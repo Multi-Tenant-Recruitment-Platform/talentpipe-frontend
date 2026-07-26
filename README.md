@@ -1,5 +1,7 @@
 # TalentPipe — Frontend
 
+[![frontend-ci](https://github.com/RavinduIT/talentpipe-frontend/actions/workflows/ci.yml/badge.svg?branch=development)](https://github.com/RavinduIT/talentpipe-frontend/actions/workflows/ci.yml)
+
 React single-page app for **TalentPipe**, the multi-tenant recruitment platform.
 The Spring Boot API lives in a separate repository: **talentpipe-backend**.
 
