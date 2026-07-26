@@ -10,6 +10,17 @@ recruitment intelligence platform. The Spring Boot API lives in its own reposito
 - Tailwind CSS 3, Axios
 - No global state library — auth state via React context (`src/auth/AuthContext.tsx`)
 
+## Branching model & contribution rules
+
+| Branch | Purpose | Rules |
+|---|---|---|
+| `master` | Production-ready code | PR only · **2 approvals** · CI green |
+| `development` | Integration branch | PR only · **1 approval** · CI green |
+| `feature/*` | All work happens here | branch off `development`, PR back into `development` |
+
+Direct pushes to `master` and `development` are blocked by branch protection.
+Read [CONTRIBUTING.md](CONTRIBUTING.md) before your first PR.
+
 ## Running locally
 
 Prerequisite: the backend API on `http://localhost:8080` (see the backend repo).
