@@ -7,8 +7,10 @@
  * conventions so the swap is a drop-in replacement inside the pages.
  */
 
-export type TeamRole = 'COMPANY_ADMIN' | 'HR_MANAGER' | 'INTERVIEWER';
-export type InvitableRole = Exclude<TeamRole, 'COMPANY_ADMIN'>;
+import type { InvitableRole } from '../api/types';
+
+/** Company roles as they appear in the mock team fixtures. */
+export type TeamRole = 'COMPANY_ADMIN' | InvitableRole;
 
 export interface TeamMember {
   id: string;
