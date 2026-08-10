@@ -2,6 +2,7 @@ import { Route, Routes } from 'react-router-dom';
 import { AuthProvider } from './auth/AuthContext';
 import { Layout } from './components/Layout';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { RequirePermission } from './components/RequirePermission';
 import { DashboardLayout } from './layouts/DashboardLayout';
 import { AcceptInvitePage } from './pages/AcceptInvitePage';
 import { CandidateRegisterPage } from './pages/CandidateRegisterPage';
@@ -9,6 +10,7 @@ import { CompanySettingsPage } from './pages/dashboard/CompanySettingsPage';
 import { OverviewPage } from './pages/dashboard/OverviewPage';
 import { PipelinePage } from './pages/dashboard/PipelinePage';
 import { TeamPage } from './pages/dashboard/TeamPage';
+import { ForbiddenPage } from './pages/ForbiddenPage';
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
 import { JobsPage } from './pages/JobsPage';
 import { LandingPage } from './pages/LandingPage';
@@ -35,19 +37,51 @@ export default function App() {
           <Route path="/accept-invite" element={<AcceptInvitePage />} />
         </Route>
 
-        {/* Company admin dashboard gets its own full-screen chrome. */}
+        {/* The company workspace gets its own full-screen chrome. Each child
+            names the permission it needs, so a role that lacks it sees a 403
+            in place rather than a page that only 403s from the API. */}
         <Route
           path="/dashboard"
           element={
-            <ProtectedRoute deniedRoles={['CANDIDATE']} redirectTo="/jobs">
+            <ProtectedRoute requires="dashboard.view" redirectTo="/jobs">
               <DashboardLayout />
             </ProtectedRoute>
           }
         >
-          <Route index element={<OverviewPage />} />
-          <Route path="team" element={<TeamPage />} />
-          <Route path="pipeline" element={<PipelinePage />} />
-          <Route path="settings" element={<CompanySettingsPage />} />
+          <Route
+            index
+            element={
+              <RequirePermission permission="overview.view">
+                <OverviewPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="team"
+            element={
+              <RequirePermission permission="team.view">
+                <TeamPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="pipeline"
+            element={
+              <RequirePermission permission="pipeline.view">
+                <PipelinePage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="settings"
+            element={
+              <RequirePermission permission="settings.view">
+                <CompanySettingsPage />
+              </RequirePermission>
+            }
+          />
+          {/* Without this, /dashboard/typo renders an empty <main>. */}
+          <Route path="*" element={<ForbiddenPage />} />
         </Route>
       </Routes>
     </AuthProvider>
