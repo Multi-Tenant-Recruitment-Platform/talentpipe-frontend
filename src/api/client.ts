@@ -1,4 +1,5 @@
 import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios';
+import { tenantGuardInterceptor } from './tenantGuard';
 import { tokenStore } from './tokenStore';
 import type { AuthResponse } from './types';
 
@@ -81,7 +82,18 @@ api.interceptors.response.use(undefined, async (error: AxiosError) => {
   return Promise.reject(error);
 });
 
-/** Extracts the backend's uniform error envelope message, with a fallback. */
+// Cross-tenant tripwire. Registered last on purpose: axios runs response
+// handlers in registration order, so nothing downstream can swallow or retry
+// its rejection — a mismatch is terminal, never refreshed.
+api.interceptors.response.use(tenantGuardInterceptor);
+
+/**
+ * Extracts the backend's uniform error envelope message, with a fallback.
+ *
+ * <p>Note that a TenantMismatchError is not an AxiosError, so it deliberately
+ * falls through to the caller's fallback string. The user is being signed out
+ * at that moment anyway — do not "fix" this by special-casing it here.</p>
+ */
 export function apiErrorMessage(err: unknown, fallback: string): string {
   if (axios.isAxiosError(err)) {
     const message = (err.response?.data as { message?: string } | undefined)?.message;
