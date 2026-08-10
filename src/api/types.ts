@@ -17,6 +17,12 @@ export interface UserResponse {
   id: string;
   tenantId: string | null;
   tenantName: string | null;
+  /**
+   * Workspace address, e.g. 'acme'. Optional: the UI falls back to reading it
+   * from the browser host, so a backend that doesn't send it loses only the
+   * subdomain line in the sidebar.
+   */
+  tenantSubdomain?: string | null;
   role: string;
   email: string;
   firstName: string;

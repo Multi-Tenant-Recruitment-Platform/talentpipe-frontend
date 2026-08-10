@@ -1,9 +1,19 @@
 import axios from 'axios';
-import { useState, type FormEvent, type ReactNode } from 'react';
+import { useMemo, useState, type FormEvent, type ReactNode } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { api, apiErrorMessage } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import { AuthShell } from '../components/AuthShell';
+import { Badge } from '../components/dashboard/Badge';
+import { Icon } from '../components/dashboard/Icon';
+import { inputClass } from '../components/ui/inputClass';
+import {
+  normalizeSubdomainInput,
+  recallSubdomain,
+  rememberSubdomain,
+  resolveTenantHost,
+  ROOT_DOMAIN,
+} from '../tenant/subdomain';
 
 type LoginMode = 'candidate' | 'company';
 
@@ -66,11 +76,19 @@ const MODES: { id: LoginMode; label: string; icon: ReactNode }[] = [
  * header (ADR-1); candidates authenticate globally, without a tenant.
  */
 export function LoginPage() {
-  const { login } = useAuth();
+  const { login, sessionEndReason } = useAuth();
   const navigate = useNavigate();
   const state = (useLocation().state ?? {}) as LoginLocationState;
 
   const [mode, setMode] = useState<LoginMode>(state.mode ?? 'company');
+
+  // Where the workspace comes from, in order of authority: the address bar,
+  // then whoever routed us here (registration), then this device's last login.
+  const tenantHost = useMemo(() => resolveTenantHost(), []);
+  const [subdomain, setSubdomain] = useState(
+    tenantHost.subdomain ?? state.subdomain ?? recallSubdomain(),
+  );
+  const [subdomainError, setSubdomainError] = useState<string | null>(null);
 
   const [email, setEmail] = useState(state.email ?? '');
   const [password, setPassword] = useState('');
@@ -87,6 +105,7 @@ export function LoginPage() {
     setError(null);
     setNotice(null);
     setNeedsVerification(false);
+    setSubdomainError(null);
   }
 
   async function handleSubmit(event: FormEvent) {
@@ -94,13 +113,19 @@ export function LoginPage() {
     setError(null);
     setNotice(null);
     setNeedsVerification(false);
+    setSubdomainError(null);
+
+    // Candidates authenticate globally; only a company login carries a tenant.
+    const tenant = mode === 'company' ? subdomain.trim() : '';
+    if (mode === 'company' && !tenant) {
+      setSubdomainError('Enter your workspace to continue.');
+      return;
+    }
+
     setSubmitting(true);
     try {
-      const loggedIn = await login(
-        '',
-        email,
-        password,
-      );
+      const loggedIn = await login(tenant, email, password);
+      rememberSubdomain(tenant);
       // The company dashboard is for company roles only — candidates have no
       // tenant and would hit 403s there, so send them to the job board.
       const home = loggedIn.role === 'CANDIDATE' ? '/jobs' : '/dashboard';
@@ -108,6 +133,12 @@ export function LoginPage() {
     } catch (err: unknown) {
       const status = axios.isAxiosError(err) ? err.response?.status : undefined;
       const message = apiErrorMessage(err, 'Login failed. Please try again.');
+      // The backend deliberately returns the same 401 "Invalid credentials"
+      // whether the workspace doesn't exist or the password is wrong — it
+      // never distinguishes them, so a workspace typo can't be confirmed by
+      // enumerating tenants via the error code. Blaming the field here would
+      // require a signal the API intentionally withholds, so this is a single
+      // generic error like any other login failure.
       setError(message);
       setNeedsVerification(status === 403 && message.toLowerCase().includes('not verified'));
     } finally {
@@ -132,10 +163,6 @@ export function LoginPage() {
     }
   }
 
-  const inputClass =
-    'mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm ' +
-    'focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500';
-
   return (
     <AuthShell>
       <h1 className="text-2xl font-bold tracking-tight">Welcome back</h1>
@@ -144,6 +171,23 @@ export function LoginPage() {
           ? 'Sign in to your company workspace.'
           : 'Sign in to track your applications.'}
       </p>
+
+      {/* Why the previous session ended, so the redirect here isn't a mystery. */}
+      {sessionEndReason === 'expired' && (
+        <div role="status" className="mt-6 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+          Your session expired. Sign in again to pick up where you left off.
+        </div>
+      )}
+
+      {sessionEndReason === 'tenant-mismatch' && (
+        <div role="alert" className="mt-6 flex items-start gap-2 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+          <Icon name="warning" className="mt-0.5 h-4 w-4 shrink-0" />
+          <span>
+            We signed you out: a response arrived for a different workspace. Nothing was shown to
+            you — please sign in again.
+          </span>
+        </div>
+      )}
 
       {state.registered && (
         <div className="mt-6 rounded-md border border-green-200 bg-green-50 p-3 text-sm text-green-700">
@@ -207,6 +251,70 @@ export function LoginPage() {
           </div>
         )}
 
+
+        {/* Which company workspace to sign in to — travels as the
+            X-Tenant-Subdomain header (ADR-1). Candidates have no tenant. */}
+        {mode === 'company' &&
+          (tenantHost.locked ? (
+            <div>
+              <span className="block text-sm font-medium text-slate-700">Workspace</span>
+              <div className="mt-1 flex items-center gap-3 rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-gradient-to-br from-indigo-600 to-violet-600 text-white">
+                  <Icon name="building" className="h-4 w-4" />
+                </span>
+                <span className="min-w-0 flex-1 truncate text-sm">
+                  <span className="font-semibold text-slate-900">{tenantHost.subdomain}</span>
+                  <span className="text-slate-400">.{ROOT_DOMAIN}</span>
+                </span>
+                <Badge tone="indigo">Detected</Badge>
+              </div>
+              <p className="mt-1.5 text-xs text-slate-500">
+                You’re signing in from this workspace’s address.
+              </p>
+            </div>
+          ) : (
+            <div>
+              <label htmlFor="subdomain" className="block text-sm font-medium text-slate-700">
+                Workspace
+              </label>
+              <div
+                className={`mt-1 flex rounded-md border shadow-sm focus-within:ring-1 ${
+                  subdomainError
+                    ? 'border-red-300 focus-within:border-red-500 focus-within:ring-red-500'
+                    : 'border-slate-300 focus-within:border-indigo-500 focus-within:ring-indigo-500'
+                }`}
+              >
+                <input
+                  id="subdomain"
+                  // Not `required`: the browser's generic bubble would preempt
+                  // the field-level message handleSubmit produces, which can
+                  // also name a workspace the backend rejected.
+                  value={subdomain}
+                  onChange={(e) => {
+                    setSubdomain(normalizeSubdomainInput(e.target.value));
+                    setSubdomainError(null);
+                  }}
+                  className="min-w-0 flex-1 rounded-l-md border-0 bg-transparent px-3 py-2 text-sm focus:outline-none"
+                  placeholder="acme"
+                  autoComplete="organization"
+                  autoCapitalize="none"
+                  spellCheck={false}
+                  aria-invalid={subdomainError ? true : undefined}
+                  aria-describedby="subdomain-hint"
+                />
+                <span className="shrink-0 rounded-r-md border-l border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-500">
+                  .{ROOT_DOMAIN}
+                </span>
+              </div>
+              <p
+                id="subdomain-hint"
+                className={`mt-1.5 text-xs ${subdomainError ? 'text-red-600' : 'text-slate-500'}`}
+              >
+                {subdomainError ??
+                  'Your company’s TalentPipe address — it’s in your invitation email.'}
+              </p>
+            </div>
+          ))}
 
         <div>
           <label htmlFor="email" className="block text-sm font-medium text-slate-700">
