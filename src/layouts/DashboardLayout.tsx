@@ -1,18 +1,33 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
+import type { Permission } from '../auth/permissions';
+import { useCan } from '../auth/useCan';
 import { Avatar } from '../components/dashboard/Avatar';
 import { Badge } from '../components/dashboard/Badge';
 import { Icon, type IconName } from '../components/dashboard/Icon';
+import { RoleBadge } from '../components/dashboard/RoleBadge';
 import { planUsage } from '../data/mockDashboard';
-import { formatRole } from '../utils/format';
+import { activeTenant } from '../tenant/activeTenant';
+import { resolveTenantHost, ROOT_DOMAIN } from '../tenant/subdomain';
+import { tenantStorage } from '../utils/tenantStorage';
 
-const NAV_ITEMS: { to: string; label: string; icon: IconName; end?: boolean }[] = [
-  { to: '/dashboard', label: 'Overview', icon: 'squares-2x2', end: true },
-  { to: '/dashboard/team', label: 'Team', icon: 'users' },
-  { to: '/dashboard/pipeline', label: 'Pipeline', icon: 'funnel' },
-  { to: '/dashboard/settings', label: 'Company Settings', icon: 'cog' },
+/** Each entry names the permission that earns it a place in the sidebar. */
+const NAV_ITEMS: {
+  to: string;
+  label: string;
+  icon: IconName;
+  end?: boolean;
+  permission: Permission;
+}[] = [
+  { to: '/dashboard', label: 'Overview', icon: 'squares-2x2', end: true, permission: 'overview.view' },
+  { to: '/dashboard/team', label: 'Team', icon: 'users', permission: 'team.view' },
+  { to: '/dashboard/pipeline', label: 'Pipeline', icon: 'funnel', permission: 'pipeline.view' },
+  { to: '/dashboard/settings', label: 'Company Settings', icon: 'cog', permission: 'settings.view' },
 ];
+
+/** Notification dismissals are per-workspace, like everything else cached. */
+const NOTIFICATIONS_SEEN = 'notifications.seen';
 
 /** Mock notification list — TODO(sprint2): wire to the notification module. */
 const NOTIFICATIONS = [
@@ -23,7 +38,14 @@ const NOTIFICATIONS = [
 
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const { user } = useAuth();
+  const allow = useCan();
   const seatsPercent = Math.round((planUsage.seatsUsed / planUsage.seatsTotal) * 100);
+  const navItems = NAV_ITEMS.filter((item) => allow(item.permission));
+
+  // Prefer what the backend says the workspace is called; fall back to the
+  // host we're served from. Neither available (localhost, older backend) →
+  // the generic label, exactly as before.
+  const subdomain = user?.tenantSubdomain ?? resolveTenantHost().subdomain;
 
   return (
     <div className="flex h-full flex-col bg-slate-900">
@@ -35,18 +57,24 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         <span className="text-lg font-bold tracking-tight text-white">TalentPipe</span>
       </div>
 
-      {/* Workspace identity */}
+      {/* Workspace identity — which tenant's data you are looking at. */}
       <div className="mx-4 mt-5 flex items-center gap-3 rounded-lg bg-white/5 px-3 py-2.5">
         <Avatar firstName={user?.tenantName ?? 'Workspace'} size="sm" className="rounded-md" />
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold text-white">{user?.tenantName ?? 'Workspace'}</p>
-          <p className="text-xs text-slate-400">Company workspace</p>
+          {subdomain ? (
+            <p className="truncate font-mono text-[11px] text-slate-400">
+              {subdomain}.{ROOT_DOMAIN}
+            </p>
+          ) : (
+            <p className="text-xs text-slate-400">Company workspace</p>
+          )}
         </div>
       </div>
 
-      {/* Primary navigation */}
+      {/* Primary navigation — only what this role may actually open. */}
       <nav className="mt-6 flex-1 space-y-1 px-4">
-        {NAV_ITEMS.map((item) => (
+        {navItems.map((item) => (
           <NavLink
             key={item.to}
             to={item.to}
@@ -66,29 +94,31 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         ))}
       </nav>
 
-      {/* Plan usage */}
-      <div className="mx-4 mb-4 rounded-xl border border-white/10 bg-white/5 p-4">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">Plan</span>
-          <Badge tone="indigo">{planUsage.tier}</Badge>
+      {/* Plan usage — seats and billing are the admin's business. */}
+      {allow('billing.view') && (
+        <div className="mx-4 mb-4 rounded-xl border border-white/10 bg-white/5 p-4">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">Plan</span>
+            <Badge tone="indigo">{planUsage.tier}</Badge>
+          </div>
+          <p className="mt-3 text-xs text-slate-400">
+            <span className="font-semibold text-white">{planUsage.seatsUsed}</span> of {planUsage.seatsTotal} seats used
+          </p>
+          <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/10">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-violet-500"
+              style={{ width: `${seatsPercent}%` }}
+            />
+          </div>
+          <button
+            type="button"
+            className="mt-3 w-full rounded-md bg-white/10 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-white/20"
+            title="Billing arrives in a later sprint"
+          >
+            Manage plan
+          </button>
         </div>
-        <p className="mt-3 text-xs text-slate-400">
-          <span className="font-semibold text-white">{planUsage.seatsUsed}</span> of {planUsage.seatsTotal} seats used
-        </p>
-        <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/10">
-          <div
-            className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-violet-500"
-            style={{ width: `${seatsPercent}%` }}
-          />
-        </div>
-        <button
-          type="button"
-          className="mt-3 w-full rounded-md bg-white/10 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-white/20"
-          title="Billing arrives in a later sprint"
-        >
-          Manage plan
-        </button>
-      </div>
+      )}
 
       {/* Footer links */}
       <div className="border-t border-white/10 px-4 py-4">
@@ -115,7 +145,17 @@ export function DashboardLayout() {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
-  const [unread, setUnread] = useState(true);
+
+  // Scoped to the workspace: dismissing these as one company must not mark
+  // them read for the next company signed into on this device.
+  const store = useMemo(() => tenantStorage(activeTenant.get()), []);
+  const [unread, setUnread] = useState(() => store.get(NOTIFICATIONS_SEEN) !== 'true');
+
+  function openNotifications() {
+    setNotificationsOpen((open) => !open);
+    setUnread(false);
+    store.set(NOTIFICATIONS_SEEN, 'true');
+  }
 
   async function handleLogout() {
     await logout();
@@ -172,10 +212,7 @@ export function DashboardLayout() {
             <div className="relative">
               <button
                 type="button"
-                onClick={() => {
-                  setNotificationsOpen((v) => !v);
-                  setUnread(false);
-                }}
+                onClick={openNotifications}
                 className="relative rounded-full p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-700"
                 aria-label="Notifications"
                 aria-expanded={notificationsOpen}
@@ -218,7 +255,13 @@ export function DashboardLayout() {
                 <p className="text-sm font-semibold leading-tight text-slate-900">
                   {user?.firstName} {user?.lastName}
                 </p>
-                <p className="text-xs leading-tight text-slate-500">{user ? formatRole(user.role) : ''}</p>
+                {/* The role decides what this session can reach, so it reads as
+                    a pill rather than as grey caption text. */}
+                {user && (
+                  <div className="mt-0.5">
+                    <RoleBadge role={user.role} />
+                  </div>
+                )}
               </div>
               <button
                 type="button"

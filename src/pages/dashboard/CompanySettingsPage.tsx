@@ -1,10 +1,13 @@
 import { useState, type FormEvent } from 'react';
 import { useAuth } from '../../auth/AuthContext';
+import { useCan } from '../../auth/useCan';
 import { Badge } from '../../components/dashboard/Badge';
 import { Card } from '../../components/dashboard/Card';
 import { Icon } from '../../components/dashboard/Icon';
 import { PageHeader } from '../../components/dashboard/PageHeader';
+import { inputClass } from '../../components/ui/inputClass';
 import { companyProfile as seedProfile, planUsage, type CompanyProfile } from '../../data/mockDashboard';
+import { ROOT_DOMAIN } from '../../tenant/subdomain';
 
 const INDUSTRIES = [
   'Information Technology',
@@ -19,18 +22,20 @@ const INDUSTRIES = [
 
 const COMPANY_SIZES = ['1–10 employees', '11–50 employees', '51–200 employees', '201–500 employees', '500+ employees'];
 
-const inputClass =
-  'mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm ' +
-  'focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500';
-
 /**
  * Company settings: the admin edits the public-facing company profile, and
  * reviews the workspace identity, careers page URL and plan usage.
+ *
+ * <p>An HR manager may read this page but not change it, so the form renders
+ * disabled rather than absent — seeing the current profile is useful even
+ * without the ability to edit it.</p>
  *
  * TODO(sprint2): persist via the tenant update endpoint once it lands.
  */
 export function CompanySettingsPage() {
   const { user } = useAuth();
+  const allow = useCan();
+  const readOnly = !allow('settings.edit');
   const [profile, setProfile] = useState<CompanyProfile>({
     ...seedProfile,
     name: user?.tenantName ?? seedProfile.name,
@@ -38,7 +43,7 @@ export function CompanySettingsPage() {
   const [saved, setSaved] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  const careersUrl = `${profile.subdomain}.talentpipe.io/jobs`;
+  const careersUrl = `${profile.subdomain}.${ROOT_DOMAIN}/jobs`;
   const seatsPercent = Math.round((planUsage.seatsUsed / planUsage.seatsTotal) * 100);
 
   function update<K extends keyof CompanyProfile>(key: K, value: CompanyProfile[K]) {
@@ -78,7 +83,12 @@ export function CompanySettingsPage() {
 
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Editable profile */}
-        <Card title="Company profile" subtitle="Public details shown to candidates" className="lg:col-span-2">
+        <Card
+          title="Company profile"
+          subtitle="Public details shown to candidates"
+          className="lg:col-span-2"
+          action={readOnly ? <Badge tone="slate">Read only</Badge> : undefined}
+        >
           <form onSubmit={handleSubmit} className="space-y-5">
             {/* Logo */}
             <div className="flex items-center gap-4">
@@ -88,7 +98,8 @@ export function CompanySettingsPage() {
               <div>
                 <button
                   type="button"
-                  className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-50"
+                  disabled={readOnly}
+                  className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
                   title="Logo upload arrives with the tenant media API"
                 >
                   Upload logo
@@ -102,6 +113,7 @@ export function CompanySettingsPage() {
                 <label htmlFor="company-name" className="block text-sm font-medium text-slate-700">Company name</label>
                 <input
                   id="company-name"
+                  disabled={readOnly}
                   required
                   value={profile.name}
                   onChange={(e) => update('name', e.target.value)}
@@ -112,6 +124,7 @@ export function CompanySettingsPage() {
                 <label htmlFor="company-industry" className="block text-sm font-medium text-slate-700">Industry</label>
                 <select
                   id="company-industry"
+                  disabled={readOnly}
                   value={profile.industry}
                   onChange={(e) => update('industry', e.target.value)}
                   className={inputClass}
@@ -125,6 +138,7 @@ export function CompanySettingsPage() {
                 <label htmlFor="company-size" className="block text-sm font-medium text-slate-700">Company size</label>
                 <select
                   id="company-size"
+                  disabled={readOnly}
                   value={profile.size}
                   onChange={(e) => update('size', e.target.value)}
                   className={inputClass}
@@ -138,6 +152,7 @@ export function CompanySettingsPage() {
                 <label htmlFor="company-website" className="block text-sm font-medium text-slate-700">Website</label>
                 <input
                   id="company-website"
+                  disabled={readOnly}
                   type="url"
                   value={profile.website}
                   onChange={(e) => update('website', e.target.value)}
@@ -149,6 +164,7 @@ export function CompanySettingsPage() {
                 <label htmlFor="company-location" className="block text-sm font-medium text-slate-700">Headquarters</label>
                 <input
                   id="company-location"
+                  disabled={readOnly}
                   value={profile.location}
                   onChange={(e) => update('location', e.target.value)}
                   className={inputClass}
@@ -159,6 +175,7 @@ export function CompanySettingsPage() {
                 <label htmlFor="company-about" className="block text-sm font-medium text-slate-700">About the company</label>
                 <textarea
                   id="company-about"
+                  disabled={readOnly}
                   rows={4}
                   value={profile.about}
                   onChange={(e) => update('about', e.target.value)}
@@ -170,15 +187,21 @@ export function CompanySettingsPage() {
               </div>
             </div>
 
-            <div className="flex justify-end border-t border-slate-100 pt-5">
-              <button
-                type="submit"
-                className="inline-flex items-center gap-2 rounded-md bg-gradient-to-r from-indigo-600 to-violet-600 px-5 py-2 text-sm font-semibold text-white shadow-sm transition-opacity hover:opacity-90"
-              >
-                <Icon name="check" className="h-4 w-4" />
-                Save changes
-              </button>
-            </div>
+            {readOnly ? (
+              <p className="border-t border-slate-100 pt-5 text-xs text-slate-500">
+                Your role can view this profile but not change it. Ask a Company Admin to update it.
+              </p>
+            ) : (
+              <div className="flex justify-end border-t border-slate-100 pt-5">
+                <button
+                  type="submit"
+                  className="inline-flex items-center gap-2 rounded-md bg-gradient-to-r from-indigo-600 to-violet-600 px-5 py-2 text-sm font-semibold text-white shadow-sm transition-opacity hover:opacity-90"
+                >
+                  <Icon name="check" className="h-4 w-4" />
+                  Save changes
+                </button>
+              </div>
+            )}
           </form>
         </Card>
 
@@ -190,7 +213,7 @@ export function CompanySettingsPage() {
                 <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Subdomain</p>
                 <div className="mt-1.5 flex items-center rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
                   <span className="truncate text-sm font-semibold text-slate-800">{profile.subdomain}</span>
-                  <span className="text-sm text-slate-400">.talentpipe.io</span>
+                  <span className="text-sm text-slate-400">.{ROOT_DOMAIN}</span>
                 </div>
               </div>
               <div className="flex items-center justify-between">
@@ -219,6 +242,7 @@ export function CompanySettingsPage() {
             </div>
           </Card>
 
+          {allow('billing.view') && (
           <Card title="Plan & usage" subtitle="Current subscription">
             <div className="flex items-center justify-between">
               <span className="inline-flex items-center gap-2 text-sm font-semibold text-slate-900">
@@ -252,6 +276,7 @@ export function CompanySettingsPage() {
               Manage plan
             </button>
           </Card>
+          )}
         </div>
       </div>
     </>

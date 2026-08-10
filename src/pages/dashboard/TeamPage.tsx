@@ -3,20 +3,16 @@ import { apiErrorMessage } from '../../api/client';
 import { teamApi } from '../../api/team';
 import type { UserResponse } from '../../api/types';
 import { useAuth } from '../../auth/AuthContext';
+import { useCan } from '../../auth/useCan';
 import { Avatar } from '../../components/dashboard/Avatar';
-import { Badge, type BadgeTone } from '../../components/dashboard/Badge';
+import { Badge } from '../../components/dashboard/Badge';
 import { Card } from '../../components/dashboard/Card';
 import { Icon } from '../../components/dashboard/Icon';
 import { InviteMemberModal, type InviteFormValues } from '../../components/dashboard/InviteMemberModal';
 import { PageHeader } from '../../components/dashboard/PageHeader';
+import { RoleBadge } from '../../components/dashboard/RoleBadge';
 import { StatCard } from '../../components/dashboard/StatCard';
 import { formatRole } from '../../utils/format';
-
-const ROLE_BADGE_TONE: Record<string, BadgeTone> = {
-  COMPANY_ADMIN: 'slate',
-  HR_MANAGER: 'indigo',
-  INTERVIEWER: 'violet',
-};
 
 /** Renders an ISO timestamp as a short, locale-aware date. */
 function formatDate(iso: string): string {
@@ -37,6 +33,7 @@ function formatDate(iso: string): string {
  */
 export function TeamPage() {
   const { user } = useAuth();
+  const allow = useCan();
 
   const [members, setMembers] = useState<UserResponse[]>([]);
   const [loading, setLoading] = useState(true);
@@ -119,14 +116,16 @@ export function TeamPage() {
         title="Team & invitations"
         subtitle="Manage who can access your hiring workspace and what they can do."
       >
-        <button
-          type="button"
-          onClick={() => setInviteOpen(true)}
-          className="inline-flex items-center gap-2 rounded-md bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-opacity hover:opacity-90"
-        >
-          <Icon name="user-plus" className="h-4 w-4" />
-          Invite member
-        </button>
+        {allow('team.invite') && (
+          <button
+            type="button"
+            onClick={() => setInviteOpen(true)}
+            className="inline-flex items-center gap-2 rounded-md bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-opacity hover:opacity-90"
+          >
+            <Icon name="user-plus" className="h-4 w-4" />
+            Invite member
+          </button>
+        )}
       </PageHeader>
 
       {notice && (
@@ -191,7 +190,7 @@ export function TeamPage() {
                   </div>
                 </td>
                 <td className="px-6 py-4">
-                  <Badge tone={ROLE_BADGE_TONE[user.role] ?? 'slate'}>{formatRole(user.role)}</Badge>
+                  <RoleBadge role={user.role} />
                 </td>
                 <td className="px-6 py-4"><Badge tone="emerald">Active</Badge></td>
                 <td className="px-6 py-4 text-sm text-slate-500">Owner</td>
@@ -211,7 +210,7 @@ export function TeamPage() {
                   </div>
                 </td>
                 <td className="px-6 py-4">
-                  <Badge tone={ROLE_BADGE_TONE[member.role] ?? 'slate'}>{formatRole(member.role)}</Badge>
+                  <RoleBadge role={member.role} />
                 </td>
                 <td className="px-6 py-4"><Badge tone="emerald">Active</Badge></td>
                 <td className="px-6 py-4 text-sm text-slate-500">{formatDate(member.createdAt)}</td>
@@ -258,42 +257,46 @@ export function TeamPage() {
                     {invite.email} · invited {formatDate(invite.createdAt)}
                   </p>
                 </div>
-                <Badge tone={ROLE_BADGE_TONE[invite.role] ?? 'slate'}>{formatRole(invite.role)}</Badge>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => void handleResend(invite.id)}
-                    disabled={resent || busy}
-                    className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold disabled:opacity-60 ${
-                      resent
-                        ? 'cursor-default bg-emerald-50 text-emerald-700'
-                        : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                    }`}
-                  >
-                    <Icon name={resent ? 'check' : 'send'} className="h-3.5 w-3.5" />
-                    {resent ? 'Sent' : 'Resend'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => void handleRevoke(invite.id)}
-                    disabled={busy}
-                    className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-60"
-                  >
-                    <Icon name="trash" className="h-3.5 w-3.5" />
-                    Revoke
-                  </button>
-                </div>
+                <RoleBadge role={invite.role} />
+                {allow('team.invite.manage') && (
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => void handleResend(invite.id)}
+                      disabled={resent || busy}
+                      className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold disabled:opacity-60 ${
+                        resent
+                          ? 'cursor-default bg-emerald-50 text-emerald-700'
+                          : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                      }`}
+                    >
+                      <Icon name={resent ? 'check' : 'send'} className="h-3.5 w-3.5" />
+                      {resent ? 'Sent' : 'Resend'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void handleRevoke(invite.id)}
+                      disabled={busy}
+                      className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-60"
+                    >
+                      <Icon name="trash" className="h-3.5 w-3.5" />
+                      Revoke
+                    </button>
+                  </div>
+                )}
               </div>
             );
           })
         )}
       </Card>
 
-      <InviteMemberModal
-        open={inviteOpen}
-        onClose={() => setInviteOpen(false)}
-        onInvite={(values) => void handleInvite(values)}
-      />
+      {allow('team.invite') && (
+        <InviteMemberModal
+          open={inviteOpen}
+          onClose={() => setInviteOpen(false)}
+          onInvite={(values) => void handleInvite(values)}
+        />
+      )}
     </>
   );
 }

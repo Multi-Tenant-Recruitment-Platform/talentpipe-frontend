@@ -1,5 +1,6 @@
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
+import { can } from '../auth/permissions';
 
 /** Shared page chrome: top navigation + content outlet. */
 export function Layout() {
@@ -30,8 +31,10 @@ export function Layout() {
             {user ? (
               <>
                 {/* The dashboard is the company workspace; candidates have no
-                    tenant, so it isn't shown to them. */}
-                {user.role !== 'CANDIDATE' && (
+                    tenant, so it isn't shown to them. Asks the permission map
+                    rather than naming a role, so this and the route guard can
+                    never drift apart. */}
+                {can(user.role, 'dashboard.view') && (
                   <NavLink to="/dashboard" className={navLinkClass}>
                     Dashboard
                   </NavLink>

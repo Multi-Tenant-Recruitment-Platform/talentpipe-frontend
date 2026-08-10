@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { apiErrorMessage } from '../../api/client';
 import { teamApi } from '../../api/team';
 import { useAuth } from '../../auth/AuthContext';
+import { useCan } from '../../auth/useCan';
 import { Avatar } from '../../components/dashboard/Avatar';
 import { Badge } from '../../components/dashboard/Badge';
 import { Card } from '../../components/dashboard/Card';
@@ -47,6 +48,7 @@ function greeting(): string {
  */
 export function OverviewPage() {
   const { user } = useAuth();
+  const allow = useCan();
   const [inviteOpen, setInviteOpen] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -111,14 +113,18 @@ export function OverviewPage() {
           <Icon name="briefcase" className="h-4 w-4" />
           Post a job
         </button>
-        <button
-          type="button"
-          onClick={() => setInviteOpen(true)}
-          className="inline-flex items-center gap-2 rounded-md bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-opacity hover:opacity-90"
-        >
-          <Icon name="user-plus" className="h-4 w-4" />
-          Invite member
-        </button>
+        {/* Inviting is a COMPANY_ADMIN action; anyone else would only get a
+            403 from the API, so they never see the button. */}
+        {allow('team.invite') && (
+          <button
+            type="button"
+            onClick={() => setInviteOpen(true)}
+            className="inline-flex items-center gap-2 rounded-md bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-opacity hover:opacity-90"
+          >
+            <Icon name="user-plus" className="h-4 w-4" />
+            Invite member
+          </button>
+        )}
       </PageHeader>
 
       {notice && (
@@ -247,7 +253,9 @@ export function OverviewPage() {
         </Card>
       </div>
 
-      <InviteMemberModal open={inviteOpen} onClose={() => setInviteOpen(false)} onInvite={(values) => void handleInvite(values)} />
+      {allow('team.invite') && (
+        <InviteMemberModal open={inviteOpen} onClose={() => setInviteOpen(false)} onInvite={(values) => void handleInvite(values)} />
+      )}
     </>
   );
 }
