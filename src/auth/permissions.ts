@@ -36,8 +36,9 @@ const COMPANY_BASE = [
   'jobs.browse',
 ] as const satisfies readonly Permission[];
 
-const ROLE_PERMISSIONS: Record<Role, readonly Permission[]> = {
-  COMPANY_ADMIN: [
+/** The matrix. The annotation makes a typo or a missing role a build error. */
+const ROLE_PERMISSIONS: Record<Role, ReadonlySet<Permission>> = {
+  COMPANY_ADMIN: new Set([
     ...COMPANY_BASE,
     'team.view',
     'team.invite',
@@ -46,20 +47,16 @@ const ROLE_PERMISSIONS: Record<Role, readonly Permission[]> = {
     'settings.view',
     'settings.edit',
     'billing.view',
-  ],
+  ]),
   // Team management is COMPANY_ADMIN-only on the backend (see api/team.ts), so
   // granting an HR manager team.view would render a page that instantly 403s.
   // NOTE: settings.view is safe only while CompanySettingsPage is mock-backed.
   // Revisit this cell when GET /tenant lands — if that endpoint is admin-only,
   // HR_MANAGER must lose it.
-  HR_MANAGER: [...COMPANY_BASE, 'pipeline.manage', 'settings.view'],
-  INTERVIEWER: [...COMPANY_BASE],
-  CANDIDATE: ['jobs.browse', 'applications.viewOwn'],
+  HR_MANAGER: new Set([...COMPANY_BASE, 'pipeline.manage', 'settings.view']),
+  INTERVIEWER: new Set(COMPANY_BASE),
+  CANDIDATE: new Set(['jobs.browse', 'applications.viewOwn']),
 };
-
-const PERMISSION_SETS = Object.fromEntries(
-  ROLES.map((role) => [role, new Set(ROLE_PERMISSIONS[role])]),
-) as Record<Role, ReadonlySet<Permission>>;
 
 const EMPTY: ReadonlySet<Permission> = new Set<Permission>();
 
@@ -80,7 +77,7 @@ export function permissionsFor(role: string | null | undefined): ReadonlySet<Per
     }
     return EMPTY;
   }
-  return PERMISSION_SETS[role];
+  return ROLE_PERMISSIONS[role];
 }
 
 export function can(role: string | null | undefined, permission: Permission): boolean {
