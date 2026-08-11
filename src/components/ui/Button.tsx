@@ -1,6 +1,6 @@
-import type { ButtonHTMLAttributes, ReactNode } from 'react';
+import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from 'react';
 
-export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
+export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'dangerSolid';
 export type ButtonSize = 'sm' | 'md';
 
 /**
@@ -18,8 +18,14 @@ const VARIANTS: Record<ButtonVariant, string> = {
     'hover:border-slate-400 hover:bg-slate-50 focus-visible:ring-indigo-500/25',
   ghost:
     'text-slate-600 hover:bg-slate-100 hover:text-slate-900 focus-visible:ring-indigo-500/25',
+  // De-emphasised inline destructive action, e.g. a Revoke link in a table row.
   danger:
     'text-red-600 hover:bg-red-50 hover:text-red-700 focus-visible:ring-red-500/25',
+  // The confirming action in a destructive dialog. `danger` is a ghost, which
+  // next to a ghost Cancel gives the two opposite outcomes identical weight.
+  dangerSolid:
+    'bg-red-600 text-white shadow-sm shadow-red-600/20 ' +
+    'hover:bg-red-500 hover:shadow-md hover:shadow-red-600/25 focus-visible:ring-red-500/40',
 };
 
 const SIZES: Record<ButtonSize, string> = {
@@ -27,23 +33,18 @@ const SIZES: Record<ButtonSize, string> = {
   md: 'gap-2 rounded-lg px-4 py-2.5 text-sm',
 };
 
-export function Button({
-  variant = 'secondary',
-  size = 'md',
-  className = '',
-  children,
-  ...rest
-}: {
-  variant?: ButtonVariant;
-  size?: ButtonSize;
-  children: ReactNode;
-} & ButtonHTMLAttributes<HTMLButtonElement>) {
+/** Ref-forwarding so dialogs can place initial focus on a specific button. */
+export const Button = forwardRef<
+  HTMLButtonElement,
+  { variant?: ButtonVariant; size?: ButtonSize; children: ReactNode } & ButtonHTMLAttributes<HTMLButtonElement>
+>(function Button({ variant = 'secondary', size = 'md', className = '', children, ...rest }, ref) {
   return (
     <button
+      ref={ref}
       className={`inline-flex items-center justify-center font-semibold transition-all focus:outline-none focus-visible:ring-4 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:shadow-sm ${SIZES[size]} ${VARIANTS[variant]} ${className}`}
       {...rest}
     >
       {children}
     </button>
   );
-}
+});
