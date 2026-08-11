@@ -77,18 +77,32 @@ const FEATURES: Feature[] = [
  */
 export function AuthBrandPanel() {
   return (
-    <div className="relative hidden overflow-hidden bg-gradient-to-br from-indigo-600 via-indigo-700 to-violet-800 lg:flex lg:flex-col lg:justify-center">
+    <div className="relative hidden overflow-hidden bg-gradient-to-br from-indigo-700 via-indigo-700 to-violet-900 lg:flex lg:flex-col lg:justify-center">
+      {/* Decorative texture: dot grid + soft glows. Purely visual. */}
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 opacity-[0.15]"
+        style={{
+          backgroundImage: 'radial-gradient(currentColor 1px, transparent 1px)',
+          backgroundSize: '18px 18px',
+          color: '#fff',
+        }}
+      />
       <div className="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-white/10 blur-3xl" aria-hidden="true" />
       <div className="absolute -bottom-24 -left-24 h-72 w-72 rounded-full bg-violet-400/20 blur-3xl" aria-hidden="true" />
+      <div className="absolute inset-0 bg-gradient-to-t from-indigo-950/40 via-transparent to-transparent" aria-hidden="true" />
 
       <div className="relative px-10 py-12 xl:px-12">
-        <span className="inline-flex items-center rounded-full border border-white/25 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-indigo-100">
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-white/25 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-indigo-100 backdrop-blur-sm">
+          <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="currentColor" aria-hidden="true">
+            <path d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" />
+          </svg>
           AI-powered hiring
         </span>
-        <h2 className="mt-4 text-3xl font-bold tracking-tight text-white">
+        <h2 className="mt-5 text-[2rem] font-bold leading-[1.15] tracking-tight text-white">
           Multi-Tenant Recruitment Platform
         </h2>
-        <p className="mt-3 text-sm leading-6 text-indigo-100">
+        <p className="mt-3 max-w-sm text-sm leading-6 text-indigo-100/90">
           One intelligent workspace for every company — screen, rediscover and
           analyse talent without leaving your pipeline.
         </p>
@@ -96,21 +110,23 @@ export function AuthBrandPanel() {
         <img
           src={heroImage}
           alt="TalentPipe platform illustration"
-          className="mx-auto mt-8 w-36 drop-shadow-2xl xl:w-44"
+          className="mx-auto mt-8 w-32 drop-shadow-2xl xl:w-40"
         />
 
-        <div className="mt-8 grid grid-cols-2 gap-3">
+        <dl className="mt-8 grid grid-cols-2 gap-3">
           {FEATURES.map((feature) => (
             <div
               key={feature.title}
-              className="rounded-xl border border-white/20 bg-white/10 p-4 backdrop-blur-sm"
+              className="rounded-2xl border border-white/15 bg-white/[0.07] p-4 shadow-sm shadow-black/5 backdrop-blur-sm transition-colors hover:bg-white/[0.11]"
             >
-              <span className="inline-flex rounded-md bg-white/20 p-1.5 text-white">{feature.icon}</span>
-              <h3 className="mt-2 text-sm font-semibold text-white">{feature.title}</h3>
-              <p className="mt-1 text-xs leading-5 text-indigo-100">{feature.description}</p>
+              <span className="inline-flex rounded-lg bg-white/15 p-1.5 text-white ring-1 ring-white/10">
+                {feature.icon}
+              </span>
+              <dt className="mt-2.5 text-sm font-semibold text-white">{feature.title}</dt>
+              <dd className="mt-1 text-xs leading-5 text-indigo-100/80">{feature.description}</dd>
             </div>
           ))}
-        </div>
+        </dl>
       </div>
     </div>
   );
