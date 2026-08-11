@@ -3,6 +3,7 @@ import { Card } from '../../components/dashboard/Card';
 import { HiringFunnel } from '../../components/dashboard/HiringFunnel';
 import { Icon, type IconName } from '../../components/dashboard/Icon';
 import { PageHeader } from '../../components/dashboard/PageHeader';
+import { Alert } from '../../components/ui/Alert';
 import { hiringFunnel, jobPipelines, pipelineInsights } from '../../data/mockDashboard';
 
 const STAGE_LABELS = ['Applied', 'Screening', 'Interview', 'Offer', 'Hired'];
@@ -45,6 +46,7 @@ export function PipelinePage() {
   return (
     <>
       <PageHeader
+        eyebrow="Analytics"
         title="Recruitment pipeline"
         subtitle="Understand how candidates flow through your hiring process — and where they get stuck."
       />
@@ -52,8 +54,11 @@ export function PipelinePage() {
       {/* Insight cards */}
       <div className="grid gap-5 sm:grid-cols-3">
         {insights.map((insight) => (
-          <div key={insight.label} className="flex items-center gap-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-            <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-lg ${insight.tone}`}>
+          <div
+            key={insight.label}
+            className="flex items-center gap-4 rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm shadow-slate-900/5 ring-1 ring-slate-900/5 transition-all hover:-translate-y-0.5 hover:shadow-md hover:shadow-slate-900/10"
+          >
+            <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${insight.tone}`}>
               <Icon name={insight.icon} className="h-5 w-5" />
             </span>
             <div className="min-w-0">
@@ -72,14 +77,11 @@ export function PipelinePage() {
         className="mt-6"
       >
         <HiringFunnel stages={hiringFunnel} />
-        <div className="mt-6 flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
-          <Icon name="warning" className="mt-0.5 h-5 w-5 shrink-0 text-amber-500" />
-          <p className="text-sm leading-relaxed text-amber-800">
-            <span className="font-semibold">Screening is your bottleneck.</span> Candidates wait ~6 days on
-            average before moving forward. Consider inviting another interviewer or tightening your
-            screening criteria to keep the pipeline flowing.
-          </p>
-        </div>
+        <Alert tone="warning" role="status" className="mt-6">
+          <span className="font-semibold">Screening is your bottleneck.</span> Candidates wait ~6 days on
+          average before moving forward. Consider inviting another interviewer or tightening your
+          screening criteria to keep the pipeline flowing.
+        </Alert>
       </Card>
 
       {/* Per-job pipelines */}
@@ -100,20 +102,20 @@ export function PipelinePage() {
         bodyClassName="overflow-x-auto"
       >
         <table className="min-w-full divide-y divide-slate-100 text-left">
-          <thead>
-            <tr className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-              <th scope="col" className="px-6 py-3">Job</th>
-              <th scope="col" className="px-6 py-3">Open for</th>
-              <th scope="col" className="w-2/5 px-6 py-3">Pipeline</th>
-              <th scope="col" className="px-6 py-3">Candidates</th>
-              <th scope="col" className="px-6 py-3">Status</th>
+          <thead className="bg-slate-50/70">
+            <tr className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+              <th scope="col" className="px-6 py-3.5">Job</th>
+              <th scope="col" className="px-6 py-3.5">Open for</th>
+              <th scope="col" className="w-2/5 px-6 py-3.5">Pipeline</th>
+              <th scope="col" className="px-6 py-3.5">Candidates</th>
+              <th scope="col" className="px-6 py-3.5">Status</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {jobPipelines.map((job) => {
               const total = job.stageCounts.reduce((sum, n) => sum + n, 0);
               return (
-                <tr key={job.id} className="hover:bg-slate-50/60">
+                <tr key={job.id} className="transition-colors hover:bg-slate-50/70">
                   <td className="px-6 py-4">
                     <p className="text-sm font-semibold text-slate-900">{job.title}</p>
                     <p className="text-xs text-slate-500">

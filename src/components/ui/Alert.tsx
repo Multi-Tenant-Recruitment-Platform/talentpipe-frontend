@@ -35,17 +35,35 @@ const TONE_STYLES: Record<AlertTone, { wrap: string; icon: string; iconName: Ico
 export function Alert({
   tone,
   role = tone === 'error' || tone === 'warning' ? 'alert' : 'status',
+  onDismiss,
+  className = '',
   children,
 }: {
   tone: AlertTone;
   role?: 'alert' | 'status';
+  /** When given, renders a dismiss affordance on the right. */
+  onDismiss?: () => void;
+  className?: string;
   children: ReactNode;
 }) {
   const styles = TONE_STYLES[tone];
   return (
-    <div role={role} className={`flex items-start gap-2.5 rounded-xl border px-3.5 py-3 text-sm leading-5 ${styles.wrap}`}>
+    <div
+      role={role}
+      className={`flex items-start gap-2.5 rounded-xl border px-3.5 py-3 text-sm leading-5 ${styles.wrap} ${className}`}
+    >
       <Icon name={styles.iconName} className={`mt-0.5 h-4 w-4 shrink-0 ${styles.icon}`} />
       <div className="min-w-0 flex-1">{children}</div>
+      {onDismiss && (
+        <button
+          type="button"
+          onClick={onDismiss}
+          aria-label="Dismiss"
+          className={`-mr-1 -mt-0.5 shrink-0 rounded-md p-1 opacity-60 transition-opacity hover:opacity-100 focus:outline-none focus-visible:opacity-100 ${styles.icon}`}
+        >
+          <Icon name="x-mark" className="h-4 w-4" />
+        </button>
+      )}
     </div>
   );
 }

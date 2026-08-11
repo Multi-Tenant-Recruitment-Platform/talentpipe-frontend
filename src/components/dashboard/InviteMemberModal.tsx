@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import type { InvitableRole } from '../../api/types';
+import { Button } from '../ui/Button';
 import { inputClass } from '../ui/inputClass';
 import { Icon, type IconName } from './Icon';
 
@@ -81,7 +82,7 @@ export function InviteMemberModal({
         onClick={onClose}
         className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm"
       />
-      <div className="relative w-full max-w-lg rounded-2xl bg-white shadow-2xl">
+      <div className="relative w-full max-w-lg rounded-3xl bg-white shadow-2xl shadow-slate-900/20 ring-1 ring-slate-900/5">
         <header className="flex items-start justify-between gap-4 border-b border-slate-100 px-6 py-5">
           <div className="flex items-center gap-3">
             <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-600 to-violet-600 text-white">
@@ -163,13 +164,13 @@ export function InviteMemberModal({
                     type="button"
                     onClick={() => setRole(option.id)}
                     aria-pressed={selected}
-                    className={`rounded-lg border p-3 text-left transition-colors ${
+                    className={`rounded-xl border p-3 text-left transition-all focus:outline-none focus-visible:ring-4 focus-visible:ring-indigo-500/20 ${
                       selected
                         ? 'border-indigo-600 bg-indigo-50/60 ring-1 ring-indigo-600'
                         : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
                     }`}
                   >
-                    <span className={`flex h-8 w-8 items-center justify-center rounded-md ${selected ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-500'}`}>
+                    <span className={`flex h-8 w-8 items-center justify-center rounded-lg ${selected ? 'bg-gradient-to-br from-indigo-600 to-violet-600 text-white' : 'bg-slate-100 text-slate-500'}`}>
                       <Icon name={option.icon} className="h-4 w-4" />
                     </span>
                     <span className="mt-2 block text-sm font-semibold text-slate-900">{option.label}</span>
@@ -195,20 +196,13 @@ export function InviteMemberModal({
           </div>
 
           <div className="flex items-center justify-end gap-3 border-t border-slate-100 pt-5">
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-md px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100"
-            >
+            <Button type="button" variant="ghost" onClick={onClose}>
               Cancel
-            </button>
-            <button
-              type="submit"
-              className="inline-flex items-center gap-2 rounded-md bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-opacity hover:opacity-90"
-            >
+            </Button>
+            <Button type="submit" variant="primary">
               <Icon name="send" className="h-4 w-4" />
               Send invitation
-            </button>
+            </Button>
           </div>
         </form>
       </div>
