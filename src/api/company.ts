@@ -1,6 +1,10 @@
 import { activeTenant } from '../tenant/activeTenant';
 import { tenantStorage, type TenantStorage } from '../utils/tenantStorage';
-import type { CompanyProfileResponse, UpdateCompanyProfileRequest } from './types';
+import type {
+  CompanyImageKind,
+  CompanyProfileResponse,
+  UpdateCompanyProfileRequest,
+} from './types';
 
 /**
  * Company profile endpoints — the workspace's own details (PB-005 UI).
@@ -12,14 +16,26 @@ import type { CompanyProfileResponse, UpdateCompanyProfileRequest } from './type
  * per-workspace `localStorage` — the screen, its validation and its states are
  * real, and the data survives a reload, but it never leaves the device.</p>
  *
- * <p><strong>When `GET /tenant` and `PATCH /tenant` land</strong>, the whole
- * swap is inside this file: `get` becomes
- * `(await api.get<CompanyProfileResponse>('/tenant')).data`, `update` becomes
- * `(await api.patch<CompanyProfileResponse>('/tenant', request)).data`, the
- * `seed` argument is dropped at the one call site, and the draft store below is
- * deleted. Nothing above the API layer changes, because nothing above it knows
- * where the profile comes from. Tenant scope is never sent — the backend takes
- * it from the access token, exactly as `team.ts` does.</p>
+ * <p><strong>Integration points for the API developer.</strong> Four calls,
+ * and the swap is confined to this file — nothing above the API layer knows or
+ * cares where a profile comes from:</p>
+ *
+ * <ul>
+ *   <li>{@link companyApi.get} → `GET /tenant`, returning
+ *       {@link CompanyProfileResponse}. Drop the `seed` argument at its one
+ *       call site (`useCompanyProfile`) once the response carries the name and
+ *       subdomain itself.</li>
+ *   <li>{@link companyApi.update} → `PATCH /tenant` with
+ *       {@link UpdateCompanyProfileRequest}, returning the saved profile.</li>
+ *   <li>{@link companyApi.uploadImage} → `POST /tenant/logo` or
+ *       `/tenant/cover` as `multipart/form-data`, returning the stored image's
+ *       URL.</li>
+ *   <li>{@link companyApi.removeImage} → `DELETE` on the same two paths.</li>
+ * </ul>
+ *
+ * <p>Tenant scope is never sent — the backend takes it from the access token,
+ * exactly as `team.ts` does. The URLs above are a proposal, not a commitment:
+ * match whatever the backend actually ships.</p>
  */
 
 /** Where the draft lives, namespaced per workspace by {@link tenantStorage}. */
@@ -43,10 +59,19 @@ export interface CompanyProfileSeed {
   subdomain?: string | null;
 }
 
-/** Exactly the editable fields, plus when they were last written. */
+/** Exactly the editable fields, plus the images and when they were written. */
 interface StoredDraft extends UpdateCompanyProfileRequest {
   updatedAt: string;
+  /** Data URLs while this is a draft; real URLs once the endpoints exist. */
+  logoUrl?: string | null;
+  coverImageUrl?: string | null;
 }
+
+/** Which stored field each image kind writes to. */
+const IMAGE_FIELD: Record<CompanyImageKind, 'logoUrl' | 'coverImageUrl'> = {
+  logo: 'logoUrl',
+  cover: 'coverImageUrl',
+};
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -67,6 +92,17 @@ function readDraft(store: TenantStorage): StoredDraft | null {
   }
 }
 
+function writeDraft(store: TenantStorage, draft: StoredDraft): void {
+  try {
+    store.set(DRAFT_KEY, JSON.stringify(draft));
+  } catch {
+    // Quota — an inlined logo is the likely culprit — or a privacy mode that
+    // blocks writes. The caller still gets the saved profile back, so the
+    // screen stays truthful for this session; once these are real requests,
+    // persistence stops being the client's problem at all.
+  }
+}
+
 /** Assembles the response the endpoint will eventually return. */
 function toResponse(
   tenantId: string | null,
@@ -78,13 +114,22 @@ function toResponse(
     // An edited name wins over the session's copy — it is the newer of the two.
     name: draft?.name ?? seed.name ?? '',
     subdomain: seed.subdomain ?? '',
+    logoUrl: draft?.logoUrl ?? null,
+    coverImageUrl: draft?.coverImageUrl ?? null,
     industry: draft?.industry ?? null,
     size: draft?.size ?? null,
+    description: draft?.description ?? null,
+    culture: draft?.culture ?? null,
+    benefits: draft?.benefits ?? [],
     email: draft?.email ?? null,
     phone: draft?.phone ?? null,
     website: draft?.website ?? null,
+    linkedinUrl: draft?.linkedinUrl ?? null,
+    facebookUrl: draft?.facebookUrl ?? null,
+    twitterUrl: draft?.twitterUrl ?? null,
     address: draft?.address ?? null,
-    description: draft?.description ?? null,
+    city: draft?.city ?? null,
+    country: draft?.country ?? null,
     // Fixed until a billing endpoint exists; the entity defaults match these.
     planTier: 'STANDARD',
     status: 'ACTIVE',
@@ -107,14 +152,55 @@ export const companyApi = {
   ): Promise<CompanyProfileResponse> {
     await sleep(LATENCY_MS);
     const tenantId = activeTenant.get();
-    const draft: StoredDraft = { ...request, updatedAt: new Date().toISOString() };
-    try {
-      tenantStorage(tenantId).set(DRAFT_KEY, JSON.stringify(draft));
-    } catch {
-      // Quota, or a privacy mode that blocks writes. The caller still gets the
-      // saved profile back, so the screen stays truthful for this session — and
-      // once this is a real PATCH, persistence stops being the client's problem.
-    }
+    const store = tenantStorage(tenantId);
+    // Carry the logo across: it is written by its own call, and a text save
+    // must never be the thing that erases it.
+    const existing = readDraft(store);
+    const draft: StoredDraft = {
+      ...request,
+      // Carry the images across: they are written by their own calls, and a
+      // text save must never be the thing that erases them.
+      logoUrl: existing?.logoUrl ?? null,
+      coverImageUrl: existing?.coverImageUrl ?? null,
+      updatedAt: new Date().toISOString(),
+    };
+    writeDraft(store, draft);
     return toResponse(tenantId, seed, draft);
+  },
+
+  /**
+   * Stores the logo or the cover image and returns the URL it can be fetched
+   * from.
+   *
+   * <p>Draft behaviour: the file is inlined as a data URL, so the preview the
+   * admin approved is exactly what is shown afterwards. The real endpoint
+   * takes `multipart/form-data` and returns a URL — same signature, so no
+   * caller changes.</p>
+   */
+  async uploadImage(kind: CompanyImageKind, file: File): Promise<string> {
+    await sleep(LATENCY_MS);
+    const dataUrl = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result));
+      reader.onerror = () => reject(new Error('That image could not be read.'));
+      reader.readAsDataURL(file);
+    });
+
+    const store = tenantStorage(activeTenant.get());
+    const existing = readDraft(store);
+    if (existing) {
+      writeDraft(store, { ...existing, [IMAGE_FIELD[kind]]: dataUrl });
+    }
+    return dataUrl;
+  },
+
+  /** Drops a stored image. Idempotent, like the DELETE it will become. */
+  async removeImage(kind: CompanyImageKind): Promise<void> {
+    await sleep(LATENCY_MS);
+    const store = tenantStorage(activeTenant.get());
+    const existing = readDraft(store);
+    if (existing) {
+      writeDraft(store, { ...existing, [IMAGE_FIELD[kind]]: null });
+    }
   },
 };

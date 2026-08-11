@@ -1,9 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import type { CompanyProfileResponse } from '../api/types';
 import {
+  benefitLabel,
   changedFields,
+  companyInitials,
   EMPTY_FORM_VALUES,
+  formatLocation,
   isDirty,
+  sortBenefits,
   normalizeFormValues,
   normalizeWebsite,
   profileCompleteness,
@@ -18,11 +22,18 @@ const COMPLETE: CompanyFormValues = {
   name: 'ABC Technologies',
   industry: 'Information Technology',
   size: '51–200 employees',
-  email: 'hr@abc.com',
+  description: 'We build recruitment software.',
+  culture: 'We encourage collaboration and continuous learning.',
+  email: 'contact@abc.com',
   phone: '011 234 5678',
   website: 'https://abc.com',
-  address: 'Colombo, Sri Lanka',
-  description: 'We build recruitment software.',
+  linkedinUrl: 'https://linkedin.com/company/abc',
+  facebookUrl: 'https://facebook.com/abc',
+  twitterUrl: 'https://x.com/abc',
+  address: 'No. 42, Galle Road',
+  city: 'Colombo',
+  country: 'Sri Lanka',
+  benefits: ['REMOTE_HYBRID', 'HEALTH_INSURANCE'],
 };
 
 const form = (overrides: Partial<CompanyFormValues> = {}): CompanyFormValues => ({
@@ -36,13 +47,22 @@ describe('toFormValues', () => {
       id: 't-1',
       name: 'ABC Technologies',
       subdomain: 'abc',
+      logoUrl: null,
+      coverImageUrl: null,
       industry: null,
       size: null,
+      description: null,
+      culture: null,
+      benefits: [],
       email: null,
       phone: null,
       website: null,
+      linkedinUrl: null,
+      facebookUrl: null,
+      twitterUrl: null,
       address: null,
-      description: null,
+      city: null,
+      country: null,
       planTier: 'STANDARD',
       status: 'ACTIVE',
       updatedAt: null,
@@ -94,7 +114,18 @@ describe('validateCompanyProfile', () => {
 
   it('accepts a profile with every optional field blank', () => {
     expect(
-      validateCompanyProfile(form({ industry: '', size: '', phone: '', website: '', address: '', description: '' })),
+      validateCompanyProfile(
+        form({
+          industry: '',
+          size: '',
+          description: '',
+          phone: '',
+          website: '',
+          address: '',
+          city: '',
+          country: '',
+        }),
+      ),
     ).toEqual({});
   });
 
@@ -103,10 +134,10 @@ describe('validateCompanyProfile', () => {
     expect(validateCompanyProfile(form({ name: '   ' })).name).toMatch(/required/i);
   });
 
-  it('requires a contact email, and rejects a malformed one', () => {
+  it('requires a company email, and rejects a malformed one', () => {
     expect(validateCompanyProfile(form({ email: '' })).email).toMatch(/required/i);
+    expect(validateCompanyProfile(form({ email: 'invalid-email' })).email).toMatch(/valid email/i);
     expect(validateCompanyProfile(form({ email: 'hr@abc' })).email).toMatch(/valid email/i);
-    expect(validateCompanyProfile(form({ email: 'hr at abc.com' })).email).toMatch(/valid email/i);
     expect(validateCompanyProfile(form({ email: '  hr@abc.com  ' })).email).toBeUndefined();
   });
 
@@ -150,47 +181,171 @@ describe('changedFields', () => {
   });
 
   it('names exactly the fields that differ', () => {
-    expect(changedFields(COMPLETE, form({ phone: '011 999 8888', address: 'Kandy' }))).toEqual([
+    expect(changedFields(COMPLETE, form({ phone: '011 999 8888', city: 'Kandy' }))).toEqual([
       'phone',
-      'address',
+      'city',
     ]);
+  });
+});
+
+describe('formatLocation', () => {
+  it('joins city and country the way a person reads them', () => {
+    expect(formatLocation(COMPLETE)).toBe('Colombo, Sri Lanka');
+  });
+
+  it('drops whichever half is missing instead of leaving a dangling comma', () => {
+    expect(formatLocation(form({ country: '' }))).toBe('Colombo');
+    expect(formatLocation(form({ city: '' }))).toBe('Sri Lanka');
+    expect(formatLocation(form({ city: '', country: '' }))).toBe('');
+  });
+});
+
+describe('companyInitials', () => {
+  it('takes one letter from each of the first two words', () => {
+    expect(companyInitials('ABC Technologies')).toBe('AT');
+    expect(companyInitials('Acme')).toBe('A');
+    expect(companyInitials('  spaced   out  name ')).toBe('SO');
+  });
+
+  it('never renders an empty monogram', () => {
+    expect(companyInitials('')).toBe('?');
+    expect(companyInitials('   ')).toBe('?');
   });
 });
 
 describe('toUpdateRequest', () => {
   it('sends blank optionals as null and never as an empty string', () => {
-    expect(toUpdateRequest(form({ phone: '', website: '', address: '', description: '' }))).toEqual({
+    expect(
+      toUpdateRequest(
+        form({
+          description: '',
+          culture: '',
+          phone: '',
+          website: '',
+          linkedinUrl: '',
+          facebookUrl: '',
+          twitterUrl: '',
+          address: '',
+          city: '',
+          country: '',
+          benefits: [],
+        }),
+      ),
+    ).toEqual({
       name: 'ABC Technologies',
       industry: 'Information Technology',
       size: '51–200 employees',
-      email: 'hr@abc.com',
+      description: null,
+      culture: null,
+      benefits: [],
+      email: 'contact@abc.com',
       phone: null,
       website: null,
+      linkedinUrl: null,
+      facebookUrl: null,
+      twitterUrl: null,
       address: null,
-      description: null,
+      city: null,
+      country: null,
     });
   });
 
   it('sends the normalised website, not the typed one', () => {
     expect(toUpdateRequest(form({ website: 'abc.com' })).website).toBe('https://abc.com');
   });
+
+  it('normalises social links the same way as the website', () => {
+    const request = toUpdateRequest(
+      form({ linkedinUrl: 'linkedin.com/company/abc', twitterUrl: 'x.com/abc' }),
+    );
+    expect(request.linkedinUrl).toBe('https://linkedin.com/company/abc');
+    expect(request.twitterUrl).toBe('https://x.com/abc');
+  });
+
+  it('sends benefits in catalogue order, whatever order they were picked', () => {
+    // Otherwise the same set of perks looks like a change on every save.
+    expect(toUpdateRequest(form({ benefits: ['HEALTH_INSURANCE', 'REMOTE_HYBRID'] })).benefits).toEqual(
+      ['REMOTE_HYBRID', 'HEALTH_INSURANCE'],
+    );
+  });
+});
+
+describe('benefits', () => {
+  it('treats a re-ordered selection as unchanged', () => {
+    expect(isDirty(COMPLETE, form({ benefits: ['HEALTH_INSURANCE', 'REMOTE_HYBRID'] }))).toBe(false);
+  });
+
+  it('sees an added or removed perk as a change', () => {
+    expect(changedFields(COMPLETE, form({ benefits: ['REMOTE_HYBRID'] }))).toEqual(['benefits']);
+    expect(
+      changedFields(COMPLETE, form({ benefits: [...COMPLETE.benefits, 'STOCK_OPTIONS'] })),
+    ).toEqual(['benefits']);
+  });
+
+  it('keeps a retired benefit readable instead of dropping it', () => {
+    // The catalogue can change; data already saved against it cannot.
+    expect(benefitLabel('REMOTE_HYBRID')).toBe('Remote / hybrid work');
+    expect(benefitLabel('SOME_RETIRED_PERK')).toBe('SOME_RETIRED_PERK');
+    expect(sortBenefits(['SOME_RETIRED_PERK', 'REMOTE_HYBRID'])).toEqual([
+      'REMOTE_HYBRID',
+      'SOME_RETIRED_PERK',
+    ]);
+  });
+});
+
+describe('social link validation', () => {
+  it('accepts a bare domain and rejects nonsense', () => {
+    expect(validateCompanyProfile(form({ linkedinUrl: 'linkedin.com/company/abc' })).linkedinUrl)
+      .toBeUndefined();
+    expect(validateCompanyProfile(form({ facebookUrl: 'not a link' })).facebookUrl).toMatch(
+      /valid Facebook link/i,
+    );
+  });
+
+  it('leaves an unset social link alone', () => {
+    expect(validateCompanyProfile(form({ linkedinUrl: '', facebookUrl: '', twitterUrl: '' })))
+      .toEqual({});
+  });
 });
 
 describe('profileCompleteness', () => {
-  it('reports 100% and nothing missing for a full profile', () => {
-    expect(profileCompleteness(COMPLETE)).toEqual({
-      filled: 8,
-      total: 8,
+  it('reaches 100% on the fields a candidate actually needs, plus a logo', () => {
+    // Deliberately not every field — socials, culture, benefits, phone and the
+    // street address are enrichment. A meter that can never reach 100% stops
+    // being read, so it must be reachable with a reasonable profile.
+    expect(profileCompleteness(COMPLETE, true)).toEqual({
+      filled: 9,
+      total: 9,
       percent: 100,
       missing: [],
     });
   });
 
+  it('counts a missing logo, and names what is missing in words', () => {
+    const { filled, total, percent, missing } = profileCompleteness(COMPLETE, false);
+    expect(missing).toEqual(['Company logo']);
+    expect(filled).toBe(8);
+    expect(total).toBe(9);
+    expect(percent).toBe(89);
+  });
+
   it('counts a whitespace-only field as missing', () => {
-    const { filled, percent, missing } = profileCompleteness(form({ phone: '   ', address: '' }));
-    expect(missing).toEqual(['phone', 'address']);
-    expect(filled).toBe(6);
-    expect(percent).toBe(75);
+    const { missing } = profileCompleteness(form({ city: '   ', country: '' }), true);
+    expect(missing).toEqual(['City', 'Country']);
+  });
+
+  it('ignores the enrichment fields entirely', () => {
+    // Blanking every one of these must not move the meter.
+    const stripped = form({
+      culture: '',
+      phone: '',
+      address: '',
+      linkedinUrl: '',
+      facebookUrl: '',
+      twitterUrl: '',
+      benefits: [],
+    });
+    expect(profileCompleteness(stripped, true).percent).toBe(100);
   });
 });
 

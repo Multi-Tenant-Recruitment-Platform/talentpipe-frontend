@@ -1,141 +1,124 @@
-import {
-  profileCompleteness,
-  websiteLabel,
-  type CompanyField,
-  type CompanyFormValues,
-} from '../../dashboard/companyProfile';
+import type { ReactNode } from 'react';
+import { profileCompleteness, type CompanyFormValues } from '../../dashboard/companyProfile';
 import { formatRelativeTime } from '../../utils/format';
 import { Button } from '../ui/Button';
-import { Badge } from './Badge';
-import { Icon, type IconName } from './Icon';
+import { CompanyBenefits } from './CompanyBenefits';
+import { CompanyInformation } from './CompanyInformation';
+import { CompanySocialLinks } from './CompanySocialLinks';
+import { ContactInformation } from './ContactInformation';
+import { Icon } from './Icon';
+import { LocationInformation } from './LocationInformation';
 
 /**
- * Read view of the company profile — what the admin sees before they decide
- * anything needs changing.
+ * Read-only company profile, composed from the section components.
  *
  * <p>Deliberately not a form full of disabled inputs. Disabled fields read as
  * broken rather than as "this is the current value", and they force every
- * visitor to parse a form layout to answer "what is our phone number?". The
- * cost is a second component; the benefit is that the common case — looking —
- * is the cheap one.</p>
+ * visitor to parse a form layout to answer "what is their phone number?".</p>
+ *
+ * <p>One component, two presentations. `variant="profile"` is the Profile
+ * Management page — roomier, headings, the presentation a candidate could be
+ * shown. `variant="compact"` is the Company Settings card, where the profile
+ * is one panel among several. They differ in spacing and headings only, so the
+ * two screens can never disagree about what the profile actually says.</p>
  */
 
-interface ContactRow {
-  field: CompanyField;
-  label: string;
-  icon: IconName;
-  /** Renders the value as a link when there is something to link to. */
-  href?: (value: string) => string;
-  display?: (value: string) => string;
-}
+export type CompanyProfileVariant = 'profile' | 'compact';
 
-const CONTACT_ROWS: ContactRow[] = [
-  { field: 'email', label: 'Email', icon: 'envelope', href: (v) => `mailto:${v}` },
-  // Strips the separators people type: 'tel:' wants dialable characters only.
-  { field: 'phone', label: 'Phone', icon: 'phone', href: (v) => `tel:${v.replace(/[^\d+]/g, '')}` },
-  { field: 'website', label: 'Website', icon: 'globe', href: (v) => v, display: websiteLabel },
-  { field: 'address', label: 'Address', icon: 'map-pin' },
-];
-
-const LINK_CLASS =
-  'truncate rounded font-medium text-indigo-600 underline-offset-2 hover:underline ' +
-  'focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500';
-
-function NotSet() {
-  return <span className="text-sm text-slate-400">Not set</span>;
-}
-
-function ContactValue({ row, value }: { row: ContactRow; value: string }) {
-  if (value === '') {
-    return <NotSet />;
-  }
-  const text = row.display ? row.display(value) : value;
-  if (!row.href) {
-    return <span className="text-sm text-slate-800">{text}</span>;
+function Section({
+  title,
+  variant,
+  children,
+}: {
+  title: string;
+  variant: CompanyProfileVariant;
+  children: ReactNode;
+}) {
+  if (variant === 'compact') {
+    return (
+      <section className="border-t border-slate-100 pt-6">
+        <h4 className="mb-4 text-xs font-medium uppercase tracking-wide text-slate-400">{title}</h4>
+        {children}
+      </section>
+    );
   }
   return (
-    <a
-      href={row.href(value)}
-      // Only the website leaves the app; mailto/tel hand off to the OS.
-      {...(row.field === 'website' ? { target: '_blank', rel: 'noreferrer noopener' } : {})}
-      className={`block text-sm ${LINK_CLASS}`}
-    >
-      {text}
-    </a>
+    <section className="border-t border-slate-100 pt-8">
+      <h3 className="mb-5 text-base font-semibold tracking-tight text-slate-900">{title}</h3>
+      {children}
+    </section>
   );
 }
 
 export function CompanyProfileView({
   values,
-  subdomain,
+  logoUrl,
+  coverUrl,
   updatedAt,
   canEdit,
   onEdit,
+  onPreview,
+  variant = 'compact',
 }: {
   values: CompanyFormValues;
-  subdomain: string;
+  logoUrl: string | null;
+  coverUrl: string | null;
   updatedAt: string | null;
   canEdit: boolean;
   onEdit: () => void;
+  /** Opens the candidate's-eye view. Absent on the compact variant. */
+  onPreview?: () => void;
+  variant?: CompanyProfileVariant;
 }) {
-  const completeness = profileCompleteness(values);
+  const profileVariant = variant === 'profile';
+  const completeness = profileCompleteness(values, logoUrl !== null);
   const incomplete = completeness.missing.length > 0;
 
   return (
-    <div className="space-y-6">
-      {/* Identity */}
-      <div className="flex items-start gap-4">
-        <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 text-white">
-          <Icon name="building" className="h-8 w-8" />
-        </span>
-        <div className="min-w-0 flex-1">
-          <h3 className="truncate text-lg font-semibold tracking-tight text-slate-900">
-            {values.name || 'Unnamed company'}
-          </h3>
-          <div className="mt-1.5 flex flex-wrap items-center gap-2">
-            {values.industry ? <Badge tone="indigo">{values.industry}</Badge> : null}
-            {values.size ? <Badge tone="slate">{values.size}</Badge> : null}
-            {subdomain && <span className="font-mono text-xs text-slate-400">{subdomain}</span>}
-          </div>
-        </div>
-      </div>
+    <div className={profileVariant ? 'space-y-8' : 'space-y-6'}>
+      <CompanyInformation
+        values={values}
+        logoUrl={logoUrl}
+        coverUrl={coverUrl}
+        withCover={profileVariant}
+        headingLevel={profileVariant ? 'h2' : 'h3'}
+      />
 
-      {/* Contact block — the questions this page exists to answer. */}
-      <dl className="grid gap-x-6 gap-y-5 border-t border-slate-100 pt-6 sm:grid-cols-2">
-        {CONTACT_ROWS.map((row) => (
-          <div key={row.field} className="flex min-w-0 items-start gap-3">
-            <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-50 text-slate-400">
-              <Icon name={row.icon} className="h-4 w-4" />
-            </span>
-            <div className="min-w-0">
-              <dt className="text-xs font-medium uppercase tracking-wide text-slate-400">
-                {row.label}
-              </dt>
-              <dd className="mt-0.5 min-w-0" data-testid={`company-${row.field}`}>
-                <ContactValue row={row} value={values[row.field]} />
-              </dd>
-            </div>
-          </div>
-        ))}
-      </dl>
-
-      {/* Description */}
-      <div className="border-t border-slate-100 pt-6">
-        <h4 className="text-xs font-medium uppercase tracking-wide text-slate-400">About</h4>
-        {values.description ? (
-          // whitespace-pre-line so paragraph breaks the admin typed survive.
-          <p className="mt-2 whitespace-pre-line text-sm leading-6 text-slate-700">
-            {values.description}
+      {values.culture && (
+        <Section title="Company culture" variant={variant}>
+          <p
+            data-testid="company-culture"
+            className="whitespace-pre-line text-sm leading-6 text-slate-700"
+          >
+            {values.culture}
           </p>
-        ) : (
-          <p className="mt-2 text-sm text-slate-400">
-            No description yet. This is the short pitch candidates read at the top of your careers
-            page.
-          </p>
-        )}
-      </div>
+        </Section>
+      )}
 
-      {/* Nudge, not nagging: it disappears the moment the profile is complete. */}
+      <Section title="Benefits & perks" variant={variant}>
+        <CompanyBenefits benefits={values.benefits} />
+      </Section>
+
+      <Section title="Contact information" variant={variant}>
+        <ContactInformation values={values} />
+      </Section>
+
+      {/* Hidden entirely when nothing is set on the roomy variant — an empty
+          heading over three "Not set" rows is noise on a page meant to sell
+          the company. Settings shows them all, because that is where they get
+          filled in. */}
+      {(!profileVariant || values.linkedinUrl || values.facebookUrl || values.twitterUrl) && (
+        <Section title="Social links" variant={variant}>
+          <CompanySocialLinks values={values} showEmpty={!profileVariant} />
+        </Section>
+      )}
+
+      <Section title="Location" variant={variant}>
+        <LocationInformation values={values} />
+      </Section>
+
+      {/* Nudge, not nagging: it disappears the moment the profile is complete,
+          and only someone who can act on it ever sees it. */}
       {incomplete && canEdit && (
         <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
           <div className="flex items-baseline justify-between gap-3 text-xs">
@@ -150,6 +133,10 @@ export function CompanyProfileView({
               style={{ width: `${completeness.percent}%` }}
             />
           </div>
+          {/* Naming what is missing turns a number into a next action. */}
+          <p className="mt-2 text-xs text-slate-500">
+            Still to add: {completeness.missing.join(', ')}.
+          </p>
         </div>
       )}
 
@@ -157,12 +144,20 @@ export function CompanyProfileView({
         <p className="text-xs text-slate-400">
           {updatedAt ? `Last updated ${formatRelativeTime(updatedAt)}` : 'Not edited yet'}
         </p>
-        {canEdit && (
-          <Button type="button" variant="secondary" onClick={onEdit}>
-            <Icon name="pencil" className="h-4 w-4" />
-            Edit profile
-          </Button>
-        )}
+        <div className="flex flex-wrap items-center gap-2">
+          {onPreview && (
+            <Button type="button" variant="ghost" onClick={onPreview}>
+              <Icon name="eye" className="h-4 w-4" />
+              Preview public profile
+            </Button>
+          )}
+          {canEdit && (
+            <Button type="button" variant="secondary" onClick={onEdit}>
+              <Icon name="pencil" className="h-4 w-4" />
+              Edit profile
+            </Button>
+          )}
+        </div>
       </div>
     </div>
   );

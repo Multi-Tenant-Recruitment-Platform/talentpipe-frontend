@@ -6,6 +6,7 @@ import { RequirePermission } from './components/RequirePermission';
 import { DashboardLayout } from './layouts/DashboardLayout';
 import { AcceptInvitePage } from './pages/AcceptInvitePage';
 import { CandidateRegisterPage } from './pages/CandidateRegisterPage';
+import { CompanyProfilePage } from './pages/dashboard/CompanyProfilePage';
 import { CompanySettingsPage } from './pages/dashboard/CompanySettingsPage';
 import { OverviewPage } from './pages/dashboard/OverviewPage';
 import { PipelinePage } from './pages/dashboard/PipelinePage';
@@ -69,6 +70,14 @@ export default function App() {
             element={
               <RequirePermission permission="pipeline.view">
                 <PipelinePage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="profile"
+            element={
+              <RequirePermission permission="company.profile.view">
+                <CompanyProfilePage />
               </RequirePermission>
             }
           />

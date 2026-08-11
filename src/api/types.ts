@@ -28,15 +28,37 @@ export interface CompanyProfileResponse {
   name: string;
   /** Workspace address. Identity, not a profile field — never editable here. */
   subdomain: string;
+  /**
+   * Where the logo can be fetched from. A URL to the caller — how it is stored
+   * is entirely the logo endpoint's business.
+   */
+  logoUrl: string | null;
+  /** Wide banner behind the logo on the candidate-facing profile. */
+  coverImageUrl: string | null;
   industry: string | null;
   /** Headcount band, e.g. '51–200 employees'. */
   size: string | null;
+  description: string | null;
+  /** What it is like to work here — separate from what the company does. */
+  culture: string | null;
+  /**
+   * Perks, as stable identifiers rather than prose, so a candidate-facing
+   * search can one day filter on them. Empty array, never null, so callers
+   * never branch on "no benefits" twice.
+   */
+  benefits: string[];
   /** Contact address candidates and applicants reach the company on. */
   email: string | null;
   phone: string | null;
   website: string | null;
+  linkedinUrl: string | null;
+  facebookUrl: string | null;
+  twitterUrl: string | null;
+  /** Street line, then city and country as separate fields so they can be
+   *  filtered and grouped later without parsing one free-text blob. */
   address: string | null;
-  description: string | null;
+  city: string | null;
+  country: string | null;
   planTier: string;
   status: string;
   /** Null until the profile has been edited at least once. */
@@ -47,17 +69,30 @@ export interface CompanyProfileResponse {
  * The editable subset. Identity and billing fields (id, subdomain, planTier,
  * status) are deliberately absent: they are not the admin's to change from
  * this screen, so sending them would invite a backend that trusts them.
+ *
+ * <p>`logoUrl` is absent too — the logo has its own upload endpoint, because a
+ * binary does not belong in a JSON patch of text fields.</p>
  */
 export interface UpdateCompanyProfileRequest {
   name: string;
   industry: string | null;
   size: string | null;
+  description: string | null;
+  culture: string | null;
+  benefits: string[];
   email: string | null;
   phone: string | null;
   website: string | null;
+  linkedinUrl: string | null;
+  facebookUrl: string | null;
+  twitterUrl: string | null;
   address: string | null;
-  description: string | null;
+  city: string | null;
+  country: string | null;
 }
+
+/** Which image an upload is for. The two have different shapes and limits. */
+export type CompanyImageKind = 'logo' | 'cover';
 
 export interface UserResponse {
   id: string;

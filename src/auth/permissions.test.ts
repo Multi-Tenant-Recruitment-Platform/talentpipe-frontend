@@ -34,6 +34,15 @@ const EXPECTED: Record<Permission, Record<Role, boolean>> = {
     INTERVIEWER: false,
     CANDIDATE: false,
   },
+  // Every company role may read their own company's profile; only an admin
+  // may change it (settings.edit). Candidates get it from a public route one
+  // day, never from the dashboard.
+  'company.profile.view': {
+    COMPANY_ADMIN: true,
+    HR_MANAGER: true,
+    INTERVIEWER: true,
+    CANDIDATE: false,
+  },
   'settings.view': { COMPANY_ADMIN: true, HR_MANAGER: true, INTERVIEWER: false, CANDIDATE: false },
   'settings.edit': { COMPANY_ADMIN: true, HR_MANAGER: false, INTERVIEWER: false, CANDIDATE: false },
   'billing.view': { COMPANY_ADMIN: true, HR_MANAGER: false, INTERVIEWER: false, CANDIDATE: false },

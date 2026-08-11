@@ -20,6 +20,7 @@ export const PERMISSIONS = [
   'team.invite.manage', // resend / revoke
   'pipeline.view',
   'pipeline.manage', // future: move candidates between stages
+  'company.profile.view', // the Profile Management page (PB-010)
   'settings.view',
   'settings.edit', // future: PATCH /tenant
   'billing.view', // plan & seat usage
@@ -34,6 +35,10 @@ const COMPANY_BASE = [
   'overview.view',
   'pipeline.view',
   'jobs.browse',
+  // Everyone in the workspace may read the company's own profile — it is the
+  // company they work for, and it is destined to be candidate-visible anyway.
+  // Changing it still needs settings.edit.
+  'company.profile.view',
 ] as const satisfies readonly Permission[];
 
 /** The matrix. The annotation makes a typo or a missing role a build error. */

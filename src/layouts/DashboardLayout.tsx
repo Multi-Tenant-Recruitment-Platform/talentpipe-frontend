@@ -22,6 +22,12 @@ const NAV_ITEMS: {
   { to: '/dashboard', label: 'Overview', icon: 'squares-2x2', end: true, permission: 'overview.view' },
   { to: '/dashboard/team', label: 'Team', icon: 'users', permission: 'team.view' },
   { to: '/dashboard/pipeline', label: 'Pipeline', icon: 'funnel', permission: 'pipeline.view' },
+  {
+    to: '/dashboard/profile',
+    label: 'Profile Management',
+    icon: 'building',
+    permission: 'company.profile.view',
+  },
   { to: '/dashboard/settings', label: 'Company Settings', icon: 'cog', permission: 'settings.view' },
 ];
 
@@ -227,8 +233,14 @@ function DashboardChrome() {
 
           <div className="ml-auto flex items-center gap-2">
             {/* Which workspace this session is reading — sits with the account
-                controls because it is identity, not navigation. */}
-            <div className="hidden items-center gap-2.5 rounded-full border border-slate-200 bg-slate-50 py-1 pl-1 pr-3.5 md:flex">
+                controls because it is identity, not navigation. Clicking the
+                company opens its profile, which is where anyone who clicked
+                the company's name expected to end up. */}
+            <Link
+              to="/dashboard/profile"
+              title="View company profile"
+              className="hidden items-center gap-2.5 rounded-full border border-slate-200 bg-slate-50 py-1 pl-1 pr-3.5 transition-colors hover:border-slate-300 hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 md:flex"
+            >
               <Avatar firstName={user?.tenantName ?? 'Workspace'} size="sm" />
               <div className="min-w-0 max-w-[11rem] leading-tight">
                 <p className="truncate text-sm font-semibold text-slate-900">
@@ -242,7 +254,7 @@ function DashboardChrome() {
                   <p className="truncate text-[10px] text-slate-500">Company workspace</p>
                 )}
               </div>
-            </div>
+            </Link>
 
             {/* Notifications */}
             <div className="relative">
