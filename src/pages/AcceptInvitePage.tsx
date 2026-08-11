@@ -47,8 +47,6 @@ export function AcceptInvitePage() {
     }
   }
 
-    'focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500';
-
   if (!token) {
     return (
       <AuthShell>

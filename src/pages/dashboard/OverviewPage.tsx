@@ -82,10 +82,22 @@ export function OverviewPage() {
       setInviteOpen(false);
       setNotice(`Invitation sent to ${values.email} — they'll join as ${values.role === 'HR_MANAGER' ? 'an HR Manager' : 'an Interviewer'} once they accept.`);
     } catch (err: unknown) {
-      // Into the dialog, not the page: a page-level alert renders behind the
-      // modal backdrop, so the admin would see nothing at all.
+      // Most invite failures belong in the dialog: a page-level alert renders
+      // behind the modal backdrop, so the admin would see nothing at all. A
+      // plan that asks for 'page' placement is the exception — a lost
+      // permission is not something retyping the form can fix, so the dialog
+      // closes and the message goes where it can actually be read.
       const plan = describeTeamError(err, 'invite');
-      setInviteError(plan);
+      if (plan.placement === 'page') {
+        setInviteError(null);
+        setInviteOpen(false);
+        setError(plan.message);
+      } else {
+        setInviteError(plan);
+      }
+      if (plan.refetch) {
+        await refreshTeam();
+      }
     } finally {
       setInviteSubmitting(false);
     }
@@ -146,7 +158,7 @@ export function OverviewPage() {
       )}
 
       {error && (
-        <Alert tone="error" className="mb-6">
+        <Alert tone="error" onDismiss={() => setError(null)} className="mb-6">
           {error}
         </Alert>
       )}
