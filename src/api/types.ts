@@ -13,6 +13,52 @@ export interface TenantResponse {
   createdAt: string;
 }
 
+/**
+ * The company's own profile, as the settings page needs it.
+ *
+ * <p>PROPOSED CONTRACT — no endpoint serves this yet. The backend exposes no
+ * tenant controller at all, and {@code Tenant} carries only name, subdomain,
+ * industry, planTier and status; the contact block and description have no
+ * column. The shape follows {@link TenantResponse}'s conventions (nullable
+ * optionals, ISO timestamps) so that wiring `GET /tenant` is a change to
+ * `src/api/company.ts` alone.</p>
+ */
+export interface CompanyProfileResponse {
+  id: string;
+  name: string;
+  /** Workspace address. Identity, not a profile field — never editable here. */
+  subdomain: string;
+  industry: string | null;
+  /** Headcount band, e.g. '51–200 employees'. */
+  size: string | null;
+  /** Contact address candidates and applicants reach the company on. */
+  email: string | null;
+  phone: string | null;
+  website: string | null;
+  address: string | null;
+  description: string | null;
+  planTier: string;
+  status: string;
+  /** Null until the profile has been edited at least once. */
+  updatedAt: string | null;
+}
+
+/**
+ * The editable subset. Identity and billing fields (id, subdomain, planTier,
+ * status) are deliberately absent: they are not the admin's to change from
+ * this screen, so sending them would invite a backend that trusts them.
+ */
+export interface UpdateCompanyProfileRequest {
+  name: string;
+  industry: string | null;
+  size: string | null;
+  email: string | null;
+  phone: string | null;
+  website: string | null;
+  address: string | null;
+  description: string | null;
+}
+
 export interface UserResponse {
   id: string;
   tenantId: string | null;
