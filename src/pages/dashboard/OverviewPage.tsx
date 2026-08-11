@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { apiErrorMessage } from '../../api/client';
 import { teamApi } from '../../api/team';
 import { useAuth } from '../../auth/AuthContext';
 import { useCan } from '../../auth/useCan';
@@ -14,6 +13,7 @@ import { PageHeader } from '../../components/dashboard/PageHeader';
 import { StatCard } from '../../components/dashboard/StatCard';
 import { Alert } from '../../components/ui/Alert';
 import { Button } from '../../components/ui/Button';
+import { describeTeamError, type TeamErrorPlan } from '../../dashboard/teamErrors';
 import { useTeamSummary } from '../../dashboard/TeamSummaryContext';
 import {
   activityFeed,
@@ -56,6 +56,8 @@ export function OverviewPage() {
   const [inviteOpen, setInviteOpen] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [inviteSubmitting, setInviteSubmitting] = useState(false);
+  const [inviteError, setInviteError] = useState<TeamErrorPlan | null>(null);
 
   const today = new Date().toLocaleDateString('en-US', {
     weekday: 'long',
@@ -65,6 +67,8 @@ export function OverviewPage() {
 
   async function handleInvite(values: InviteFormValues) {
     setError(null);
+    setInviteError(null);
+    setInviteSubmitting(true);
     try {
       await teamApi.invite({
         firstName: values.firstName,
@@ -72,13 +76,18 @@ export function OverviewPage() {
         email: values.email,
         role: values.role,
       });
-      setInviteOpen(false);
-      setNotice(`Invitation sent to ${values.email} — they'll join as ${values.role === 'HR_MANAGER' ? 'an HR Manager' : 'an Interviewer'} once they accept.`);
       // Keeps the pending-invite KPI and the sidebar seat gauge honest without
       // making the user reload.
       await refreshTeam();
+      setInviteOpen(false);
+      setNotice(`Invitation sent to ${values.email} — they'll join as ${values.role === 'HR_MANAGER' ? 'an HR Manager' : 'an Interviewer'} once they accept.`);
     } catch (err: unknown) {
-      setError(apiErrorMessage(err, 'We could not send that invitation.'));
+      // Into the dialog, not the page: a page-level alert renders behind the
+      // modal backdrop, so the admin would see nothing at all.
+      const plan = describeTeamError(err, 'invite');
+      setInviteError(plan);
+    } finally {
+      setInviteSubmitting(false);
     }
   }
 
@@ -258,8 +267,20 @@ export function OverviewPage() {
         </Card>
       </div>
 
-      {allow('team.invite') && (
-        <InviteMemberModal open={inviteOpen} onClose={() => setInviteOpen(false)} onInvite={(values) => void handleInvite(values)} />
+      {/* Mounted only while open, so each invite starts from a clean form. */}
+      {allow('team.invite') && inviteOpen && (
+        <InviteMemberModal
+          open
+          onClose={() => {
+            setInviteOpen(false);
+            setInviteError(null);
+          }}
+          onInvite={(values) => void handleInvite(values)}
+          submitting={inviteSubmitting}
+          error={inviteError?.message ?? null}
+          errorTone={inviteError?.tone ?? 'error'}
+          focusField={inviteError?.focus ?? null}
+        />
       )}
     </>
   );
