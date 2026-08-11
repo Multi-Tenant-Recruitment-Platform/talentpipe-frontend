@@ -65,16 +65,6 @@ export interface ActivityItem {
   time: string;
 }
 
-export interface CompanyProfile {
-  name: string;
-  subdomain: string;
-  industry: string;
-  size: string;
-  website: string;
-  location: string;
-  about: string;
-}
-
 /** Headline KPIs shown on the overview page. */
 export const overviewStats = {
   activeJobs: 8,
@@ -320,17 +310,9 @@ export const activityFeed: ActivityItem[] = [
   },
 ];
 
-/** Editable company profile seed — pre-populated from the tenant on load. */
-export const companyProfile: CompanyProfile = {
-  name: 'Acme Corporation',
-  subdomain: 'acme',
-  industry: 'Information Technology',
-  size: '51–200 employees',
-  website: 'https://acme.com',
-  location: 'Colombo, Sri Lanka',
-  about:
-    'Acme builds workforce software that helps distributed teams ship faster. We hire for craft, curiosity and ownership — and we want every candidate to enjoy the process.',
-};
+// The company profile seed used to live here. It now belongs to the API layer
+// (src/api/company.ts), which owns the whole record — mock or real — so the
+// settings page never has to know which of the two it is reading.
 
 export const planUsage = {
   tier: 'Growth',
