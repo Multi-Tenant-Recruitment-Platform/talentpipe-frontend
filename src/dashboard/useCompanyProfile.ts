@@ -15,6 +15,7 @@ import {
   validateCompanyProfile,
   type CompanyFieldErrors,
   type CompanyFormValues,
+  type CompanyListField,
   type CompanyTextField,
 } from './companyProfile';
 
@@ -140,15 +141,21 @@ export function useCompanyProfile() {
     }
   }
 
-  /** Adds or removes one perk. Never validated — a set cannot be malformed. */
-  function toggleBenefit(id: string) {
+  /** Adds or removes one item from a list field. A set cannot be malformed. */
+  function toggleListValue(field: CompanyListField, id: string) {
     setMessage(null);
     setValues((current) => ({
       ...current,
-      benefits: current.benefits.includes(id)
-        ? current.benefits.filter((benefit) => benefit !== id)
-        : [...current.benefits, id],
+      [field]: current[field].includes(id)
+        ? current[field].filter((entry) => entry !== id)
+        : [...current[field], id],
     }));
+  }
+
+  /** Free-text lists (values, office locations) are replaced wholesale. */
+  function setList(field: CompanyListField, next: string[]) {
+    setMessage(null);
+    setValues((current) => ({ ...current, [field]: next }));
   }
 
   /** Stages a picked file: validated, previewed, but not uploaded. */
@@ -290,7 +297,8 @@ export function useCompanyProfile() {
     setMessage,
     reload: load,
     change,
-    toggleBenefit,
+    toggleListValue,
+    setList,
     pickImage,
     removeImage,
     submit,

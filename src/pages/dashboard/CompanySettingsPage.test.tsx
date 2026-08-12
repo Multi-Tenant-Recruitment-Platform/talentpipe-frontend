@@ -4,6 +4,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CompanyProfileResponse } from '../../api/types';
 import { authContextMock, makeUser, setAuth } from '../../test/authHarness';
+import { makeCompanyProfile } from '../../test/companyFixtures';
 
 /**
  * Company Settings — only what is unique to this page.
@@ -29,37 +30,17 @@ vi.mock('../../api/team', () => ({ teamApi: { list, invite: vi.fn(), resend: vi.
 
 const { CompanySettingsPage } = await import('./CompanySettingsPage');
 const { TeamSummaryProvider } = await import('../../dashboard/TeamSummaryContext');
+const { CompanyProfileProvider } = await import('../../dashboard/CompanyProfileContext');
 
-const PROFILE: CompanyProfileResponse = {
-  id: 't-1',
-  name: 'ABC Technologies',
-  subdomain: 'abc',
-  logoUrl: null,
-  coverImageUrl: null,
-  industry: 'Information Technology',
-  size: '51–200 employees',
-  description: 'We build recruitment software.',
-  culture: null,
-  benefits: [],
-  email: 'contact@abc.com',
-  phone: '011 234 5678',
-  website: 'https://abc.com',
-  linkedinUrl: null,
-  facebookUrl: null,
-  twitterUrl: null,
-  address: 'No. 42, Galle Road',
-  city: 'Colombo',
-  country: 'Sri Lanka',
-  planTier: 'STANDARD',
-  status: 'ACTIVE',
-  updatedAt: '2026-08-11T09:00:00Z',
-};
+const PROFILE = makeCompanyProfile();
 
 function renderPage() {
   return render(
     <MemoryRouter>
       <TeamSummaryProvider>
-        <CompanySettingsPage />
+        <CompanyProfileProvider>
+          <CompanySettingsPage />
+        </CompanyProfileProvider>
       </TeamSummaryProvider>
     </MemoryRouter>,
   );
@@ -80,7 +61,7 @@ describe('the company profile section', () => {
     expect(await screen.findByTestId('company-email')).toHaveTextContent('contact@abc.com');
 
     await user.click(screen.getByRole('button', { name: /edit profile/i }));
-    expect(screen.getByLabelText(/company name/i)).toHaveValue('ABC Technologies');
+    expect(screen.getByLabelText(/^company name$/i)).toHaveValue('ABC Technologies');
     // The same fields as the profile page, because it is the same component.
     expect(screen.getByLabelText(/^country$/i)).toHaveValue('Sri Lanka');
     expect(screen.getByRole('checkbox', { name: /remote \/ hybrid work/i })).toBeInTheDocument();

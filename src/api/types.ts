@@ -35,12 +35,35 @@ export interface CompanyProfileResponse {
   logoUrl: string | null;
   /** Wide banner behind the logo on the candidate-facing profile. */
   coverImageUrl: string | null;
+  /** One line under the name, e.g. 'Hiring software for growing teams'. */
+  tagline: string | null;
   industry: string | null;
+  /** Private limited, public, partnership… */
+  companyType: string | null;
   /** Headcount band, e.g. '51–200 employees'. */
   size: string | null;
+  /** Exact headcount, where the band is not precise enough. */
+  employeeCount: number | null;
+  foundedYear: number | null;
   description: string | null;
   /** What it is like to work here — separate from what the company does. */
   culture: string | null;
+  mission: string | null;
+  vision: string | null;
+  /** Short phrases, not prose — 'Ownership', 'Craft', 'Curiosity'. */
+  values: string[];
+
+  // Registration. Held for contracts and invoices, never candidate-facing.
+  legalName: string | null;
+  registrationNumber: string | null;
+  taxNumber: string | null;
+  vatNumber: string | null;
+
+  // How the company operates.
+  workModes: string[];
+  timezone: string | null;
+  currency: string | null;
+  language: string | null;
   /**
    * Perks, as stable identifiers rather than prose, so a candidate-facing
    * search can one day filter on them. Empty array, never null, so callers
@@ -49,16 +72,45 @@ export interface CompanyProfileResponse {
   benefits: string[];
   /** Contact address candidates and applicants reach the company on. */
   email: string | null;
+  /** Where applications and candidate questions go, if not the main address. */
+  hrEmail: string | null;
   phone: string | null;
+  alternativePhone: string | null;
   website: string | null;
   linkedinUrl: string | null;
   facebookUrl: string | null;
   twitterUrl: string | null;
-  /** Street line, then city and country as separate fields so they can be
-   *  filtered and grouped later without parsing one free-text blob. */
+  instagramUrl: string | null;
+  /** Street line, then the administrative parts as separate fields so they can
+   *  be filtered and grouped later without parsing one free-text blob. */
   address: string | null;
   city: string | null;
+  state: string | null;
+  postalCode: string | null;
   country: string | null;
+  /**
+   * Every city the company operates from, headquarters included. The number of
+   * offices is this list's length — a separate count would be a second source
+   * of truth that goes stale the first time a branch opens.
+   */
+  officeLocations: string[];
+
+  /**
+   * Organisation shape. Admin-defined vocabularies that jobs and people are
+   * later filed under — the count of each is the array's length, never a
+   * separate number, so the two can never disagree.
+   */
+  departments: string[];
+  teams: string[];
+  businessUnits: string[];
+
+  /** Hiring vocabulary. What this company's jobs may be posted against. */
+  employmentTypes: string[];
+  jobCategories: string[];
+  jobFamilies: string[];
+  jobLevels: string[];
+  jobTitles: string[];
+
   planTier: string;
   status: string;
   /** Null until the profile has been edited at least once. */
@@ -75,20 +127,49 @@ export interface CompanyProfileResponse {
  */
 export interface UpdateCompanyProfileRequest {
   name: string;
+  tagline: string | null;
   industry: string | null;
+  companyType: string | null;
   size: string | null;
+  employeeCount: number | null;
+  foundedYear: number | null;
   description: string | null;
   culture: string | null;
+  mission: string | null;
+  vision: string | null;
+  values: string[];
   benefits: string[];
+  legalName: string | null;
+  registrationNumber: string | null;
+  taxNumber: string | null;
+  vatNumber: string | null;
+  workModes: string[];
+  timezone: string | null;
+  currency: string | null;
+  language: string | null;
   email: string | null;
+  hrEmail: string | null;
   phone: string | null;
+  alternativePhone: string | null;
   website: string | null;
   linkedinUrl: string | null;
   facebookUrl: string | null;
   twitterUrl: string | null;
+  instagramUrl: string | null;
   address: string | null;
   city: string | null;
+  state: string | null;
+  postalCode: string | null;
   country: string | null;
+  officeLocations: string[];
+  departments: string[];
+  teams: string[];
+  businessUnits: string[];
+  employmentTypes: string[];
+  jobCategories: string[];
+  jobFamilies: string[];
+  jobLevels: string[];
+  jobTitles: string[];
 }
 
 /** Which image an upload is for. The two have different shapes and limits. */

@@ -7,7 +7,7 @@ import { Icon } from '../../components/dashboard/Icon';
 import { PageHeader } from '../../components/dashboard/PageHeader';
 import { Button } from '../../components/ui/Button';
 import { useTeamSummary } from '../../dashboard/TeamSummaryContext';
-import { useCompanyProfile } from '../../dashboard/useCompanyProfile';
+import { useCompanyProfileContext } from '../../dashboard/CompanyProfileContext';
 import { planUsage } from '../../data/mockDashboard';
 import { ROOT_DOMAIN } from '../../tenant/subdomain';
 import { useState } from 'react';
@@ -34,7 +34,7 @@ function statusLabel(status: string): string {
 }
 
 export function CompanySettingsPage() {
-  const controller = useCompanyProfile();
+  const controller = useCompanyProfileContext();
   const allow = useCan();
   const [copied, setCopied] = useState(false);
 

@@ -4,7 +4,7 @@ import { Card } from '../../components/dashboard/Card';
 import { CompanyProfilePanel } from '../../components/dashboard/CompanyProfilePanel';
 import { Icon } from '../../components/dashboard/Icon';
 import { PageHeader } from '../../components/dashboard/PageHeader';
-import { useCompanyProfile } from '../../dashboard/useCompanyProfile';
+import { useCompanyProfileContext } from '../../dashboard/CompanyProfileContext';
 
 /**
  * Profile Management — the company's profile as a profile, not as a settings
@@ -21,16 +21,12 @@ import { useCompanyProfile } from '../../dashboard/useCompanyProfile';
  * components that already present this data properly.</p>
  */
 export function CompanyProfilePage() {
-  const controller = useCompanyProfile();
+  const controller = useCompanyProfileContext();
   const allow = useCan();
 
   return (
     <>
-      <PageHeader
-        eyebrow="Company"
-        title="Company profile"
-        subtitle="How your company appears to candidates — on your job posts and anywhere your profile is shown."
-      />
+      <PageHeader eyebrow="Company" title="Company profile" />
 
       <div className="mx-auto max-w-4xl">
         <Card bodyClassName="p-6 sm:p-8">

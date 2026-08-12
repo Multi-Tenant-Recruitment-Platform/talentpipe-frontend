@@ -46,7 +46,8 @@ export function CompanyProfilePanel({
     setMessage,
     reload,
     change,
-    toggleBenefit,
+    toggleListValue,
+    setList,
     pickImage,
     removeImage,
     submit,
@@ -91,7 +92,8 @@ export function CompanyProfilePanel({
           coverUrl={shownCoverUrl}
           imageErrors={imageErrors}
           onChange={change}
-          onToggleBenefit={toggleBenefit}
+          onToggleListValue={toggleListValue}
+          onChangeList={setList}
           onPickImage={(kind, file) => void pickImage(kind, file)}
           onRemoveImage={removeImage}
           onSubmit={submit}

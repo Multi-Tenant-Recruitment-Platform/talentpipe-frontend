@@ -18,6 +18,13 @@ export function ContactInformation({ values }: { values: CompanyFormValues }) {
         testId="company-email"
       />
       <DetailItem
+        icon="envelope"
+        label="HR / recruitment"
+        value={values.hrEmail}
+        href={values.hrEmail ? `mailto:${values.hrEmail}` : undefined}
+        testId="company-hrEmail"
+      />
+      <DetailItem
         icon="phone"
         label="Phone"
         value={values.phone}
@@ -25,6 +32,17 @@ export function ContactInformation({ values }: { values: CompanyFormValues }) {
         // the text — they are what makes a number readable.
         href={values.phone ? `tel:${values.phone.replace(/[^\d+]/g, '')}` : undefined}
         testId="company-phone"
+      />
+      <DetailItem
+        icon="phone"
+        label="Alternative phone"
+        value={values.alternativePhone}
+        href={
+          values.alternativePhone
+            ? `tel:${values.alternativePhone.replace(/[^\d+]/g, '')}`
+            : undefined
+        }
+        testId="company-alternativePhone"
       />
       <DetailItem
         icon="globe"

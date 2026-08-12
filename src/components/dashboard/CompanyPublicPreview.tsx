@@ -3,13 +3,16 @@ import { Link } from 'react-router-dom';
 import {
   formatLocation,
   websiteLabel,
+  workModeLabel,
   type CompanyFormValues,
 } from '../../dashboard/companyProfile';
 import { Button } from '../ui/Button';
 import { useFocusTrap } from '../ui/useFocusTrap';
+import { Badge } from './Badge';
 import { CompanyBenefits } from './CompanyBenefits';
 import { CompanyCoverImage } from './CompanyCoverImage';
 import { CompanySocialRow } from './CompanySocialLinks';
+import { CompanyStoryInformation } from './CompanyStoryInformation';
 import { Icon } from './Icon';
 
 /**
@@ -106,11 +109,31 @@ export function CompanyPublicPreview({
                 >
                   {values.name || 'Unnamed company'}
                 </h2>
-                {location && (
-                  <p className="mt-1 inline-flex items-center gap-1.5 text-sm text-slate-500">
-                    <Icon name="map-pin" className="h-4 w-4 text-slate-400" />
-                    {location}
-                  </p>
+                {values.tagline && (
+                  <p className="mt-1 text-sm text-slate-600">{values.tagline}</p>
+                )}
+                <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-500">
+                  {location && (
+                    <span className="inline-flex items-center gap-1.5">
+                      <Icon name="map-pin" className="h-4 w-4 text-slate-400" />
+                      {location}
+                    </span>
+                  )}
+                  {values.foundedYear && (
+                    <span className="inline-flex items-center gap-1.5">
+                      <Icon name="calendar" className="h-4 w-4 text-slate-400" />
+                      Founded {values.foundedYear}
+                    </span>
+                  )}
+                </div>
+                {values.workModes.length > 0 && (
+                  <div className="mt-2.5 flex flex-wrap gap-2">
+                    {values.workModes.map((mode) => (
+                      <Badge key={mode} tone="emerald">
+                        {workModeLabel(mode)}
+                      </Badge>
+                    ))}
+                  </div>
                 )}
               </div>
               <CompanySocialRow values={values} />
@@ -130,6 +153,15 @@ export function CompanyPublicPreview({
             <Fact label="Location" value={location} />
             <Fact label="Website" value={values.website ? websiteLabel(values.website) : ''} />
           </dl>
+
+          {(values.mission || values.vision || values.values.length > 0) && (
+            <section>
+              <h3 className="text-sm font-semibold text-slate-900">What we stand for</h3>
+              <div className="mt-3">
+                <CompanyStoryInformation values={values} />
+              </div>
+            </section>
+          )}
 
           {values.culture && (
             <section>
@@ -151,10 +183,14 @@ export function CompanyPublicPreview({
 
           <section className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-6">
             <div className="min-w-0 text-sm text-slate-500">
-              {values.email && (
+              {/* The recruitment address wins where there is one — that is the
+                  inbox a candidate's question should land in. */}
+              {(values.hrEmail || values.email) && (
                 <p className="truncate">
                   Get in touch:{' '}
-                  <span className="font-medium text-slate-700">{values.email}</span>
+                  <span className="font-medium text-slate-700">
+                    {values.hrEmail || values.email}
+                  </span>
                 </p>
               )}
             </div>

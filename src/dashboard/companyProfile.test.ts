@@ -1,11 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import type { CompanyProfileResponse } from '../api/types';
+import { makeCompanyProfile, makeEmptyCompanyProfile } from '../test/companyFixtures';
 import {
   benefitLabel,
   changedFields,
+  cleanValues,
   companyInitials,
+  currencyCode,
   EMPTY_FORM_VALUES,
   formatLocation,
+  formatStreet,
   isDirty,
   sortBenefits,
   normalizeFormValues,
@@ -18,23 +21,12 @@ import {
   type CompanyFormValues,
 } from './companyProfile';
 
-const COMPLETE: CompanyFormValues = {
-  name: 'ABC Technologies',
-  industry: 'Information Technology',
-  size: '51–200 employees',
-  description: 'We build recruitment software.',
-  culture: 'We encourage collaboration and continuous learning.',
-  email: 'contact@abc.com',
-  phone: '011 234 5678',
-  website: 'https://abc.com',
-  linkedinUrl: 'https://linkedin.com/company/abc',
-  facebookUrl: 'https://facebook.com/abc',
-  twitterUrl: 'https://x.com/abc',
-  address: 'No. 42, Galle Road',
-  city: 'Colombo',
-  country: 'Sri Lanka',
-  benefits: ['REMOTE_HYBRID', 'HEALTH_INSURANCE'],
-};
+const COMPLETE: CompanyFormValues = toFormValues(
+  makeCompanyProfile({
+    facebookUrl: 'https://facebook.com/abc',
+    twitterUrl: 'https://x.com/abc',
+  }),
+);
 
 const form = (overrides: Partial<CompanyFormValues> = {}): CompanyFormValues => ({
   ...COMPLETE,
@@ -43,34 +35,22 @@ const form = (overrides: Partial<CompanyFormValues> = {}): CompanyFormValues => 
 
 describe('toFormValues', () => {
   it('turns every null the API can send into an empty string', () => {
-    const profile: CompanyProfileResponse = {
-      id: 't-1',
-      name: 'ABC Technologies',
-      subdomain: 'abc',
-      logoUrl: null,
-      coverImageUrl: null,
-      industry: null,
-      size: null,
-      description: null,
-      culture: null,
-      benefits: [],
-      email: null,
-      phone: null,
-      website: null,
-      linkedinUrl: null,
-      facebookUrl: null,
-      twitterUrl: null,
-      address: null,
-      city: null,
-      country: null,
-      planTier: 'STANDARD',
-      status: 'ACTIVE',
-      updatedAt: null,
-    };
-
     // A null reaching a controlled <input value> is React's "uncontrolled to
     // controlled" warning and a field that silently stops updating.
-    expect(toFormValues(profile)).toEqual({ ...EMPTY_FORM_VALUES, name: 'ABC Technologies' });
+    expect(toFormValues(makeEmptyCompanyProfile())).toEqual({
+      ...EMPTY_FORM_VALUES,
+      name: 'ABC Technologies',
+    });
+  });
+
+  it('renders numbers as the strings the inputs hold', () => {
+    const values = toFormValues(makeCompanyProfile({ foundedYear: 2015, employeeCount: 120 }));
+    expect(values.foundedYear).toBe('2015');
+    expect(values.employeeCount).toBe('120');
+
+    // Zero is a real value and must not be flattened into "not set" — the
+    // classic falsy bug that would blank a legitimate figure.
+    expect(toFormValues(makeCompanyProfile({ employeeCount: 0 })).employeeCount).toBe('0');
   });
 });
 
@@ -172,8 +152,8 @@ describe('validateCompanyProfile', () => {
 describe('changedFields', () => {
   it('ignores edits that would save identically', () => {
     // Whitespace is not a change — and it must not be saved as one.
-    expect(isDirty(COMPLETE, form({ name: '  ABC Technologies  ' }))).toBe(false);
-    expect(isDirty(COMPLETE, form({ description: 'We build recruitment software. ' }))).toBe(false);
+    expect(isDirty(COMPLETE, form({ name: `  ${COMPLETE.name}  ` }))).toBe(false);
+    expect(isDirty(COMPLETE, form({ description: `${COMPLETE.description} ` }))).toBe(false);
   });
 
   it('sees a bare domain as unchanged once it is already normalised', () => {
@@ -189,14 +169,31 @@ describe('changedFields', () => {
 });
 
 describe('formatLocation', () => {
-  it('joins city and country the way a person reads them', () => {
-    expect(formatLocation(COMPLETE)).toBe('Colombo, Sri Lanka');
+  it('joins city, state and country the way a person reads them', () => {
+    expect(formatLocation(COMPLETE)).toBe('Colombo, Western, Sri Lanka');
   });
 
-  it('drops whichever half is missing instead of leaving a dangling comma', () => {
-    expect(formatLocation(form({ country: '' }))).toBe('Colombo');
-    expect(formatLocation(form({ city: '' }))).toBe('Sri Lanka');
-    expect(formatLocation(form({ city: '', country: '' }))).toBe('');
+  it('drops whichever parts are missing instead of leaving dangling commas', () => {
+    expect(formatLocation(form({ state: '' }))).toBe('Colombo, Sri Lanka');
+    expect(formatLocation(form({ country: '', state: '' }))).toBe('Colombo');
+    expect(formatLocation(form({ city: '', state: '' }))).toBe('Sri Lanka');
+    expect(formatLocation(form({ city: '', state: '', country: '' }))).toBe('');
+  });
+});
+
+describe('formatStreet', () => {
+  it('joins the street line and the postal code', () => {
+    expect(formatStreet(COMPLETE)).toBe('No. 42, Galle Road, 00300');
+    expect(formatStreet(form({ postalCode: '' }))).toBe('No. 42, Galle Road');
+    expect(formatStreet(form({ address: '', postalCode: '' }))).toBe('');
+  });
+});
+
+describe('currencyCode', () => {
+  it('keeps the code and drops the label', () => {
+    // 'LKR' belongs next to a salary figure; the full name belongs in the picker.
+    expect(currencyCode('LKR — Sri Lankan rupee')).toBe('LKR');
+    expect(currencyCode('USD')).toBe('USD');
   });
 });
 
@@ -215,39 +212,27 @@ describe('companyInitials', () => {
 
 describe('toUpdateRequest', () => {
   it('sends blank optionals as null and never as an empty string', () => {
-    expect(
-      toUpdateRequest(
-        form({
-          description: '',
-          culture: '',
-          phone: '',
-          website: '',
-          linkedinUrl: '',
-          facebookUrl: '',
-          twitterUrl: '',
-          address: '',
-          city: '',
-          country: '',
-          benefits: [],
-        }),
-      ),
-    ).toEqual({
-      name: 'ABC Technologies',
-      industry: 'Information Technology',
-      size: '51–200 employees',
-      description: null,
-      culture: null,
-      benefits: [],
-      email: 'contact@abc.com',
-      phone: null,
-      website: null,
-      linkedinUrl: null,
-      facebookUrl: null,
-      twitterUrl: null,
-      address: null,
-      city: null,
-      country: null,
-    });
+    const request = toUpdateRequest({ ...EMPTY_FORM_VALUES, name: 'ABC', email: 'a@b.com' });
+
+    // Every optional text field is null; the list fields are [], never null.
+    const nulls = Object.entries(request).filter(([, value]) => value === null);
+    expect(nulls.length).toBeGreaterThan(20);
+    expect(request.name).toBe('ABC');
+    expect(request.email).toBe('a@b.com');
+    expect(request.values).toEqual([]);
+    expect(request.benefits).toEqual([]);
+    expect(request.workModes).toEqual([]);
+    expect(Object.values(request)).not.toContain('');
+  });
+
+  it('sends the numbers as numbers, not as the strings the form held', () => {
+    const request = toUpdateRequest(form({ foundedYear: '2015', employeeCount: '120' }));
+    expect(request.foundedYear).toBe(2015);
+    expect(request.employeeCount).toBe(120);
+
+    const blank = toUpdateRequest(form({ foundedYear: '', employeeCount: '' }));
+    expect(blank.foundedYear).toBeNull();
+    expect(blank.employeeCount).toBeNull();
   });
 
   it('sends the normalised website, not the typed one', () => {
@@ -290,6 +275,69 @@ describe('benefits', () => {
       'REMOTE_HYBRID',
       'SOME_RETIRED_PERK',
     ]);
+  });
+});
+
+describe('numbers', () => {
+  it('rejects a founded year that is impossible', () => {
+    const thisYear = new Date().getFullYear();
+    expect(validateCompanyProfile(form({ foundedYear: '1750' })).foundedYear).toMatch(/between/i);
+    expect(validateCompanyProfile(form({ foundedYear: String(thisYear + 1) })).foundedYear).toMatch(
+      /between/i,
+    );
+    expect(validateCompanyProfile(form({ foundedYear: '2015.5' })).foundedYear).toMatch(/between/i);
+    // A number input yields '' for "abc", but a paste can still land here.
+    expect(validateCompanyProfile(form({ foundedYear: 'abc' })).foundedYear).toMatch(/between/i);
+  });
+
+  it('accepts the boundary years', () => {
+    const thisYear = String(new Date().getFullYear());
+    expect(validateCompanyProfile(form({ foundedYear: '1800' })).foundedYear).toBeUndefined();
+    expect(validateCompanyProfile(form({ foundedYear: thisYear })).foundedYear).toBeUndefined();
+  });
+
+  it('requires the employee count to be a whole positive number', () => {
+    expect(validateCompanyProfile(form({ employeeCount: '0' })).employeeCount).toMatch(/whole/i);
+    expect(validateCompanyProfile(form({ employeeCount: '-5' })).employeeCount).toMatch(/whole/i);
+    expect(validateCompanyProfile(form({ employeeCount: '12.5' })).employeeCount).toMatch(/whole/i);
+    expect(validateCompanyProfile(form({ employeeCount: '1' })).employeeCount).toBeUndefined();
+  });
+});
+
+describe('the second contact channels', () => {
+  it('validates the HR email and the alternative phone like the primaries', () => {
+    expect(validateCompanyProfile(form({ hrEmail: 'nope' })).hrEmail).toMatch(/valid email/i);
+    expect(validateCompanyProfile(form({ hrEmail: '' })).hrEmail).toBeUndefined();
+    expect(validateCompanyProfile(form({ alternativePhone: 'call me' })).alternativePhone).toMatch(
+      /valid phone/i,
+    );
+    expect(validateCompanyProfile(form({ alternativePhone: '' })).alternativePhone).toBeUndefined();
+  });
+});
+
+describe('registration details', () => {
+  it('does not impose a format, because they differ by country', () => {
+    // A regex here would reject a legitimate number somewhere in the world.
+    for (const registrationNumber of ['PV 12345', '12345678901234', 'HRB-9911/X']) {
+      expect(validateCompanyProfile(form({ registrationNumber })).registrationNumber).toBeUndefined();
+    }
+  });
+
+  it('still caps the length', () => {
+    expect(validateCompanyProfile(form({ vatNumber: 'x'.repeat(61) })).vatNumber).toMatch(/under 60/);
+  });
+});
+
+describe('company values', () => {
+  it('trims, drops blanks and de-duplicates case-insensitively', () => {
+    expect(cleanValues([' Ownership ', 'ownership', '', '  ', 'Craft'])).toEqual([
+      'Ownership',
+      'Craft',
+    ]);
+  });
+
+  it('treats a re-typed duplicate as no change', () => {
+    expect(isDirty(COMPLETE, form({ values: ['Ownership', 'Craft', 'ownership'] }))).toBe(false);
   });
 });
 

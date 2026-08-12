@@ -6,6 +6,8 @@ import { useCan } from '../auth/useCan';
 import { Avatar } from '../components/dashboard/Avatar';
 import { Icon, type IconName } from '../components/dashboard/Icon';
 import { RoleBadge } from '../components/dashboard/RoleBadge';
+import { CompanyLogo } from '../components/dashboard/CompanyLogo';
+import { CompanyProfileProvider, useCompanyIdentity } from '../dashboard/CompanyProfileContext';
 import { TeamSummaryProvider } from '../dashboard/TeamSummaryContext';
 import { activeTenant } from '../tenant/activeTenant';
 import { resolveTenantHost, ROOT_DOMAIN } from '../tenant/subdomain';
@@ -118,10 +120,13 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
  */
 export function DashboardLayout() {
   return (
-    // Provider sits above both the sidebar and the routed outlet so the
-    // roster is fetched once and shared, not re-requested per surface.
+    // Both providers sit above the sidebar and the routed outlet, so the
+    // roster and the company profile are each fetched once for the session and
+    // shared — not re-requested per surface, and never two copies that drift.
     <TeamSummaryProvider>
-      <DashboardChrome />
+      <CompanyProfileProvider>
+        <DashboardChrome />
+      </CompanyProfileProvider>
     </TeamSummaryProvider>
   );
 }
@@ -136,6 +141,10 @@ function DashboardChrome() {
   // Which workspace this session reads: the backend's name first, then the
   // host we're served from (localhost / older backend has neither).
   const subdomain = user?.tenantSubdomain ?? resolveTenantHost().subdomain;
+
+  // The profile is the newer answer; the login response is the fallback while
+  // it loads. Renaming the company now updates this chip immediately.
+  const company = useCompanyIdentity(user?.tenantName);
 
   // Mac reads ⌘K, everything else Ctrl K. Computed once — `navigator` is
   // stable for the life of the document.
@@ -241,11 +250,13 @@ function DashboardChrome() {
               title="View company profile"
               className="hidden items-center gap-2.5 rounded-full border border-slate-200 bg-slate-50 py-1 pl-1 pr-3.5 transition-colors hover:border-slate-300 hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 md:flex"
             >
-              <Avatar firstName={user?.tenantName ?? 'Workspace'} size="sm" />
+              {company.logoUrl ? (
+                <CompanyLogo src={company.logoUrl} name={company.name} size="sm" />
+              ) : (
+                <Avatar firstName={company.name} size="sm" />
+              )}
               <div className="min-w-0 max-w-[11rem] leading-tight">
-                <p className="truncate text-sm font-semibold text-slate-900">
-                  {user?.tenantName ?? 'Workspace'}
-                </p>
+                <p className="truncate text-sm font-semibold text-slate-900">{company.name}</p>
                 {subdomain ? (
                   <p className="truncate font-mono text-[10px] text-slate-500">
                     {subdomain}.{ROOT_DOMAIN}

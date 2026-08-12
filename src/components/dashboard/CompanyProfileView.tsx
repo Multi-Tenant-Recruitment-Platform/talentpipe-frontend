@@ -2,9 +2,14 @@ import type { ReactNode } from 'react';
 import { profileCompleteness, type CompanyFormValues } from '../../dashboard/companyProfile';
 import { formatRelativeTime } from '../../utils/format';
 import { Button } from '../ui/Button';
+import { CompanyAtAGlance } from './CompanyAtAGlance';
 import { CompanyBenefits } from './CompanyBenefits';
+import { CompanyJobTaxonomy, CompanyOrganisation } from './CompanyTaxonomy';
 import { CompanyInformation } from './CompanyInformation';
+import { CompanyOperations } from './CompanyOperations';
+import { CompanyRegistrationInformation } from './CompanyRegistrationInformation';
 import { CompanySocialLinks } from './CompanySocialLinks';
+import { CompanyStoryInformation } from './CompanyStoryInformation';
 import { ContactInformation } from './ContactInformation';
 import { Icon } from './Icon';
 import { LocationInformation } from './LocationInformation';
@@ -84,6 +89,16 @@ export function CompanyProfileView({
         headingLevel={profileVariant ? 'h2' : 'h3'}
       />
 
+      <Section title="At a glance" variant={variant}>
+        <CompanyAtAGlance values={values} />
+      </Section>
+
+      {(values.mission || values.vision || values.values.length > 0) && (
+        <Section title="Mission, vision & values" variant={variant}>
+          <CompanyStoryInformation values={values} />
+        </Section>
+      )}
+
       {values.culture && (
         <Section title="Company culture" variant={variant}>
           <p
@@ -97,6 +112,10 @@ export function CompanyProfileView({
 
       <Section title="Benefits & perks" variant={variant}>
         <CompanyBenefits benefits={values.benefits} />
+      </Section>
+
+      <Section title="Work & operations" variant={variant}>
+        <CompanyOperations values={values} />
       </Section>
 
       <Section title="Contact information" variant={variant}>
@@ -115,6 +134,22 @@ export function CompanyProfileView({
 
       <Section title="Location" variant={variant}>
         <LocationInformation values={values} />
+      </Section>
+
+      {/* The tail of the page is reference data rather than presentation:
+          paperwork first, then the vocabularies jobs and people are filed
+          under. None of it belongs near the top, where a candidate-facing
+          read starts, and none of it reaches the public preview. */}
+      <Section title="Registration & tax" variant={variant}>
+        <CompanyRegistrationInformation values={values} />
+      </Section>
+
+      <Section title="Organisation" variant={variant}>
+        <CompanyOrganisation values={values} />
+      </Section>
+
+      <Section title="Hiring vocabulary" variant={variant}>
+        <CompanyJobTaxonomy values={values} />
       </Section>
 
       {/* Nudge, not nagging: it disappears the moment the profile is complete,

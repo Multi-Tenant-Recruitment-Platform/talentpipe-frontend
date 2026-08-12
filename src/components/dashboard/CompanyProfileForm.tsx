@@ -2,21 +2,30 @@ import { useRef, type FormEvent, type ReactNode } from 'react';
 import type { CompanyImageKind } from '../../api/types';
 import {
   BENEFIT_CATALOGUE,
-  COMPANY_SIZES,
+  COMPANY_SIZE_GROUPS,
   COMPANY_TEXT_FIELDS,
+  COMPANY_TYPES,
+  CURRENCIES,
+  EMPLOYMENT_TYPES,
   FIELD_LABELS,
   INDUSTRIES,
+  JOB_LEVELS,
+  LANGUAGES,
   MAX_CULTURE,
   MAX_DESCRIPTION,
   SOCIAL_FIELDS,
   SOCIAL_PLACEHOLDERS,
+  TIMEZONES,
+  WORK_MODES,
   type CompanyFieldErrors,
   type CompanyFormValues,
+  type CompanyListField,
   type CompanyTextField,
 } from '../../dashboard/companyProfile';
 import { Button } from '../ui/Button';
 import { inputClass } from '../ui/inputClass';
 import { CompanyImagePicker } from './CompanyImagePicker';
+import { CompanyChipListEditor } from './CompanyChipListEditor';
 import { Icon } from './Icon';
 
 /**
@@ -76,6 +85,48 @@ function Field({
   );
 }
 
+/** A titled set of checkboxes over a fixed catalogue. */
+function CheckboxGroup({
+  legend,
+  hint,
+  options,
+  selected,
+  onToggle,
+  columns = 'sm:grid-cols-2',
+}: {
+  legend: string;
+  hint: string;
+  options: { id: string; label: string }[];
+  selected: string[];
+  onToggle: (id: string) => void;
+  columns?: string;
+}) {
+  return (
+    <fieldset className="border-t border-slate-100 pt-6">
+      <legend className="text-xs font-medium uppercase tracking-wide text-slate-400">
+        {legend}
+      </legend>
+      <p className="mt-1 text-xs text-slate-400">{hint}</p>
+      <div className={`mt-4 grid gap-x-6 gap-y-2.5 ${columns}`}>
+        {options.map((option) => (
+          <label
+            key={option.id}
+            className="flex cursor-pointer items-center gap-2.5 text-sm text-slate-700"
+          >
+            <input
+              type="checkbox"
+              checked={selected.includes(option.id)}
+              onChange={() => onToggle(option.id)}
+              className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-2 focus:ring-indigo-500/40"
+            />
+            {option.label}
+          </label>
+        ))}
+      </div>
+    </fieldset>
+  );
+}
+
 export function CompanyProfileForm({
   values,
   errors,
@@ -85,7 +136,8 @@ export function CompanyProfileForm({
   coverUrl,
   imageErrors,
   onChange,
-  onToggleBenefit,
+  onToggleListValue,
+  onChangeList,
   onPickImage,
   onRemoveImage,
   onSubmit,
@@ -99,7 +151,8 @@ export function CompanyProfileForm({
   coverUrl: string | null;
   imageErrors: Record<CompanyImageKind, string | null>;
   onChange: (field: CompanyTextField, value: string) => void;
-  onToggleBenefit: (id: string) => void;
+  onToggleListValue: (field: CompanyListField, id: string) => void;
+  onChangeList: (field: CompanyListField, next: string[]) => void;
   onPickImage: (kind: CompanyImageKind, file: File) => void;
   onRemoveImage: (kind: CompanyImageKind) => void;
   /** Validates and saves; returns the errors that stopped it, if any. */
@@ -150,7 +203,7 @@ export function CompanyProfileForm({
       </div>
 
       <Fieldset legend="Company overview">
-        <Field field="name" error={errors.name} className="sm:col-span-2">
+        <Field field="name" error={errors.name}>
           <input
             id={fieldId('name')}
             value={values.name}
@@ -158,6 +211,21 @@ export function CompanyProfileForm({
             autoComplete="organization"
             className={inputClass}
             {...a11y('name')}
+          />
+        </Field>
+
+        <Field
+          field="tagline"
+          error={errors.tagline}
+          hint="One line, shown under the company name."
+        >
+          <input
+            id={fieldId('tagline')}
+            value={values.tagline}
+            onChange={(e) => onChange('tagline', e.target.value)}
+            placeholder="Hiring software for growing teams"
+            className={inputClass}
+            {...a11y('tagline')}
           />
         </Field>
 
@@ -189,12 +257,66 @@ export function CompanyProfileForm({
             {...a11y('size')}
           >
             <option value="">Select a size</option>
-            {COMPANY_SIZES.map((size) => (
-              <option key={size} value={size}>
-                {size}
+            {COMPANY_SIZE_GROUPS.map((group) => (
+              <optgroup key={group.label} label={group.label}>
+                {group.options.map((size) => (
+                  <option key={size} value={size}>
+                    {size}
+                  </option>
+                ))}
+              </optgroup>
+            ))}
+          </select>
+        </Field>
+
+        <Field field="companyType" error={errors.companyType}>
+          <select
+            id={fieldId('companyType')}
+            value={values.companyType}
+            onChange={(e) => onChange('companyType', e.target.value)}
+            className={inputClass}
+            {...a11y('companyType')}
+          >
+            <option value="">Select a type</option>
+            {COMPANY_TYPES.map((type) => (
+              <option key={type} value={type}>
+                {type}
               </option>
             ))}
           </select>
+        </Field>
+
+        <Field
+          field="employeeCount"
+          error={errors.employeeCount}
+          hint="The exact figure, if the band above is not precise enough."
+        >
+          <input
+            id={fieldId('employeeCount')}
+            type="number"
+            inputMode="numeric"
+            min={1}
+            value={values.employeeCount}
+            onChange={(e) => onChange('employeeCount', e.target.value)}
+            placeholder="120"
+            className={inputClass}
+            {...a11y('employeeCount')}
+          />
+        </Field>
+
+        <Field field="foundedYear" error={errors.foundedYear}>
+          <input
+            id={fieldId('foundedYear')}
+            type="number"
+            inputMode="numeric"
+            min={1800}
+            max={new Date().getFullYear()}
+            value={values.foundedYear}
+            onChange={(e) => onChange('foundedYear', e.target.value)}
+            placeholder="2015"
+            className={inputClass}
+            {...a11y('foundedYear')}
+          />
         </Field>
 
         <Field
@@ -239,35 +361,61 @@ export function CompanyProfileForm({
             {values.culture.trim().length} / {MAX_CULTURE}
           </p>
         </Field>
+
+        <Field field="mission" error={errors.mission} hint="Why the company exists.">
+          <textarea
+            id={fieldId('mission')}
+            rows={2}
+            value={values.mission}
+            onChange={(e) => onChange('mission', e.target.value)}
+            className={`${inputClass} resize-none`}
+            {...a11y('mission')}
+          />
+        </Field>
+
+        <Field field="vision" error={errors.vision} hint="Where it is heading.">
+          <textarea
+            id={fieldId('vision')}
+            rows={2}
+            value={values.vision}
+            onChange={(e) => onChange('vision', e.target.value)}
+            className={`${inputClass} resize-none`}
+            {...a11y('vision')}
+          />
+        </Field>
+
+        <div className="sm:col-span-2">
+          <CompanyChipListEditor
+            id="company-values"
+            label="Company values"
+            placeholder="Innovation, then Enter"
+            hint="Short phrases work best — one idea each, not a sentence."
+            values={values.values}
+            disabled={saving}
+            onChange={(next) => onChangeList('values', next)}
+          />
+        </div>
       </Fieldset>
 
-      {/* A checklist, not free text: stored as identifiers, these can be
+      {/* Checklists, not free text: stored as identifiers, these can be
           filtered on later — "show me remote-friendly companies" — which a
           sentence someone typed never could. */}
-      <fieldset className="border-t border-slate-100 pt-6">
-        <legend className="text-xs font-medium uppercase tracking-wide text-slate-400">
-          Benefits &amp; perks
-        </legend>
-        <p className="mt-1 text-xs text-slate-400">
-          Pick everything that applies. Candidates scan these before the job description.
-        </p>
-        <div className="mt-4 grid gap-x-6 gap-y-2.5 sm:grid-cols-2">
-          {BENEFIT_CATALOGUE.map((benefit) => (
-            <label
-              key={benefit.id}
-              className="flex cursor-pointer items-center gap-2.5 text-sm text-slate-700"
-            >
-              <input
-                type="checkbox"
-                checked={values.benefits.includes(benefit.id)}
-                onChange={() => onToggleBenefit(benefit.id)}
-                className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-2 focus:ring-indigo-500/40"
-              />
-              {benefit.label}
-            </label>
-          ))}
-        </div>
-      </fieldset>
+      <CheckboxGroup
+        legend="Work arrangements"
+        hint="How roles at this company are usually staffed."
+        options={WORK_MODES}
+        selected={values.workModes}
+        onToggle={(id) => onToggleListValue('workModes', id)}
+        columns="sm:grid-cols-3"
+      />
+
+      <CheckboxGroup
+        legend="Benefits &amp; perks"
+        hint="Pick everything that applies. Candidates scan these before the job description."
+        options={BENEFIT_CATALOGUE}
+        selected={values.benefits}
+        onToggle={(id) => onToggleListValue('benefits', id)}
+      />
 
       <Fieldset legend="Contact information">
         <Field field="email" error={errors.email} hint="Where candidates and applicants reach you.">
@@ -283,6 +431,22 @@ export function CompanyProfileForm({
           />
         </Field>
 
+        <Field
+          field="hrEmail"
+          error={errors.hrEmail}
+          hint="Only if applications go somewhere other than the address above."
+        >
+          <input
+            id={fieldId('hrEmail')}
+            type="email"
+            value={values.hrEmail}
+            onChange={(e) => onChange('hrEmail', e.target.value)}
+            placeholder="careers@abc.com"
+            className={inputClass}
+            {...a11y('hrEmail')}
+          />
+        </Field>
+
         <Field field="phone" error={errors.phone}>
           <input
             id={fieldId('phone')}
@@ -293,6 +457,18 @@ export function CompanyProfileForm({
             placeholder="+94 11 234 5678"
             className={inputClass}
             {...a11y('phone')}
+          />
+        </Field>
+
+        <Field field="alternativePhone" error={errors.alternativePhone}>
+          <input
+            id={fieldId('alternativePhone')}
+            type="tel"
+            value={values.alternativePhone}
+            onChange={(e) => onChange('alternativePhone', e.target.value)}
+            placeholder="+94 77 123 4567"
+            className={inputClass}
+            {...a11y('alternativePhone')}
           />
         </Field>
 
@@ -362,6 +538,30 @@ export function CompanyProfileForm({
           />
         </Field>
 
+        <Field field="state" error={errors.state}>
+          <input
+            id={fieldId('state')}
+            value={values.state}
+            onChange={(e) => onChange('state', e.target.value)}
+            autoComplete="address-level1"
+            placeholder="Western"
+            className={inputClass}
+            {...a11y('state')}
+          />
+        </Field>
+
+        <Field field="postalCode" error={errors.postalCode}>
+          <input
+            id={fieldId('postalCode')}
+            value={values.postalCode}
+            onChange={(e) => onChange('postalCode', e.target.value)}
+            autoComplete="postal-code"
+            placeholder="00300"
+            className={inputClass}
+            {...a11y('postalCode')}
+          />
+        </Field>
+
         <Field field="country" error={errors.country}>
           <input
             id={fieldId('country')}
@@ -371,6 +571,228 @@ export function CompanyProfileForm({
             placeholder="Sri Lanka"
             className={inputClass}
             {...a11y('country')}
+          />
+        </Field>
+
+        <div className="sm:col-span-2">
+          {/* No "number of offices" field: that number is this list's length,
+              and a second copy of it would go stale the day a branch opens. */}
+          <CompanyChipListEditor
+            id="company-officeLocations"
+            label="Office locations"
+            placeholder="Kandy, then Enter"
+            hint="Every city you operate from, headquarters included."
+            values={values.officeLocations}
+            disabled={saving}
+            onChange={(next) => onChangeList('officeLocations', next)}
+          />
+        </div>
+      </Fieldset>
+
+      <Fieldset legend="Organisation">
+        {/* No "number of departments" box: that number is this list's length.
+            Two copies of the same fact disagree the moment one is edited. */}
+        <div className="sm:col-span-2">
+          <CompanyChipListEditor
+            id="company-departments"
+            label="Departments"
+            placeholder="Engineering, then Enter"
+            hint="Counted automatically — the profile shows however many you list."
+            values={values.departments}
+            disabled={saving}
+            onChange={(next) => onChangeList('departments', next)}
+          />
+        </div>
+        <div className="sm:col-span-2">
+          <CompanyChipListEditor
+            id="company-teams"
+            label="Teams"
+            placeholder="Backend, then Enter"
+            hint="The squads inside those departments."
+            values={values.teams}
+            disabled={saving}
+            onChange={(next) => onChangeList('teams', next)}
+          />
+        </div>
+        <div className="sm:col-span-2">
+          <CompanyChipListEditor
+            id="company-businessUnits"
+            label="Business units"
+            placeholder="Cloud Services, then Enter"
+            hint="The lines of business the company sells."
+            values={values.businessUnits}
+            disabled={saving}
+            onChange={(next) => onChangeList('businessUnits', next)}
+          />
+        </div>
+      </Fieldset>
+
+      <CheckboxGroup
+        legend="Employment types"
+        hint="The contract types this company hires on."
+        options={EMPLOYMENT_TYPES}
+        selected={values.employmentTypes}
+        onToggle={(id) => onToggleListValue('employmentTypes', id)}
+        columns="sm:grid-cols-3"
+      />
+
+      <CheckboxGroup
+        legend="Job levels"
+        hint="Seniority ladder. Shown in this order, never alphabetically."
+        options={JOB_LEVELS}
+        selected={values.jobLevels}
+        onToggle={(id) => onToggleListValue('jobLevels', id)}
+        columns="sm:grid-cols-4"
+      />
+
+      <Fieldset legend="Job taxonomy">
+        <div className="sm:col-span-2">
+          <CompanyChipListEditor
+            id="company-jobCategories"
+            label="Job categories"
+            placeholder="Software Engineering, then Enter"
+            hint="How openings are grouped on the careers page."
+            values={values.jobCategories}
+            disabled={saving}
+            onChange={(next) => onChangeList('jobCategories', next)}
+          />
+        </div>
+        <div className="sm:col-span-2">
+          <CompanyChipListEditor
+            id="company-jobFamilies"
+            label="Job families"
+            placeholder="Engineering, then Enter"
+            hint="Broader groupings across categories."
+            values={values.jobFamilies}
+            disabled={saving}
+            onChange={(next) => onChangeList('jobFamilies', next)}
+          />
+        </div>
+        <div className="sm:col-span-2">
+          <CompanyChipListEditor
+            id="company-jobTitles"
+            label="Job titles"
+            placeholder="Software Engineer, then Enter"
+            hint="The titles you post under. Jobs will pick from this list."
+            values={values.jobTitles}
+            disabled={saving}
+            onChange={(next) => onChangeList('jobTitles', next)}
+          />
+        </div>
+      </Fieldset>
+
+      <Fieldset legend="Operations">
+        <Field field="timezone" error={errors.timezone}>
+          <select
+            id={fieldId('timezone')}
+            value={values.timezone}
+            onChange={(e) => onChange('timezone', e.target.value)}
+            className={inputClass}
+            {...a11y('timezone')}
+          >
+            <option value="">Select a time zone</option>
+            {/* A stored zone outside the shortlist still shows, so a value the
+                backend holds is never silently blanked by this select. */}
+            {values.timezone && !TIMEZONES.includes(values.timezone) && (
+              <option value={values.timezone}>{values.timezone}</option>
+            )}
+            {TIMEZONES.map((zone) => (
+              <option key={zone} value={zone}>
+                {zone}
+              </option>
+            ))}
+          </select>
+        </Field>
+
+        <Field field="currency" error={errors.currency} hint="Used when a salary is shown.">
+          <select
+            id={fieldId('currency')}
+            value={values.currency}
+            onChange={(e) => onChange('currency', e.target.value)}
+            className={inputClass}
+            {...a11y('currency')}
+          >
+            <option value="">Select a currency</option>
+            {values.currency && !CURRENCIES.includes(values.currency) && (
+              <option value={values.currency}>{values.currency}</option>
+            )}
+            {CURRENCIES.map((currency) => (
+              <option key={currency} value={currency}>
+                {currency}
+              </option>
+            ))}
+          </select>
+        </Field>
+
+        <Field field="language" error={errors.language}>
+          <select
+            id={fieldId('language')}
+            value={values.language}
+            onChange={(e) => onChange('language', e.target.value)}
+            className={inputClass}
+            {...a11y('language')}
+          >
+            <option value="">Select a language</option>
+            {values.language && !LANGUAGES.includes(values.language) && (
+              <option value={values.language}>{values.language}</option>
+            )}
+            {LANGUAGES.map((language) => (
+              <option key={language} value={language}>
+                {language}
+              </option>
+            ))}
+          </select>
+        </Field>
+      </Fieldset>
+
+      {/* Paperwork, not marketing — kept last and never shown to candidates. */}
+      <Fieldset legend="Registration & tax">
+        <Field
+          field="legalName"
+          error={errors.legalName}
+          className="sm:col-span-2"
+          hint="The registered name, if it differs from the trading name."
+        >
+          <input
+            id={fieldId('legalName')}
+            value={values.legalName}
+            onChange={(e) => onChange('legalName', e.target.value)}
+            placeholder="ABC Technologies (Private) Limited"
+            className={inputClass}
+            {...a11y('legalName')}
+          />
+        </Field>
+
+        <Field field="registrationNumber" error={errors.registrationNumber}>
+          <input
+            id={fieldId('registrationNumber')}
+            value={values.registrationNumber}
+            onChange={(e) => onChange('registrationNumber', e.target.value)}
+            placeholder="PV 12345"
+            className={inputClass}
+            {...a11y('registrationNumber')}
+          />
+        </Field>
+
+        <Field field="taxNumber" error={errors.taxNumber}>
+          <input
+            id={fieldId('taxNumber')}
+            value={values.taxNumber}
+            onChange={(e) => onChange('taxNumber', e.target.value)}
+            placeholder="123456789-0000"
+            className={inputClass}
+            {...a11y('taxNumber')}
+          />
+        </Field>
+
+        <Field field="vatNumber" error={errors.vatNumber}>
+          <input
+            id={fieldId('vatNumber')}
+            value={values.vatNumber}
+            onChange={(e) => onChange('vatNumber', e.target.value)}
+            placeholder="VAT-987654321"
+            className={inputClass}
+            {...a11y('vatNumber')}
           />
         </Field>
       </Fieldset>
