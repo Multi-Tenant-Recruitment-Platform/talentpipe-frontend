@@ -31,8 +31,6 @@ export function makeCompanyProfile(
     benefits: ['REMOTE_HYBRID', 'HEALTH_INSURANCE'],
     legalName: 'ABC Technologies (Private) Limited',
     registrationNumber: 'PV 12345',
-    taxNumber: '123456789-0000',
-    vatNumber: 'VAT-987654321',
     workModes: ['REMOTE', 'HYBRID'],
     timezone: 'Asia/Colombo',
     currency: 'LKR — Sri Lankan rupee',

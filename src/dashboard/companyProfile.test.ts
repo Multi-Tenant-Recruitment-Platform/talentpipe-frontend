@@ -324,7 +324,9 @@ describe('registration details', () => {
   });
 
   it('still caps the length', () => {
-    expect(validateCompanyProfile(form({ vatNumber: 'x'.repeat(61) })).vatNumber).toMatch(/under 60/);
+    expect(
+      validateCompanyProfile(form({ registrationNumber: 'x'.repeat(61) })).registrationNumber,
+    ).toMatch(/under 60/);
   });
 });
 

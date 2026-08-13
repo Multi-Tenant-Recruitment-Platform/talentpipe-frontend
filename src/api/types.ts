@@ -56,8 +56,6 @@ export interface CompanyProfileResponse {
   // Registration. Held for contracts and invoices, never candidate-facing.
   legalName: string | null;
   registrationNumber: string | null;
-  taxNumber: string | null;
-  vatNumber: string | null;
 
   // How the company operates.
   workModes: string[];
@@ -96,7 +94,7 @@ export interface CompanyProfileResponse {
   officeLocations: string[];
 
   /**
-   * Organisation shape. Admin-defined vocabularies that jobs and people are
+   * Organization shape. Admin-defined vocabularies that jobs and people are
    * later filed under — the count of each is the array's length, never a
    * separate number, so the two can never disagree.
    */
@@ -141,8 +139,6 @@ export interface UpdateCompanyProfileRequest {
   benefits: string[];
   legalName: string | null;
   registrationNumber: string | null;
-  taxNumber: string | null;
-  vatNumber: string | null;
   workModes: string[];
   timezone: string | null;
   currency: string | null;

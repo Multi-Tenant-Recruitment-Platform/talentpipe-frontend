@@ -31,8 +31,6 @@ export const COMPANY_TEXT_FIELDS = [
   // Registration
   'legalName',
   'registrationNumber',
-  'taxNumber',
-  'vatNumber',
   // Operations
   'timezone',
   'currency',
@@ -340,8 +338,6 @@ export const FIELD_LABELS: Record<CompanyField, string> = {
   culture: 'Company culture',
   legalName: 'Legal company name',
   registrationNumber: 'Registration number',
-  taxNumber: 'Tax identification number',
-  vatNumber: 'VAT number',
   timezone: 'Time zone',
   currency: 'Currency',
   language: 'Primary language',
@@ -410,8 +406,6 @@ export function toFormValues(profile: CompanyProfileResponse): CompanyFormValues
     culture: text(profile.culture),
     legalName: text(profile.legalName),
     registrationNumber: text(profile.registrationNumber),
-    taxNumber: text(profile.taxNumber),
-    vatNumber: text(profile.vatNumber),
     timezone: text(profile.timezone),
     currency: text(profile.currency),
     language: text(profile.language),
@@ -583,7 +577,7 @@ export function validateCompanyProfile(values: CompanyFormValues): CompanyFieldE
     }
   }
 
-  for (const field of ['postalCode', 'registrationNumber', 'taxNumber', 'vatNumber'] as const) {
+  for (const field of ['postalCode', 'registrationNumber'] as const) {
     if (n[field].length > MAX_SHORT) {
       errors[field] = `Keep the ${FIELD_LABELS[field].toLowerCase()} under ${MAX_SHORT} characters.`;
     }
@@ -669,8 +663,6 @@ export function toUpdateRequest(values: CompanyFormValues): UpdateCompanyProfile
     benefits: n.benefits,
     legalName: orNull(n.legalName),
     registrationNumber: orNull(n.registrationNumber),
-    taxNumber: orNull(n.taxNumber),
-    vatNumber: orNull(n.vatNumber),
     workModes: n.workModes,
     timezone: orNull(n.timezone),
     currency: orNull(n.currency),

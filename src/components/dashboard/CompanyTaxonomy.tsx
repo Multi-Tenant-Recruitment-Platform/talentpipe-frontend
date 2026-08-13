@@ -5,7 +5,7 @@ import {
 } from '../../dashboard/companyProfile';
 
 /**
- * The vocabularies a company files its work under — its organisation shape,
+ * The vocabularies a company files its work under — its organization shape,
  * and the terms its jobs are posted against.
  *
  * <p>Laid out as a specification table: a fixed label column on the left, the
@@ -54,7 +54,7 @@ function TaxonomyRow({
   );
 }
 
-export function CompanyOrganisation({ values }: { values: CompanyFormValues }) {
+export function CompanyOrganization({ values }: { values: CompanyFormValues }) {
   return (
     <dl>
       <TaxonomyRow label="Departments" items={values.departments} testId="company-departments" />

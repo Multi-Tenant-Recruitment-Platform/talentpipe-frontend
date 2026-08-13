@@ -535,9 +535,9 @@ describe('the public profile preview', () => {
     expect(within(within(dialog).getByTestId('company-values')).getAllByRole('listitem')).toHaveLength(
       2,
     );
-    // Registration and tax are administrative — a candidate never sees them.
+    // Registration detail is administrative — a candidate never sees it.
     expect(within(dialog).queryByText(/PV 12345/)).toBeNull();
-    expect(within(dialog).queryByText(/VAT-987654321/)).toBeNull();
+    expect(within(dialog).queryByText(/ABC Technologies \(Private\) Limited/)).toBeNull();
     // The jobs board is a real route, so the call to action goes somewhere.
     expect(within(dialog).getByRole('link', { name: /view open positions/i })).toHaveAttribute(
       'href',

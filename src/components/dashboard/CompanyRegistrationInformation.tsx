@@ -2,7 +2,7 @@ import type { CompanyFormValues } from '../../dashboard/companyProfile';
 import { DetailItem } from './DetailItem';
 
 /**
- * Legal name, registration and tax identifiers.
+ * Legal name and registration number.
  *
  * <p>Administrative detail, not marketing — it belongs on the management
  * surfaces and never on anything a candidate sees, which is why the public
@@ -24,18 +24,6 @@ export function CompanyRegistrationInformation({ values }: { values: CompanyForm
         label="Registration number"
         value={values.registrationNumber}
         testId="company-registrationNumber"
-      />
-      <DetailItem
-        icon="identification"
-        label="Tax identification number"
-        value={values.taxNumber}
-        testId="company-taxNumber"
-      />
-      <DetailItem
-        icon="identification"
-        label="VAT number"
-        value={values.vatNumber}
-        testId="company-vatNumber"
       />
     </dl>
   );

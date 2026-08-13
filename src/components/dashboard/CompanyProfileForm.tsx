@@ -589,7 +589,7 @@ export function CompanyProfileForm({
         </div>
       </Fieldset>
 
-      <Fieldset legend="Organisation">
+      <Fieldset legend="Organization">
         {/* No "number of departments" box: that number is this list's length.
             Two copies of the same fact disagree the moment one is edited. */}
         <div className="sm:col-span-2">
@@ -774,27 +774,6 @@ export function CompanyProfileForm({
           />
         </Field>
 
-        <Field field="taxNumber" error={errors.taxNumber}>
-          <input
-            id={fieldId('taxNumber')}
-            value={values.taxNumber}
-            onChange={(e) => onChange('taxNumber', e.target.value)}
-            placeholder="123456789-0000"
-            className={inputClass}
-            {...a11y('taxNumber')}
-          />
-        </Field>
-
-        <Field field="vatNumber" error={errors.vatNumber}>
-          <input
-            id={fieldId('vatNumber')}
-            value={values.vatNumber}
-            onChange={(e) => onChange('vatNumber', e.target.value)}
-            placeholder="VAT-987654321"
-            className={inputClass}
-            {...a11y('vatNumber')}
-          />
-        </Field>
       </Fieldset>
 
       <div className="flex flex-wrap items-center justify-end gap-3 border-t border-slate-100 pt-5">

@@ -4,7 +4,7 @@ import { formatRelativeTime } from '../../utils/format';
 import { Button } from '../ui/Button';
 import { CompanyAtAGlance } from './CompanyAtAGlance';
 import { CompanyBenefits } from './CompanyBenefits';
-import { CompanyJobTaxonomy, CompanyOrganisation } from './CompanyTaxonomy';
+import { CompanyJobTaxonomy, CompanyOrganization } from './CompanyTaxonomy';
 import { CompanyInformation } from './CompanyInformation';
 import { CompanyOperations } from './CompanyOperations';
 import { CompanyRegistrationInformation } from './CompanyRegistrationInformation';
@@ -140,12 +140,12 @@ export function CompanyProfileView({
           paperwork first, then the vocabularies jobs and people are filed
           under. None of it belongs near the top, where a candidate-facing
           read starts, and none of it reaches the public preview. */}
-      <Section title="Registration & tax" variant={variant}>
+      <Section title="Registration" variant={variant}>
         <CompanyRegistrationInformation values={values} />
       </Section>
 
-      <Section title="Organisation" variant={variant}>
-        <CompanyOrganisation values={values} />
+      <Section title="Organization" variant={variant}>
+        <CompanyOrganization values={values} />
       </Section>
 
       <Section title="Hiring vocabulary" variant={variant}>

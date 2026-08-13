@@ -130,8 +130,6 @@ function toResponse(
     benefits: draft?.benefits ?? [],
     legalName: draft?.legalName ?? null,
     registrationNumber: draft?.registrationNumber ?? null,
-    taxNumber: draft?.taxNumber ?? null,
-    vatNumber: draft?.vatNumber ?? null,
     workModes: draft?.workModes ?? [],
     timezone: draft?.timezone ?? null,
     currency: draft?.currency ?? null,
