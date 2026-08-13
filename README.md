@@ -65,10 +65,40 @@ npm run build
 
 ## Docker
 
+The backend stack is managed from its own repository, so start it first:
+
 ```bash
-docker build --build-arg VITE_API_BASE_URL=http://localhost:8080/api/v1 -t talentpipe-frontend .
-docker run -p 5173:80 talentpipe-frontend
+cd ../talentpipe-backend/infra && docker compose up -d postgres backend
+```
+
+Then, from this repository:
+
+```bash
+docker compose up -d --build      # http://localhost:5173
 ```
 
 Multi-stage build: Node 20 builds `dist/`, nginx serves it with SPA fallback
-(`nginx.conf`).
+(`nginx.conf.template`).
+
+**nginx proxies `/api` to the backend**, so the browser talks to a single
+origin and CORS never applies — the same arrangement the Vite dev server uses
+(`vite.config.ts`). That is why `VITE_API_BASE_URL` is the relative `/api/v1`
+in both dev and Docker; an absolute URL here would bake a host into the image
+and force CORS open.
+
+The container serves on **5173** deliberately: the backend builds emailed
+invitation and verification links from `FRONTEND_BASE_URL`, whose default is
+`http://localhost:5173`, so those links resolve without reconfiguring it. This
+is the same port `npm run dev` uses — run one or the other, not both.
+
+| Variable | Default | Applies |
+|---|---|---|
+| `BACKEND_ORIGIN` | `http://host.docker.internal:8080` | run time (no trailing slash) |
+| `VITE_API_BASE_URL` | `/api/v1` | build time |
+| `VITE_APP_ROOT_DOMAIN` | `talentpipe.io` | build time |
+| `FRONTEND_PORT` | `5173` | run time |
+
+`BACKEND_ORIGIN` is substituted into the nginx config at container start, so
+pointing the SPA at a different API needs no rebuild. Because it resolves over
+`host.docker.internal`, the backend can be a container or a plain
+`mvnw spring-boot:run` on the host — both work unchanged.

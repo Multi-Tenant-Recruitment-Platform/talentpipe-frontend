@@ -26,8 +26,6 @@ export function ForgotPasswordPage() {
     }
   }
 
-    'focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500';
-
   return (
     <section className="mx-auto max-w-md">
       <h1 className="text-3xl font-bold tracking-tight">Reset your password</h1>

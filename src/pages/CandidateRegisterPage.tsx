@@ -60,8 +60,6 @@ export function CandidateRegisterPage() {
     }
   }
 
-    'focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500';
-
   return (
     <AuthShell>
       <h1 className="text-2xl font-bold tracking-tight">Create your account</h1>
