@@ -2,6 +2,7 @@ import { api } from './client';
 import type {
   CompanyImageKind,
   CompanyProfileResponse,
+  PublicCompanyProfileResponse,
   UpdateCompanyProfileRequest,
 } from './types';
 
@@ -64,5 +65,21 @@ export const companyApi = {
   /** Drops a stored image. Idempotent — removing an absent image succeeds. */
   async removeImage(kind: CompanyImageKind): Promise<void> {
     await api.delete(`/tenant/${kind}`);
+  },
+
+  /**
+   * Candidate-facing public profile. Unauthenticated — no token is sent even
+   * when a user is signed in, matching the backend's open security config for
+   * this route.
+   *
+   * <p>Returns only the curated subset a candidate needs: branding, description,
+   * industry and location. Internal fields (legal name, HR email, billing) are
+   * absent by design on the backend.</p>
+   */
+  async getPublicProfile(subdomain: string): Promise<PublicCompanyProfileResponse> {
+    const { data } = await api.get<PublicCompanyProfileResponse>(
+      `/public/companies/${subdomain}`,
+    );
+    return data;
   },
 };
