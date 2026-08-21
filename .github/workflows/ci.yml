@@ -54,6 +54,22 @@ jobs:
           npm ci
           npm run test:coverage
 
+      # Speeds up repeat runs of the scanner engine/plugins.
+      - name: Cache Sonar packages
+        if: ${{ env.SONAR_TOKEN != '' }}
+        uses: actions/cache@v4
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
+
+      # Identity (organization/projectKey) lives in sonar-project.properties.
+      # The optional SONAR_ORGANIZATION / SONAR_PROJECT_KEY repo variables
+      # override it, so a renamed SonarCloud project needs no code change.
       - name: Sonar analysis (skipped until SONAR_TOKEN is set)
         if: ${{ env.SONAR_TOKEN != '' }}
         uses: sonarsource/sonarqube-scan-action@v5
+        with:
+          args: >
+            ${{ vars.SONAR_ORGANIZATION && format('-Dsonar.organization={0}', vars.SONAR_ORGANIZATION) || '' }}
+            ${{ vars.SONAR_PROJECT_KEY && format('-Dsonar.projectKey={0}', vars.SONAR_PROJECT_KEY) || '' }}
