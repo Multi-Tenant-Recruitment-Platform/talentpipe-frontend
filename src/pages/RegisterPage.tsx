@@ -121,8 +121,7 @@ export function RegisterPage() {
             Your team will sign in at{' '}
             <span className="font-medium text-slate-600">
               {subdomain || 'acme'}.{ROOT_DOMAIN}
-            </span>
-            .
+            </span>.
           </p>
         </div>
 

@@ -7,7 +7,7 @@ import { DetailItem } from './DetailItem';
  * <p>Every value that can be acted on is a link. A phone number a candidate
  * has to retype is a phone number that gets typed wrong.</p>
  */
-export function ContactInformation({ values }: { values: CompanyFormValues }) {
+export function ContactInformation({ values }: Readonly<{ values: CompanyFormValues }>) {
   return (
     <dl className="grid gap-x-6 gap-y-5 sm:grid-cols-2">
       <DetailItem

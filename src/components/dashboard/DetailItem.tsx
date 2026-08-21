@@ -15,7 +15,7 @@ export function DetailItem({
   href,
   external = false,
   testId,
-}: {
+}: Readonly<{
   icon: IconName;
   label: string;
   /** Display text. Empty string means "not set". */
@@ -24,7 +24,7 @@ export function DetailItem({
   href?: string;
   external?: boolean;
   testId?: string;
-}) {
+}>) {
   let content: ReactNode;
   if (value === '') {
     content = <span className="text-sm text-slate-400">Not set</span>;

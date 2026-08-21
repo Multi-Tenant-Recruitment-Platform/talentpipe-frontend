@@ -43,7 +43,7 @@ import { Icon } from './Icon';
 const fieldId = (field: CompanyTextField) => `company-${field}`;
 const errorId = (field: CompanyTextField) => `company-${field}-error`;
 
-function Fieldset({ legend, children }: { legend: string; children: ReactNode }) {
+function Fieldset({ legend, children }: Readonly<{ legend: string; children: ReactNode }>) {
   return (
     <fieldset className="border-t border-slate-100 pt-6">
       <legend className="text-xs font-medium uppercase tracking-wide text-slate-400">
@@ -60,13 +60,13 @@ function Field({
   hint,
   className = '',
   children,
-}: {
+}: Readonly<{
   field: CompanyTextField;
   error?: string;
   hint?: ReactNode;
   className?: string;
   children: ReactNode;
-}) {
+}>) {
   return (
     <div className={className}>
       <label htmlFor={fieldId(field)} className="block text-sm font-medium text-slate-700">
@@ -93,14 +93,14 @@ function CheckboxGroup({
   selected,
   onToggle,
   columns = 'sm:grid-cols-2',
-}: {
+}: Readonly<{
   legend: string;
   hint: string;
   options: { id: string; label: string }[];
   selected: string[];
   onToggle: (id: string) => void;
   columns?: string;
-}) {
+}>) {
   return (
     <fieldset className="border-t border-slate-100 pt-6">
       <legend className="text-xs font-medium uppercase tracking-wide text-slate-400">
@@ -142,7 +142,7 @@ export function CompanyProfileForm({
   onRemoveImage,
   onSubmit,
   onCancel,
-}: {
+}: Readonly<{
   values: CompanyFormValues;
   errors: CompanyFieldErrors;
   dirty: boolean;
@@ -158,7 +158,7 @@ export function CompanyProfileForm({
   /** Validates and saves; returns the errors that stopped it, if any. */
   onSubmit: () => CompanyFieldErrors;
   onCancel: () => void;
-}) {
+}>) {
   const formRef = useRef<HTMLFormElement>(null);
 
   function handleSubmit(event: FormEvent) {

@@ -21,11 +21,11 @@ import { Icon } from './Icon';
 export function CompanySocialLinks({
   values,
   showEmpty = false,
-}: {
+}: Readonly<{
   values: CompanyFormValues;
   /** Render rows for unset links too. Off for candidate-facing surfaces. */
   showEmpty?: boolean;
-}) {
+}>) {
   const present = SOCIAL_FIELDS.filter((field) => values[field] !== '');
   const shown = showEmpty ? SOCIAL_FIELDS : present;
 
@@ -54,7 +54,7 @@ export function CompanySocialLinks({
  * Compact row of social links for the candidate-facing preview, where the
  * labelled-list treatment would be heavier than the content deserves.
  */
-export function CompanySocialRow({ values }: { values: CompanyFormValues }) {
+export function CompanySocialRow({ values }: Readonly<{ values: CompanyFormValues }>) {
   const present = SOCIAL_FIELDS.filter((field) => values[field] !== '');
   if (present.length === 0) {
     return null;

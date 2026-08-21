@@ -22,7 +22,7 @@ const REASONS: Partial<Record<Permission, string>> = {
  * so the sidebar and top bar stay usable and the URL survives — a silent
  * redirect away from a deep link reads as a bug, not as a permission boundary.
  */
-export function ForbiddenPage({ requires }: { requires?: Permission }) {
+export function ForbiddenPage({ requires }: Readonly<{ requires?: Permission }>) {
   const { user } = useAuth();
   const home = homeRouteFor(user?.role);
 

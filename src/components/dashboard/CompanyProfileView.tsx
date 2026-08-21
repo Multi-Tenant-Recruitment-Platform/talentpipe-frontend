@@ -34,11 +34,11 @@ function Section({
   title,
   variant,
   children,
-}: {
+}: Readonly<{
   title: string;
   variant: CompanyProfileVariant;
   children: ReactNode;
-}) {
+}>) {
   if (variant === 'compact') {
     return (
       <section className="border-t border-slate-100 pt-6">
@@ -64,7 +64,7 @@ export function CompanyProfileView({
   onEdit,
   onPreview,
   variant = 'compact',
-}: {
+}: Readonly<{
   values: CompanyFormValues;
   logoUrl: string | null;
   coverUrl: string | null;
@@ -74,7 +74,7 @@ export function CompanyProfileView({
   /** Opens the candidate's-eye view. Absent on the compact variant. */
   onPreview?: () => void;
   variant?: CompanyProfileVariant;
-}) {
+}>) {
   const profileVariant = variant === 'profile';
   const completeness = profileCompleteness(values, logoUrl !== null);
   const incomplete = completeness.missing.length > 0;

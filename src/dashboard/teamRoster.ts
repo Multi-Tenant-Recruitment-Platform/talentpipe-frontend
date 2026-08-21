@@ -190,7 +190,7 @@ export function selectRoster(rows: RosterRow[], q: RosterQuery): RosterSelection
     segmentCounts,
     otherCount: matched.filter((row) => row.segment === 'other').length,
     // Derived, never hardcoded: an unexpected role stays filterable.
-    roleOptions: Array.from(new Set(rows.map((row) => row.role))).sort(),
+    roleOptions: Array.from(new Set(rows.map((row) => row.role))).sort((a, b) => a.localeCompare(b)),
   };
 }
 

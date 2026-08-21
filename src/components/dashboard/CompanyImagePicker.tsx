@@ -32,7 +32,7 @@ export function CompanyImagePicker({
   disabled = false,
   onPick,
   onRemove,
-}: {
+}: Readonly<{
   kind: CompanyImageKind;
   /** What to show right now: the staged preview, or the stored image. */
   imageUrl: string | null;
@@ -41,7 +41,7 @@ export function CompanyImagePicker({
   disabled?: boolean;
   onPick: (file: File) => void;
   onRemove: () => void;
-}) {
+}>) {
   const inputRef = useRef<HTMLInputElement>(null);
   const label = IMAGE_LABELS[kind];
 

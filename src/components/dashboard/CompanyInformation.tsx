@@ -16,14 +16,14 @@ export function CompanyInformation({
   coverUrl,
   withCover = false,
   headingLevel = 'h3',
-}: {
+}: Readonly<{
   values: CompanyFormValues;
   logoUrl: string | null;
   coverUrl: string | null;
   /** The roomy variant leads with the banner; the settings card does not. */
   withCover?: boolean;
   headingLevel?: 'h2' | 'h3';
-}) {
+}>) {
   const Heading = headingLevel;
 
   return (

@@ -20,10 +20,10 @@ import { CompanyPublicPreview } from './CompanyPublicPreview';
 export function CompanyProfilePanel({
   controller,
   variant = 'compact',
-}: {
+}: Readonly<{
   controller: CompanyProfileController;
   variant?: CompanyProfileVariant;
-}) {
+}>) {
   const {
     saved,
     values,

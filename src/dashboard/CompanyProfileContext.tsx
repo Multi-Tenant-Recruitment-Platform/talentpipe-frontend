@@ -16,7 +16,7 @@ import { useCompanyProfile, type CompanyProfileController } from './useCompanyPr
  */
 const CompanyProfileContext = createContext<CompanyProfileController | null>(null);
 
-export function CompanyProfileProvider({ children }: { children: ReactNode }) {
+export function CompanyProfileProvider({ children }: Readonly<{ children: ReactNode }>) {
   const controller = useCompanyProfile();
   return (
     <CompanyProfileContext.Provider value={controller}>{children}</CompanyProfileContext.Provider>

@@ -14,7 +14,7 @@ import { DetailItem } from './DetailItem';
  * job post render correctly — the currency beside a salary, the zone beside an
  * interview slot.</p>
  */
-export function CompanyOperations({ values }: { values: CompanyFormValues }) {
+export function CompanyOperations({ values }: Readonly<{ values: CompanyFormValues }>) {
   return (
     <div className="space-y-5">
       <div>

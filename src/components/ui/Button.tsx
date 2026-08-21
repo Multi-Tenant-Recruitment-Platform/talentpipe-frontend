@@ -37,10 +37,16 @@ const SIZES: Record<ButtonSize, string> = {
 export const Button = forwardRef<
   HTMLButtonElement,
   { variant?: ButtonVariant; size?: ButtonSize; children: ReactNode } & ButtonHTMLAttributes<HTMLButtonElement>
->(function Button({ variant = 'secondary', size = 'md', className = '', children, ...rest }, ref) {
+>(function Button(
+  { variant = 'secondary', size = 'md', type = 'button', className = '', children, ...rest },
+  ref,
+) {
   return (
+    // Defaulting to 'button': a <button> in a form submits it unless told
+    // otherwise, and every caller that wants that passes type="submit".
     <button
       ref={ref}
+      type={type}
       className={`inline-flex items-center justify-center font-semibold transition-all focus:outline-none focus-visible:ring-4 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:shadow-sm ${SIZES[size]} ${VARIANTS[variant]} ${className}`}
       {...rest}
     >

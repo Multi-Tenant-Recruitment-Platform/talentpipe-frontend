@@ -62,7 +62,15 @@ export function validateImageFile(file: File, kind: CompanyImageKind): string | 
 export function readFileAsDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result));
+    // readAsDataURL always yields a string; the guard states that rather
+    // than stringifying an ArrayBuffer into '[object ArrayBuffer]'.
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        resolve(reader.result);
+      } else {
+        reject(new Error('That image could not be read. Try another file.'));
+      }
+    };
     reader.onerror = () => reject(new Error('That image could not be read. Try another file.'));
     reader.readAsDataURL(file);
   });

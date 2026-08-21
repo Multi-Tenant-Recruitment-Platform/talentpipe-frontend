@@ -38,14 +38,14 @@ export function Alert({
   onDismiss,
   className = '',
   children,
-}: {
+}: Readonly<{
   tone: AlertTone;
   role?: 'alert' | 'status';
   /** When given, renders a dismiss affordance on the right. */
   onDismiss?: () => void;
   className?: string;
   children: ReactNode;
-}) {
+}>) {
   const styles = TONE_STYLES[tone];
   return (
     <div

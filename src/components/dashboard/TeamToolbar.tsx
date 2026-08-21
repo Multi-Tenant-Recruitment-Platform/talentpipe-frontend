@@ -33,7 +33,7 @@ export function TeamToolbar({
   filtersActive,
   onClearFilters,
   disabled = false,
-}: {
+}: Readonly<{
   segment: Segment;
   onSegmentChange: (segment: Segment) => void;
   segmentCounts: Record<Segment, number>;
@@ -47,7 +47,7 @@ export function TeamToolbar({
   filtersActive: boolean;
   onClearFilters: () => void;
   disabled?: boolean;
-}) {
+}>) {
   return (
     <div className="mb-4 flex flex-col gap-3">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

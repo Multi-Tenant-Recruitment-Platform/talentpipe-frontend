@@ -57,10 +57,10 @@ export function LocationProbe() {
 export function RouterHarness({
   initialEntry = '/dashboard',
   children,
-}: {
+}: Readonly<{
   initialEntry?: string;
   children: ReactNode;
-}) {
+}>) {
   return (
     <MemoryRouter initialEntries={[initialEntry]}>
       <LocationProbe />

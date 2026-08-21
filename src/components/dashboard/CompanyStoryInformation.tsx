@@ -7,7 +7,7 @@ import type { CompanyFormValues } from '../../dashboard/companyProfile';
  * statements a company either has or has not written, and an empty "Mission"
  * heading on a candidate-facing page is worse than no heading at all.</p>
  */
-export function CompanyStoryInformation({ values }: { values: CompanyFormValues }) {
+export function CompanyStoryInformation({ values }: Readonly<{ values: CompanyFormValues }>) {
   const hasStatements = values.mission !== '' || values.vision !== '';
 
   return (

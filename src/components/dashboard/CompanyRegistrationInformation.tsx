@@ -10,7 +10,7 @@ import { DetailItem } from './DetailItem';
  * shown verbatim rather than reformatted into a shape that would be wrong
  * somewhere.</p>
  */
-export function CompanyRegistrationInformation({ values }: { values: CompanyFormValues }) {
+export function CompanyRegistrationInformation({ values }: Readonly<{ values: CompanyFormValues }>) {
   return (
     <dl className="grid gap-x-6 gap-y-5 sm:grid-cols-2">
       <DetailItem

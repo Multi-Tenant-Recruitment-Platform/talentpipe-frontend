@@ -21,11 +21,11 @@ function TaxonomyRow({
   label,
   items,
   testId,
-}: {
+}: Readonly<{
   label: string;
   items: string[];
   testId: string;
-}) {
+}>) {
   return (
     <div className="grid gap-1.5 border-t border-slate-100 py-3.5 first:border-t-0 first:pt-0 sm:grid-cols-[11rem_1fr] sm:gap-4">
       <dt className="flex items-baseline gap-1.5 text-xs font-medium uppercase tracking-wide text-slate-400">
@@ -54,7 +54,7 @@ function TaxonomyRow({
   );
 }
 
-export function CompanyOrganization({ values }: { values: CompanyFormValues }) {
+export function CompanyOrganization({ values }: Readonly<{ values: CompanyFormValues }>) {
   return (
     <dl>
       <TaxonomyRow label="Departments" items={values.departments} testId="company-departments" />
@@ -68,7 +68,7 @@ export function CompanyOrganization({ values }: { values: CompanyFormValues }) {
   );
 }
 
-export function CompanyJobTaxonomy({ values }: { values: CompanyFormValues }) {
+export function CompanyJobTaxonomy({ values }: Readonly<{ values: CompanyFormValues }>) {
   return (
     <dl>
       <TaxonomyRow

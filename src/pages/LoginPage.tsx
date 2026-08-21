@@ -71,6 +71,35 @@ const MODES: { id: LoginMode; label: string; icon: ReactNode }[] = [
 ];
 
 /**
+ * The company dashboard is for company roles only — candidates have no tenant
+ * and would hit 403s there, so send them to the job board.
+ */
+function homeFor(role: string): string {
+  return role === 'CANDIDATE' ? '/jobs' : '/dashboard';
+}
+
+/**
+ * What a failed login should say, and whether to offer a resend.
+ *
+ * <p>The backend deliberately returns the same 401 "Invalid credentials"
+ * whether the workspace doesn't exist or the password is wrong — it never
+ * distinguishes them, so a workspace typo can't be confirmed by enumerating
+ * tenants via the error code. Blaming a field here would require a signal the
+ * API intentionally withholds, so this is a single generic error like any
+ * other login failure. Only a 403 naming an unverified account is different,
+ * because there the resend is both useful and safe — the caller has already
+ * proven they know the password.</p>
+ */
+function loginFailure(err: unknown): { message: string; needsVerification: boolean } {
+  const status = axios.isAxiosError(err) ? err.response?.status : undefined;
+  const message = apiErrorMessage(err, 'Login failed. Please try again.');
+  return {
+    message,
+    needsVerification: status === 403 && message.toLowerCase().includes('not verified'),
+  };
+}
+
+/**
  * Login (PB-007), split-screen edition: the brand panel showcases the
  * platform's highlights while the form serves both personas. Company users
  * log in with their subdomain, which travels as the X-Tenant-Subdomain
@@ -128,21 +157,11 @@ export function LoginPage() {
     try {
       const loggedIn = await login(tenant, email, password);
       rememberSubdomain(tenant);
-      // The company dashboard is for company roles only — candidates have no
-      // tenant and would hit 403s there, so send them to the job board.
-      const home = loggedIn.role === 'CANDIDATE' ? '/jobs' : '/dashboard';
-      navigate(state.from ?? home, { replace: true });
+      navigate(state.from ?? homeFor(loggedIn.role), { replace: true });
     } catch (err: unknown) {
-      const status = axios.isAxiosError(err) ? err.response?.status : undefined;
-      const message = apiErrorMessage(err, 'Login failed. Please try again.');
-      // The backend deliberately returns the same 401 "Invalid credentials"
-      // whether the workspace doesn't exist or the password is wrong — it
-      // never distinguishes them, so a workspace typo can't be confirmed by
-      // enumerating tenants via the error code. Blaming the field here would
-      // require a signal the API intentionally withholds, so this is a single
-      // generic error like any other login failure.
-      setError(message);
-      setNeedsVerification(status === 403 && message.toLowerCase().includes('not verified'));
+      const failure = loginFailure(err);
+      setError(failure.message);
+      setNeedsVerification(failure.needsVerification);
     } finally {
       setSubmitting(false);
     }

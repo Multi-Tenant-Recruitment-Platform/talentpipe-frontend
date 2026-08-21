@@ -493,7 +493,10 @@ export function normalizeFormValues(values: CompanyFormValues): CompanyFormValue
 
 // Deliberately permissive: one @, no spaces, a dotted domain. The authority on
 // whether an address exists is the mail server, not a regex.
-const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+// The domain labels exclude '.' so each part of the pattern matches a
+// distinct span: overlapping '[^\s@]+' around the dot backtracks quadratically
+// on a long malformed address.
+const EMAIL = /^[^\s@]+@[^\s@.]+(\.[^\s@.]+)*\.[^\s@.]{2,}$/;
 // Digits with the separators people actually type: + ( ) - and spaces. The
 // leading '(' matters — '(011) 234 5678' is how an area code is usually
 // written, and rejecting it would look like the field is simply broken.
@@ -519,6 +522,20 @@ export function validateCompanyProfile(values: CompanyFormValues): CompanyFieldE
   const n = normalizeFormValues(values);
   const errors: CompanyFieldErrors = {};
 
+  // One pass per family of rules. Split out of a single body that had grown
+  // past the point where the shape of the whole was still readable.
+  checkIdentity(n, errors);
+  checkPhones(n, errors);
+  checkLinks(n, errors);
+  checkNumbers(n, errors);
+  checkPlaceLengths(n, errors);
+  checkStoryLengths(n, errors);
+
+  return errors;
+}
+
+/** The two required fields, plus the optional HR address that must still parse. */
+function checkIdentity(n: CompanyFormValues, errors: CompanyFieldErrors): void {
   if (n.name === '') {
     errors.name = 'Company name is required.';
   } else if (n.name.length > MAX_NAME) {
@@ -534,24 +551,33 @@ export function validateCompanyProfile(values: CompanyFormValues): CompanyFieldE
   if (n.hrEmail !== '' && !EMAIL.test(n.hrEmail)) {
     errors.hrEmail = 'Please enter a valid email address, like careers@abc.com.';
   }
+}
 
+function checkPhones(n: CompanyFormValues, errors: CompanyFieldErrors): void {
   for (const field of ['phone', 'alternativePhone'] as const) {
     if (n[field] !== '' && invalidPhone(n[field])) {
       errors[field] = 'Please enter a valid phone number, like +94 11 234 5678.';
     }
   }
+}
 
+function checkLinks(n: CompanyFormValues, errors: CompanyFieldErrors): void {
   for (const field of URL_FIELDS) {
-    if (n[field] !== '' && !isValidWebsite(n[field])) {
-      errors[field] =
-        field === 'website'
-          ? 'Please enter a valid website, like abc.com or https://abc.com.'
-          : `Please enter a valid ${FIELD_LABELS[field]} link, like ${SOCIAL_PLACEHOLDERS[field as SocialField]}.`;
+    if (n[field] === '' || isValidWebsite(n[field])) {
+      continue;
     }
+    errors[field] =
+      field === 'website'
+        ? 'Please enter a valid website, like abc.com or https://abc.com.'
+        : `Please enter a valid ${FIELD_LABELS[field]} link, like ${SOCIAL_PLACEHOLDERS[field as SocialField]}.`;
   }
+}
 
-  // Both numbers arrive as strings, so "12e4" and "  " have to be rejected
-  // here rather than trusted to have been filtered by the input type.
+/**
+ * Both numbers arrive as strings, so "12e4" and "  " have to be rejected here
+ * rather than trusted to have been filtered by the input type.
+ */
+function checkNumbers(n: CompanyFormValues, errors: CompanyFieldErrors): void {
   if (n.foundedYear !== '') {
     const year = Number(n.foundedYear);
     const thisYear = new Date().getFullYear();
@@ -566,7 +592,10 @@ export function validateCompanyProfile(values: CompanyFormValues): CompanyFieldE
       errors.employeeCount = 'Enter the number of employees as a whole number.';
     }
   }
+}
 
+/** Ceilings on the address block. */
+function checkPlaceLengths(n: CompanyFormValues, errors: CompanyFieldErrors): void {
   if (n.address.length > MAX_ADDRESS) {
     errors.address = `Keep the address under ${MAX_ADDRESS} characters.`;
   }
@@ -582,7 +611,10 @@ export function validateCompanyProfile(values: CompanyFormValues): CompanyFieldE
       errors[field] = `Keep the ${FIELD_LABELS[field].toLowerCase()} under ${MAX_SHORT} characters.`;
     }
   }
+}
 
+/** Ceilings on the free-text story fields. */
+function checkStoryLengths(n: CompanyFormValues, errors: CompanyFieldErrors): void {
   if (n.legalName.length > MAX_NAME) {
     errors.legalName = `Keep the legal name under ${MAX_NAME} characters.`;
   }
@@ -604,8 +636,6 @@ export function validateCompanyProfile(values: CompanyFormValues): CompanyFieldE
       errors[field] = `Keep the ${FIELD_LABELS[field].toLowerCase()} under ${MAX_STATEMENT} characters.`;
     }
   }
-
-  return errors;
 }
 
 /** True when a normalized URL has a host that could plausibly resolve. */

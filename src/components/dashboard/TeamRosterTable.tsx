@@ -38,7 +38,7 @@ export function TeamRosterTable({
   firstLoad,
   refreshing,
   empty,
-}: {
+}: Readonly<{
   rows: RosterRow[];
   sort: SortState;
   onSortChange: (key: SortKey) => void;
@@ -51,7 +51,7 @@ export function TeamRosterTable({
   firstLoad: boolean;
   refreshing: boolean;
   empty: ReactNode;
-}) {
+}>) {
   const showEmpty = !firstLoad && rows.length === 0;
 
   return (
@@ -62,9 +62,7 @@ export function TeamRosterTable({
         <div aria-hidden="true" className="absolute inset-x-0 top-0 h-0.5 animate-pulse bg-indigo-500" />
       )}
       {firstLoad && (
-        <p role="status" className="sr-only">
-          Loading your team…
-        </p>
+        <output className="sr-only">Loading your team…</output>
       )}
 
       <table className="min-w-full divide-y divide-slate-100 text-left">
@@ -73,6 +71,10 @@ export function TeamRosterTable({
           <tr className="text-xs font-semibold uppercase tracking-wide text-slate-500">
             {COLUMNS.map(({ key, label, className }) => {
               const active = sort.key === key;
+              const activeChevron = sort.dir === 'asc' ? 'rotate-90' : '-rotate-90';
+              const chevron = active
+                ? `text-indigo-600 ${activeChevron}`
+                : 'rotate-90 opacity-0 group-hover:opacity-40';
               return (
                 <th
                   key={key}
@@ -90,11 +92,7 @@ export function TeamRosterTable({
                         is the established stand-in elsewhere in the dashboard. */}
                     <Icon
                       name="arrow-left"
-                      className={`h-3 w-3 transition ${
-                        active
-                          ? `text-indigo-600 ${sort.dir === 'asc' ? 'rotate-90' : '-rotate-90'}`
-                          : 'rotate-90 opacity-0 group-hover:opacity-40'
-                      }`}
+                      className={`h-3 w-3 transition ${chevron}`}
                     />
                     <span className="sr-only">Sort by {label.toLowerCase()}</span>
                   </button>
@@ -107,10 +105,12 @@ export function TeamRosterTable({
           </tr>
         </thead>
 
-        <tbody className="divide-y divide-slate-100" aria-busy={refreshing || undefined}>
-          {firstLoad &&
-            [0, 1, 2, 3, 4].map((row) => (
-              <tr key={`skeleton-${row}`} aria-hidden="true" data-testid="roster-skeleton">
+        {/* Its own row group: aria-hidden on a <tr> is invalid — a row can be
+            focusable in a grid — so the placeholder is hidden as a group. */}
+        {firstLoad && (
+          <tbody aria-hidden="true" className="divide-y divide-slate-100">
+            {[0, 1, 2, 3, 4].map((row) => (
+              <tr key={`skeleton-${row}`} data-testid="roster-skeleton">
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-3">
                     <div className="h-8 w-8 shrink-0 animate-pulse rounded-full bg-slate-200" />
@@ -132,7 +132,10 @@ export function TeamRosterTable({
                 <td className="px-6 py-4" />
               </tr>
             ))}
+          </tbody>
+        )}
 
+        <tbody className="divide-y divide-slate-100" aria-busy={refreshing || undefined}>
           {showEmpty && (
             <tr>
               <td colSpan={5}>{empty}</td>
@@ -143,6 +146,7 @@ export function TeamRosterTable({
             rows.map((row) => {
               const busy = busyId === row.id;
               const lastResend = resentAt(row.id);
+              const resendLabel = lastResend ? 'Resend again' : 'Resend';
               return (
                 <tr
                   key={row.id}
@@ -206,11 +210,7 @@ export function TeamRosterTable({
                             onClick={() => onResend(row)}
                           >
                             <Icon name="send" className="h-3.5 w-3.5" />
-                            {busy && busyAction === 'resend'
-                              ? 'Resending…'
-                              : lastResend
-                                ? 'Resend again'
-                                : 'Resend'}
+                            {busy && busyAction === 'resend' ? 'Resending…' : resendLabel}
                           </Button>
                         )}
                         {row.canRevoke && (

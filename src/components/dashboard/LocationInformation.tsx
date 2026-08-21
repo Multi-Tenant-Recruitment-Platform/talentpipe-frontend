@@ -14,7 +14,7 @@ import { Icon } from './Icon';
  * separate fields are what lets jobs be filtered by country later without
  * parsing prose.</p>
  */
-export function LocationInformation({ values }: { values: CompanyFormValues }) {
+export function LocationInformation({ values }: Readonly<{ values: CompanyFormValues }>) {
   return (
     <dl className="grid gap-x-6 gap-y-5 sm:grid-cols-2">
       <DetailItem

@@ -22,12 +22,12 @@ export function CompanyLogo({
   name,
   size = 'md',
   className = '',
-}: {
+}: Readonly<{
   src: string | null;
   name: string;
   size?: CompanyLogoSize;
   className?: string;
-}) {
+}>) {
   const shape = `${SIZES[size]} shrink-0 overflow-hidden ${className}`;
 
   if (src) {

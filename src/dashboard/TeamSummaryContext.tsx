@@ -42,7 +42,7 @@ const TeamSummaryContext = createContext<TeamSummary | null>(null);
  * on the same permission the route guard uses. For any other role this stays
  * empty and non-loading rather than firing a request that can only 403.</p>
  */
-export function TeamSummaryProvider({ children }: { children: ReactNode }) {
+export function TeamSummaryProvider({ children }: Readonly<{ children: ReactNode }>) {
   const allow = useCan();
   const { user } = useAuth();
   const canRead = allow('team.view');

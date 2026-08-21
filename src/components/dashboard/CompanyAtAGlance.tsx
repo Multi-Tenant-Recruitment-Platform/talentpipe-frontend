@@ -23,7 +23,7 @@ interface Stat {
   hint: string;
 }
 
-export function CompanyAtAGlance({ values }: { values: CompanyFormValues }) {
+export function CompanyAtAGlance({ values }: Readonly<{ values: CompanyFormValues }>) {
   const stats: Stat[] = [
     {
       label: 'Departments',

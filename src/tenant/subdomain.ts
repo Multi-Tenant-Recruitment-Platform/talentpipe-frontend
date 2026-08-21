@@ -35,7 +35,10 @@ export function slugifySubdomain(input: string): string {
     // than 'u' plus a diacritic that would turn into a hyphen below.
     .replace(/[\u0300-\u036f]/g, '')
     .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
+    // Runs were already collapsed above, so at most one hyphen can sit at
+    // either end — matching a single one avoids the backtracking that '-+'
+    // costs on a long hyphen run.
+    .replace(/^-|-$/g, '')
     .slice(0, 63);
 }
 

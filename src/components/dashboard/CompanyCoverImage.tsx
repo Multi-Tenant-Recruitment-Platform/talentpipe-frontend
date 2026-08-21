@@ -13,11 +13,11 @@ export function CompanyCoverImage({
   coverUrl,
   logoUrl,
   name,
-}: {
+}: Readonly<{
   coverUrl: string | null;
   logoUrl: string | null;
   name: string;
-}) {
+}>) {
   return (
     <div className="relative">
       <div
