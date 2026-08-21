@@ -6,6 +6,30 @@ on:
   push:
     branches: [master, development]
 
+# ---------------------------------------------------------------------------
+# Static analysis is NOT run from here.
+#
+# SonarCloud is bound to this repository through its GitHub App, which runs
+# Automatic Analysis and posts the "SonarCloud Code Analysis" check on every
+# pull request. SonarCloud refuses CI-based analysis while Automatic Analysis
+# is enabled, so a scanner job in this workflow can only ever fail — which is
+# exactly what it did: the job existed but had never completed successfully,
+# and no coverage measure was ever recorded on the project as a result.
+#
+# If coverage reporting is wanted later (Automatic Analysis cannot run the
+# test suite, so it cannot produce one), the switch is deliberate and has two
+# halves that must happen together:
+#
+#   1. Turn OFF Automatic Analysis:
+#      SonarCloud -> project -> Administration -> Analysis Method
+#   2. Re-add a scanner job here that runs `npm run test:coverage` and then
+#      sonarsource/sonarqube-scan-action, with SONAR_TOKEN in repo secrets.
+#      sonar-project.properties already carries the correct organization,
+#      project key and lcov path for that job.
+#
+# Doing only half of this reintroduces the failure this comment replaces.
+# ---------------------------------------------------------------------------
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -31,34 +55,3 @@ jobs:
 
       - name: Test
         run: npm test
-
-  # Static analysis via SonarCloud (or a self-hosted SonarQube).
-  # Inactive until SONAR_TOKEN is configured — see talentpipe-backend: docs/QUALITY.md.
-  sonar:
-    runs-on: ubuntu-latest
-    env:
-      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL || 'https://sonarcloud.io' }}
-    steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-        with:
-          fetch-depth: 0 # full history for accurate new-code analysis
-
-      - name: Set up Node.js
-        if: ${{ env.SONAR_TOKEN != '' }}
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
-        with:
-          node-version: '20'
-          cache: npm
-
-      # The scanner reads coverage/lcov.info from this workspace, so it has to
-      # be generated in this job — the build job's files are not visible here.
-      - name: Generate coverage
-        if: ${{ env.SONAR_TOKEN != '' }}
-        run: |
-          npm ci --ignore-scripts
-          npm run test:coverage
-
-      - name: Sonar analysis (skipped until SONAR_TOKEN is set)
-        if: ${{ env.SONAR_TOKEN != '' }}
-        uses: sonarsource/sonarqube-scan-action@2f77a1ec69fb1d595b06f35ab27e97605bdef703 # v5
