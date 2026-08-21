@@ -63,13 +63,9 @@ jobs:
           key: ${{ runner.os }}-sonar
           restore-keys: ${{ runner.os }}-sonar
 
-      # Identity (organization/projectKey) lives in sonar-project.properties.
-      # The optional SONAR_ORGANIZATION / SONAR_PROJECT_KEY repo variables
-      # override it, so a renamed SonarCloud project needs no code change.
+      # v6: v5 emits a "no longer supported and contains a security
+      # vulnerability" warning on every run. Analysis settings live in
+      # sonar-project.properties rather than in an `args:` input here.
       - name: Sonar analysis (skipped until SONAR_TOKEN is set)
         if: ${{ env.SONAR_TOKEN != '' }}
-        uses: sonarsource/sonarqube-scan-action@v5
-        with:
-          args: >
-            ${{ vars.SONAR_ORGANIZATION && format('-Dsonar.organization={0}', vars.SONAR_ORGANIZATION) || '' }}
-            ${{ vars.SONAR_PROJECT_KEY && format('-Dsonar.projectKey={0}', vars.SONAR_PROJECT_KEY) || '' }}
+        uses: sonarsource/sonarqube-scan-action@v6
