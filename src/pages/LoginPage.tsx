@@ -165,6 +165,12 @@ export function LoginPage() {
     }
   }
 
+  const submitLabel = submitting
+    ? 'Signing in…'
+    : mode === 'company'
+      ? 'Sign in as company'
+      : 'Sign in as candidate';
+
   return (
     <AuthShell>
       <span className="text-xs font-semibold uppercase tracking-wider text-indigo-600">Sign in</span>
@@ -391,11 +397,7 @@ export function LoginPage() {
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 0 1 8-8V0C5.373 0 0 5.373 0 12h4Z" />
             </svg>
           )}
-          {submitting
-            ? 'Signing in…'
-            : mode === 'company'
-              ? 'Sign in as company'
-              : 'Sign in as candidate'}
+          {submitLabel}
         </button>
       </form>
 

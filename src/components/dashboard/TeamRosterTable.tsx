@@ -62,9 +62,9 @@ export function TeamRosterTable({
         <div aria-hidden="true" className="absolute inset-x-0 top-0 h-0.5 animate-pulse bg-indigo-500" />
       )}
       {firstLoad && (
-        <p role="status" className="sr-only">
+        <output className="sr-only">
           Loading your team…
-        </p>
+        </output>
       )}
 
       <table className="min-w-full divide-y divide-slate-100 text-left">
@@ -143,6 +143,12 @@ export function TeamRosterTable({
             rows.map((row) => {
               const busy = busyId === row.id;
               const lastResend = resentAt(row.id);
+              const resendLabel =
+                busy && busyAction === 'resend'
+                  ? 'Resending…'
+                  : lastResend
+                    ? 'Resend again'
+                    : 'Resend';
               return (
                 <tr
                   key={row.id}
@@ -206,11 +212,7 @@ export function TeamRosterTable({
                             onClick={() => onResend(row)}
                           >
                             <Icon name="send" className="h-3.5 w-3.5" />
-                            {busy && busyAction === 'resend'
-                              ? 'Resending…'
-                              : lastResend
-                                ? 'Resend again'
-                                : 'Resend'}
+                            {resendLabel}
                           </Button>
                         )}
                         {row.canRevoke && (

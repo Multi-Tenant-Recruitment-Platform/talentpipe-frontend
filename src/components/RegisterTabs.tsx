@@ -6,7 +6,7 @@ import { Link } from 'react-router-dom';
  * page — a job seeker who lands on the company form (e.g. via "Get started")
  * can flip straight to candidate sign-up.
  */
-export function RegisterTabs({ active }: { active: 'company' | 'candidate' }) {
+export function RegisterTabs({ active }: Readonly<{ active: 'company' | 'candidate' }>) {
   const base =
     'flex items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-semibold transition-colors';
   const on = 'bg-white text-indigo-700 shadow-sm';

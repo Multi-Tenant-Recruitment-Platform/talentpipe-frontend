@@ -43,7 +43,7 @@ const NOTIFICATIONS = [
   { id: 'n-3', icon: 'briefcase' as IconName, text: '5 new applications for UX Designer', time: '3 hours ago' },
 ];
 
-function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
+function SidebarContent({ onNavigate }: Readonly<{ onNavigate?: () => void }>) {
   const allow = useCan();
   const navItems = NAV_ITEMS.filter((item) => allow(item.permission));
 

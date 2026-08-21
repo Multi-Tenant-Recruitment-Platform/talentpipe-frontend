@@ -35,9 +35,9 @@ export function ForgotPasswordPage() {
 
       {sent ? (
         <div className="mt-6 space-y-5 rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-          <div role="status" className="rounded-md border border-green-200 bg-green-50 p-3 text-sm text-green-700">
+          <output className="block rounded-md border border-green-200 bg-green-50 p-3 text-sm text-green-700">
             If an account exists for {email}, a password reset link is on its way.
-          </div>
+          </output>
           <Link
             to="/login"
             className="block text-center text-sm font-semibold text-indigo-600 hover:text-indigo-500"

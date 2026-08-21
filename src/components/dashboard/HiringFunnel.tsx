@@ -20,7 +20,7 @@ export function stageConversion(stages: FunnelStage[], index: number): number | 
  * Horizontal-bar hiring funnel: each stage scales against the top of the
  * funnel, with stage-to-stage conversion percentages alongside.
  */
-export function HiringFunnel({ stages }: { stages: FunnelStage[] }) {
+export function HiringFunnel({ stages }: Readonly<{ stages: FunnelStage[] }>) {
   const top = stages[0]?.count ?? 1;
 
   return (

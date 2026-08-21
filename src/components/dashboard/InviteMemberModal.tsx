@@ -47,7 +47,7 @@ export function InviteMemberModal({
   error = null,
   errorTone = 'error',
   focusField = null,
-}: {
+}: Readonly<{
   open: boolean;
   onClose: () => void;
   onInvite: (values: InviteFormValues) => void;
@@ -56,7 +56,7 @@ export function InviteMemberModal({
   errorTone?: AlertTone;
   /** Which field the failure points at, so the fix starts in the right place. */
   focusField?: 'email' | null;
-}) {
+}>) {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
@@ -114,6 +114,11 @@ export function InviteMemberModal({
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      // Not a native <dialog>: showModal()/close() are unimplemented in jsdom
+      // (verified against the jsdom version this project tests against), so
+      // that migration would pass in a browser and fail every test that
+      // renders this modal. role="dialog" + aria-modal is the correct ARIA
+      // substitute and is what the focus trap below is built around.
       role="dialog"
       aria-modal="true"
       aria-labelledby="invite-member-title"

@@ -111,9 +111,11 @@ describe('every status stays visible', () => {
     expect(screen.queryByText('Nimal Perera')).toBeNull();
     expect(screen.getByText('Amaya Rathnayake')).toBeInTheDocument();
 
-    // The banner explains where the hidden accounts went.
+    // The banner explains where the hidden accounts went. It's an info-tone
+    // Alert, which renders as a native <output> (not a div[role]) — see
+    // Alert.tsx.
     const banner = screen.getByText(/disabled or awaiting email verification/i);
-    await user.click(within(banner.closest('div[role]') as HTMLElement).getByRole('button', { name: /show all/i }));
+    await user.click(within(banner.closest('output') as HTMLElement).getByRole('button', { name: /show all/i }));
     expect(screen.getByText('Nimal Perera')).toBeInTheDocument();
   });
 });

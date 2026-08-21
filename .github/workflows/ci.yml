@@ -10,18 +10,23 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: '20'
           cache: npm
 
-      # npm run build = tsc (strict type-check) + vite production build
+      # npm run build = tsc (strict type-check) + vite production build.
+      # --ignore-scripts: no dependency here needs an install-time script —
+      # esbuild (vite's bundler) resolves its native binary through
+      # optionalDependencies, which npm installs regardless of this flag, so
+      # skipping lifecycle scripts costs nothing and closes off arbitrary code
+      # execution from a compromised package's postinstall hook.
       - name: Install, type-check and build
         run: |
-          npm ci
+          npm ci --ignore-scripts
           npm run build
 
       - name: Test
@@ -35,13 +40,13 @@ jobs:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL || 'https://sonarcloud.io' }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           fetch-depth: 0 # full history for accurate new-code analysis
 
       - name: Set up Node.js
         if: ${{ env.SONAR_TOKEN != '' }}
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: '20'
           cache: npm
@@ -51,9 +56,9 @@ jobs:
       - name: Generate coverage
         if: ${{ env.SONAR_TOKEN != '' }}
         run: |
-          npm ci
+          npm ci --ignore-scripts
           npm run test:coverage
 
       - name: Sonar analysis (skipped until SONAR_TOKEN is set)
         if: ${{ env.SONAR_TOKEN != '' }}
-        uses: sonarsource/sonarqube-scan-action@v5
+        uses: sonarsource/sonarqube-scan-action@2f77a1ec69fb1d595b06f35ab27e97605bdef703 # v5

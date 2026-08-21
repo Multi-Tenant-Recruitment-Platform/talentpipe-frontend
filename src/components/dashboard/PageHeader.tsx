@@ -12,12 +12,12 @@ export function PageHeader({
   title,
   subtitle,
   children,
-}: {
+}: Readonly<{
   eyebrow?: string;
   title: string;
   subtitle?: string;
   children?: ReactNode;
-}) {
+}>) {
   return (
     <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
       <div className="min-w-0">

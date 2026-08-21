@@ -46,6 +46,7 @@ export function Layout() {
                   </NavLink>
                 )}
                 <button
+                  type="button"
                   onClick={() => void handleLogout()}
                   className="ml-1 rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
                 >

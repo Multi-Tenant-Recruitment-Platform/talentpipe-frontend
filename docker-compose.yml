@@ -24,11 +24,14 @@ services:
         VITE_APP_ROOT_DOMAIN: ${VITE_APP_ROOT_DOMAIN:-talentpipe.io}
     container_name: talentpipe-frontend
     ports:
-      # 5173 matches the backend's FRONTEND_BASE_URL default, so the links it
-      # puts in invitation and verification emails resolve against this
-      # container with no backend reconfiguration. Note this is the same port
-      # `npm run dev` uses — run one or the other, not both.
-      - "${FRONTEND_PORT:-5173}:80"
+      # Host side (5173) matches the backend's FRONTEND_BASE_URL default, so
+      # the links it puts in invitation and verification emails resolve
+      # against this container with no backend reconfiguration. Note this is
+      # the same port `npm run dev` uses — run one or the other, not both.
+      #
+      # Container side (8080) because nginx runs as a non-root user inside the
+      # container and cannot bind a port below 1024 — see Dockerfile.
+      - "${FRONTEND_PORT:-5173}:8080"
     environment:
       # No trailing slash; nginx appends the request URI.
       BACKEND_ORIGIN: ${BACKEND_ORIGIN:-http://host.docker.internal:8080}
@@ -36,7 +39,7 @@ services:
       # Required on Linux, harmless on Docker Desktop, where it already exists.
       - "host.docker.internal:host-gateway"
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/healthz"]
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]
       interval: 15s
       timeout: 3s
       start_period: 5s

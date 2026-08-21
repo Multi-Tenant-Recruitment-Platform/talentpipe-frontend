@@ -15,14 +15,14 @@ export function Card({
   children,
   className = '',
   bodyClassName = '',
-}: {
+}: Readonly<{
   title?: string;
   subtitle?: string;
   action?: ReactNode;
   children: ReactNode;
   className?: string;
   bodyClassName?: string;
-}) {
+}>) {
   return (
     <section
       className={`rounded-2xl border border-slate-200/80 bg-white shadow-sm shadow-slate-900/5 ring-1 ring-slate-900/5 ${className}`}
