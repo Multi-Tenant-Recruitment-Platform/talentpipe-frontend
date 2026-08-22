@@ -28,14 +28,27 @@ jobs:
         run: npm test
 
   # Static analysis via SonarCloud (or a self-hosted SonarQube).
-  # Inactive until SONAR_TOKEN is configured — see talentpipe-backend: docs/QUALITY.md.
+  # Needs SONAR_TOKEN — see talentpipe-backend: docs/QUALITY.md.
   #
-  # This job is the project's only analysis: Automatic Analysis must stay OFF
-  # in SonarCloud (Project → Administration → Analysis Method). The scanner
-  # refuses to run alongside it ("You are running CI analysis while Automatic
-  # Analysis is enabled", exit 3), and only a CI run can upload the coverage
-  # report the quality gate reads.
+  # Opted in by the SONAR_CI_ANALYSIS repository variable, because SonarCloud
+  # allows a project exactly one analysis method. While Automatic Analysis is
+  # enabled server-side, the scanner refuses to run at all — it aborts with
+  # "You are running CI analysis while Automatic Analysis is enabled" and exits
+  # 3 before uploading anything. That check reads the project's server-side
+  # setting, so no file in this repository can satisfy it; running the job
+  # anyway just paints the pull request red next to a green Automatic Analysis.
+  #
+  # To hand analysis over to CI — worth doing, because this is the only method
+  # that imports coverage/lcov.info, so coverage conditions on the quality gate
+  # measure something real rather than reporting N/A:
+  #   1. SonarCloud → project → Administration → Analysis Method →
+  #      turn Automatic Analysis OFF.
+  #   2. GitHub → Settings → Secrets and variables → Actions → Variables →
+  #      set SONAR_CI_ANALYSIS = true.
+  # Both steps, in that order. Until then Automatic Analysis stays the project's
+  # analysis and reports as the separate "SonarCloud Code Analysis" check.
   sonar:
+    if: ${{ vars.SONAR_CI_ANALYSIS == 'true' }}
     runs-on: ubuntu-latest
     env:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
