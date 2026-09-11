@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api/client';
+import { inputClass } from '../components/ui/inputClass';
 
 /**
  * Password-reset request. The confirmation is intentionally identical whether
@@ -25,10 +26,6 @@ export function ForgotPasswordPage() {
     }
   }
 
-  const inputClass =
-    'mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm ' +
-    'focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500';
-
   return (
     <section className="mx-auto max-w-md">
       <h1 className="text-3xl font-bold tracking-tight">Reset your password</h1>
@@ -38,9 +35,9 @@ export function ForgotPasswordPage() {
 
       {sent ? (
         <div className="mt-6 space-y-5 rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-          <div role="status" className="rounded-md border border-green-200 bg-green-50 p-3 text-sm text-green-700">
+          <output className="block rounded-md border border-green-200 bg-green-50 p-3 text-sm text-green-700">
             If an account exists for {email}, a password reset link is on its way.
-          </div>
+          </output>
           <Link
             to="/login"
             className="block text-center text-sm font-semibold text-indigo-600 hover:text-indigo-500"

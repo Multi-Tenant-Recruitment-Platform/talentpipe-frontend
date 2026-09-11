@@ -6,36 +6,133 @@ on:
   push:
     branches: [master, development]
 
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: '20'
           cache: npm
 
-      # npm run build = tsc (strict type-check) + vite production build
+      # npm run build = tsc (strict type-check) + vite production build.
+      # --ignore-scripts: no dependency here needs an install-time script —
+      # esbuild (vite's bundler) resolves its native binary through
+      # optionalDependencies, which npm installs regardless of this flag, so
+      # skipping lifecycle scripts costs nothing and closes off arbitrary code
+      # execution from a compromised package's postinstall hook.
       - name: Install, type-check and build
         run: |
-          npm ci
+          npm ci --ignore-scripts
           npm run build
 
-  # Static analysis via SonarCloud (or a self-hosted SonarQube).
-  # Inactive until SONAR_TOKEN is configured — see talentpipe-backend: docs/QUALITY.md.
+      - name: Test
+        run: npm test
+
+  # -------------------------------------------------------------------------
+  # SonarCloud quality gate.
+  #
+  # This job does NOT run a scanner. SonarCloud analyses this repository with
+  # Automatic Analysis (the GitHub App), and running a CI scan alongside it is
+  # rejected by SonarCloud outright — that is what left the previous version of
+  # this job permanently skipped. Instead this job *asserts* on the analysis
+  # that Automatic Analysis already produced, which needs no SONAR_TOKEN: the
+  # project is public, so its quality gate is readable anonymously.
+  #
+  # The value it adds over the "SonarCloud Code Analysis" check is the SHA
+  # match below. It refuses to pass on a gate computed for some earlier commit,
+  # and it fails — rather than silently passing — if no analysis for this commit
+  # ever arrives.
+  #
+  # Enforced on pull requests only: that is where a gate can still stop bad code,
+  # and where Automatic Analysis reliably reports. On push the merge has already
+  # happened, and `development` carries no computed gate to assert on.
+  # -------------------------------------------------------------------------
   sonar:
     runs-on: ubuntu-latest
-    env:
-      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL || 'https://sonarcloud.io' }}
+    if: github.event_name == 'pull_request'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
-          fetch-depth: 0 # full history for accurate new-code analysis
+          fetch-depth: 1 # only sonar-project.properties is read from the tree
 
-      - name: Sonar analysis (skipped until SONAR_TOKEN is set)
-        if: ${{ env.SONAR_TOKEN != '' }}
-        uses: sonarsource/sonarqube-scan-action@v5
+      - name: Await SonarCloud analysis and enforce the quality gate
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          TIMEOUT_SECONDS: '900'
+        run: |
+          set -euo pipefail
+
+          API=https://sonarcloud.io/api
+          # Single source of truth for the key — it is already correct here.
+          PROJECT=$(sed -n 's/^sonar\.projectKey=//p' sonar-project.properties | tr -d '[:space:]')
+          if [ -z "$PROJECT" ]; then
+            echo "::error::sonar.projectKey is missing from sonar-project.properties"
+            exit 1
+          fi
+          echo "Project: $PROJECT"
+          echo "PR #$PR_NUMBER, head $HEAD_SHA"
+
+          # Automatic Analysis is triggered by the push, so it may still be in
+          # flight when this job starts. Wait for the analysis whose commit is
+          # exactly this head SHA.
+          analyzed=""
+          deadline=$(( SECONDS + TIMEOUT_SECONDS ))
+          while :; do
+            body=$(curl -sS --fail-with-body --max-time 30 \
+              "$API/project_pull_requests/list?project=$PROJECT") || body=""
+
+            if [ -n "$body" ]; then
+              analyzed=$(printf '%s' "$body" \
+                | jq -r --arg pr "$PR_NUMBER" \
+                    '.pullRequests[]? | select(.key == $pr) | .commit.sha // ""')
+              # Explicit if, not `[ ... ] && break`: under `set -e` a false
+              # test as the last statement of this block aborts the job.
+              if [ "$analyzed" = "$HEAD_SHA" ]; then
+                break
+              fi
+            fi
+
+            if [ "$SECONDS" -ge "$deadline" ]; then
+              echo "::error::No SonarCloud analysis for $HEAD_SHA after ${TIMEOUT_SECONDS}s (latest analysed commit: ${analyzed:-none}). Automatic Analysis did not report for this commit."
+              exit 1
+            fi
+            echo "Waiting for analysis of $HEAD_SHA (latest: ${analyzed:-none})..."
+            sleep 15
+          done
+
+          echo "Analysis found for $HEAD_SHA."
+
+          gate=$(curl -sS --fail-with-body --max-time 30 \
+            "$API/qualitygates/project_status?projectKey=$PROJECT&pullRequest=$PR_NUMBER")
+
+          status=$(printf '%s' "$gate" | jq -r '.projectStatus.status')
+
+          {
+            echo "### SonarCloud quality gate: \`$status\`"
+            echo ""
+            echo "Analysed commit \`$HEAD_SHA\`"
+            echo ""
+            echo "| Condition | Status | Actual | Threshold |"
+            echo "|---|---|---|---|"
+            printf '%s' "$gate" | jq -r '
+              .projectStatus.conditions[]?
+              | "| \(.metricKey) | \(.status) | \(.actualValue // "-") | \(.comparator) \(.errorThreshold) |"'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [ "$status" != "OK" ]; then
+            printf '%s' "$gate" | jq -r '
+              .projectStatus.conditions[]? | select(.status != "OK")
+              | "::error::Quality gate condition failed: \(.metricKey) = \(.actualValue) (must not be \(.comparator) \(.errorThreshold))"'
+            echo "::error::SonarCloud quality gate status is $status (expected OK)."
+            exit 1
+          fi
+
+          echo "Quality gate passed."

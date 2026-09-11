@@ -22,19 +22,23 @@ export function Avatar({
   lastName,
   size = 'md',
   className = '',
-}: {
+}: Readonly<{
   firstName: string;
   lastName?: string;
   size?: keyof typeof SIZES;
   className?: string;
-}) {
+}>) {
   const full = `${firstName} ${lastName ?? ''}`.trim();
   const initials = full
     .split(/\s+/)
     .slice(0, 2)
     .map((part) => part.charAt(0).toUpperCase())
     .join('');
-  const hash = [...full].reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
+  // codePointAt over charCodeAt: charCodeAt reads one UTF-16 code unit, which
+  // splits a surrogate pair (e.g. an emoji in a name) into two mismatched
+  // halves. The tint only needs a stable number, but it should be stable per
+  // character, not per code unit.
+  const hash = [...full].reduce((acc, ch) => acc + (ch.codePointAt(0) ?? 0), 0);
   const tone = PALETTE[hash % PALETTE.length];
 
   return (

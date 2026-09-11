@@ -10,6 +10,16 @@ import {
 import { api, SESSION_EXPIRED_EVENT } from '../api/client';
 import { tokenStore } from '../api/tokenStore';
 import type { AuthResponse, RegisterRequest, RegisterResponse, UserResponse } from '../api/types';
+import {
+  activeTenant,
+  TENANT_MISMATCH_EVENT,
+  watchCrossTabTenantChange,
+  type TenantMismatchDetail,
+} from '../tenant/activeTenant';
+import { resolveTenantHost } from '../tenant/subdomain';
+
+/** Why the last session ended, so the login page can explain itself. */
+export type SessionEndReason = 'expired' | 'tenant-mismatch';
 
 /**
  * Application auth state. The access token itself lives in the token store
@@ -21,6 +31,8 @@ interface AuthContextValue {
   user: UserResponse | null;
   /** True while the initial session restore (refresh-token exchange) runs. */
   initializing: boolean;
+  /** Set when a session ended by itself rather than by the user logging out. */
+  sessionEndReason: SessionEndReason | null;
   login: (subdomain: string, email: string, password: string) => Promise<UserResponse>;
   register: (request: RegisterRequest) => Promise<RegisterResponse>;
   logout: () => Promise<void>;
@@ -28,18 +40,25 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-export function AuthProvider({ children }: { children: ReactNode }) {
+export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   const [user, setUser] = useState<UserResponse | null>(null);
   const [initializing, setInitializing] = useState(true);
+  const [sessionEndReason, setSessionEndReason] = useState<SessionEndReason | null>(null);
 
   const applyAuth = useCallback((auth: AuthResponse) => {
     tokenStore.setAccessToken(auth.accessToken);
     tokenStore.setRefreshToken(auth.refreshToken);
+    // Stamp the workspace this session belongs to. Covers login and the
+    // startup refresh alike, so a hard reload re-stamps from the authoritative
+    // response. Null for candidates, which leaves the tenant guard inert.
+    activeTenant.set(auth.user.tenantId);
     setUser(auth.user);
+    setSessionEndReason(null);
   }, []);
 
   const clearAuth = useCallback(() => {
     tokenStore.clear();
+    activeTenant.clear();
     setUser(null);
   }, []);
 
@@ -54,7 +73,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
       try {
-        const { data } = await api.post<AuthResponse>('/auth/refresh', { refreshToken });
+        // Send the tenant header when the host pins one, so a backend that
+        // later requires it on refresh doesn't silently break reloads on a
+        // workspace subdomain. Harmless if the backend ignores it.
+        const host = resolveTenantHost();
+        const { data } = await api.post<AuthResponse>(
+          '/auth/refresh',
+          { refreshToken },
+          host.subdomain ? { headers: { 'X-Tenant-Subdomain': host.subdomain } } : undefined,
+        );
         if (!cancelled) {
           applyAuth(data);
         }
@@ -76,9 +103,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // The API client signals an unrecoverable 401 (refresh failed) here.
   useEffect(() => {
-    const onExpired = () => clearAuth();
+    const onExpired = () => {
+      clearAuth();
+      setSessionEndReason('expired');
+    };
     window.addEventListener(SESSION_EXPIRED_EVENT, onExpired);
     return () => window.removeEventListener(SESSION_EXPIRED_EVENT, onExpired);
+  }, [clearAuth]);
+
+  // A response arrived for another workspace, or another tab signed into one.
+  // Ends the session locally and deliberately does NOT call /auth/logout: the
+  // session state is exactly what we have stopped trusting.
+  useEffect(() => {
+    const onMismatch = (event: Event) => {
+      if (import.meta.env.DEV) {
+        console.error('[tenant] mismatch', (event as CustomEvent<TenantMismatchDetail>).detail);
+      }
+      clearAuth();
+      setSessionEndReason('tenant-mismatch');
+    };
+    window.addEventListener(TENANT_MISMATCH_EVENT, onMismatch);
+    const unwatch = watchCrossTabTenantChange();
+    return () => {
+      window.removeEventListener(TENANT_MISMATCH_EVENT, onMismatch);
+      unwatch();
+    };
   }, [clearAuth]);
 
   const login = useCallback(
@@ -116,8 +165,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [clearAuth]);
 
   const value = useMemo(
-    () => ({ user, initializing, login, register, logout }),
-    [user, initializing, login, register, logout],
+    () => ({ user, initializing, sessionEndReason, login, register, logout }),
+    [user, initializing, sessionEndReason, login, register, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

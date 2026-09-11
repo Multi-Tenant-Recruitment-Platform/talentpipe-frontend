@@ -4,9 +4,10 @@ import { api, apiErrorMessage } from '../api/client';
 import type { CandidateRegisterRequest } from '../api/types';
 import { AuthShell } from '../components/AuthShell';
 import { RegisterTabs } from '../components/RegisterTabs';
+import { inputClass } from '../components/ui/inputClass';
 
 /** Small divider that labels a group of fields inside the form. */
-function SectionLabel({ children }: { children: ReactNode }) {
+function SectionLabel({ children }: Readonly<{ children: ReactNode }>) {
   return (
     <div className="flex items-center gap-3" aria-hidden="true">
       <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">{children}</span>
@@ -58,10 +59,6 @@ export function CandidateRegisterPage() {
       setSubmitting(false);
     }
   }
-
-  const inputClass =
-    'mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm ' +
-    'focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500';
 
   return (
     <AuthShell>

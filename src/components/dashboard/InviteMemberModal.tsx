@@ -1,5 +1,9 @@
-import { useEffect, useState, type FormEvent } from 'react';
-import type { InvitableRole } from '../../data/mockDashboard';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
+import type { InvitableRole } from '../../api/types';
+import { Alert, type AlertTone } from '../ui/Alert';
+import { Button } from '../ui/Button';
+import { inputClass } from '../ui/inputClass';
+import { useFocusTrap } from '../ui/useFocusTrap';
 import { Icon, type IconName } from './Icon';
 
 export interface InviteFormValues {
@@ -7,7 +11,6 @@ export interface InviteFormValues {
   lastName: string;
   email: string;
   role: InvitableRole;
-  note: string;
 }
 
 const ROLE_OPTIONS: { id: InvitableRole; label: string; description: string; icon: IconName }[] = [
@@ -25,42 +28,74 @@ const ROLE_OPTIONS: { id: InvitableRole; label: string; description: string; ico
   },
 ];
 
-const inputClass =
-  'mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm ' +
-  'focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500';
-
 /**
  * Invitation dialog used by the company admin to bring HR managers and
- * interviewers onto the platform. Closes on Escape or backdrop click.
+ * interviewers onto the platform.
  *
+ * <p>Failures are rendered <em>inside</em> the dialog. They previously went to
+ * a page-level alert that the backdrop covered, and the form cleared itself
+ * the instant Send was pressed — so a duplicate-email rejection looked like
+ * the form had simply wiped what you typed, with no explanation anywhere.
+ * Fields now reset when the dialog opens, not when it submits, so a rejected
+ * attempt keeps its values and can be corrected.</p>
  */
 export function InviteMemberModal({
   open,
   onClose,
   onInvite,
-}: {
+  submitting = false,
+  error = null,
+  errorTone = 'error',
+  focusField = null,
+}: Readonly<{
   open: boolean;
   onClose: () => void;
   onInvite: (values: InviteFormValues) => void;
-}) {
+  submitting?: boolean;
+  error?: string | null;
+  errorTone?: AlertTone;
+  /** Which field the failure points at, so the fix starts in the right place. */
+  focusField?: 'email' | null;
+}>) {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<InvitableRole>('HR_MANAGER');
-  const [note, setNote] = useState('');
+
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const firstFieldRef = useRef<HTMLInputElement>(null);
+  const emailRef = useRef<HTMLInputElement>(null);
+
+  useFocusTrap(dialogRef, open, { initialFocusRef: firstFieldRef });
+
+  // Note there is deliberately no reset effect here. The parent unmounts this
+  // component when the dialog closes, so the useState initialisers above give
+  // every open a clean form. An effect that cleared the fields on `open` would
+  // run after the first paint — briefly showing the previous values, and
+  // racing anything typed in that window. Crucially, the form is never cleared
+  // on submit: a rejected attempt must keep what the admin typed so they can
+  // correct one field instead of retyping everything.
+
+  useEffect(() => {
+    if (open && focusField === 'email') {
+      emailRef.current?.focus();
+      emailRef.current?.select();
+    }
+  }, [open, focusField, error]);
 
   useEffect(() => {
     if (!open) {
       return;
     }
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
+      // Ignored mid-flight — the invitation may already have been created.
+      if (event.key === 'Escape' && !submitting) {
         onClose();
       }
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [open, onClose]);
+  }, [open, submitting, onClose]);
 
   if (!open) {
     return null;
@@ -68,23 +103,38 @@ export function InviteMemberModal({
 
   function handleSubmit(event: FormEvent) {
     event.preventDefault();
-    onInvite({ firstName: firstName.trim(), lastName: lastName.trim(), email: email.trim(), role, note: note.trim() });
-    setFirstName('');
-    setLastName('');
-    setEmail('');
-    setRole('HR_MANAGER');
-    setNote('');
+    onInvite({
+      firstName: firstName.trim(),
+      lastName: lastName.trim(),
+      email: email.trim(),
+      role,
+    });
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="invite-member-title">
-      <button
-        type="button"
-        aria-label="Close dialog"
-        onClick={onClose}
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      // Not a native <dialog>: showModal()/close() are unimplemented in jsdom
+      // (verified against the jsdom version this project tests against), so
+      // that migration would pass in a browser and fail every test that
+      // renders this modal. role="dialog" + aria-modal is the correct ARIA
+      // substitute and is what the focus trap below is built around.
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="invite-member-title"
+    >
+      {/* Not a button: a focusable backdrop is an unlabelled tab stop that sits
+          before the dialog content and duplicates the header's close control. */}
+      <div
+        aria-hidden="true"
+        onClick={() => !submitting && onClose()}
         className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm"
       />
-      <div className="relative w-full max-w-lg rounded-2xl bg-white shadow-2xl">
+
+      <div
+        ref={dialogRef}
+        className="relative max-h-full w-full max-w-lg overflow-y-auto rounded-3xl bg-white shadow-2xl shadow-slate-900/20 ring-1 ring-slate-900/5"
+      >
         <header className="flex items-start justify-between gap-4 border-b border-slate-100 px-6 py-5">
           <div className="flex items-center gap-3">
             <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-600 to-violet-600 text-white">
@@ -94,13 +144,16 @@ export function InviteMemberModal({
               <h2 id="invite-member-title" className="text-base font-semibold text-slate-900">
                 Invite team member
               </h2>
-              <p className="text-xs text-slate-500">They'll receive an email with a link to join your workspace.</p>
+              <p className="text-xs text-slate-500">
+                They&apos;ll get an email with a link to join your workspace. It expires in 7 days.
+              </p>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+            disabled={submitting}
+            className="rounded-md p-1 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 disabled:opacity-60"
             aria-label="Close"
           >
             <Icon name="x-mark" className="h-5 w-5" />
@@ -108,6 +161,8 @@ export function InviteMemberModal({
         </header>
 
         <form onSubmit={handleSubmit} className="space-y-5 px-6 py-6">
+          {error && <Alert tone={errorTone}>{error}</Alert>}
+
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <label htmlFor="invite-first-name" className="block text-sm font-medium text-slate-700">
@@ -115,7 +170,9 @@ export function InviteMemberModal({
               </label>
               <input
                 id="invite-first-name"
+                ref={firstFieldRef}
                 required
+                disabled={submitting}
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
                 className={inputClass}
@@ -130,6 +187,7 @@ export function InviteMemberModal({
               <input
                 id="invite-last-name"
                 required
+                disabled={submitting}
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
                 className={inputClass}
@@ -145,8 +203,10 @@ export function InviteMemberModal({
             </label>
             <input
               id="invite-email"
+              ref={emailRef}
               type="email"
               required
+              disabled={submitting}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className={inputClass}
@@ -155,7 +215,7 @@ export function InviteMemberModal({
             />
           </div>
 
-          <fieldset>
+          <fieldset disabled={submitting}>
             <legend className="block text-sm font-medium text-slate-700">Role</legend>
             <div className="mt-2 grid gap-3 sm:grid-cols-2">
               {ROLE_OPTIONS.map((option) => {
@@ -166,52 +226,39 @@ export function InviteMemberModal({
                     type="button"
                     onClick={() => setRole(option.id)}
                     aria-pressed={selected}
-                    className={`rounded-lg border p-3 text-left transition-colors ${
+                    className={`rounded-xl border p-3 text-left transition-all focus:outline-none focus-visible:ring-4 focus-visible:ring-indigo-500/20 ${
                       selected
                         ? 'border-indigo-600 bg-indigo-50/60 ring-1 ring-indigo-600'
                         : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
                     }`}
                   >
-                    <span className={`flex h-8 w-8 items-center justify-center rounded-md ${selected ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-500'}`}>
+                    <span
+                      className={`flex h-8 w-8 items-center justify-center rounded-lg ${
+                        selected
+                          ? 'bg-gradient-to-br from-indigo-600 to-violet-600 text-white'
+                          : 'bg-slate-100 text-slate-500'
+                      }`}
+                    >
                       <Icon name={option.icon} className="h-4 w-4" />
                     </span>
                     <span className="mt-2 block text-sm font-semibold text-slate-900">{option.label}</span>
-                    <span className="mt-0.5 block text-xs leading-relaxed text-slate-500">{option.description}</span>
+                    <span className="mt-0.5 block text-xs leading-relaxed text-slate-500">
+                      {option.description}
+                    </span>
                   </button>
                 );
               })}
             </div>
           </fieldset>
 
-          <div>
-            <label htmlFor="invite-note" className="block text-sm font-medium text-slate-700">
-              Personal note <span className="font-normal text-slate-400">(optional)</span>
-            </label>
-            <textarea
-              id="invite-note"
-              rows={3}
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              className={`${inputClass} resize-none`}
-              placeholder="Add a short welcome message to the invitation email…"
-            />
-          </div>
-
           <div className="flex items-center justify-end gap-3 border-t border-slate-100 pt-5">
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-md px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100"
-            >
+            <Button type="button" variant="ghost" onClick={onClose} disabled={submitting}>
               Cancel
-            </button>
-            <button
-              type="submit"
-              className="inline-flex items-center gap-2 rounded-md bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-opacity hover:opacity-90"
-            >
+            </Button>
+            <Button type="submit" variant="primary" disabled={submitting}>
               <Icon name="send" className="h-4 w-4" />
-              Send invitation
-            </button>
+              {submitting ? 'Sending…' : 'Send invitation'}
+            </Button>
           </div>
         </form>
       </div>

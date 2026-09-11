@@ -1,3 +1,20 @@
+# Build inputs only. Everything here either bloats the context, invalidates
+# layer caching needlessly, or must not end up inside an image layer.
 node_modules
 dist
+coverage
 .git
+.github
+.claude
+
+# Vite reads .env during `npm run build`, so keeping these out is what makes
+# the image depend on the build ARGs alone rather than on whatever happens to
+# be in a developer's working copy.
+.env
+.env.*
+
+*.log
+*.md
+Dockerfile
+.dockerignore
+docker-compose.yml

@@ -1,18 +1,40 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
+import type { Permission } from '../auth/permissions';
+import { useCan } from '../auth/useCan';
 import { Avatar } from '../components/dashboard/Avatar';
-import { Badge } from '../components/dashboard/Badge';
 import { Icon, type IconName } from '../components/dashboard/Icon';
-import { planUsage } from '../data/mockDashboard';
-import { formatRole } from '../utils/format';
+import { RoleBadge } from '../components/dashboard/RoleBadge';
+import { CompanyLogo } from '../components/dashboard/CompanyLogo';
+import { CompanyProfileProvider, useCompanyIdentity } from '../dashboard/CompanyProfileContext';
+import { TeamSummaryProvider } from '../dashboard/TeamSummaryContext';
+import { activeTenant } from '../tenant/activeTenant';
+import { resolveTenantHost, ROOT_DOMAIN } from '../tenant/subdomain';
+import { tenantStorage } from '../utils/tenantStorage';
 
-const NAV_ITEMS: { to: string; label: string; icon: IconName; end?: boolean }[] = [
-  { to: '/dashboard', label: 'Overview', icon: 'squares-2x2', end: true },
-  { to: '/dashboard/team', label: 'Team', icon: 'users' },
-  { to: '/dashboard/pipeline', label: 'Pipeline', icon: 'funnel' },
-  { to: '/dashboard/settings', label: 'Company Settings', icon: 'cog' },
+/** Each entry names the permission that earns it a place in the sidebar. */
+const NAV_ITEMS: {
+  to: string;
+  label: string;
+  icon: IconName;
+  end?: boolean;
+  permission: Permission;
+}[] = [
+  { to: '/dashboard', label: 'Overview', icon: 'squares-2x2', end: true, permission: 'overview.view' },
+  { to: '/dashboard/team', label: 'Team', icon: 'users', permission: 'team.view' },
+  { to: '/dashboard/pipeline', label: 'Pipeline', icon: 'funnel', permission: 'pipeline.view' },
+  {
+    to: '/dashboard/profile',
+    label: 'Profile Management',
+    icon: 'building',
+    permission: 'company.profile.view',
+  },
+  { to: '/dashboard/settings', label: 'Company Settings', icon: 'cog', permission: 'settings.view' },
 ];
+
+/** Notification dismissals are per-workspace, like everything else cached. */
+const NOTIFICATIONS_SEEN = 'notifications.seen';
 
 /** Mock notification list — TODO(sprint2): wire to the notification module. */
 const NOTIFICATIONS = [
@@ -21,83 +43,69 @@ const NOTIFICATIONS = [
   { id: 'n-3', icon: 'briefcase' as IconName, text: '5 new applications for UX Designer', time: '3 hours ago' },
 ];
 
-function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
-  const { user } = useAuth();
-  const seatsPercent = Math.round((planUsage.seatsUsed / planUsage.seatsTotal) * 100);
+function SidebarContent({ onNavigate }: Readonly<{ onNavigate?: () => void }>) {
+  const allow = useCan();
+  const navItems = NAV_ITEMS.filter((item) => allow(item.permission));
 
   return (
-    <div className="flex h-full flex-col bg-slate-900">
+    // Light chrome: the sidebar recedes so the workspace data is the only
+    // thing competing for attention. Brand colour is spent on one mark and
+    // the active nav row, nowhere else.
+    <div className="flex h-full flex-col border-r border-slate-200 bg-white">
       {/* Brand */}
-      <div className="flex h-16 items-center gap-2.5 border-b border-white/10 px-6">
-        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-violet-500 text-white">
+      <div className="flex h-16 items-center gap-2.5 border-b border-slate-200 px-6">
+        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-600 to-violet-600 text-white shadow-sm">
           <Icon name="funnel" className="h-4 w-4" />
         </span>
-        <span className="text-lg font-bold tracking-tight text-white">TalentPipe</span>
+        <span className="text-lg font-bold tracking-tight text-slate-900">TalentPipe</span>
       </div>
 
-      {/* Workspace identity */}
-      <div className="mx-4 mt-5 flex items-center gap-3 rounded-lg bg-white/5 px-3 py-2.5">
-        <Avatar firstName={user?.tenantName ?? 'Workspace'} size="sm" className="rounded-md" />
-        <div className="min-w-0">
-          <p className="truncate text-sm font-semibold text-white">{user?.tenantName ?? 'Workspace'}</p>
-          <p className="text-xs text-slate-400">Company workspace</p>
-        </div>
-      </div>
-
-      {/* Primary navigation */}
+      {/* Primary navigation — only what this role may actually open. */}
       <nav className="mt-6 flex-1 space-y-1 px-4">
-        {NAV_ITEMS.map((item) => (
+        <p className="px-3 pb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400">Menu</p>
+        {navItems.map((item) => (
           <NavLink
             key={item.to}
             to={item.to}
             end={item.end}
             onClick={onNavigate}
             className={({ isActive }) =>
-              `group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+              `group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 ${
                 isActive
-                  ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-md shadow-indigo-950/40'
-                  : 'text-slate-400 hover:bg-white/5 hover:text-white'
+                  ? 'bg-indigo-50 text-indigo-700'
+                  : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
               }`
             }
           >
-            <Icon name={item.icon} className="h-5 w-5 shrink-0" />
-            {item.label}
+            {({ isActive }) => (
+              <>
+                {/* Left rail marks the active row without relying on fill
+                    alone, so it stays legible at low contrast settings. */}
+                <span
+                  aria-hidden="true"
+                  className={`absolute inset-y-1.5 left-0 w-1 rounded-r-full bg-indigo-600 transition-opacity ${
+                    isActive ? 'opacity-100' : 'opacity-0'
+                  }`}
+                />
+                <Icon
+                  name={item.icon}
+                  className={`h-5 w-5 shrink-0 ${isActive ? 'text-indigo-600' : 'text-slate-400 group-hover:text-slate-600'}`}
+                />
+                {item.label}
+              </>
+            )}
           </NavLink>
         ))}
       </nav>
 
-      {/* Plan usage */}
-      <div className="mx-4 mb-4 rounded-xl border border-white/10 bg-white/5 p-4">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">Plan</span>
-          <Badge tone="indigo">{planUsage.tier}</Badge>
-        </div>
-        <p className="mt-3 text-xs text-slate-400">
-          <span className="font-semibold text-white">{planUsage.seatsUsed}</span> of {planUsage.seatsTotal} seats used
-        </p>
-        <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/10">
-          <div
-            className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-violet-500"
-            style={{ width: `${seatsPercent}%` }}
-          />
-        </div>
-        <button
-          type="button"
-          className="mt-3 w-full rounded-md bg-white/10 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-white/20"
-          title="Billing arrives in a later sprint"
-        >
-          Manage plan
-        </button>
-      </div>
-
       {/* Footer links */}
-      <div className="border-t border-white/10 px-4 py-4">
+      <div className="border-t border-slate-200 px-4 py-4">
         <Link
           to="/"
           onClick={onNavigate}
-          className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-slate-400 transition-colors hover:bg-white/5 hover:text-white"
+          className="flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
         >
-          <Icon name="arrow-left" className="h-5 w-5" />
+          <Icon name="arrow-left" className="h-5 w-5 text-slate-400" />
           Back to site
         </Link>
       </div>
@@ -111,11 +119,62 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
  * outlet. Collapses to a slide-over drawer on small screens.
  */
 export function DashboardLayout() {
+  return (
+    // Both providers sit above the sidebar and the routed outlet, so the
+    // roster and the company profile are each fetched once for the session and
+    // shared — not re-requested per surface, and never two copies that drift.
+    <TeamSummaryProvider>
+      <CompanyProfileProvider>
+        <DashboardChrome />
+      </CompanyProfileProvider>
+    </TeamSummaryProvider>
+  );
+}
+
+function DashboardChrome() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
-  const [unread, setUnread] = useState(true);
+  const searchRef = useRef<HTMLInputElement>(null);
+
+  // Which workspace this session reads: the backend's name first, then the
+  // host we're served from (localhost / older backend has neither).
+  const subdomain = user?.tenantSubdomain ?? resolveTenantHost().subdomain;
+
+  // The profile is the newer answer; the login response is the fallback while
+  // it loads. Renaming the company now updates this chip immediately.
+  const company = useCompanyIdentity(user?.tenantName);
+
+  // Mac reads ⌘K, everything else Ctrl K. Computed once — `navigator` is
+  // stable for the life of the document.
+  const shortcutHint = useMemo(
+    () => (/Mac|iPhone|iPad/.test(navigator.platform) ? '⌘K' : 'Ctrl K'),
+    [],
+  );
+
+  // The badge above advertises a shortcut, so it has to actually work.
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault();
+        searchRef.current?.focus();
+      }
+    }
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, []);
+
+  // Scoped to the workspace: dismissing these as one company must not mark
+  // them read for the next company signed into on this device.
+  const store = useMemo(() => tenantStorage(activeTenant.get()), []);
+  const [unread, setUnread] = useState(() => store.get(NOTIFICATIONS_SEEN) !== 'true');
+
+  function openNotifications() {
+    setNotificationsOpen((open) => !open);
+    setUnread(false);
+    store.set(NOTIFICATIONS_SEEN, 'true');
+  }
 
   async function handleLogout() {
     await logout();
@@ -146,37 +205,74 @@ export function DashboardLayout() {
 
       <div className="flex min-h-screen flex-col lg:pl-64">
         {/* Top bar */}
-        <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-slate-200 bg-white/90 px-4 backdrop-blur sm:px-6">
+        <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-slate-200 bg-white/85 px-4 backdrop-blur-md sm:px-6">
           <button
             type="button"
             onClick={() => setSidebarOpen(true)}
-            className="rounded-md p-2 text-slate-500 hover:bg-slate-100 lg:hidden"
+            className="rounded-lg p-2 text-slate-500 transition-colors hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 lg:hidden"
             aria-label="Open navigation"
           >
             <Icon name="menu" className="h-5 w-5" />
           </button>
 
           {/* Global search — decorative until the search API lands. */}
-          <div className="relative hidden max-w-md flex-1 sm:block">
-            <Icon name="search" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <div className="group relative hidden max-w-md flex-1 sm:block">
+            <Icon
+              name="search"
+              className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 transition-colors group-focus-within:text-indigo-600"
+            />
             {/* TODO(sprint2): wire to global search once it exists. */}
             <input
+              ref={searchRef}
               type="search"
               placeholder="Search jobs, candidates, people…"
-              className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm text-slate-700 placeholder:text-slate-400 focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              aria-label="Search"
+              aria-keyshortcuts="Control+K Meta+K"
+              className="w-full rounded-full border border-slate-200 bg-slate-50 py-2.5 pl-11 pr-16 text-sm text-slate-700 shadow-sm transition-all placeholder:text-slate-400 hover:border-slate-300 hover:bg-white focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-indigo-500/15 [&::-webkit-search-cancel-button]:appearance-none"
             />
+            {/* Discoverability for the shortcut below; hidden once typing
+                starts would need state, so it simply sits behind the text. */}
+            <kbd
+              aria-hidden="true"
+              className="pointer-events-none absolute right-3 top-1/2 hidden -translate-y-1/2 items-center gap-0.5 rounded-md border border-slate-200 bg-white px-1.5 py-0.5 font-sans text-[10px] font-semibold text-slate-400 shadow-sm transition-opacity group-focus-within:opacity-0 lg:flex"
+            >
+              {shortcutHint}
+            </kbd>
           </div>
 
-          <div className="ml-auto flex items-center gap-1.5">
+          <div className="ml-auto flex items-center gap-2">
+            {/* Which workspace this session is reading — sits with the account
+                controls because it is identity, not navigation. Clicking the
+                company opens its profile, which is where anyone who clicked
+                the company's name expected to end up. */}
+            <Link
+              to="/dashboard/profile"
+              title="View company profile"
+              className="hidden items-center gap-2.5 rounded-full border border-slate-200 bg-slate-50 py-1 pl-1 pr-3.5 transition-colors hover:border-slate-300 hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 md:flex"
+            >
+              {company.logoUrl ? (
+                <CompanyLogo src={company.logoUrl} name={company.name} size="sm" />
+              ) : (
+                <Avatar firstName={company.name} size="sm" />
+              )}
+              <div className="min-w-0 max-w-[11rem] leading-tight">
+                <p className="truncate text-sm font-semibold text-slate-900">{company.name}</p>
+                {subdomain ? (
+                  <p className="truncate font-mono text-[10px] text-slate-500">
+                    {subdomain}.{ROOT_DOMAIN}
+                  </p>
+                ) : (
+                  <p className="truncate text-[10px] text-slate-500">Company workspace</p>
+                )}
+              </div>
+            </Link>
+
             {/* Notifications */}
             <div className="relative">
               <button
                 type="button"
-                onClick={() => {
-                  setNotificationsOpen((v) => !v);
-                  setUnread(false);
-                }}
-                className="relative rounded-full p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+                onClick={openNotifications}
+                className="relative rounded-xl p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
                 aria-label="Notifications"
                 aria-expanded={notificationsOpen}
               >
@@ -191,11 +287,11 @@ export function DashboardLayout() {
                     onClick={() => setNotificationsOpen(false)}
                     className="fixed inset-0 z-10 cursor-default"
                   />
-                  <div className="absolute right-0 z-20 mt-2 w-80 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl">
+                  <div className="absolute right-0 z-20 mt-2 w-80 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl shadow-slate-900/10 ring-1 ring-slate-900/5">
                     <p className="border-b border-slate-100 px-4 py-3 text-sm font-semibold text-slate-900">Notifications</p>
                     <ul className="divide-y divide-slate-100">
                       {NOTIFICATIONS.map((n) => (
-                        <li key={n.id} className="flex gap-3 px-4 py-3 hover:bg-slate-50">
+                        <li key={n.id} className="flex gap-3 px-4 py-3 transition-colors hover:bg-slate-50">
                           <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
                             <Icon name={n.icon} className="h-4 w-4" />
                           </span>
@@ -218,12 +314,18 @@ export function DashboardLayout() {
                 <p className="text-sm font-semibold leading-tight text-slate-900">
                   {user?.firstName} {user?.lastName}
                 </p>
-                <p className="text-xs leading-tight text-slate-500">{user ? formatRole(user.role) : ''}</p>
+                {/* The role decides what this session can reach, so it reads as
+                    a pill rather than as grey caption text. */}
+                {user && (
+                  <div className="mt-0.5">
+                    <RoleBadge role={user.role} />
+                  </div>
+                )}
               </div>
               <button
                 type="button"
                 onClick={() => void handleLogout()}
-                className="rounded-md p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                className="rounded-xl p-2 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
                 aria-label="Log out"
                 title="Log out"
               >

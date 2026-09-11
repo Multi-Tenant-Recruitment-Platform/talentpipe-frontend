@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { apiErrorMessage } from '../../api/client';
 import { teamApi } from '../../api/team';
 import { useAuth } from '../../auth/AuthContext';
+import { useCan } from '../../auth/useCan';
 import { Avatar } from '../../components/dashboard/Avatar';
 import { Badge } from '../../components/dashboard/Badge';
 import { Card } from '../../components/dashboard/Card';
@@ -11,6 +11,10 @@ import { Icon, type IconName } from '../../components/dashboard/Icon';
 import { InviteMemberModal, type InviteFormValues } from '../../components/dashboard/InviteMemberModal';
 import { PageHeader } from '../../components/dashboard/PageHeader';
 import { StatCard } from '../../components/dashboard/StatCard';
+import { Alert } from '../../components/ui/Alert';
+import { Button } from '../../components/ui/Button';
+import { describeTeamError, type TeamErrorPlan } from '../../dashboard/teamErrors';
+import { useTeamSummary } from '../../dashboard/TeamSummaryContext';
 import {
   activityFeed,
   hiringFunnel,
@@ -47,9 +51,13 @@ function greeting(): string {
  */
 export function OverviewPage() {
   const { user } = useAuth();
+  const allow = useCan();
+  const { pendingInvites, loading: teamLoading, refresh: refreshTeam } = useTeamSummary();
   const [inviteOpen, setInviteOpen] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [inviteSubmitting, setInviteSubmitting] = useState(false);
+  const [inviteError, setInviteError] = useState<TeamErrorPlan | null>(null);
 
   const today = new Date().toLocaleDateString('en-US', {
     weekday: 'long',
@@ -59,6 +67,8 @@ export function OverviewPage() {
 
   async function handleInvite(values: InviteFormValues) {
     setError(null);
+    setInviteError(null);
+    setInviteSubmitting(true);
     try {
       await teamApi.invite({
         firstName: values.firstName,
@@ -66,10 +76,18 @@ export function OverviewPage() {
         email: values.email,
         role: values.role,
       });
+      // Keeps the pending-invite KPI and the sidebar seat gauge honest without
+      // making the user reload.
+      await refreshTeam();
       setInviteOpen(false);
       setNotice(`Invitation sent to ${values.email} — they'll join as ${values.role === 'HR_MANAGER' ? 'an HR Manager' : 'an Interviewer'} once they accept.`);
     } catch (err: unknown) {
-      setError(apiErrorMessage(err, 'We could not send that invitation.'));
+      // Into the dialog, not the page: a page-level alert renders behind the
+      // modal backdrop, so the admin would see nothing at all.
+      const plan = describeTeamError(err, 'invite');
+      setInviteError(plan);
+    } finally {
+      setInviteSubmitting(false);
     }
   }
 
@@ -100,40 +118,37 @@ export function OverviewPage() {
   return (
     <>
       <PageHeader
+        eyebrow="Overview"
         title={`${greeting()}, ${user?.firstName ?? 'there'}`}
         subtitle={`Here's what's happening with your hiring — ${today}`}
       >
-        <button
-          type="button"
+        <Button
+          variant="secondary"
           onClick={() => setNotice('Job posting arrives with the Job module — for now, invite your hiring team and shape your pipeline.')}
-          className="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50"
         >
           <Icon name="briefcase" className="h-4 w-4" />
           Post a job
-        </button>
-        <button
-          type="button"
-          onClick={() => setInviteOpen(true)}
-          className="inline-flex items-center gap-2 rounded-md bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-opacity hover:opacity-90"
-        >
-          <Icon name="user-plus" className="h-4 w-4" />
-          Invite member
-        </button>
+        </Button>
+        {/* Inviting is a COMPANY_ADMIN action; anyone else would only get a
+            403 from the API, so they never see the button. */}
+        {allow('team.invite') && (
+          <Button variant="primary" onClick={() => setInviteOpen(true)}>
+            <Icon name="user-plus" className="h-4 w-4" />
+            Invite member
+          </Button>
+        )}
       </PageHeader>
 
       {notice && (
-        <div role="status" className="mb-6 flex items-start justify-between gap-4 rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm text-indigo-800">
-          <p>{notice}</p>
-          <button type="button" onClick={() => setNotice(null)} aria-label="Dismiss" className="rounded p-0.5 text-indigo-400 hover:text-indigo-600">
-            <Icon name="x-mark" className="h-4 w-4" />
-          </button>
-        </div>
+        <Alert tone="info" onDismiss={() => setNotice(null)} className="mb-6">
+          {notice}
+        </Alert>
       )}
 
       {error && (
-        <div role="alert" className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <Alert tone="error" className="mb-6">
           {error}
-        </div>
+        </Alert>
       )}
 
       {/* KPI row */}
@@ -159,9 +174,11 @@ export function OverviewPage() {
           tone="emerald"
           delta={{ value: '+4', direction: 'up', hint: 'vs last week' }}
         />
+        {/* The only KPI on this row with a real backend behind it — the rest
+            wait on the Job / Candidate / Interview modules. */}
         <StatCard
           label="Pending invites"
-          value={String(overviewStats.pendingInvites)}
+          value={teamLoading ? '—' : String(pendingInvites.length)}
           icon="envelope"
           tone="amber"
         />
@@ -187,7 +204,7 @@ export function OverviewPage() {
           <ul className="space-y-5">
             {healthMetrics.map((metric) => (
               <li key={metric.label} className="flex items-center gap-4">
-                <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${metric.tone}`}>
+                <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${metric.tone}`}>
                   <Icon name={metric.icon} className="h-5 w-5" />
                 </span>
                 <div className="min-w-0">
@@ -207,8 +224,11 @@ export function OverviewPage() {
           {upcomingInterviews.map((interview) => {
             const type = INTERVIEW_TYPE_BADGE[interview.type];
             return (
-              <div key={interview.id} className="flex flex-wrap items-center gap-4 px-6 py-4 first:pt-5 last:pb-5">
-                <div className="w-24 shrink-0">
+              <div
+                key={interview.id}
+                className="flex flex-wrap items-center gap-4 px-6 py-4 transition-colors first:pt-5 last:pb-5 hover:bg-slate-50/70"
+              >
+                <div className="w-24 shrink-0 border-l-2 border-indigo-500 pl-3">
                   <p className="text-sm font-semibold text-slate-900">{interview.dayLabel}</p>
                   <p className="text-xs text-slate-500">{interview.time}</p>
                 </div>
@@ -247,7 +267,21 @@ export function OverviewPage() {
         </Card>
       </div>
 
-      <InviteMemberModal open={inviteOpen} onClose={() => setInviteOpen(false)} onInvite={(values) => void handleInvite(values)} />
+      {/* Mounted only while open, so each invite starts from a clean form. */}
+      {allow('team.invite') && inviteOpen && (
+        <InviteMemberModal
+          open
+          onClose={() => {
+            setInviteOpen(false);
+            setInviteError(null);
+          }}
+          onInvite={(values) => void handleInvite(values)}
+          submitting={inviteSubmitting}
+          error={inviteError?.message ?? null}
+          errorTone={inviteError?.tone ?? 'error'}
+          focusField={inviteError?.focus ?? null}
+        />
+      )}
     </>
   );
 }
