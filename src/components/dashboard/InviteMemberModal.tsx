@@ -47,7 +47,7 @@ export function InviteMemberModal({
   error = null,
   errorTone = 'error',
   focusField = null,
-}: {
+}: Readonly<{
   open: boolean;
   onClose: () => void;
   onInvite: (values: InviteFormValues) => void;
@@ -56,7 +56,7 @@ export function InviteMemberModal({
   errorTone?: AlertTone;
   /** Which field the failure points at, so the fix starts in the right place. */
   focusField?: 'email' | null;
-}) {
+}>) {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');

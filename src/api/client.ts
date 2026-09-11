@@ -79,7 +79,9 @@ api.interceptors.response.use(undefined, async (error: AxiosError) => {
     window.dispatchEvent(new Event(SESSION_EXPIRED_EVENT));
   }
 
-  return Promise.reject(error);
+  // Throwing (rather than returning a rejected promise) preserves the
+  // original stack trace through this async rejection handler.
+  throw error;
 });
 
 // Cross-tenant tripwire. Registered last on purpose: axios runs response

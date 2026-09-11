@@ -69,18 +69,43 @@ async function openEditor(user: ReturnType<typeof userEvent.setup>) {
 const lastRequest = (): UpdateCompanyProfileRequest =>
   update.mock.calls[update.mock.calls.length - 1][0];
 
+/**
+ * Image writes the server has accepted so far in one test.
+ *
+ * <p>The real endpoints persist the logo and cover independently of the text
+ * save, so the PATCH response that follows an upload already carries the new
+ * URL — that response is the page's authoritative copy. Recording the writes
+ * here keeps the mock honest about that ordering; without it, `update` would
+ * answer with the images the profile had before the upload.</p>
+ */
+let storedImages: Partial<Pick<CompanyProfileResponse, 'logoUrl' | 'coverImageUrl'>>;
+
+/** Which response field an image kind writes to. */
+const urlField = (kind: string): 'logoUrl' | 'coverImageUrl' =>
+  kind === 'logo' ? 'logoUrl' : 'coverImageUrl';
+
 beforeEach(() => {
   vi.clearAllMocks();
+  storedImages = {};
   setAuth({ user: makeUser(), initializing: false });
   get.mockResolvedValue(PROFILE);
   // The saved profile is what comes back — the same contract the endpoint has.
   update.mockImplementation(async (request: UpdateCompanyProfileRequest) => ({
     ...PROFILE,
     ...request,
+    // Applied last: an image written earlier in this save outranks whatever
+    // the base profile carried, exactly as the server's own row would.
+    ...storedImages,
     updatedAt: new Date().toISOString(),
   }));
-  uploadImage.mockImplementation(async (kind: string) => `https://cdn.test/${kind}.png`);
-  removeImage.mockResolvedValue(undefined);
+  uploadImage.mockImplementation(async (kind: string) => {
+    const url = `https://cdn.test/${kind}.png`;
+    storedImages[urlField(kind)] = url;
+    return url;
+  });
+  removeImage.mockImplementation(async (kind: string) => {
+    storedImages[urlField(kind)] = null;
+  });
 });
 
 describe('viewing the profile', () => {
@@ -182,7 +207,11 @@ describe('editing', () => {
     expect(await screen.findByText(/company profile updated successfully/i)).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'ABC Technologies (Pvt) Ltd' })).toBeInTheDocument();
     expect(screen.queryByLabelText(/^company name$/i)).toBeNull();
-  });
+    // This one types into every field on the form, so it is legitimately the
+    // slowest test here — measured between 2.2s and 4.6s on an idle machine,
+    // which leaves nothing under the 5s default once the suite runs in
+    // parallel. The extra headroom is for the typing, not for a hang.
+  }, 15_000);
 
   it('saves a bare domain as a working URL', async () => {
     const user = userEvent.setup();

@@ -5,7 +5,7 @@ import { AuthBrandPanel } from './AuthBrandPanel';
  * Split-screen layout shared by the auth pages: brand panel on the left,
  * the page's form on the right (the form stands alone on small screens).
  */
-export function AuthShell({ children }: { children: ReactNode }) {
+export function AuthShell({ children }: Readonly<{ children: ReactNode }>) {
   return (
     <div className="relative">
       {/* Soft ambient glow behind the card — decorative only. */}
