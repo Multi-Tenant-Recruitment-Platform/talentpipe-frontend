@@ -8,7 +8,7 @@ import { Icon } from './Icon';
  * set of perks reads identically on every profile — a candidate comparing two
  * companies should not have to re-scan a shuffled list.</p>
  */
-export function CompanyBenefits({ benefits }: { benefits: string[] }) {
+export function CompanyBenefits({ benefits }: Readonly<{ benefits: string[] }>) {
   if (benefits.length === 0) {
     return (
       <p className="text-sm text-slate-400" data-testid="company-benefits">

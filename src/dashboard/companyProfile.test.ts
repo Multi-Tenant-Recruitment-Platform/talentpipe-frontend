@@ -44,13 +44,7 @@ describe('toFormValues', () => {
   });
 
   it('renders numbers as the strings the inputs hold', () => {
-    const values = toFormValues(makeCompanyProfile({ foundedYear: 2015, employeeCount: 120 }));
-    expect(values.foundedYear).toBe('2015');
-    expect(values.employeeCount).toBe('120');
-
-    // Zero is a real value and must not be flattened into "not set" — the
-    // classic falsy bug that would blank a legitimate figure.
-    expect(toFormValues(makeCompanyProfile({ employeeCount: 0 })).employeeCount).toBe('0');
+    expect(toFormValues(makeCompanyProfile({ foundedYear: 2015 })).foundedYear).toBe('2015');
   });
 });
 
@@ -219,20 +213,30 @@ describe('toUpdateRequest', () => {
     expect(nulls.length).toBeGreaterThan(20);
     expect(request.name).toBe('ABC');
     expect(request.email).toBe('a@b.com');
-    expect(request.values).toEqual([]);
     expect(request.benefits).toEqual([]);
-    expect(request.workModes).toEqual([]);
+    expect(request.departments).toEqual([]);
     expect(Object.values(request)).not.toContain('');
   });
 
-  it('sends the numbers as numbers, not as the strings the form held', () => {
-    const request = toUpdateRequest(form({ foundedYear: '2015', employeeCount: '120' }));
-    expect(request.foundedYear).toBe(2015);
-    expect(request.employeeCount).toBe(120);
+  it('sends the year as a number, not as the string the form held', () => {
+    expect(toUpdateRequest(form({ foundedYear: '2015' })).foundedYear).toBe(2015);
+    expect(toUpdateRequest(form({ foundedYear: '' })).foundedYear).toBeNull();
+  });
 
-    const blank = toUpdateRequest(form({ foundedYear: '', employeeCount: '' }));
-    expect(blank.foundedYear).toBeNull();
-    expect(blank.employeeCount).toBeNull();
+  it('no longer sends the fields that were removed from the profile', () => {
+    const request = toUpdateRequest(COMPLETE);
+    for (const removed of [
+      'employeeCount',
+      'culture',
+      'values',
+      'workModes',
+      'teams',
+      'businessUnits',
+      'employmentTypes',
+      'jobCategories',
+    ]) {
+      expect(request).not.toHaveProperty(removed);
+    }
   });
 
   it('sends the normalised website, not the typed one', () => {
@@ -295,13 +299,6 @@ describe('numbers', () => {
     expect(validateCompanyProfile(form({ foundedYear: '1800' })).foundedYear).toBeUndefined();
     expect(validateCompanyProfile(form({ foundedYear: thisYear })).foundedYear).toBeUndefined();
   });
-
-  it('requires the employee count to be a whole positive number', () => {
-    expect(validateCompanyProfile(form({ employeeCount: '0' })).employeeCount).toMatch(/whole/i);
-    expect(validateCompanyProfile(form({ employeeCount: '-5' })).employeeCount).toMatch(/whole/i);
-    expect(validateCompanyProfile(form({ employeeCount: '12.5' })).employeeCount).toMatch(/whole/i);
-    expect(validateCompanyProfile(form({ employeeCount: '1' })).employeeCount).toBeUndefined();
-  });
 });
 
 describe('the second contact channels', () => {
@@ -330,16 +327,18 @@ describe('registration details', () => {
   });
 });
 
-describe('company values', () => {
+describe('free-text lists', () => {
   it('trims, drops blanks and de-duplicates case-insensitively', () => {
-    expect(cleanValues([' Ownership ', 'ownership', '', '  ', 'Craft'])).toEqual([
-      'Ownership',
-      'Craft',
+    expect(cleanValues([' Engineering ', 'engineering', '', '  ', 'QA'])).toEqual([
+      'Engineering',
+      'QA',
     ]);
   });
 
   it('treats a re-typed duplicate as no change', () => {
-    expect(isDirty(COMPLETE, form({ values: ['Ownership', 'Craft', 'ownership'] }))).toBe(false);
+    expect(
+      isDirty(COMPLETE, form({ departments: ['Engineering', 'QA', 'HR', 'engineering'] })),
+    ).toBe(false);
   });
 });
 
@@ -360,7 +359,7 @@ describe('social link validation', () => {
 
 describe('profileCompleteness', () => {
   it('reaches 100% on the fields a candidate actually needs, plus a logo', () => {
-    // Deliberately not every field — socials, culture, benefits, phone and the
+    // Deliberately not every field — socials, benefits, phone and the
     // street address are enrichment. A meter that can never reach 100% stops
     // being read, so it must be reachable with a reasonable profile.
     expect(profileCompleteness(COMPLETE, true)).toEqual({
@@ -387,7 +386,6 @@ describe('profileCompleteness', () => {
   it('ignores the enrichment fields entirely', () => {
     // Blanking every one of these must not move the meter.
     const stripped = form({
-      culture: '',
       phone: '',
       address: '',
       linkedinUrl: '',

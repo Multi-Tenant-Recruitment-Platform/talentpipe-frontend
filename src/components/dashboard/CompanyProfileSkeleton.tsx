@@ -6,7 +6,7 @@
  * `aria-busy` with a plain-text label because a screen reader gets nothing at
  * all from grey rectangles.</p>
  */
-export function CompanyProfileSkeleton({ logoSize = 'md' }: { logoSize?: 'md' | 'lg' }) {
+export function CompanyProfileSkeleton({ logoSize = 'md' }: Readonly<{ logoSize?: 'md' | 'lg' }>) {
   const logo = logoSize === 'lg' ? 'h-24 w-24 rounded-2xl' : 'h-16 w-16 rounded-xl';
 
   return (

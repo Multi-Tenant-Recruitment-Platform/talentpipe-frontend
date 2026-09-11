@@ -16,7 +16,6 @@ import {
   watchCrossTabTenantChange,
   type TenantMismatchDetail,
 } from '../tenant/activeTenant';
-import { resolveTenantHost } from '../tenant/subdomain';
 
 /** Why the last session ended, so the login page can explain itself. */
 export type SessionEndReason = 'expired' | 'tenant-mismatch';
@@ -33,7 +32,7 @@ interface AuthContextValue {
   initializing: boolean;
   /** Set when a session ended by itself rather than by the user logging out. */
   sessionEndReason: SessionEndReason | null;
-  login: (subdomain: string, email: string, password: string) => Promise<UserResponse>;
+  login: (email: string, password: string) => Promise<UserResponse>;
   register: (request: RegisterRequest) => Promise<RegisterResponse>;
   logout: () => Promise<void>;
 }
@@ -73,15 +72,7 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
         return;
       }
       try {
-        // Send the tenant header when the host pins one, so a backend that
-        // later requires it on refresh doesn't silently break reloads on a
-        // workspace subdomain. Harmless if the backend ignores it.
-        const host = resolveTenantHost();
-        const { data } = await api.post<AuthResponse>(
-          '/auth/refresh',
-          { refreshToken },
-          host.subdomain ? { headers: { 'X-Tenant-Subdomain': host.subdomain } } : undefined,
-        );
+        const { data } = await api.post<AuthResponse>('/auth/refresh', { refreshToken });
         if (!cancelled) {
           applyAuth(data);
         }
@@ -131,14 +122,10 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   }, [clearAuth]);
 
   const login = useCallback(
-    async (subdomain: string, email: string, password: string) => {
-      // Tenant identity travels in the header, never the body (ADR-1).
-      // Candidates authenticate globally, so no tenant header is sent.
-      const { data } = await api.post<AuthResponse>(
-        '/auth/login',
-        { email, password },
-        subdomain ? { headers: { 'X-Tenant-Subdomain': subdomain } } : undefined,
-      );
+    async (email: string, password: string) => {
+      // Email and password alone, for company users and candidates alike: the
+      // backend resolves which account they belong to. No workspace header.
+      const { data } = await api.post<AuthResponse>('/auth/login', { email, password });
       applyAuth(data);
       return data.user;
     },

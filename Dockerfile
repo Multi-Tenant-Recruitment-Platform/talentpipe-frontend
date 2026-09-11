@@ -29,11 +29,6 @@ COPY . .
 ARG VITE_API_BASE_URL=/api/v1
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 
-# Apex domain workspaces live under; decides whether the login page reads the
-# tenant from the hostname (acme.talentpipe.io) or asks the user to type it.
-ARG VITE_APP_ROOT_DOMAIN=talentpipe.io
-ENV VITE_APP_ROOT_DOMAIN=$VITE_APP_ROOT_DOMAIN
-
 RUN npm run build
 
 FROM nginx:1.27-alpine

@@ -20,7 +20,7 @@ describe('tenantStorage', () => {
     const store = tenantStorage(null);
     store.set('notifications.seen', 'true');
     expect(store.get('notifications.seen')).toBeNull();
-    expect(localStorage.length).toBe(0);
+    expect(localStorage).toHaveLength(0);
   });
 
   it('removes what it wrote', () => {

@@ -24,7 +24,7 @@ export function ConfirmDialog({
   busy = false,
   onConfirm,
   onCancel,
-}: {
+}: Readonly<{
   open: boolean;
   title: string;
   description: ReactNode;
@@ -35,7 +35,7 @@ export function ConfirmDialog({
   busy?: boolean;
   onConfirm: () => void;
   onCancel: () => void;
-}) {
+}>) {
   const dialogRef = useRef<HTMLDivElement>(null);
   const cancelRef = useRef<HTMLButtonElement>(null);
 

@@ -62,7 +62,7 @@ export function InviteMemberModal({
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<InvitableRole>('HR_MANAGER');
 
-  const dialogRef = useRef<HTMLDivElement>(null);
+  const dialogRef = useRef<HTMLDialogElement>(null);
   const firstFieldRef = useRef<HTMLInputElement>(null);
   const emailRef = useRef<HTMLInputElement>(null);
 
@@ -112,17 +112,7 @@ export function InviteMemberModal({
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      // Not a native <dialog>: showModal()/close() are unimplemented in jsdom
-      // (verified against the jsdom version this project tests against), so
-      // that migration would pass in a browser and fail every test that
-      // renders this modal. role="dialog" + aria-modal is the correct ARIA
-      // substitute and is what the focus trap below is built around.
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="invite-member-title"
-    >
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Not a button: a focusable backdrop is an unlabelled tab stop that sits
           before the dialog content and duplicates the header's close control. */}
       <div
@@ -131,9 +121,16 @@ export function InviteMemberModal({
         className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm"
       />
 
-      <div
+      {/* A native <dialog> rather than a div with role="dialog", and on the
+          panel rather than the overlay — the panel is what the role describes.
+          `open` rather than showModal(): the overlay above already provides the
+          backdrop and the positioning. p-0/text-inherit undo user-agent styles. */}
+      <dialog
         ref={dialogRef}
-        className="relative max-h-full w-full max-w-lg overflow-y-auto rounded-3xl bg-white shadow-2xl shadow-slate-900/20 ring-1 ring-slate-900/5"
+        open
+        aria-modal="true"
+        aria-labelledby="invite-member-title"
+        className="relative m-0 h-auto max-h-full w-full max-w-lg overflow-y-auto rounded-3xl bg-white p-0 text-inherit shadow-2xl shadow-slate-900/20 ring-1 ring-slate-900/5"
       >
         <header className="flex items-start justify-between gap-4 border-b border-slate-100 px-6 py-5">
           <div className="flex items-center gap-3">
@@ -261,7 +258,7 @@ export function InviteMemberModal({
             </Button>
           </div>
         </form>
-      </div>
+      </dialog>
     </div>
   );
 }

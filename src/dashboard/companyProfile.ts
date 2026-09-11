@@ -21,13 +21,11 @@ export const COMPANY_TEXT_FIELDS = [
   'industry',
   'companyType',
   'size',
-  'employeeCount',
   'foundedYear',
   'description',
   // Story
   'mission',
   'vision',
-  'culture',
   // Registration
   'legalName',
   'registrationNumber',
@@ -57,18 +55,9 @@ export type CompanyTextField = (typeof COMPANY_TEXT_FIELDS)[number];
 
 /** The list-valued fields, which need set comparison rather than equality. */
 export const COMPANY_LIST_FIELDS = [
-  'values',
   'benefits',
-  'workModes',
   'officeLocations',
   'departments',
-  'teams',
-  'businessUnits',
-  'employmentTypes',
-  'jobCategories',
-  'jobFamilies',
-  'jobLevels',
-  'jobTitles',
 ] as const;
 export type CompanyListField = (typeof COMPANY_LIST_FIELDS)[number];
 
@@ -93,12 +82,10 @@ const MAX_PLACE = 120;
 const MAX_SHORT = 60;
 const MAX_TAGLINE = 140;
 export const MAX_DESCRIPTION = 1000;
-export const MAX_CULTURE = 600;
 export const MAX_STATEMENT = 400;
 
 /** Founded before this and it is not a company, it is a typo. */
 const EARLIEST_FOUNDED_YEAR = 1800;
-const MAX_EMPLOYEE_COUNT = 5_000_000;
 
 export const INDUSTRIES = [
   'Information Technology',
@@ -200,13 +187,6 @@ export const LANGUAGES = [
   'Japanese',
 ];
 
-/** How the company staffs its roles — items 35–37 of the field list. */
-export const WORK_MODES: { id: string; label: string }[] = [
-  { id: 'REMOTE', label: 'Remote' },
-  { id: 'HYBRID', label: 'Hybrid' },
-  { id: 'ON_SITE', label: 'On-site' },
-];
-
 /**
  * The perks a company can advertise.
  *
@@ -231,46 +211,11 @@ export const BENEFIT_CATALOGUE: { id: string; label: string }[] = [
   { id: 'CAREER_DEVELOPMENT', label: 'Career development' },
 ];
 
-/** Closed vocabularies — every company hires against much the same few. */
-export const EMPLOYMENT_TYPES = [
-  { id: 'FULL_TIME', label: 'Full-time' },
-  { id: 'PART_TIME', label: 'Part-time' },
-  { id: 'CONTRACT', label: 'Contract' },
-  { id: 'INTERNSHIP', label: 'Internship' },
-  { id: 'TEMPORARY', label: 'Temporary' },
-  { id: 'FREELANCE', label: 'Freelance' },
-];
-
-export const JOB_LEVELS = [
-  { id: 'INTERN', label: 'Intern' },
-  { id: 'JUNIOR', label: 'Junior' },
-  { id: 'MID', label: 'Mid-level' },
-  { id: 'SENIOR', label: 'Senior' },
-  { id: 'LEAD', label: 'Lead' },
-  { id: 'MANAGER', label: 'Manager' },
-  { id: 'DIRECTOR', label: 'Director' },
-];
-
 const BENEFIT_LABELS = new Map(BENEFIT_CATALOGUE.map((b) => [b.id, b.label]));
-const WORK_MODE_LABELS = new Map(WORK_MODES.map((m) => [m.id, m.label]));
-const EMPLOYMENT_TYPE_LABELS = new Map(EMPLOYMENT_TYPES.map((t) => [t.id, t.label]));
-const JOB_LEVEL_LABELS = new Map(JOB_LEVELS.map((l) => [l.id, l.label]));
 
 /** Falls back to the raw id so a benefit we stop offering is still readable. */
 export function benefitLabel(id: string): string {
   return BENEFIT_LABELS.get(id) ?? id;
-}
-
-export function workModeLabel(id: string): string {
-  return WORK_MODE_LABELS.get(id) ?? id;
-}
-
-export function employmentTypeLabel(id: string): string {
-  return EMPLOYMENT_TYPE_LABELS.get(id) ?? id;
-}
-
-export function jobLevelLabel(id: string): string {
-  return JOB_LEVEL_LABELS.get(id) ?? id;
 }
 
 /** Catalogue order, whatever order they were selected or stored in. */
@@ -282,12 +227,8 @@ function sortByCatalogue(ids: string[], catalogue: { id: string }[]): string[] {
 }
 
 export const sortBenefits = (ids: string[]) => sortByCatalogue(ids, BENEFIT_CATALOGUE);
-export const sortWorkModes = (ids: string[]) => sortByCatalogue(ids, WORK_MODES);
-/** Levels sort by seniority, never alphabetically — Junior before Lead. */
-export const sortEmploymentTypes = (ids: string[]) => sortByCatalogue(ids, EMPLOYMENT_TYPES);
-export const sortJobLevels = (ids: string[]) => sortByCatalogue(ids, JOB_LEVELS);
 
-/** Company values are free text, so they only ever get trimmed and de-duped. */
+/** Free-text lists only ever get trimmed and de-duped. */
 export function cleanValues(values: string[]): string[] {
   const seen = new Set<string>();
   const out: string[] = [];
@@ -309,18 +250,9 @@ const EMPTY_TEXT = Object.fromEntries(COMPANY_TEXT_FIELDS.map((field) => [field,
 
 export const EMPTY_FORM_VALUES: CompanyFormValues = {
   ...EMPTY_TEXT,
-  values: [],
   benefits: [],
-  workModes: [],
   officeLocations: [],
   departments: [],
-  teams: [],
-  businessUnits: [],
-  employmentTypes: [],
-  jobCategories: [],
-  jobFamilies: [],
-  jobLevels: [],
-  jobTitles: [],
 };
 
 /** Human label for a field, used in labels, prompts and error summaries. */
@@ -330,12 +262,10 @@ export const FIELD_LABELS: Record<CompanyField, string> = {
   industry: 'Industry',
   companyType: 'Company type',
   size: 'Company size',
-  employeeCount: 'Number of employees',
   foundedYear: 'Founded year',
   description: 'Company description',
   mission: 'Mission',
   vision: 'Vision',
-  culture: 'Company culture',
   legalName: 'Legal company name',
   registrationNumber: 'Registration number',
   timezone: 'Time zone',
@@ -355,18 +285,9 @@ export const FIELD_LABELS: Record<CompanyField, string> = {
   state: 'State / province',
   postalCode: 'Postal code',
   country: 'Country',
-  values: 'Company values',
   benefits: 'Benefits & perks',
-  workModes: 'Work arrangements',
-  officeLocations: 'Office locations',
+  officeLocations: 'Other branches',
   departments: 'Departments',
-  teams: 'Teams',
-  businessUnits: 'Business units',
-  employmentTypes: 'Employment types',
-  jobCategories: 'Job categories',
-  jobFamilies: 'Job families',
-  jobLevels: 'Job levels',
-  jobTitles: 'Job titles',
 };
 
 /** The social fields, in the order they are shown. */
@@ -398,12 +319,10 @@ export function toFormValues(profile: CompanyProfileResponse): CompanyFormValues
     industry: text(profile.industry),
     companyType: text(profile.companyType),
     size: text(profile.size),
-    employeeCount: num(profile.employeeCount),
     foundedYear: num(profile.foundedYear),
     description: text(profile.description),
     mission: text(profile.mission),
     vision: text(profile.vision),
-    culture: text(profile.culture),
     legalName: text(profile.legalName),
     registrationNumber: text(profile.registrationNumber),
     timezone: text(profile.timezone),
@@ -423,20 +342,11 @@ export function toFormValues(profile: CompanyProfileResponse): CompanyFormValues
     state: text(profile.state),
     postalCode: text(profile.postalCode),
     country: text(profile.country),
-    values: cleanValues(profile.values ?? []),
     officeLocations: cleanValues(profile.officeLocations ?? []),
     departments: cleanValues(profile.departments ?? []),
-    teams: cleanValues(profile.teams ?? []),
-    businessUnits: cleanValues(profile.businessUnits ?? []),
-    employmentTypes: sortEmploymentTypes(profile.employmentTypes ?? []),
-    jobCategories: cleanValues(profile.jobCategories ?? []),
-    jobFamilies: cleanValues(profile.jobFamilies ?? []),
-    jobLevels: sortJobLevels(profile.jobLevels ?? []),
-    jobTitles: cleanValues(profile.jobTitles ?? []),
     // Sorted on the way in, so a backend that returns them in insertion order
     // cannot make the same set look like a change.
     benefits: sortBenefits(profile.benefits ?? []),
-    workModes: sortWorkModes(profile.workModes ?? []),
   };
 }
 
@@ -459,7 +369,7 @@ export function normalizeWebsite(raw: string): string {
 /** Every field that holds a URL, and so gets the same normalising and check. */
 const URL_FIELDS = ['website', ...SOCIAL_FIELDS] as const;
 /** Long-form fields keep their line breaks; everything else is one line. */
-const MULTILINE_FIELDS = new Set<CompanyTextField>(['description', 'culture', 'mission', 'vision']);
+const MULTILINE_FIELDS = new Set<CompanyTextField>(['description', 'mission', 'vision']);
 
 /**
  * What gets validated and compared: the values as they would be saved.
@@ -479,21 +389,19 @@ export function normalizeFormValues(values: CompanyFormValues): CompanyFormValue
       normalized[field] = values[field].trim().replace(/\s+/g, ' ');
     }
   }
-  normalized.values = cleanValues(values.values);
-  normalized.officeLocations = cleanValues(values.officeLocations);
-  for (const field of ['departments', 'teams', 'businessUnits', 'jobCategories', 'jobFamilies', 'jobTitles'] as const) {
+  for (const field of ['officeLocations', 'departments'] as const) {
     normalized[field] = cleanValues(values[field]);
   }
-  normalized.employmentTypes = sortEmploymentTypes(values.employmentTypes);
-  normalized.jobLevels = sortJobLevels(values.jobLevels);
   normalized.benefits = sortBenefits(values.benefits);
-  normalized.workModes = sortWorkModes(values.workModes);
   return normalized;
 }
 
 // Deliberately permissive: one @, no spaces, a dotted domain. The authority on
 // whether an address exists is the mail server, not a regex.
-const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+// The domain labels exclude '.' so each part of the pattern matches a
+// distinct span: overlapping '[^\s@]+' around the dot backtracks quadratically
+// on a long malformed address.
+const EMAIL = /^[^\s@]+@[^\s@.]+(\.[^\s@.]+)*\.[^\s@.]{2,}$/;
 // Digits with the separators people actually type: + ( ) - and spaces. The
 // leading '(' matters — '(011) 234 5678' is how an area code is usually
 // written, and rejecting it would look like the field is simply broken.
@@ -519,6 +427,20 @@ export function validateCompanyProfile(values: CompanyFormValues): CompanyFieldE
   const n = normalizeFormValues(values);
   const errors: CompanyFieldErrors = {};
 
+  // One pass per family of rules. Split out of a single body that had grown
+  // past the point where the shape of the whole was still readable.
+  checkIdentity(n, errors);
+  checkPhones(n, errors);
+  checkLinks(n, errors);
+  checkNumbers(n, errors);
+  checkPlaceLengths(n, errors);
+  checkStoryLengths(n, errors);
+
+  return errors;
+}
+
+/** The two required fields, plus the optional HR address that must still parse. */
+function checkIdentity(n: CompanyFormValues, errors: CompanyFieldErrors): void {
   if (n.name === '') {
     errors.name = 'Company name is required.';
   } else if (n.name.length > MAX_NAME) {
@@ -534,24 +456,33 @@ export function validateCompanyProfile(values: CompanyFormValues): CompanyFieldE
   if (n.hrEmail !== '' && !EMAIL.test(n.hrEmail)) {
     errors.hrEmail = 'Please enter a valid email address, like careers@abc.com.';
   }
+}
 
+function checkPhones(n: CompanyFormValues, errors: CompanyFieldErrors): void {
   for (const field of ['phone', 'alternativePhone'] as const) {
     if (n[field] !== '' && invalidPhone(n[field])) {
       errors[field] = 'Please enter a valid phone number, like +94 11 234 5678.';
     }
   }
+}
 
+function checkLinks(n: CompanyFormValues, errors: CompanyFieldErrors): void {
   for (const field of URL_FIELDS) {
-    if (n[field] !== '' && !isValidWebsite(n[field])) {
-      errors[field] =
-        field === 'website'
-          ? 'Please enter a valid website, like abc.com or https://abc.com.'
-          : `Please enter a valid ${FIELD_LABELS[field]} link, like ${SOCIAL_PLACEHOLDERS[field as SocialField]}.`;
+    if (n[field] === '' || isValidWebsite(n[field])) {
+      continue;
     }
+    errors[field] =
+      field === 'website'
+        ? 'Please enter a valid website, like abc.com or https://abc.com.'
+        : `Please enter a valid ${FIELD_LABELS[field]} link, like ${SOCIAL_PLACEHOLDERS[field as SocialField]}.`;
   }
+}
 
-  // Both numbers arrive as strings, so "12e4" and "  " have to be rejected
-  // here rather than trusted to have been filtered by the input type.
+/**
+ * The year arrives as a string, so "12e4" and "  " have to be rejected here
+ * rather than trusted to have been filtered by the input type.
+ */
+function checkNumbers(n: CompanyFormValues, errors: CompanyFieldErrors): void {
   if (n.foundedYear !== '') {
     const year = Number(n.foundedYear);
     const thisYear = new Date().getFullYear();
@@ -559,14 +490,10 @@ export function validateCompanyProfile(values: CompanyFormValues): CompanyFieldE
       errors.foundedYear = `Enter a year between ${EARLIEST_FOUNDED_YEAR} and ${thisYear}.`;
     }
   }
+}
 
-  if (n.employeeCount !== '') {
-    const count = Number(n.employeeCount);
-    if (!Number.isInteger(count) || count < 1 || count > MAX_EMPLOYEE_COUNT) {
-      errors.employeeCount = 'Enter the number of employees as a whole number.';
-    }
-  }
-
+/** Ceilings on the address block. */
+function checkPlaceLengths(n: CompanyFormValues, errors: CompanyFieldErrors): void {
   if (n.address.length > MAX_ADDRESS) {
     errors.address = `Keep the address under ${MAX_ADDRESS} characters.`;
   }
@@ -582,7 +509,10 @@ export function validateCompanyProfile(values: CompanyFormValues): CompanyFieldE
       errors[field] = `Keep the ${FIELD_LABELS[field].toLowerCase()} under ${MAX_SHORT} characters.`;
     }
   }
+}
 
+/** Ceilings on the free-text story fields. */
+function checkStoryLengths(n: CompanyFormValues, errors: CompanyFieldErrors): void {
   if (n.legalName.length > MAX_NAME) {
     errors.legalName = `Keep the legal name under ${MAX_NAME} characters.`;
   }
@@ -595,17 +525,11 @@ export function validateCompanyProfile(values: CompanyFormValues): CompanyFieldE
     errors.description = `Keep the description under ${MAX_DESCRIPTION} characters — it is ${n.description.length} right now.`;
   }
 
-  if (n.culture.length > MAX_CULTURE) {
-    errors.culture = `Keep the culture note under ${MAX_CULTURE} characters — it is ${n.culture.length} right now.`;
-  }
-
   for (const field of ['mission', 'vision'] as const) {
     if (n[field].length > MAX_STATEMENT) {
       errors[field] = `Keep the ${FIELD_LABELS[field].toLowerCase()} under ${MAX_STATEMENT} characters.`;
     }
   }
-
-  return errors;
 }
 
 /** True when a normalized URL has a host that could plausibly resolve. */
@@ -653,17 +577,13 @@ export function toUpdateRequest(values: CompanyFormValues): UpdateCompanyProfile
     industry: orNull(n.industry),
     companyType: orNull(n.companyType),
     size: orNull(n.size),
-    employeeCount: numOrNull(n.employeeCount),
     foundedYear: numOrNull(n.foundedYear),
     description: orNull(n.description),
-    culture: orNull(n.culture),
     mission: orNull(n.mission),
     vision: orNull(n.vision),
-    values: n.values,
     benefits: n.benefits,
     legalName: orNull(n.legalName),
     registrationNumber: orNull(n.registrationNumber),
-    workModes: n.workModes,
     timezone: orNull(n.timezone),
     currency: orNull(n.currency),
     language: orNull(n.language),
@@ -686,13 +606,6 @@ export function toUpdateRequest(values: CompanyFormValues): UpdateCompanyProfile
     country: orNull(n.country),
     officeLocations: n.officeLocations,
     departments: n.departments,
-    teams: n.teams,
-    businessUnits: n.businessUnits,
-    employmentTypes: n.employmentTypes,
-    jobCategories: n.jobCategories,
-    jobFamilies: n.jobFamilies,
-    jobLevels: n.jobLevels,
-    jobTitles: n.jobTitles,
   };
 }
 
@@ -700,7 +613,7 @@ export function toUpdateRequest(values: CompanyFormValues): UpdateCompanyProfile
  * What a candidate-facing profile is judged complete on.
  *
  * <p>Deliberately not every field. Registration numbers, tax details, socials,
- * culture, phone and the street address are either enrichment or paperwork —
+ * phone and the street address are either enrichment or paperwork —
  * valuable, but a profile without them is not broken, and a meter that can
  * never reach 100% stops being read. These plus a logo are what makes the
  * profile answer "who are these people?".</p>

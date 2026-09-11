@@ -21,14 +21,14 @@ export function EmptyState({
   description,
   action,
   className = '',
-}: {
+}: Readonly<{
   icon: IconName;
   tone?: keyof typeof TONES;
   title: string;
   description: string;
   action?: ReactNode;
   className?: string;
-}) {
+}>) {
   return (
     <div className={`px-6 py-12 text-center ${className}`}>
       <span className={`mx-auto flex h-12 w-12 items-center justify-center rounded-full ${TONES[tone]}`}>

@@ -1,14 +1,8 @@
 import { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import {
-  formatLocation,
-  websiteLabel,
-  workModeLabel,
-  type CompanyFormValues,
-} from '../../dashboard/companyProfile';
+import { formatLocation, websiteLabel, type CompanyFormValues } from '../../dashboard/companyProfile';
 import { Button } from '../ui/Button';
 import { useFocusTrap } from '../ui/useFocusTrap';
-import { Badge } from './Badge';
 import { CompanyBenefits } from './CompanyBenefits';
 import { CompanyCoverImage } from './CompanyCoverImage';
 import { CompanySocialRow } from './CompanySocialLinks';
@@ -30,7 +24,7 @@ import { Icon } from './Icon';
  */
 
 /** One fact in the summary strip. */
-function Fact({ label, value }: { label: string; value: string }) {
+function Fact({ label, value }: Readonly<{ label: string; value: string }>) {
   return (
     <div className="min-w-0">
       <dt className="text-xs font-medium uppercase tracking-wide text-slate-400">{label}</dt>
@@ -46,13 +40,13 @@ export function CompanyPublicPreview({
   logoUrl,
   coverUrl,
   onClose,
-}: {
+}: Readonly<{
   values: CompanyFormValues;
   logoUrl: string | null;
   coverUrl: string | null;
   onClose: () => void;
-}) {
-  const dialogRef = useRef<HTMLDivElement>(null);
+}>) {
+  const dialogRef = useRef<HTMLDialogElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
 
   useFocusTrap(dialogRef, true, { initialFocusRef: closeRef });
@@ -79,12 +73,18 @@ export function CompanyPublicPreview({
         className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm"
       />
 
-      <div
+      {/* A native <dialog> rather than a div with role="dialog": the element
+          carries the role itself. It is rendered with `open` instead of
+          showModal() because the surrounding fixed overlay already owns the
+          positioning and the backdrop. The p-0/max-h-none/text-inherit classes
+          undo the user-agent styles that would otherwise pad, cap and recolour
+          the panel. */}
+      <dialog
         ref={dialogRef}
-        role="dialog"
+        open
         aria-modal="true"
         aria-labelledby="public-preview-title"
-        className="relative w-full max-w-3xl rounded-2xl bg-white shadow-2xl shadow-slate-900/20 ring-1 ring-slate-900/5"
+        className="relative m-0 h-auto max-h-none w-full max-w-3xl overflow-visible rounded-2xl bg-white p-0 text-inherit shadow-2xl shadow-slate-900/20 ring-1 ring-slate-900/5"
       >
         {/* Says plainly that this is a rehearsal, not the live page. */}
         <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-6 py-3">
@@ -126,15 +126,6 @@ export function CompanyPublicPreview({
                     </span>
                   )}
                 </div>
-                {values.workModes.length > 0 && (
-                  <div className="mt-2.5 flex flex-wrap gap-2">
-                    {values.workModes.map((mode) => (
-                      <Badge key={mode} tone="emerald">
-                        {workModeLabel(mode)}
-                      </Badge>
-                    ))}
-                  </div>
-                )}
               </div>
               <CompanySocialRow values={values} />
             </div>
@@ -154,21 +145,12 @@ export function CompanyPublicPreview({
             <Fact label="Website" value={values.website ? websiteLabel(values.website) : ''} />
           </dl>
 
-          {(values.mission || values.vision || values.values.length > 0) && (
+          {(values.mission || values.vision) && (
             <section>
               <h3 className="text-sm font-semibold text-slate-900">What we stand for</h3>
               <div className="mt-3">
                 <CompanyStoryInformation values={values} />
               </div>
-            </section>
-          )}
-
-          {values.culture && (
-            <section>
-              <h3 className="text-sm font-semibold text-slate-900">Our culture</h3>
-              <p className="mt-2 whitespace-pre-line text-sm leading-6 text-slate-700">
-                {values.culture}
-              </p>
             </section>
           )}
 
@@ -208,7 +190,7 @@ export function CompanyPublicPreview({
             </Link>
           </section>
         </div>
-      </div>
+      </dialog>
     </div>
   );
 }

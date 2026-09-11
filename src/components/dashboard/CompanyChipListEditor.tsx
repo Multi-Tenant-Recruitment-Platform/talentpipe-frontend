@@ -23,7 +23,7 @@ export function CompanyChipListEditor({
   values,
   disabled = false,
   onChange,
-}: {
+}: Readonly<{
   id: string;
   label: string;
   placeholder: string;
@@ -31,7 +31,7 @@ export function CompanyChipListEditor({
   values: string[];
   disabled?: boolean;
   onChange: (next: string[]) => void;
-}) {
+}>) {
   const [draft, setDraft] = useState('');
 
   function commit() {

@@ -4,7 +4,8 @@ import { CompanyCoverImage } from './CompanyCoverImage';
 import { CompanyLogo } from './CompanyLogo';
 
 /**
- * Who the company is: cover, logo, name, industry, size, and the description.
+ * Who the company is: cover, logo, name, industry, size, the description, and
+ * the departments it is organised into.
  *
  * <p>Written to be read by someone deciding whether to apply, not only by the
  * admin maintaining it — hence a banner, a headline and a paragraph rather
@@ -16,14 +17,14 @@ export function CompanyInformation({
   coverUrl,
   withCover = false,
   headingLevel = 'h3',
-}: {
+}: Readonly<{
   values: CompanyFormValues;
   logoUrl: string | null;
   coverUrl: string | null;
   /** The roomy variant leads with the banner; the settings card does not. */
   withCover?: boolean;
   headingLevel?: 'h2' | 'h3';
-}) {
+}>) {
   const Heading = headingLevel;
 
   return (
@@ -82,6 +83,26 @@ export function CompanyInformation({
           </p>
         )}
       </div>
+
+      {/* Like mission and vision: shown once there is something to show, and
+          absent otherwise — an empty "Departments" label says nothing. */}
+      {values.departments.length > 0 && (
+        <div>
+          <h4 className="text-xs font-medium uppercase tracking-wide text-slate-400">
+            Departments
+          </h4>
+          <ul data-testid="company-departments" className="mt-2 flex flex-wrap gap-2">
+            {values.departments.map((department) => (
+              <li
+                key={department}
+                className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700"
+              >
+                {department}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   );
 }

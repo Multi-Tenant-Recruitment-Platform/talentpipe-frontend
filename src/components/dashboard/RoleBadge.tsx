@@ -13,6 +13,6 @@ export const ROLE_BADGE_TONE: Record<string, BadgeTone> = {
 };
 
 /** The one place a role is rendered as a pill — sidebar, team table and 403. */
-export function RoleBadge({ role }: { role: string }) {
+export function RoleBadge({ role }: Readonly<{ role: string }>) {
   return <Badge tone={ROLE_BADGE_TONE[role] ?? 'slate'}>{formatRole(role)}</Badge>;
 }

@@ -9,7 +9,7 @@ import { Badge } from './Badge';
  * status explains why a row offers no actions, that reason is attached as help
  * text rather than left for the admin to guess.</p>
  */
-export function MemberStatusBadge({ status }: { status: string }) {
+export function MemberStatusBadge({ status }: Readonly<{ status: string }>) {
   const meta = statusMeta(status);
   return (
     <span className="inline-flex" title={meta.hint}>

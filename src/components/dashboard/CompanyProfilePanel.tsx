@@ -20,10 +20,16 @@ import { CompanyPublicPreview } from './CompanyPublicPreview';
 export function CompanyProfilePanel({
   controller,
   variant = 'compact',
-}: {
+  onEdit,
+}: Readonly<{
   controller: CompanyProfileController;
   variant?: CompanyProfileVariant;
-}) {
+  /**
+   * What "Edit profile" does. Defaults to opening the editor in place; a page
+   * that gives the editor its own URL navigates there instead.
+   */
+  onEdit?: () => void;
+}>) {
   const {
     saved,
     values,
@@ -109,7 +115,7 @@ export function CompanyProfilePanel({
             coverUrl={savedCoverUrl}
             updatedAt={profile?.updatedAt ?? null}
             canEdit={canEdit}
-            onEdit={startEditing}
+            onEdit={onEdit ?? startEditing}
             // The preview belongs on the presentation surface. In the settings
             // card it would be a third button competing for a small footer.
             onPreview={variant === 'profile' ? openPreview : undefined}

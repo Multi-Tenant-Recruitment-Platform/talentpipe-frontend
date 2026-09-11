@@ -81,6 +81,17 @@ export default function App() {
               </RequirePermission>
             }
           />
+          {/* The editor has its own URL, so it can be reloaded and linked to,
+              and Back leaves it. Only a role that may change the profile gets
+              in; everyone else sees the 403 in place. */}
+          <Route
+            path="profile/edit"
+            element={
+              <RequirePermission permission="settings.edit">
+                <CompanyProfilePage mode="edit" />
+              </RequirePermission>
+            }
+          />
           <Route
             path="settings"
             element={

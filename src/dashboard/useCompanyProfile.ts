@@ -146,7 +146,7 @@ export function useCompanyProfile() {
     }));
   }
 
-  /** Free-text lists (values, office locations) are replaced wholesale. */
+  /** Free-text lists (office locations, departments) are replaced wholesale. */
   function setList(field: CompanyListField, next: string[]) {
     setMessage(null);
     setValues((current) => ({ ...current, [field]: next }));
