@@ -10,7 +10,6 @@ import { CompanyLogo } from '../components/dashboard/CompanyLogo';
 import { CompanyProfileProvider, useCompanyIdentity } from '../dashboard/CompanyProfileContext';
 import { TeamSummaryProvider } from '../dashboard/TeamSummaryContext';
 import { activeTenant } from '../tenant/activeTenant';
-import { resolveTenantHost, ROOT_DOMAIN } from '../tenant/subdomain';
 import { tenantStorage } from '../utils/tenantStorage';
 
 /** Each entry names the permission that earns it a place in the sidebar. */
@@ -138,10 +137,6 @@ function DashboardChrome() {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
 
-  // Which workspace this session reads: the backend's name first, then the
-  // host we're served from (localhost / older backend has neither).
-  const subdomain = user?.tenantSubdomain ?? resolveTenantHost().subdomain;
-
   // The profile is the newer answer; the login response is the fallback while
   // it loads. Renaming the company now updates this chip immediately.
   const company = useCompanyIdentity(user?.tenantName);
@@ -255,16 +250,9 @@ function DashboardChrome() {
               ) : (
                 <Avatar firstName={company.name} size="sm" />
               )}
-              <div className="min-w-0 max-w-[11rem] leading-tight">
-                <p className="truncate text-sm font-semibold text-slate-900">{company.name}</p>
-                {subdomain ? (
-                  <p className="truncate font-mono text-[10px] text-slate-500">
-                    {subdomain}.{ROOT_DOMAIN}
-                  </p>
-                ) : (
-                  <p className="truncate text-[10px] text-slate-500">Company workspace</p>
-                )}
-              </div>
+              <p className="min-w-0 max-w-[11rem] truncate text-sm font-semibold text-slate-900">
+                {company.name}
+              </p>
             </Link>
 
             {/* Notifications */}

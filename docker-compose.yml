@@ -21,7 +21,6 @@ services:
       args:
         # Relative: nginx proxies /api to the backend, keeping one origin.
         VITE_API_BASE_URL: ${VITE_API_BASE_URL:-/api/v1}
-        VITE_APP_ROOT_DOMAIN: ${VITE_APP_ROOT_DOMAIN:-talentpipe.io}
     container_name: talentpipe-frontend
     ports:
       # 5173 matches the backend's FRONTEND_BASE_URL default, so the links it

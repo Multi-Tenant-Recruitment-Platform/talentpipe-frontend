@@ -1,25 +1,16 @@
 import axios from 'axios';
-import { useMemo, useState, type FormEvent, type ReactNode } from 'react';
+import { useState, type FormEvent, type ReactNode } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { api, apiErrorMessage } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import { AuthShell } from '../components/AuthShell';
-import { Badge } from '../components/dashboard/Badge';
 import { Icon } from '../components/dashboard/Icon';
 import { Alert } from '../components/ui/Alert';
 import { inputClass } from '../components/ui/inputClass';
-import {
-  normalizeSubdomainInput,
-  recallSubdomain,
-  rememberSubdomain,
-  resolveTenantHost,
-  ROOT_DOMAIN,
-} from '../tenant/subdomain';
 
 type LoginMode = 'candidate' | 'company';
 
 interface LoginLocationState {
-  subdomain?: string;
   /** Set by the registration pages after a successful sign-up. */
   registered?: boolean | 'company' | 'candidate';
   /** Pre-selects the login tab (e.g. after candidate registration). */
@@ -82,9 +73,9 @@ function homeFor(role: string): string {
  * What a failed login should say, and whether to offer a resend.
  *
  * <p>The backend deliberately returns the same 401 "Invalid credentials"
- * whether the workspace doesn't exist or the password is wrong — it never
- * distinguishes them, so a workspace typo can't be confirmed by enumerating
- * tenants via the error code. Blaming a field here would require a signal the
+ * whether the account doesn't exist or the password is wrong — it never
+ * distinguishes them, so an address can't be confirmed by enumerating
+ * accounts via the error code. Blaming a field here would require a signal the
  * API intentionally withholds, so this is a single generic error like any
  * other login failure. Only a 403 naming an unverified account is different,
  * because there the resend is both useful and safe — the caller has already
@@ -101,9 +92,9 @@ function loginFailure(err: unknown): { message: string; needsVerification: boole
 
 /**
  * Login (PB-007), split-screen edition: the brand panel showcases the
- * platform's highlights while the form serves both personas. Company users
- * log in with their subdomain, which travels as the X-Tenant-Subdomain
- * header (ADR-1); candidates authenticate globally, without a tenant.
+ * platform's highlights while the form serves both personas. Both sign in
+ * with email and password alone — the backend finds the company account from
+ * those, so no workspace address is asked for.
  */
 export function LoginPage() {
   const { login, sessionEndReason } = useAuth();
@@ -111,14 +102,6 @@ export function LoginPage() {
   const state = (useLocation().state ?? {}) as LoginLocationState;
 
   const [mode, setMode] = useState<LoginMode>(state.mode ?? 'company');
-
-  // Where the workspace comes from, in order of authority: the address bar,
-  // then whoever routed us here (registration), then this device's last login.
-  const tenantHost = useMemo(() => resolveTenantHost(), []);
-  const [subdomain, setSubdomain] = useState(
-    tenantHost.subdomain ?? state.subdomain ?? recallSubdomain(),
-  );
-  const [subdomainError, setSubdomainError] = useState<string | null>(null);
 
   const [email, setEmail] = useState(state.email ?? '');
   const [password, setPassword] = useState('');
@@ -136,7 +119,6 @@ export function LoginPage() {
     setError(null);
     setNotice(null);
     setNeedsVerification(false);
-    setSubdomainError(null);
   }
 
   async function handleSubmit(event: FormEvent) {
@@ -144,19 +126,10 @@ export function LoginPage() {
     setError(null);
     setNotice(null);
     setNeedsVerification(false);
-    setSubdomainError(null);
-
-    // Candidates authenticate globally; only a company login carries a tenant.
-    const tenant = mode === 'company' ? subdomain.trim() : '';
-    if (mode === 'company' && !tenant) {
-      setSubdomainError('Enter your workspace to continue.');
-      return;
-    }
 
     setSubmitting(true);
     try {
-      const loggedIn = await login(tenant, email, password);
-      rememberSubdomain(tenant);
+      const loggedIn = await login(email, password);
       navigate(state.from ?? homeFor(loggedIn.role), { replace: true });
     } catch (err: unknown) {
       const failure = loginFailure(err);
@@ -279,73 +252,6 @@ export function LoginPage() {
           </Alert>
         )}
         {notice && <Alert tone="info">{notice}</Alert>}
-
-        {/* Which company workspace to sign in to — travels as the
-            X-Tenant-Subdomain header (ADR-1). Candidates have no tenant. */}
-        {mode === 'company' &&
-          (tenantHost.locked ? (
-            <div>
-              <span className="block text-sm font-medium text-slate-700">Workspace</span>
-              <div className="mt-1.5 flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2.5">
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-600 to-violet-600 text-white shadow-sm">
-                  <Icon name="building" className="h-4 w-4" />
-                </span>
-                <span className="min-w-0 flex-1 truncate text-sm">
-                  <span className="font-semibold text-slate-900">{tenantHost.subdomain}</span>
-                  <span className="text-slate-400">.{ROOT_DOMAIN}</span>
-                </span>
-                <Badge tone="indigo">Detected</Badge>
-              </div>
-              <p className="mt-1.5 text-xs text-slate-500">
-                You’re signing in from this workspace’s address.
-              </p>
-            </div>
-          ) : (
-            <div>
-              <label htmlFor="subdomain" className="block text-sm font-medium text-slate-700">
-                Workspace
-              </label>
-              <div
-                className={`mt-1.5 flex items-center overflow-hidden rounded-lg border bg-white shadow-sm transition-colors focus-within:ring-4 ${
-                  subdomainError
-                    ? 'border-red-300 focus-within:border-red-500 focus-within:ring-red-500/15'
-                    : 'border-slate-300 hover:border-slate-400 focus-within:border-indigo-500 focus-within:ring-indigo-500/15'
-                }`}
-              >
-                <span className="flex h-full items-center pl-3.5 text-slate-400" aria-hidden="true">
-                  <Icon name="building" className="h-4 w-4" />
-                </span>
-                <input
-                  id="subdomain"
-                  // Not `required`: the browser's generic bubble would preempt
-                  // the field-level message handleSubmit produces, which can
-                  // also name a workspace the backend rejected.
-                  value={subdomain}
-                  onChange={(e) => {
-                    setSubdomain(normalizeSubdomainInput(e.target.value));
-                    setSubdomainError(null);
-                  }}
-                  className="min-w-0 flex-1 border-0 bg-transparent px-2.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-0"
-                  placeholder="acme"
-                  autoComplete="organization"
-                  autoCapitalize="none"
-                  spellCheck={false}
-                  aria-invalid={subdomainError ? true : undefined}
-                  aria-describedby="subdomain-hint"
-                />
-                <span className="shrink-0 self-stretch border-l border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-500">
-                  .{ROOT_DOMAIN}
-                </span>
-              </div>
-              <p
-                id="subdomain-hint"
-                className={`mt-1.5 text-xs ${subdomainError ? 'text-red-600' : 'text-slate-500'}`}
-              >
-                {subdomainError ??
-                  'Your company’s TalentPipe address — it’s in your invitation email.'}
-              </p>
-            </div>
-          ))}
 
         <div>
           <label htmlFor="email" className="block text-sm font-medium text-slate-700">

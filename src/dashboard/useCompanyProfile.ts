@@ -4,7 +4,6 @@ import type { CompanyImageKind, CompanyProfileResponse } from '../api/types';
 import { useAuth } from '../auth/AuthContext';
 import { useCan } from '../auth/useCan';
 import type { AlertTone } from '../components/ui/Alert';
-import { resolveTenantHost } from '../tenant/subdomain';
 import { readFileAsDataUrl, validateImageFile } from './companyImages';
 import { describeCompanyError } from './companyErrors';
 import {
@@ -78,10 +77,9 @@ export function useCompanyProfile() {
   const [removed, setRemoved] = useState<ImageRemoved>(NONE_REMOVED);
   const [imageErrors, setImageErrors] = useState<ImageErrors>(NO_IMAGE_ERRORS);
 
-  // Identity the draft store cannot invent, taken from the session. Both go
-  // away with the store: the real GET /tenant reads them from the access token.
+  // Identity the draft store cannot invent, taken from the session. Goes away
+  // with the store: the real GET /tenant reads it from the access token.
   const seedName = user?.tenantName ?? null;
-  const seedSubdomain = user?.tenantSubdomain ?? resolveTenantHost().subdomain;
 
   const clearStaging = useCallback(() => {
     setStaged(NO_STAGING);
@@ -92,7 +90,7 @@ export function useCompanyProfile() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const loaded = await companyApi.get({ name: seedName, subdomain: seedSubdomain });
+      const loaded = await companyApi.get({ name: seedName });
       const asForm = toFormValues(loaded);
       setProfile(loaded);
       setSaved(asForm);
@@ -108,7 +106,7 @@ export function useCompanyProfile() {
     } finally {
       setLoading(false);
     }
-  }, [seedName, seedSubdomain, clearStaging]);
+  }, [seedName, clearStaging]);
 
   // Re-runs when the signed-in identity changes, so switching workspaces on one
   // device never leaves the previous company's details on screen.
@@ -152,7 +150,7 @@ export function useCompanyProfile() {
     }));
   }
 
-  /** Free-text lists (values, office locations) are replaced wholesale. */
+  /** Free-text lists (office locations, departments) are replaced wholesale. */
   function setList(field: CompanyListField, next: string[]) {
     setMessage(null);
     setValues((current) => ({ ...current, [field]: next }));
@@ -205,10 +203,7 @@ export function useCompanyProfile() {
         }
       }
 
-      const updated = await companyApi.update(toUpdateRequest(values), {
-        name: seedName,
-        subdomain: seedSubdomain,
-      });
+      const updated = await companyApi.update(toUpdateRequest(values), { name: seedName });
       const withImages = { ...updated, ...urls };
       const asForm = toFormValues(withImages);
       setProfile(withImages);

@@ -60,8 +60,9 @@ npm run build
   restores sessions across reloads.
 - A `401` triggers a single-flight `POST /auth/refresh` and one retry; failure
   broadcasts a session-expired event that logs the user out.
-- Company login sends the tenant as the `X-Tenant-Subdomain` header; candidates
-  authenticate globally without it.
+- Company users and candidates both sign in with email and password only; the
+  backend resolves which account they belong to. No workspace subdomain is
+  asked for, sent, or shown anywhere in the UI.
 
 ## Docker
 
@@ -95,7 +96,6 @@ is the same port `npm run dev` uses — run one or the other, not both.
 |---|---|---|
 | `BACKEND_ORIGIN` | `http://host.docker.internal:8080` | run time (no trailing slash) |
 | `VITE_API_BASE_URL` | `/api/v1` | build time |
-| `VITE_APP_ROOT_DOMAIN` | `talentpipe.io` | build time |
 | `FRONTEND_PORT` | `5173` | run time |
 
 `BACKEND_ORIGIN` is substituted into the nginx config at container start, so

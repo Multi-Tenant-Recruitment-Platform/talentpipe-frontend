@@ -11,8 +11,8 @@ import type {
  *
  * <p><strong>No backend endpoint serves this yet.</strong> The API surface is
  * `/auth`, `/team`, `/public/candidates` and `/public/jobs`; there is no tenant
- * controller, and the `Tenant` entity has columns only for name, subdomain,
- * industry, plan tier and status. So the two calls below are served from
+ * controller, and the `Tenant` entity has columns only for name, industry,
+ * plan tier and status. So the two calls below are served from
  * per-workspace `localStorage` — the screen, its validation and its states are
  * real, and the data survives a reload, but it never leaves the device.</p>
  *
@@ -23,8 +23,8 @@ import type {
  * <ul>
  *   <li>{@link companyApi.get} → `GET /tenant`, returning
  *       {@link CompanyProfileResponse}. Drop the `seed` argument at its one
- *       call site (`useCompanyProfile`) once the response carries the name and
- *       subdomain itself.</li>
+ *       call site (`useCompanyProfile`) once the response carries the name
+ *       itself.</li>
  *   <li>{@link companyApi.update} → `PATCH /tenant` with
  *       {@link UpdateCompanyProfileRequest}, returning the saved profile.</li>
  *   <li>{@link companyApi.uploadImage} → `POST /tenant/logo` or
@@ -48,15 +48,14 @@ const DRAFT_KEY = 'company.profile';
 const LATENCY_MS = 220;
 
 /**
- * Identity the draft store cannot invent: the company name and subdomain come
- * from the session (`UserResponse.tenantName` / `tenantSubdomain`).
+ * Identity the draft store cannot invent: the company name comes from the
+ * session (`UserResponse.tenantName`).
  *
- * <p>The real `GET /tenant` reads all of this from the access token, so this
- * argument disappears with the draft store.</p>
+ * <p>The real `GET /tenant` reads it from the access token, so this argument
+ * disappears with the draft store.</p>
  */
 export interface CompanyProfileSeed {
   name?: string | null;
-  subdomain?: string | null;
 }
 
 /** Exactly the editable fields, plus the images and when they were written. */
@@ -113,24 +112,19 @@ function toResponse(
     id: tenantId ?? 'draft-tenant',
     // An edited name wins over the session's copy — it is the newer of the two.
     name: draft?.name ?? seed.name ?? '',
-    subdomain: seed.subdomain ?? '',
     logoUrl: draft?.logoUrl ?? null,
     coverImageUrl: draft?.coverImageUrl ?? null,
     tagline: draft?.tagline ?? null,
     industry: draft?.industry ?? null,
     companyType: draft?.companyType ?? null,
     size: draft?.size ?? null,
-    employeeCount: draft?.employeeCount ?? null,
     foundedYear: draft?.foundedYear ?? null,
     description: draft?.description ?? null,
-    culture: draft?.culture ?? null,
     mission: draft?.mission ?? null,
     vision: draft?.vision ?? null,
-    values: draft?.values ?? [],
     benefits: draft?.benefits ?? [],
     legalName: draft?.legalName ?? null,
     registrationNumber: draft?.registrationNumber ?? null,
-    workModes: draft?.workModes ?? [],
     timezone: draft?.timezone ?? null,
     currency: draft?.currency ?? null,
     language: draft?.language ?? null,
@@ -150,13 +144,6 @@ function toResponse(
     country: draft?.country ?? null,
     officeLocations: draft?.officeLocations ?? [],
     departments: draft?.departments ?? [],
-    teams: draft?.teams ?? [],
-    businessUnits: draft?.businessUnits ?? [],
-    employmentTypes: draft?.employmentTypes ?? [],
-    jobCategories: draft?.jobCategories ?? [],
-    jobFamilies: draft?.jobFamilies ?? [],
-    jobLevels: draft?.jobLevels ?? [],
-    jobTitles: draft?.jobTitles ?? [],
     // Fixed until a billing endpoint exists; the entity defaults match these.
     planTier: 'STANDARD',
     status: 'ACTIVE',

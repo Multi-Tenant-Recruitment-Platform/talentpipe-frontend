@@ -1,14 +1,8 @@
 import { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import {
-  formatLocation,
-  websiteLabel,
-  workModeLabel,
-  type CompanyFormValues,
-} from '../../dashboard/companyProfile';
+import { formatLocation, websiteLabel, type CompanyFormValues } from '../../dashboard/companyProfile';
 import { Button } from '../ui/Button';
 import { useFocusTrap } from '../ui/useFocusTrap';
-import { Badge } from './Badge';
 import { CompanyBenefits } from './CompanyBenefits';
 import { CompanyCoverImage } from './CompanyCoverImage';
 import { CompanySocialRow } from './CompanySocialLinks';
@@ -132,15 +126,6 @@ export function CompanyPublicPreview({
                     </span>
                   )}
                 </div>
-                {values.workModes.length > 0 && (
-                  <div className="mt-2.5 flex flex-wrap gap-2">
-                    {values.workModes.map((mode) => (
-                      <Badge key={mode} tone="emerald">
-                        {workModeLabel(mode)}
-                      </Badge>
-                    ))}
-                  </div>
-                )}
               </div>
               <CompanySocialRow values={values} />
             </div>
@@ -160,21 +145,12 @@ export function CompanyPublicPreview({
             <Fact label="Website" value={values.website ? websiteLabel(values.website) : ''} />
           </dl>
 
-          {(values.mission || values.vision || values.values.length > 0) && (
+          {(values.mission || values.vision) && (
             <section>
               <h3 className="text-sm font-semibold text-slate-900">What we stand for</h3>
               <div className="mt-3">
                 <CompanyStoryInformation values={values} />
               </div>
-            </section>
-          )}
-
-          {values.culture && (
-            <section>
-              <h3 className="text-sm font-semibold text-slate-900">Our culture</h3>
-              <p className="mt-2 whitespace-pre-line text-sm leading-6 text-slate-700">
-                {values.culture}
-              </p>
             </section>
           )}
 

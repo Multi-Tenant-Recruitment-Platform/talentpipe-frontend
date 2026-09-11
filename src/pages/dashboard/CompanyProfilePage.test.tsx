@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter } from 'react-router-dom';
+import type { ReactNode } from 'react';
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CompanyProfileResponse, UpdateCompanyProfileRequest } from '../../api/types';
 import { toFormValues, toUpdateRequest } from '../../dashboard/companyProfile';
@@ -50,20 +51,37 @@ const pngFile = (name = 'logo.png', size = 50_000) => {
   return file;
 };
 
-function renderPage() {
-  return render(
-    <MemoryRouter>
+/** Where the router currently is, so a test can assert on the URL. */
+function LocationProbe() {
+  return <div data-testid="location">{useLocation().pathname}</div>;
+}
+
+/** The two profile routes exactly as App.tsx declares them, minus the gates. */
+function ProfileRoutes({ path = '/dashboard/profile', extra }: Readonly<{ path?: string; extra?: ReactNode }>) {
+  return (
+    <MemoryRouter initialEntries={[path]}>
       <CompanyProfileProvider>
-        <CompanyProfilePage />
+        {extra}
+        <Routes>
+          <Route path="/dashboard/profile" element={<CompanyProfilePage />} />
+          <Route path="/dashboard/profile/edit" element={<CompanyProfilePage mode="edit" />} />
+        </Routes>
+        <LocationProbe />
       </CompanyProfileProvider>
-    </MemoryRouter>,
+    </MemoryRouter>
   );
 }
+
+function renderPage(path?: string) {
+  return render(<ProfileRoutes path={path} />);
+}
+
+const currentPath = () => screen.getByTestId('location').textContent;
 
 async function openEditor(user: ReturnType<typeof userEvent.setup>) {
   renderPage();
   await user.click(await screen.findByRole('button', { name: /edit profile/i }));
-  return screen.getByLabelText(/^company name$/i);
+  return screen.findByLabelText(/^company name$/i);
 }
 
 const lastRequest = (): UpdateCompanyProfileRequest =>
@@ -342,43 +360,73 @@ describe('the logo and cover image', () => {
   });
 });
 
-describe('the derived counts', () => {
-  it('counts the lists rather than storing a number beside them', async () => {
+describe('departments', () => {
+  it('sit under the description, with no Organization section', async () => {
     renderPage();
     await screen.findByRole('heading', { name: 'ABC Technologies' });
 
-    const stats = within(screen.getByTestId('company-stats'));
-    // Fixture: 3 departments, 2 teams, 1 business unit, 2 offices.
-    expect(stats.getByText('Departments').closest('div')).toHaveTextContent('3');
-    expect(stats.getByText('Teams').closest('div')).toHaveTextContent('2');
-    expect(stats.getByText('Business units').closest('div')).toHaveTextContent('1');
-    expect(stats.getByText('Offices').closest('div')).toHaveTextContent('2');
+    const departments = within(screen.getByTestId('company-departments')).getAllByRole('listitem');
+    expect(departments.map((d) => d.textContent)).toEqual(['Engineering', 'QA', 'HR']);
+    expect(
+      screen.getByTestId('company-description').compareDocumentPosition(
+        screen.getByTestId('company-departments'),
+      ) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(screen.queryByRole('heading', { name: /^organization$/i })).toBeNull();
   });
 
-  it('shows only figures this page can answer for', async () => {
+  it('are hidden entirely until one is added, like mission and vision', async () => {
+    get.mockResolvedValue({ ...PROFILE, departments: [] });
     renderPage();
     await screen.findByRole('heading', { name: 'ABC Technologies' });
 
-    // Headcounts belong to the team roster and open positions to jobs; both
-    // have their own pages. A number here that you cannot change here only
-    // raises "where do I edit this?" on a screen that cannot answer.
-    const stats = within(screen.getByTestId('company-stats'));
-    expect(stats.queryByText(/hr managers/i)).toBeNull();
-    expect(stats.queryByText(/interviewers/i)).toBeNull();
-    expect(stats.queryByText(/open positions/i)).toBeNull();
+    expect(screen.queryByTestId('company-departments')).toBeNull();
+    expect(screen.queryByRole('heading', { name: /^departments$/i })).toBeNull();
   });
 
-  it('follows the list when it changes, with no second number to update', async () => {
+  it('are edited in the overview, next to the description, and saved', async () => {
     const user = userEvent.setup();
     await openEditor(user);
 
-    await user.type(screen.getByLabelText(/^departments$/i), 'Finance');
+    const overview = screen.getByText('Company overview', { selector: 'legend' }).closest('fieldset')!;
+    const input = within(overview).getByLabelText(/^departments$/i);
+    expect(screen.queryByText('Organization', { selector: 'legend' })).toBeNull();
+    // The hint no longer talks about counting.
+    expect(screen.queryByText(/counted automatically/i)).toBeNull();
+
+    await user.type(input, 'Finance');
     await user.keyboard('{Enter}');
     await user.click(screen.getByRole('button', { name: /save changes/i }));
 
     expect(lastRequest().departments).toEqual(['Engineering', 'QA', 'HR', 'Finance']);
-    const stats = within(await screen.findByTestId('company-stats'));
-    expect(stats.getByText('Departments').closest('div')).toHaveTextContent('4');
+    expect(await screen.findByTestId('company-departments')).toHaveTextContent('Finance');
+  });
+});
+
+describe('no counts', () => {
+  it('has no "At a glance" section of department and branch totals', async () => {
+    renderPage();
+    await screen.findByRole('heading', { name: 'ABC Technologies' });
+
+    expect(screen.queryByRole('heading', { name: /at a glance/i })).toBeNull();
+    expect(screen.queryByTestId('company-stats')).toBeNull();
+    // Nor a count tucked into the branches label.
+    expect(screen.getByText('Other branches')).toBeInTheDocument();
+    expect(screen.queryByText(/other branches \(\d+\)/i)).toBeNull();
+  });
+});
+
+describe('other branches', () => {
+  it('replaces the word "Offices" on the profile and in the editor', async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await screen.findByRole('heading', { name: 'ABC Technologies' });
+    expect(screen.queryByText(/offices/i)).toBeNull();
+    expect(within(screen.getByTestId('company-officeLocations')).getAllByRole('listitem')).toHaveLength(2);
+
+    await openEditorFromView(user);
+    expect(screen.getByLabelText(/^other branches$/i)).toBeInTheDocument();
+    expect(screen.queryByLabelText(/office locations/i)).toBeNull();
   });
 });
 
@@ -395,18 +443,11 @@ describe('the shared profile context', () => {
       return <div data-testid="chip">{company.name}</div>;
     }
 
-    render(
-      <MemoryRouter>
-        <CompanyProfileProvider>
-          <Chrome />
-          <CompanyProfilePage />
-        </CompanyProfileProvider>
-      </MemoryRouter>,
-    );
+    render(<ProfileRoutes extra={<Chrome />} />);
 
     await screen.findByRole('heading', { name: 'ABC Technologies' });
     await user.click(screen.getByRole('button', { name: /edit profile/i }));
-    const nameInput = screen.getByLabelText(/^company name$/i);
+    const nameInput = await screen.findByLabelText(/^company name$/i);
     await user.clear(nameInput);
     await user.type(nameInput, 'LankaTech Solutions');
     await user.click(screen.getByRole('button', { name: /save changes/i }));
@@ -436,33 +477,9 @@ describe('the shared profile context', () => {
   });
 });
 
-describe('the hiring vocabulary', () => {
-  it('shows labels for the stored identifiers, in catalogue order', async () => {
-    renderPage();
-    await screen.findByRole('heading', { name: 'ABC Technologies' });
 
-    // 'FULL_TIME' is for the database; 'Full-time' is for the person.
-    expect(screen.getByTestId('company-employmentTypes')).toHaveTextContent('Full-time');
-    expect(screen.getByTestId('company-employmentTypes')).toHaveTextContent('Internship');
-    // Seniority order, never alphabetical — Junior before Senior.
-    const levels = within(screen.getByTestId('company-jobLevels')).getAllByRole('listitem');
-    expect(levels.map((l) => l.textContent)).toEqual(['Junior', 'Senior']);
-    expect(screen.getByTestId('company-jobTitles')).toHaveTextContent('Software Engineer');
-  });
-
-  it('keeps job levels in seniority order however they are picked', async () => {
-    const user = userEvent.setup();
-    await openEditor(user);
-
-    await user.click(screen.getByRole('checkbox', { name: 'Intern' }));
-    await user.click(screen.getByRole('button', { name: /save changes/i }));
-
-    expect(lastRequest().jobLevels).toEqual(['INTERN', 'JUNIOR', 'SENIOR']);
-  });
-});
-
-describe('benefits, culture and social links', () => {
-  it('shows the perks in catalogue order and the culture note', async () => {
+describe('benefits and social links', () => {
+  it('shows the perks in catalogue order', async () => {
     renderPage();
     await screen.findByRole('heading', { name: 'ABC Technologies' });
 
@@ -471,9 +488,6 @@ describe('benefits, culture and social links', () => {
       'Remote / hybrid work',
       'Health insurance',
     ]);
-    expect(screen.getByTestId('company-culture')).toHaveTextContent(
-      'We encourage collaboration and continuous learning.',
-    );
   });
 
   it('shows only the social links that are set', async () => {
@@ -531,9 +545,6 @@ describe('the public profile preview', () => {
     expect(within(dialog).getByText(/founded 2015/i)).toBeInTheDocument();
     expect(within(dialog).getByTestId('company-mission')).toHaveTextContent(
       'Make hiring fair and fast.',
-    );
-    expect(within(within(dialog).getByTestId('company-values')).getAllByRole('listitem')).toHaveLength(
-      2,
     );
     // Registration detail is administrative — a candidate never sees it.
     expect(within(dialog).queryByText(/PV 12345/)).toBeNull();
@@ -670,7 +681,131 @@ describe('leaving the editor', () => {
 
     // Re-opening starts from the saved profile, not the abandoned edit.
     await user.click(screen.getByRole('button', { name: /edit profile/i }));
-    expect(screen.getByLabelText(/^company name$/i)).toHaveValue('ABC Technologies');
+    expect(await screen.findByLabelText(/^company name$/i)).toHaveValue('ABC Technologies');
+  });
+});
+
+describe('the profile and the editor have separate URLs', () => {
+  it('moves to /dashboard/profile/edit when editing starts', async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await screen.findByRole('heading', { name: 'ABC Technologies' });
+    expect(currentPath()).toBe('/dashboard/profile');
+
+    await openEditorFromView(user);
+    expect(currentPath()).toBe('/dashboard/profile/edit');
+    expect(screen.getByRole('heading', { name: /edit company profile/i })).toBeInTheDocument();
+  });
+
+  it('opens the editor when the edit URL is loaded directly', async () => {
+    renderPage('/dashboard/profile/edit');
+    // A reload or a pasted link lands in the form, not on the read view.
+    expect(await screen.findByLabelText(/^company name$/i)).toHaveValue('ABC Technologies');
+    expect(currentPath()).toBe('/dashboard/profile/edit');
+  });
+
+  it('returns to /dashboard/profile after a save', async () => {
+    const user = userEvent.setup();
+    const nameInput = await openEditor(user);
+    await user.type(nameInput, ' Ltd');
+    await user.click(screen.getByRole('button', { name: /save changes/i }));
+
+    expect(await screen.findByText(/company profile updated successfully/i)).toBeInTheDocument();
+    expect(currentPath()).toBe('/dashboard/profile');
+    expect(screen.queryByLabelText(/^company name$/i)).toBeNull();
+  });
+
+  it('returns to /dashboard/profile on cancel and on discard', async () => {
+    const user = userEvent.setup();
+    await openEditor(user);
+    await user.click(screen.getByRole('button', { name: /cancel/i }));
+    expect(currentPath()).toBe('/dashboard/profile');
+
+    const nameInput = await openEditorFromView(user);
+    await user.type(nameInput, ' Ltd');
+    await user.click(screen.getByRole('button', { name: /cancel/i }));
+    // Still on the edit URL while the dialog asks.
+    expect(currentPath()).toBe('/dashboard/profile/edit');
+    await user.click(
+      within(await screen.findByRole('alertdialog')).getByRole('button', { name: /discard changes/i }),
+    );
+    expect(currentPath()).toBe('/dashboard/profile');
+  });
+});
+
+/** Like openEditor, for a test that has already rendered the page. */
+async function openEditorFromView(user: ReturnType<typeof userEvent.setup>) {
+  await user.click(screen.getByRole('button', { name: /edit profile/i }));
+  return screen.findByLabelText(/^company name$/i);
+}
+
+describe('removed fields', () => {
+  it('are not shown on the profile', async () => {
+    renderPage();
+    await screen.findByRole('heading', { name: 'ABC Technologies' });
+
+    for (const gone of [
+      /number of employees/i,
+      /company culture/i,
+      /company values/i,
+      /work arrangements/i,
+      /^teams$/i,
+      /business units/i,
+      /employment types/i,
+      /job categories/i,
+      /job levels/i,
+      /job families/i,
+      /job titles/i,
+      /hiring vocabulary/i,
+    ]) {
+      expect(screen.queryByText(gone)).toBeNull();
+    }
+  });
+
+  it('are not offered in the editor', async () => {
+    const user = userEvent.setup();
+    await openEditor(user);
+
+    for (const gone of [
+      /number of employees/i,
+      /company culture/i,
+      /company values/i,
+      /^teams$/i,
+      /business units/i,
+      /job categories/i,
+      /job families/i,
+      /job titles/i,
+    ]) {
+      expect(screen.queryByLabelText(gone)).toBeNull();
+    }
+    for (const gone of [/work arrangements/i, /employment types/i, /job levels/i, /job taxonomy/i]) {
+      expect(screen.queryByText(gone)).toBeNull();
+    }
+    expect(screen.queryByRole('checkbox', { name: /full-time/i })).toBeNull();
+    expect(screen.queryByRole('checkbox', { name: 'Senior' })).toBeNull();
+    // What stays is still there.
+    expect(screen.getByLabelText(/^departments$/i)).toBeInTheDocument();
+  });
+});
+
+describe('the editor section headings', () => {
+  it('are dark enough to read as headings', async () => {
+    const user = userEvent.setup();
+    await openEditor(user);
+
+    for (const heading of [
+      'Company overview',
+      'Benefits & perks',
+      'Contact information',
+      'Social links',
+      'Location',
+      'Operations',
+      'Registration & tax',
+    ]) {
+      const legend = screen.getByText(heading, { selector: 'legend' });
+      expect(legend).toHaveClass('text-slate-600');
+      expect(legend).not.toHaveClass('text-slate-400');
+    }
   });
 });
 

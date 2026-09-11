@@ -6,17 +6,13 @@ import {
   COMPANY_TEXT_FIELDS,
   COMPANY_TYPES,
   CURRENCIES,
-  EMPLOYMENT_TYPES,
   FIELD_LABELS,
   INDUSTRIES,
-  JOB_LEVELS,
   LANGUAGES,
-  MAX_CULTURE,
   MAX_DESCRIPTION,
   SOCIAL_FIELDS,
   SOCIAL_PLACEHOLDERS,
   TIMEZONES,
-  WORK_MODES,
   type CompanyFieldErrors,
   type CompanyFormValues,
   type CompanyListField,
@@ -40,15 +36,19 @@ import { Icon } from './Icon';
  * the moment the feedback is actually useful.</p>
  */
 
+/**
+ * Section headings. Dark enough to read as headings and break a long form into
+ * parts — the lighter grey they had sat below the field labels in weight.
+ */
+const LEGEND_CLASS = 'text-xs font-semibold uppercase tracking-wide text-slate-600';
+
 const fieldId = (field: CompanyTextField) => `company-${field}`;
 const errorId = (field: CompanyTextField) => `company-${field}-error`;
 
 function Fieldset({ legend, children }: Readonly<{ legend: string; children: ReactNode }>) {
   return (
     <fieldset className="border-t border-slate-100 pt-6">
-      <legend className="text-xs font-medium uppercase tracking-wide text-slate-400">
-        {legend}
-      </legend>
+      <legend className={LEGEND_CLASS}>{legend}</legend>
       <div className="mt-4 grid gap-5 sm:grid-cols-2">{children}</div>
     </fieldset>
   );
@@ -103,9 +103,7 @@ function CheckboxGroup({
 }>) {
   return (
     <fieldset className="border-t border-slate-100 pt-6">
-      <legend className="text-xs font-medium uppercase tracking-wide text-slate-400">
-        {legend}
-      </legend>
+      <legend className={LEGEND_CLASS}>{legend}</legend>
       <p className="mt-1 text-xs text-slate-400">{hint}</p>
       <div className={`mt-4 grid gap-x-6 gap-y-2.5 ${columns}`}>
         {options.map((option) => (
@@ -177,7 +175,6 @@ export function CompanyProfileForm({
     errors[field] ? { 'aria-invalid': true, 'aria-describedby': errorId(field) } : {};
 
   const overLimit = values.description.trim().length > MAX_DESCRIPTION;
-  const cultureOver = values.culture.trim().length > MAX_CULTURE;
 
   return (
     <form ref={formRef} onSubmit={handleSubmit} noValidate className="space-y-6">
@@ -286,24 +283,6 @@ export function CompanyProfileForm({
           </select>
         </Field>
 
-        <Field
-          field="employeeCount"
-          error={errors.employeeCount}
-          hint="The exact figure, if the band above is not precise enough."
-        >
-          <input
-            id={fieldId('employeeCount')}
-            type="number"
-            inputMode="numeric"
-            min={1}
-            value={values.employeeCount}
-            onChange={(e) => onChange('employeeCount', e.target.value)}
-            placeholder="120"
-            className={inputClass}
-            {...a11y('employeeCount')}
-          />
-        </Field>
-
         <Field field="foundedYear" error={errors.foundedYear}>
           <input
             id={fieldId('foundedYear')}
@@ -340,27 +319,19 @@ export function CompanyProfileForm({
           </p>
         </Field>
 
-        <Field
-          field="culture"
-          error={errors.culture}
-          className="sm:col-span-2"
-          hint="What it is like to work here — the day to day, not the mission statement."
-        >
-          <textarea
-            id={fieldId('culture')}
-            rows={3}
-            value={values.culture}
-            onChange={(e) => onChange('culture', e.target.value)}
-            placeholder="We encourage collaboration, continuous learning and innovation…"
-            className={`${inputClass} resize-none`}
-            {...a11y('culture')}
+        {/* Sits with the description, like mission and vision, rather than
+            under a heading of its own. */}
+        <div className="sm:col-span-2">
+          <CompanyChipListEditor
+            id="company-departments"
+            label="Departments"
+            placeholder="Engineering, then Enter"
+            hint="Shown on the profile under the description, once you add one."
+            values={values.departments}
+            disabled={saving}
+            onChange={(next) => onChangeList('departments', next)}
           />
-          <p
-            className={`mt-1 text-right text-xs tabular-nums ${cultureOver ? 'font-medium text-red-600' : 'text-slate-400'}`}
-          >
-            {values.culture.trim().length} / {MAX_CULTURE}
-          </p>
-        </Field>
+        </div>
 
         <Field field="mission" error={errors.mission} hint="Why the company exists.">
           <textarea
@@ -383,32 +354,11 @@ export function CompanyProfileForm({
             {...a11y('vision')}
           />
         </Field>
-
-        <div className="sm:col-span-2">
-          <CompanyChipListEditor
-            id="company-values"
-            label="Company values"
-            placeholder="Innovation, then Enter"
-            hint="Short phrases work best — one idea each, not a sentence."
-            values={values.values}
-            disabled={saving}
-            onChange={(next) => onChangeList('values', next)}
-          />
-        </div>
       </Fieldset>
 
-      {/* Checklists, not free text: stored as identifiers, these can be
-          filtered on later — "show me remote-friendly companies" — which a
-          sentence someone typed never could. */}
-      <CheckboxGroup
-        legend="Work arrangements"
-        hint="How roles at this company are usually staffed."
-        options={WORK_MODES}
-        selected={values.workModes}
-        onToggle={(id) => onToggleListValue('workModes', id)}
-        columns="sm:grid-cols-3"
-      />
-
+      {/* A checklist, not free text: stored as identifiers, these can be
+          filtered on later — "show me companies with health insurance" —
+          which a sentence someone typed never could. */}
       <CheckboxGroup
         legend="Benefits &amp; perks"
         hint="Pick everything that applies. Candidates scan these before the job description."
@@ -575,108 +525,14 @@ export function CompanyProfileForm({
         </Field>
 
         <div className="sm:col-span-2">
-          {/* No "number of offices" field: that number is this list's length,
-              and a second copy of it would go stale the day a branch opens. */}
           <CompanyChipListEditor
             id="company-officeLocations"
-            label="Office locations"
+            label="Other branches"
             placeholder="Kandy, then Enter"
-            hint="Every city you operate from, headquarters included."
+            hint="The other cities you operate from, besides the address above."
             values={values.officeLocations}
             disabled={saving}
             onChange={(next) => onChangeList('officeLocations', next)}
-          />
-        </div>
-      </Fieldset>
-
-      <Fieldset legend="Organization">
-        {/* No "number of departments" box: that number is this list's length.
-            Two copies of the same fact disagree the moment one is edited. */}
-        <div className="sm:col-span-2">
-          <CompanyChipListEditor
-            id="company-departments"
-            label="Departments"
-            placeholder="Engineering, then Enter"
-            hint="Counted automatically — the profile shows however many you list."
-            values={values.departments}
-            disabled={saving}
-            onChange={(next) => onChangeList('departments', next)}
-          />
-        </div>
-        <div className="sm:col-span-2">
-          <CompanyChipListEditor
-            id="company-teams"
-            label="Teams"
-            placeholder="Backend, then Enter"
-            hint="The squads inside those departments."
-            values={values.teams}
-            disabled={saving}
-            onChange={(next) => onChangeList('teams', next)}
-          />
-        </div>
-        <div className="sm:col-span-2">
-          <CompanyChipListEditor
-            id="company-businessUnits"
-            label="Business units"
-            placeholder="Cloud Services, then Enter"
-            hint="The lines of business the company sells."
-            values={values.businessUnits}
-            disabled={saving}
-            onChange={(next) => onChangeList('businessUnits', next)}
-          />
-        </div>
-      </Fieldset>
-
-      <CheckboxGroup
-        legend="Employment types"
-        hint="The contract types this company hires on."
-        options={EMPLOYMENT_TYPES}
-        selected={values.employmentTypes}
-        onToggle={(id) => onToggleListValue('employmentTypes', id)}
-        columns="sm:grid-cols-3"
-      />
-
-      <CheckboxGroup
-        legend="Job levels"
-        hint="Seniority ladder. Shown in this order, never alphabetically."
-        options={JOB_LEVELS}
-        selected={values.jobLevels}
-        onToggle={(id) => onToggleListValue('jobLevels', id)}
-        columns="sm:grid-cols-4"
-      />
-
-      <Fieldset legend="Job taxonomy">
-        <div className="sm:col-span-2">
-          <CompanyChipListEditor
-            id="company-jobCategories"
-            label="Job categories"
-            placeholder="Software Engineering, then Enter"
-            hint="How openings are grouped on the careers page."
-            values={values.jobCategories}
-            disabled={saving}
-            onChange={(next) => onChangeList('jobCategories', next)}
-          />
-        </div>
-        <div className="sm:col-span-2">
-          <CompanyChipListEditor
-            id="company-jobFamilies"
-            label="Job families"
-            placeholder="Engineering, then Enter"
-            hint="Broader groupings across categories."
-            values={values.jobFamilies}
-            disabled={saving}
-            onChange={(next) => onChangeList('jobFamilies', next)}
-          />
-        </div>
-        <div className="sm:col-span-2">
-          <CompanyChipListEditor
-            id="company-jobTitles"
-            label="Job titles"
-            placeholder="Software Engineer, then Enter"
-            hint="The titles you post under. Jobs will pick from this list."
-            values={values.jobTitles}
-            disabled={saving}
-            onChange={(next) => onChangeList('jobTitles', next)}
           />
         </div>
       </Fieldset>
