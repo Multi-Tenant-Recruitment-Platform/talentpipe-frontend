@@ -39,7 +39,7 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-export function AuthProvider({ children }: { children: ReactNode }) {
+export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   const [user, setUser] = useState<UserResponse | null>(null);
   const [initializing, setInitializing] = useState(true);
   const [sessionEndReason, setSessionEndReason] = useState<SessionEndReason | null>(null);

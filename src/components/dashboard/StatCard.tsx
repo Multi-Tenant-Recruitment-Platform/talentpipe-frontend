@@ -21,13 +21,13 @@ export function StatCard({
   icon,
   tone,
   delta,
-}: {
+}: Readonly<{
   label: string;
   value: string;
   icon: IconName;
   tone: StatTone;
   delta?: { value: string; direction: 'up' | 'down'; hint?: string };
-}) {
+}>) {
   const tones = TONE_CLASSES[tone];
   return (
     <div className="group relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm shadow-slate-900/5 ring-1 ring-slate-900/5 transition-all hover:-translate-y-0.5 hover:shadow-md hover:shadow-slate-900/10">

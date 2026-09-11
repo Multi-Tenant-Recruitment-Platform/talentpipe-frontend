@@ -77,10 +77,6 @@ export function useCompanyProfile() {
   const [removed, setRemoved] = useState<ImageRemoved>(NONE_REMOVED);
   const [imageErrors, setImageErrors] = useState<ImageErrors>(NO_IMAGE_ERRORS);
 
-  // Identity the draft store cannot invent, taken from the session. Goes away
-  // with the store: the real GET /tenant reads it from the access token.
-  const seedName = user?.tenantName ?? null;
-
   const clearStaging = useCallback(() => {
     setStaged(NO_STAGING);
     setRemoved(NONE_REMOVED);
@@ -90,7 +86,7 @@ export function useCompanyProfile() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const loaded = await companyApi.get({ name: seedName });
+      const loaded = await companyApi.get();
       const asForm = toFormValues(loaded);
       setProfile(loaded);
       setSaved(asForm);
@@ -106,7 +102,7 @@ export function useCompanyProfile() {
     } finally {
       setLoading(false);
     }
-  }, [seedName, clearStaging]);
+  }, [clearStaging]);
 
   // Re-runs when the signed-in identity changes, so switching workspaces on one
   // device never leaves the previous company's details on screen.
@@ -189,24 +185,22 @@ export function useCompanyProfile() {
       // Images go first and separately: they are binaries on their own
       // endpoints, and a failure here must not be reported as "profile not
       // saved" when the text in fact never left.
-      const urls: Record<'logoUrl' | 'coverImageUrl', string | null> = {
-        logoUrl: savedImage('logo'),
-        coverImageUrl: savedImage('cover'),
-      };
       for (const kind of ['logo', 'cover'] as const) {
         const pending = staged[kind];
         if (pending) {
-          urls[IMAGE_URL_FIELD[kind]] = await companyApi.uploadImage(kind, pending.file);
+          await companyApi.uploadImage(kind, pending.file);
         } else if (removed[kind] && savedImage(kind) !== null) {
           await companyApi.removeImage(kind);
-          urls[IMAGE_URL_FIELD[kind]] = null;
         }
       }
 
-      const updated = await companyApi.update(toUpdateRequest(values), { name: seedName });
-      const withImages = { ...updated, ...urls };
-      const asForm = toFormValues(withImages);
-      setProfile(withImages);
+      // The text save runs last, so its response already reflects the image
+      // work above and is the authoritative copy of both. Merging locally
+      // tracked URLs over it would reinstate the pre-save cache-busting
+      // version and could show the previous picture from cache.
+      const updated = await companyApi.update(toUpdateRequest(values));
+      const asForm = toFormValues(updated);
+      setProfile(updated);
       setSaved(asForm);
       // Adopt the server's copy: it has been normalised ('abc.com' is now
       // 'https://abc.com'), and the read view must show what was stored.

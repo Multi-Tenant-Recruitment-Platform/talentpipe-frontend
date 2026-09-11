@@ -13,7 +13,7 @@ const TONE_CLASSES: Record<BadgeTone, string> = {
 };
 
 /** Small status/role pill with a soft tinted ring. */
-export function Badge({ tone = 'slate', children }: { tone?: BadgeTone; children: ReactNode }) {
+export function Badge({ tone = 'slate', children }: Readonly<{ tone?: BadgeTone; children: ReactNode }>) {
   return (
     <span
       className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset ${TONE_CLASSES[tone]}`}

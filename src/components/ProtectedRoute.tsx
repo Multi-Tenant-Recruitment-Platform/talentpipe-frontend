@@ -19,13 +19,13 @@ export function ProtectedRoute({
   children,
   requires,
   redirectTo,
-}: {
+}: Readonly<{
   children: ReactNode;
   /** Permission the area demands. Omit for "any authenticated user". */
   requires?: Permission;
   /** Where a role that may never enter this area is sent instead of a 403. */
   redirectTo?: string;
-}) {
+}>) {
   const { user, initializing } = useAuth();
   const location = useLocation();
 

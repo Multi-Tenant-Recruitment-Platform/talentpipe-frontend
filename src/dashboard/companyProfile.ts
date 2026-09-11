@@ -587,7 +587,10 @@ export function toUpdateRequest(values: CompanyFormValues): UpdateCompanyProfile
     timezone: orNull(n.timezone),
     currency: orNull(n.currency),
     language: orNull(n.language),
-    email: orNull(n.email),
+    // email is required on the backend; validateCompanyProfile already
+    // rejects blank before this function is ever called, so n.email is
+    // guaranteed non-empty here and must not be sent as null.
+    email: n.email,
     hrEmail: orNull(n.hrEmail),
     phone: orNull(n.phone),
     alternativePhone: orNull(n.alternativePhone),

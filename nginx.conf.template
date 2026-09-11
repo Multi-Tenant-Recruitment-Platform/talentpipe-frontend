@@ -10,7 +10,11 @@
 # run-time knob rather than something baked into the image at build time.
 # ---------------------------------------------------------------------------
 server {
-  listen 80;
+  # 8080, not 80: the container runs as the unprivileged `nginx` user (see
+  # Dockerfile), which lacks CAP_NET_BIND_SERVICE and cannot bind a port below
+  # 1024. docker-compose maps the familiar host port 5173 to this internally,
+  # so nothing external changes.
+  listen 8080;
   server_name _;
 
   root /usr/share/nginx/html;

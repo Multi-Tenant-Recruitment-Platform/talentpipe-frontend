@@ -99,7 +99,7 @@ const PATHS = {
 
 export type IconName = keyof typeof PATHS;
 
-export function Icon({ name, className = 'h-5 w-5' }: { name: IconName; className?: string }) {
+export function Icon({ name, className = 'h-5 w-5' }: Readonly<{ name: IconName; className?: string }>) {
   return (
     <svg
       className={className}

@@ -190,7 +190,13 @@ export function selectRoster(rows: RosterRow[], q: RosterQuery): RosterSelection
     segmentCounts,
     otherCount: matched.filter((row) => row.segment === 'other').length,
     // Derived, never hardcoded: an unexpected role stays filterable.
-    roleOptions: Array.from(new Set(rows.map((row) => row.role))).sort((a, b) => a.localeCompare(b)),
+    // Sorted with localeCompare rather than a bare .sort(): the default
+    // comparator comes from UTF-16 code units, which is not alphabetical
+    // order for anything outside plain ASCII — the same reason the tiebreak
+    // above uses it.
+    roleOptions: Array.from(new Set(rows.map((row) => row.role))).sort((a, b) =>
+      a.localeCompare(b),
+    ),
   };
 }
 

@@ -106,7 +106,10 @@ export interface CompanyProfileResponse {
  * binary does not belong in a JSON patch of text fields.</p>
  */
 export interface UpdateCompanyProfileRequest {
+  /** Required — the backend enforces it and the frontend validator does too. */
   name: string;
+  /** Required — candidates need a way to reach the company. */
+  email: string;
   tagline: string | null;
   industry: string | null;
   companyType: string | null;
@@ -121,7 +124,6 @@ export interface UpdateCompanyProfileRequest {
   timezone: string | null;
   currency: string | null;
   language: string | null;
-  email: string | null;
   hrEmail: string | null;
   phone: string | null;
   alternativePhone: string | null;
@@ -137,6 +139,33 @@ export interface UpdateCompanyProfileRequest {
   country: string | null;
   officeLocations: string[];
   departments: string[];
+}
+
+/**
+ * Curated public view of a company, returned by GET /public/companies/{subdomain}.
+ *
+ * <p>A strict subset of {@link CompanyProfileResponse}: only the fields a
+ * candidate needs to evaluate a prospective employer are included. Internal
+ * details (legal name, registration number, HR email, billing info) are
+ * deliberately absent — this endpoint is unauthenticated and candidate-facing.</p>
+ */
+export interface PublicCompanyProfileResponse {
+  name: string;
+  subdomain: string;
+  logoUrl: string | null;
+  coverImageUrl: string | null;
+  tagline: string | null;
+  description: string | null;
+  industry: string | null;
+  size: string | null;
+  foundedYear: number | null;
+  website: string | null;
+  linkedinUrl: string | null;
+  twitterUrl: string | null;
+  instagramUrl: string | null;
+  facebookUrl: string | null;
+  city: string | null;
+  country: string | null;
 }
 
 /** Which image an upload is for. The two have different shapes and limits. */
