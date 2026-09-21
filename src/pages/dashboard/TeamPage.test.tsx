@@ -69,6 +69,39 @@ function renderTeam() {
 
 const rowFor = (name: RegExp) => screen.getByRole('row', { name });
 
+type User = ReturnType<typeof userEvent.setup>;
+
+/**
+ * Picks a value from an Ant Design `Select`.
+ *
+ * <p>Not `selectOptions`: antd's select is a combobox with a popup, not a
+ * native `<select>`, so there are no `<option>` elements to select. Open it,
+ * then click the option — which is what a user does either way. Note the
+ * argument is the option's visible label, not the underlying enum value.</p>
+ *
+ * <p>Matched by `title` rather than `role="option"`: antd keeps a parallel
+ * hidden listbox for assistive tech and only populates it with a window of
+ * entries around the active one, so an option further down the list has no
+ * `option` role to find. The visible rows are the complete set.</p>
+ */
+async function chooseOption(user: User, label: RegExp, optionName: string) {
+  await user.click(screen.getByLabelText(label));
+  await user.click(await screen.findByTitle(optionName));
+}
+
+/**
+ * Clicks a radio rendered as a segmented button.
+ *
+ * <p>antd hides the real input underneath its styled label and gives it
+ * `pointer-events: none`, so the click has to land on the label — exactly where
+ * a real click lands. The input is still a proper radio, which is why it is
+ * found by role first.</p>
+ */
+async function clickRadio(user: User, name: RegExp) {
+  const radio = screen.getByRole('radio', { name });
+  await user.click(radio.closest('label') ?? radio);
+}
+
 beforeEach(() => {
   localStorage.clear();
   vi.clearAllMocks();
@@ -107,7 +140,7 @@ describe('every status stays visible', () => {
     renderTeam();
     await screen.findByText('Amaya Rathnayake');
 
-    await user.click(screen.getByRole('radio', { name: /pending/i }));
+    await clickRadio(user, /pending/i);
     expect(screen.queryByText('Nimal Perera')).toBeNull();
     expect(screen.getByText('Amaya Rathnayake')).toBeInTheDocument();
 
@@ -147,7 +180,7 @@ describe('search, filter and sort', () => {
     renderTeam();
     await screen.findByText('Amaya Rathnayake');
 
-    await user.selectOptions(screen.getByLabelText(/filter by role/i), 'INTERVIEWER');
+    await chooseOption(user, /filter by role/i, 'Interviewer');
     expect(screen.getByText('Amaya Rathnayake')).toBeInTheDocument();
     expect(screen.queryByText('Kasun Silva')).toBeNull();
   });

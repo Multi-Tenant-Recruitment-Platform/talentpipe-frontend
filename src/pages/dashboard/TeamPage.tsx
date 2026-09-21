@@ -1,3 +1,4 @@
+import { Col, Divider, Flex, Row, Typography } from 'antd';
 import { useState } from 'react';
 import { teamApi } from '../../api/team';
 import { useAuth } from '../../auth/AuthContext';
@@ -155,7 +156,7 @@ export function TeamPage() {
 
   const inviteButton = canInvite ? (
     <Button variant="primary" onClick={() => setInviteOpen(true)}>
-      <Icon name="user-plus" className="h-4 w-4" />
+      <Icon name="user-plus" size={16} />
       Invite member
     </Button>
   ) : null;
@@ -195,49 +196,59 @@ export function TeamPage() {
       {/* Load and action failures keep separate slots: a rejected invite must
           not blank a roster that loaded perfectly well. */}
       {loadError && (
-        <Alert tone="error" className="mb-6">
-          <div className="flex flex-wrap items-center justify-between gap-3">
+        <Alert tone="error" style={{ marginBottom: 24 }}>
+          <Flex wrap align="center" justify="space-between" gap={12}>
             <span>{loadError}</span>
             <Button size="sm" variant="secondary" onClick={() => void refresh()}>
               Try again
             </Button>
-          </div>
+          </Flex>
         </Alert>
       )}
 
       {message && (
-        <Alert tone={message.tone} onDismiss={() => setMessage(null)} className="mb-6">
+        <Alert tone={message.tone} onDismiss={() => setMessage(null)} style={{ marginBottom: 24 }}>
           {message.text}
         </Alert>
       )}
 
-      <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Workspace access" value={kpi(activeCount)} icon="users" tone="indigo" />
-        <StatCard label="HR Managers" value={kpi(hrCount)} icon="briefcase" tone="violet" />
-        <StatCard label="Interviewers" value={kpi(interviewerCount)} icon="identification" tone="emerald" />
-        <StatCard label="Pending invites" value={kpi(pendingCount)} icon="envelope" tone="amber" />
-      </div>
+      <Row gutter={[20, 20]}>
+        <Col xs={24} sm={12} xl={6}>
+          <StatCard label="Workspace access" value={kpi(activeCount)} icon="users" tone="indigo" />
+        </Col>
+        <Col xs={24} sm={12} xl={6}>
+          <StatCard label="HR Managers" value={kpi(hrCount)} icon="briefcase" tone="violet" />
+        </Col>
+        <Col xs={24} sm={12} xl={6}>
+          <StatCard
+            label="Interviewers"
+            value={kpi(interviewerCount)}
+            icon="identification"
+            tone="emerald"
+          />
+        </Col>
+        <Col xs={24} sm={12} xl={6}>
+          <StatCard label="Pending invites" value={kpi(pendingCount)} icon="envelope" tone="amber" />
+        </Col>
+      </Row>
 
       {/* Disabled and unverified accounts live outside Active and Pending, so
           say where they went rather than letting them look deleted. */}
       {roster.otherCount > 0 && roster.segment !== 'all' && (
-        <Alert tone="info" className="mt-6">
+        <Alert tone="info" style={{ marginTop: 24 }}>
           {roster.otherCount === 1
             ? '1 account is disabled or awaiting email verification.'
             : `${roster.otherCount} accounts are disabled or awaiting email verification.`}{' '}
-          <button
-            type="button"
-            onClick={() => roster.setSegment('all')}
-            className="font-semibold underline underline-offset-2 hover:no-underline focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
-          >
+          <button type="button" onClick={() => roster.setSegment('all')} className="tp-link-button">
             Show all
           </button>{' '}
           to see them.
         </Alert>
       )}
 
-      <Card className="mt-6" bodyClassName="px-6 pb-2 pt-5">
-        <TeamToolbar
+      <div style={{ marginTop: 24 }}>
+        <Card bodyClassName="tp-roster-body">
+          <TeamToolbar
           segment={roster.segment}
           onSegmentChange={roster.setSegment}
           segmentCounts={roster.segmentCounts}
@@ -246,14 +257,13 @@ export function TeamPage() {
           onRoleFilterChange={roster.setRoleFilter}
           query={roster.query}
           onQueryChange={roster.setQuery}
-          visibleCount={roster.visible.length}
-          totalCount={roster.rows.length}
-          filtersActive={roster.filtersActive}
-          onClearFilters={roster.clearFilters}
-          disabled={firstLoad}
-        />
+            visibleCount={roster.visible.length}
+            totalCount={roster.rows.length}
+            filtersActive={roster.filtersActive}
+            onClearFilters={roster.clearFilters}
+            disabled={firstLoad}
+          />
 
-        <div className="-mx-6 overflow-x-auto">
           <TeamRosterTable
             rows={roster.visible}
             sort={roster.sort}
@@ -268,19 +278,20 @@ export function TeamPage() {
             refreshing={refreshing}
             empty={empty}
           />
-        </div>
 
-        {soloAdmin && (
-          <div className="-mx-6 border-t border-slate-100">
-            <EmptyState
-              icon="users"
-              title="You're the only person here"
-              description="Invite an HR manager or an interviewer to start sharing the hiring work."
-              action={inviteButton}
-            />
-          </div>
-        )}
-      </Card>
+          {soloAdmin && (
+            <>
+              <Divider style={{ marginBlock: 0 }} />
+              <EmptyState
+                icon="users"
+                title="You're the only person here"
+                description="Invite an HR manager or an interviewer to start sharing the hiring work."
+                action={inviteButton}
+              />
+            </>
+          )}
+        </Card>
+      </div>
 
       {/* Mounted only while open, so each invite starts from a clean form. */}
       {canInvite && inviteOpen && (
@@ -303,9 +314,9 @@ export function TeamPage() {
         title="Revoke this invitation?"
         description={
           <>
-            <span className="font-medium text-slate-900">{pendingRevoke?.fullName}</span> (
-            {pendingRevoke?.email}) will be removed from your workspace and their invitation link will
-            stop working immediately. This can&apos;t be undone — you&apos;d have to invite them again.
+            <Typography.Text strong>{pendingRevoke?.fullName}</Typography.Text> ({pendingRevoke?.email})
+            will be removed from your workspace and their invitation link will stop working
+            immediately. This can&apos;t be undone — you&apos;d have to invite them again.
           </>
         }
         confirmLabel="Revoke invitation"
