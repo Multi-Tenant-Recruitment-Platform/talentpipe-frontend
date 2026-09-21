@@ -1,3 +1,4 @@
+import { Typography, theme } from 'antd';
 import type { ReactNode } from 'react';
 import { Icon, type IconName } from './Icon';
 
@@ -7,6 +8,10 @@ import { Icon, type IconName } from './Icon';
  * <p>Shared by the contact and location blocks so a change to how "not set"
  * reads lands in both. An empty value is stated rather than left blank — a gap
  * where a phone number should be is indistinguishable from a rendering bug.</p>
+ *
+ * <p>Kept as real `<dt>`/`<dd>` rather than antd's `Descriptions`: the pair is
+ * the correct semantic for a term and its value, and `Descriptions` offers no
+ * hook for the per-field test ids the profile suite reads.</p>
  */
 export function DetailItem({
   icon,
@@ -25,31 +30,56 @@ export function DetailItem({
   external?: boolean;
   testId?: string;
 }>) {
+  const { token } = theme.useToken();
+
   let content: ReactNode;
   if (value === '') {
-    content = <span className="text-sm text-slate-400">Not set</span>;
+    content = <Typography.Text type="secondary">Not set</Typography.Text>;
   } else if (href) {
     content = (
-      <a
+      <Typography.Link
         href={href}
         {...(external ? { target: '_blank', rel: 'noreferrer noopener' } : {})}
-        className="block truncate rounded text-sm font-medium text-indigo-600 underline-offset-2 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+        style={{ display: 'block', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis' }}
       >
         {value}
-      </a>
+      </Typography.Link>
     );
   } else {
-    content = <span className="text-sm text-slate-800">{value}</span>;
+    content = <Typography.Text>{value}</Typography.Text>;
   }
 
   return (
-    <div className="flex min-w-0 items-start gap-3">
-      <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-50 text-slate-400">
-        <Icon name={icon} className="h-4 w-4" />
+    <div style={{ display: 'flex', minWidth: 0, alignItems: 'flex-start', gap: 12 }}>
+      <span
+        style={{
+          marginTop: 2,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: 32,
+          height: 32,
+          flexShrink: 0,
+          borderRadius: token.borderRadius,
+          background: token.colorFillQuaternary,
+          color: token.colorTextTertiary,
+        }}
+      >
+        <Icon name={icon} size={16} />
       </span>
-      <div className="min-w-0">
-        <dt className="text-xs font-medium uppercase tracking-wide text-slate-400">{label}</dt>
-        <dd className="mt-0.5 min-w-0" data-testid={testId}>
+      <div style={{ minWidth: 0 }}>
+        <dt
+          style={{
+            fontSize: 12,
+            fontWeight: 500,
+            textTransform: 'uppercase',
+            letterSpacing: '0.03em',
+            color: token.colorTextTertiary,
+          }}
+        >
+          {label}
+        </dt>
+        <dd style={{ marginTop: 2, marginInlineStart: 0, minWidth: 0 }} data-testid={testId}>
           {content}
         </dd>
       </div>

@@ -1,3 +1,4 @@
+import { Flex, Typography, theme } from 'antd';
 import type { ReactNode } from 'react';
 
 /**
@@ -18,18 +19,38 @@ export function PageHeader({
   subtitle?: string;
   children?: ReactNode;
 }>) {
+  const { token } = theme.useToken();
+
   return (
-    <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
-      <div className="min-w-0">
+    <Flex wrap align="flex-end" justify="space-between" gap={16} style={{ marginBottom: 32 }}>
+      <div style={{ minWidth: 0 }}>
         {eyebrow && (
-          <span className="text-xs font-semibold uppercase tracking-wider text-indigo-600">{eyebrow}</span>
+          <Typography.Text
+            style={{
+              fontSize: 12,
+              fontWeight: 600,
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
+              color: token.colorPrimary,
+            }}
+          >
+            {eyebrow}
+          </Typography.Text>
         )}
-        <h1 className={`text-2xl font-bold tracking-tight text-slate-900 sm:text-[1.75rem] ${eyebrow ? 'mt-1.5' : ''}`}>
+        <Typography.Title level={1} style={{ fontSize: 26, margin: 0, marginTop: eyebrow ? 6 : 0 }}>
           {title}
-        </h1>
-        {subtitle && <p className="mt-1.5 text-sm text-slate-500">{subtitle}</p>}
+        </Typography.Title>
+        {subtitle && (
+          <Typography.Text type="secondary" style={{ display: 'block', marginTop: 6 }}>
+            {subtitle}
+          </Typography.Text>
+        )}
       </div>
-      {children && <div className="flex flex-wrap items-center gap-3">{children}</div>}
-    </div>
+      {children && (
+        <Flex wrap align="center" gap={12}>
+          {children}
+        </Flex>
+      )}
+    </Flex>
   );
 }

@@ -1,3 +1,4 @@
+import { Flex, Typography } from 'antd';
 import { useEffect, useRef, type ReactNode } from 'react';
 import { Icon } from '../dashboard/Icon';
 import { Button } from './Button';
@@ -9,6 +10,13 @@ import { useFocusTrap } from './useFocusTrap';
  * <p>Uses `role="alertdialog"` rather than `dialog`: it makes assistive tech
  * announce the description immediately on open, which is the whole point when
  * the next click permanently deletes something.</p>
+ *
+ * <p>Deliberately not antd's `Modal`, which hard-codes `role="dialog"` with no
+ * override, sets no `aria-describedby`, and puts a close "X" in the tab ring —
+ * three regressions for a dialog whose entire job is to make the consequence
+ * unmissable and to land focus on the safe choice. It also has no equivalent of
+ * this trap's `fallbackFocusId`, which matters because the row that opened the
+ * dialog no longer exists once a revoke succeeds.</p>
  *
  * <p>Initial focus lands on Cancel — the safe choice — so a stray Enter
  * dismisses rather than destroys.</p>
@@ -63,15 +71,16 @@ export function ConfirmDialog({
     return null;
   }
 
+  const chip =
+    tone === 'danger'
+      ? { background: '#fee2e2', color: '#dc2626' }
+      : { background: '#eef2ff', color: '#4f46e5' };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="tp-dialog-overlay">
       {/* Not a button: a focusable backdrop is a tab stop that reads as an
           unlabelled control and duplicates Cancel. */}
-      <div
-        aria-hidden="true"
-        onClick={() => !busy && onCancel()}
-        className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm"
-      />
+      <div aria-hidden="true" onClick={() => !busy && onCancel()} className="tp-dialog-backdrop" />
 
       <div
         ref={dialogRef}
@@ -79,27 +88,34 @@ export function ConfirmDialog({
         aria-modal="true"
         aria-labelledby="confirm-dialog-title"
         aria-describedby="confirm-dialog-description"
-        className="relative w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl shadow-slate-900/20 ring-1 ring-slate-900/5"
+        className="tp-dialog-panel"
       >
-        <div className="flex gap-4">
+        <Flex gap={16}>
           <span
-            className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full ${
-              tone === 'danger' ? 'bg-red-50 text-red-600' : 'bg-indigo-50 text-indigo-600'
-            }`}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 44,
+              height: 44,
+              flexShrink: 0,
+              borderRadius: '50%',
+              ...chip,
+            }}
           >
-            <Icon name="warning" className="h-5 w-5" />
+            <Icon name="warning" size={20} />
           </span>
-          <div className="min-w-0">
-            <h2 id="confirm-dialog-title" className="text-base font-semibold text-slate-900">
+          <div style={{ minWidth: 0 }}>
+            <Typography.Title id="confirm-dialog-title" level={2} style={{ fontSize: 16, margin: 0 }}>
               {title}
-            </h2>
-            <div id="confirm-dialog-description" className="mt-1.5 text-sm leading-6 text-slate-600">
-              {description}
+            </Typography.Title>
+            <div id="confirm-dialog-description" style={{ marginTop: 6, lineHeight: 1.6 }}>
+              <Typography.Text type="secondary">{description}</Typography.Text>
             </div>
           </div>
-        </div>
+        </Flex>
 
-        <div className="mt-6 flex items-center justify-end gap-3">
+        <Flex align="center" justify="flex-end" gap={12} style={{ marginTop: 24 }}>
           <Button ref={cancelRef} type="button" variant="ghost" onClick={onCancel} disabled={busy}>
             {cancelLabel}
           </Button>
@@ -111,7 +127,7 @@ export function ConfirmDialog({
           >
             {busy ? (busyLabel ?? confirmLabel) : confirmLabel}
           </Button>
-        </div>
+        </Flex>
       </div>
     </div>
   );

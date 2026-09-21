@@ -1,3 +1,5 @@
+import type { CSSProperties } from 'react';
+
 /**
  * Central icon set for the dashboard (Heroicons outline paths, 24×24,
  * stroke 1.5) so every surface shares the same visual language.
@@ -99,10 +101,43 @@ const PATHS = {
 
 export type IconName = keyof typeof PATHS;
 
-export function Icon({ name, className = 'h-5 w-5' }: Readonly<{ name: IconName; className?: string }>) {
+/**
+ * Kept in preference to `@ant-design/icons` on purpose.
+ *
+ * <p>Every antd icon renders as `<span role="img" aria-label="…">`, which joins
+ * the accessible name of whatever contains it — a button reading "Remove"
+ * silently becomes "delete Remove". These stay `aria-hidden`, so a control's
+ * accessible name is exactly its visible text and nothing queries an icon by
+ * accident.</p>
+ *
+ * <p>Colour is inherited via `currentColor`: set it on the parent, or pass
+ * `style={{ color }}`.</p>
+ */
+export function Icon({
+  name,
+  size = 20,
+  style,
+  className,
+}: Readonly<{
+  name: IconName;
+  size?: number;
+  style?: CSSProperties;
+  /**
+   * Transitional: call sites still carrying Tailwind sizing classes. Those
+   * classes outrank the width/height attributes while Tailwind is present, so
+   * sizing is unchanged until each caller moves to `size`. Removed with
+   * Tailwind itself.
+   */
+  className?: string;
+}>) {
   return (
     <svg
       className={className}
+      width={size}
+      height={size}
+      // Icons sit next to text in flex rows throughout; without this they are
+      // the first thing the browser squeezes when a label runs long.
+      style={{ flexShrink: 0, ...style }}
       fill="none"
       viewBox="0 0 24 24"
       strokeWidth={1.5}

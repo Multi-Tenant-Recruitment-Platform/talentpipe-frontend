@@ -1,3 +1,5 @@
+import { Skeleton, theme } from 'antd';
+
 /**
  * Placeholder shown while the company profile loads.
  *
@@ -5,31 +7,42 @@
  * of detail — so the page does not visibly jump when the real content lands.
  * `aria-busy` with a plain-text label because a screen reader gets nothing at
  * all from grey rectangles.</p>
+ *
+ * <p>antd's `Skeleton` carries neither the test id nor the label, so it stays
+ * wrapped rather than used directly.</p>
  */
 export function CompanyProfileSkeleton({ logoSize = 'md' }: Readonly<{ logoSize?: 'md' | 'lg' }>) {
-  const logo = logoSize === 'lg' ? 'h-24 w-24 rounded-2xl' : 'h-16 w-16 rounded-xl';
+  const { token } = theme.useToken();
+  const avatarSize = logoSize === 'lg' ? 96 : 64;
+  const rule = `1px solid ${token.colorBorderSecondary}`;
 
   return (
-    <div className="animate-pulse space-y-6" data-testid="profile-skeleton" aria-busy="true">
+    <div data-testid="profile-skeleton" aria-busy="true">
       <span className="sr-only">Loading company profile…</span>
-      <div className="flex items-center gap-4">
-        <div className={`${logo} bg-slate-200`} />
-        <div className="space-y-2">
-          <div className="h-4 w-48 rounded bg-slate-200" />
-          <div className="h-3 w-32 rounded bg-slate-100" />
-        </div>
+
+      <Skeleton
+        active
+        avatar={{ size: avatarSize, shape: 'square' }}
+        title={{ width: 192 }}
+        paragraph={{ rows: 1, width: 128 }}
+      />
+
+      <div style={{ borderTop: rule, paddingTop: 24, marginTop: 24 }}>
+        <Skeleton active title={false} paragraph={{ rows: 3, width: ['100%', '92%', '60%'] }} />
       </div>
-      <div className="space-y-2 border-t border-slate-100 pt-6">
-        <div className="h-3 w-full rounded bg-slate-100" />
-        <div className="h-3 w-11/12 rounded bg-slate-100" />
-        <div className="h-3 w-3/5 rounded bg-slate-100" />
-      </div>
-      <div className="grid gap-5 border-t border-slate-100 pt-6 sm:grid-cols-2">
+
+      <div
+        style={{
+          borderTop: rule,
+          paddingTop: 24,
+          marginTop: 24,
+          display: 'grid',
+          gap: 20,
+          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+        }}
+      >
         {[0, 1, 2, 3].map((row) => (
-          <div key={row} className="space-y-2">
-            <div className="h-3 w-16 rounded bg-slate-100" />
-            <div className="h-4 w-40 rounded bg-slate-200" />
-          </div>
+          <Skeleton key={row} active title={{ width: 64 }} paragraph={{ rows: 1, width: 160 }} />
         ))}
       </div>
     </div>

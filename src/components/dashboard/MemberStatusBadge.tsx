@@ -12,8 +12,9 @@ import { Badge } from './Badge';
 export function MemberStatusBadge({ status }: Readonly<{ status: string }>) {
   const meta = statusMeta(status);
   return (
-    <span className="inline-flex" title={meta.hint}>
+    <span style={{ display: 'inline-flex' }} title={meta.hint}>
       <Badge tone={meta.tone}>{meta.label}</Badge>
+      {/* The `title` above is mouse-only; this is the same hint for everyone else. */}
       {meta.hint && <span className="sr-only"> — {meta.hint}</span>}
     </span>
   );

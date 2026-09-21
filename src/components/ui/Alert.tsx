@@ -1,81 +1,119 @@
-import type { ReactNode } from 'react';
+import { theme } from 'antd';
+import type { CSSProperties, ReactNode } from 'react';
 import { Icon, type IconName } from '../dashboard/Icon';
 
 export type AlertTone = 'info' | 'success' | 'warning' | 'error';
 
-const TONE_STYLES: Record<AlertTone, { wrap: string; icon: string; iconName: IconName }> = {
-  info: {
-    wrap: 'border-indigo-200 bg-indigo-50 text-indigo-700',
-    icon: 'text-indigo-500',
-    iconName: 'info',
-  },
-  success: {
-    wrap: 'border-emerald-200 bg-emerald-50 text-emerald-700',
-    icon: 'text-emerald-500',
-    iconName: 'check',
-  },
-  warning: {
-    wrap: 'border-amber-200 bg-amber-50 text-amber-800',
-    icon: 'text-amber-500',
-    iconName: 'warning',
-  },
-  error: {
-    wrap: 'border-red-200 bg-red-50 text-red-700',
-    icon: 'text-red-500',
-    iconName: 'warning',
-  },
-};
-
 /**
- * Shared inline banner for the auth pages' status/notice/error messages —
- * one visual language instead of five hand-rolled colored divs. `role`
- * mirrors what each caller previously set by hand (alerts vs. status
- * announcements) so assistive tech behavior is unchanged.
+ * Shared inline banner for status/notice/error messages — one visual language
+ * instead of the coloured divs each page used to hand-roll.
  *
- * <p>A "status" alert renders as a native {@code <output>} rather than
- * {@code <div role="status">}: {@code <output>} carries that role implicitly
- * and is the semantic element assistive tech and browsers agree on across
- * devices, where a bare ARIA role on a generic div is handled less
- * consistently. There is no such native element for "alert" — that one stays
- * a div with an explicit role.</p>
+ * <p>Deliberately not antd's `Alert`. That component always renders
+ * `role="alert"`, which is assertive: it interrupts a screen-reader user
+ * mid-sentence. That is right for an error and wrong for "Invitation sent".
+ * A "status" alert here renders as a native {@code <output>}, which carries
+ * `role="status"` implicitly and is the element assistive tech and browsers
+ * agree on most consistently. There is no native equivalent for "alert" — that
+ * one stays a div with an explicit role.</p>
+ *
+ * <p>Colours come from antd's tone tokens, so it tracks the theme.</p>
  */
 export function Alert({
   tone,
   role = tone === 'error' || tone === 'warning' ? 'alert' : 'status',
   onDismiss,
-  className = '',
+  style,
+  className,
   children,
 }: Readonly<{
   tone: AlertTone;
   role?: 'alert' | 'status';
   /** When given, renders a dismiss affordance on the right. */
   onDismiss?: () => void;
+  style?: CSSProperties;
+  /** Transitional: callers still passing Tailwind spacing. Removed with Tailwind. */
   className?: string;
   children: ReactNode;
 }>) {
-  const styles = TONE_STYLES[tone];
-  const wrapClassName = `flex items-start gap-2.5 rounded-xl border px-3.5 py-3 text-sm leading-5 ${styles.wrap} ${className}`;
+  const { token } = theme.useToken();
+
+  const TONES: Record<AlertTone, { bg: string; border: string; text: string; icon: IconName }> = {
+    info: {
+      bg: token.colorInfoBg,
+      border: token.colorInfoBorder,
+      text: token.colorInfoText,
+      icon: 'info',
+    },
+    success: {
+      bg: token.colorSuccessBg,
+      border: token.colorSuccessBorder,
+      text: token.colorSuccessText,
+      icon: 'check',
+    },
+    warning: {
+      bg: token.colorWarningBg,
+      border: token.colorWarningBorder,
+      text: token.colorWarningText,
+      icon: 'warning',
+    },
+    error: {
+      bg: token.colorErrorBg,
+      border: token.colorErrorBorder,
+      text: token.colorErrorText,
+      icon: 'warning',
+    },
+  };
+
+  const t = TONES[tone];
+  const wrapStyle: CSSProperties = {
+    display: 'flex',
+    alignItems: 'flex-start',
+    gap: 10,
+    padding: '12px 14px',
+    borderRadius: token.borderRadiusLG,
+    border: `1px solid ${t.border}`,
+    background: t.bg,
+    color: t.text,
+    fontSize: token.fontSize,
+    lineHeight: 1.45,
+    ...style,
+  };
+
   const content = (
     <>
-      <Icon name={styles.iconName} className={`mt-0.5 h-4 w-4 shrink-0 ${styles.icon}`} />
-      <div className="min-w-0 flex-1">{children}</div>
+      <Icon name={t.icon} size={16} style={{ marginTop: 2 }} />
+      <div style={{ minWidth: 0, flex: 1 }}>{children}</div>
       {onDismiss && (
         <button
           type="button"
           onClick={onDismiss}
           aria-label="Dismiss"
-          className={`-mr-1 -mt-0.5 shrink-0 rounded-md p-1 opacity-60 transition-opacity hover:opacity-100 focus:outline-none focus-visible:opacity-100 ${styles.icon}`}
+          style={{
+            flexShrink: 0,
+            marginTop: -2,
+            marginRight: -4,
+            padding: 4,
+            border: 0,
+            background: 'transparent',
+            color: 'inherit',
+            cursor: 'pointer',
+            opacity: 0.65,
+            borderRadius: token.borderRadius,
+            lineHeight: 0,
+          }}
         >
-          <Icon name="x-mark" className="h-4 w-4" />
+          <Icon name="x-mark" size={16} />
         </button>
       )}
     </>
   );
 
   return role === 'status' ? (
-    <output className={wrapClassName}>{content}</output>
+    <output className={className} style={wrapStyle}>
+      {content}
+    </output>
   ) : (
-    <div role="alert" className={wrapClassName}>
+    <div role="alert" className={className} style={wrapStyle}>
       {content}
     </div>
   );
