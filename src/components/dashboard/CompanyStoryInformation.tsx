@@ -1,3 +1,4 @@
+import { Col, Row, Typography } from 'antd';
 import type { CompanyFormValues } from '../../dashboard/companyProfile';
 
 /**
@@ -13,29 +14,33 @@ export function CompanyStoryInformation({ values }: Readonly<{ values: CompanyFo
   }
 
   return (
-    <div className="grid gap-5 sm:grid-cols-2">
+    <Row gutter={[20, 20]}>
       {values.mission && (
-        <div>
-          <h4 className="text-xs font-medium uppercase tracking-wide text-slate-400">Mission</h4>
-          <p
+        <Col xs={24} sm={12}>
+          <Typography.Title level={4} className="tp-legend" style={{ margin: 0 }}>
+            Mission
+          </Typography.Title>
+          <Typography.Paragraph
             data-testid="company-mission"
-            className="mt-1.5 whitespace-pre-line text-sm leading-6 text-slate-700"
+            style={{ marginTop: 6, marginBottom: 0, whiteSpace: 'pre-line' }}
           >
             {values.mission}
-          </p>
-        </div>
+          </Typography.Paragraph>
+        </Col>
       )}
       {values.vision && (
-        <div>
-          <h4 className="text-xs font-medium uppercase tracking-wide text-slate-400">Vision</h4>
-          <p
+        <Col xs={24} sm={12}>
+          <Typography.Title level={4} className="tp-legend" style={{ margin: 0 }}>
+            Vision
+          </Typography.Title>
+          <Typography.Paragraph
             data-testid="company-vision"
-            className="mt-1.5 whitespace-pre-line text-sm leading-6 text-slate-700"
+            style={{ marginTop: 6, marginBottom: 0, whiteSpace: 'pre-line' }}
           >
             {values.vision}
-          </p>
-        </div>
+          </Typography.Paragraph>
+        </Col>
       )}
-    </div>
+    </Row>
   );
 }

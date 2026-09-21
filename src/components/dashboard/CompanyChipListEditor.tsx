@@ -1,7 +1,7 @@
+import { Input, Space, Tag, Typography } from 'antd';
 import { useState, type KeyboardEvent } from 'react';
 import { cleanValues } from '../../dashboard/companyProfile';
 import { Button } from '../ui/Button';
-import { inputClass } from '../ui/inputClass';
 import { Icon } from './Icon';
 
 /**
@@ -14,6 +14,13 @@ import { Icon } from './Icon';
  *
  * <p>Used for company values and for office locations, which are the same
  * interaction over different words.</p>
+ *
+ * <p>Deliberately not `Select mode="tags"`. The commit rules here are specific:
+ * Enter <em>or</em> a comma commits (and suppresses the surrounding form's
+ * submit, so adding an entry never saves the whole profile), Backspace on an
+ * empty draft removes the last chip, blurring commits what was typed, and
+ * `cleanValues` drops blanks and duplicates. A combobox handles none of those
+ * the same way.</p>
  */
 export function CompanyChipListEditor({
   id,
@@ -57,33 +64,42 @@ export function CompanyChipListEditor({
 
   return (
     <div>
-      <label htmlFor={id} className="block text-sm font-medium text-slate-700">
+      <label htmlFor={id} style={{ display: 'block', fontWeight: 500, marginBottom: 6 }}>
         {label}
       </label>
 
       {values.length > 0 && (
-        <ul className="mt-2 flex flex-wrap gap-2">
+        <ul
+          style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: 8,
+            listStyle: 'none',
+            margin: '0 0 8px',
+            padding: 0,
+          }}
+        >
           {values.map((value) => (
             <li key={value}>
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-50 py-1 pl-3 pr-1.5 text-xs font-medium text-indigo-700 ring-1 ring-inset ring-indigo-600/20">
+              {/* antd's Tag supplies the chip; the list semantics around it are
+                  ours, because the profile renders these as a real list. */}
+              <Tag
+                color="geekblue"
+                closable={!disabled}
+                onClose={() => onChange(values.filter((entry) => entry !== value))}
+                closeIcon={<Icon name="x-mark" size={12} />}
+                aria-label={`Remove ${value}`}
+                style={{ marginInlineEnd: 0, borderRadius: 999 }}
+              >
                 {value}
-                <button
-                  type="button"
-                  disabled={disabled}
-                  onClick={() => onChange(values.filter((entry) => entry !== value))}
-                  aria-label={`Remove ${value}`}
-                  className="rounded-full p-0.5 text-indigo-500 transition-colors hover:bg-indigo-100 hover:text-indigo-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  <Icon name="x-mark" className="h-3 w-3" />
-                </button>
-              </span>
+              </Tag>
             </li>
           ))}
         </ul>
       )}
 
-      <div className="mt-2 flex gap-2">
-        <input
+      <Space.Compact style={{ width: '100%' }}>
+        <Input
           id={id}
           value={draft}
           disabled={disabled}
@@ -93,19 +109,19 @@ export function CompanyChipListEditor({
           // pressing Enter should not silently discard it.
           onBlur={commit}
           placeholder={placeholder}
-          className={inputClass}
         />
         <Button
           type="button"
           variant="secondary"
           disabled={disabled || draft.trim() === ''}
           onClick={commit}
-          className="mt-1.5 shrink-0"
         >
           Add
         </Button>
-      </div>
-      <p className="mt-1.5 text-xs text-slate-400">{hint}</p>
+      </Space.Compact>
+      <Typography.Text type="secondary" style={{ display: 'block', fontSize: 12, marginTop: 6 }}>
+        {hint}
+      </Typography.Text>
     </div>
   );
 }

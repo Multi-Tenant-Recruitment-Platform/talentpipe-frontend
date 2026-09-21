@@ -1,3 +1,4 @@
+import { Flex } from 'antd';
 import {
   SOCIAL_FIELDS,
   websiteLabel,
@@ -34,7 +35,7 @@ export function CompanySocialLinks({
   }
 
   return (
-    <dl className="grid gap-x-6 gap-y-5 sm:grid-cols-2">
+    <dl className="tp-detail-grid">
       {shown.map((field) => (
         <DetailItem
           key={field}
@@ -61,7 +62,7 @@ export function CompanySocialRow({ values }: Readonly<{ values: CompanyFormValue
   }
 
   return (
-    <div className="flex flex-wrap gap-2">
+    <Flex wrap gap={8}>
       {present.map((field) => (
         <a
           key={field}
@@ -69,12 +70,12 @@ export function CompanySocialRow({ values }: Readonly<{ values: CompanyFormValue
           target="_blank"
           rel="noreferrer noopener"
           data-testid={`preview-${field}`}
-          className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+          className="tp-social-chip"
         >
-          <Icon name="link" className="h-3.5 w-3.5 text-slate-400" />
+          <Icon name="link" size={14} style={{ opacity: 0.55 }} />
           {FIELD_LABELS[field]}
         </a>
       ))}
-    </div>
+    </Flex>
   );
 }

@@ -1,3 +1,4 @@
+import { Flex, Typography } from 'antd';
 import { useRef, type ChangeEvent } from 'react';
 import type { CompanyImageKind } from '../../api/types';
 import {
@@ -23,6 +24,12 @@ import { Icon } from './Icon';
  * the native control cannot be styled to match the rest of the form, but it is
  * still the thing that opens the picker and still what a screen reader reads,
  * so it is hidden from sight only — never `display: none`.</p>
+ *
+ * <p>Deliberately not antd's `Upload`. That component owns a `fileList` of its
+ * own, which would shadow the staging the profile controller already does, and
+ * its hidden input is `display: none` — unreachable by keyboard and by the
+ * tests that drive this. Since nothing is uploaded here, `Upload` would be
+ * decoration over a control that already works.</p>
  */
 export function CompanyImagePicker({
   kind,
@@ -56,23 +63,35 @@ export function CompanyImagePicker({
   }
 
   return (
-    <div className="flex flex-wrap items-start gap-4">
+    <Flex wrap align="flex-start" gap={16}>
       {kind === 'logo' ? (
         <CompanyLogo src={imageUrl} name={companyName} size="md" />
       ) : (
         <div
           data-testid="cover-preview"
-          className="h-16 w-32 shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-gradient-to-br from-indigo-500 via-violet-500 to-indigo-600"
+          style={{
+            width: 128,
+            height: 64,
+            flexShrink: 0,
+            overflow: 'hidden',
+            borderRadius: 8,
+            border: '1px solid #e2e8f0',
+            background: 'var(--tp-brand-gradient)',
+          }}
         >
           {imageUrl && (
-            <img src={imageUrl} alt={`${companyName || 'Company'} cover`} className="h-full w-full object-cover" />
+            <img
+              src={imageUrl}
+              alt={`${companyName || 'Company'} cover`}
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            />
           )}
         </div>
       )}
 
-      <div className="min-w-0">
-        <p className="text-sm font-medium text-slate-700">{label}</p>
-        <div className="mt-1.5 flex flex-wrap items-center gap-2">
+      <div style={{ minWidth: 0 }}>
+        <Typography.Text strong>{label}</Typography.Text>
+        <Flex wrap align="center" gap={8} style={{ marginTop: 6 }}>
           <input
             ref={inputRef}
             type="file"
@@ -92,27 +111,32 @@ export function CompanyImagePicker({
             disabled={disabled}
             onClick={() => inputRef.current?.click()}
           >
-            <Icon name={kind === 'logo' ? 'building' : 'eye'} className="h-4 w-4" />
+            <Icon name={kind === 'logo' ? 'building' : 'eye'} size={16} />
             {imageUrl ? `Change ${label.toLowerCase()}` : `Upload ${label.toLowerCase()}`}
           </Button>
           {imageUrl && (
+            // No icon: the accessible name has to stay exactly "Remove".
             <Button type="button" size="sm" variant="danger" disabled={disabled} onClick={onRemove}>
               Remove
             </Button>
           )}
-        </div>
+        </Flex>
 
         {error ? (
-          <p role="alert" className="mt-1.5 flex items-start gap-1 text-xs text-red-600">
-            <Icon name="warning" className="mt-px h-3.5 w-3.5 shrink-0" />
+          <Typography.Paragraph
+            role="alert"
+            type="danger"
+            style={{ display: 'flex', alignItems: 'flex-start', gap: 4, fontSize: 12, margin: '6px 0 0' }}
+          >
+            <Icon name="warning" size={14} style={{ marginTop: 1 }} />
             {error}
-          </p>
+          </Typography.Paragraph>
         ) : (
-          <p className="mt-1.5 text-xs text-slate-400">
+          <Typography.Text type="secondary" style={{ display: 'block', fontSize: 12, marginTop: 6 }}>
             PNG, JPG, SVG or WebP, up to {formatBytes(MAX_IMAGE_BYTES[kind])}. {IMAGE_HINTS[kind]}
-          </p>
+          </Typography.Text>
         )}
       </div>
-    </div>
+    </Flex>
   );
 }

@@ -1,3 +1,4 @@
+import { Checkbox, Col, Flex, Input, Row, Select, Typography } from 'antd';
 import { useRef, type FormEvent, type ReactNode } from 'react';
 import type { CompanyImageKind } from '../../api/types';
 import {
@@ -19,7 +20,6 @@ import {
   type CompanyTextField,
 } from '../../dashboard/companyProfile';
 import { Button } from '../ui/Button';
-import { inputClass } from '../ui/inputClass';
 import { CompanyImagePicker } from './CompanyImagePicker';
 import { CompanyChipListEditor } from './CompanyChipListEditor';
 import { Icon } from './Icon';
@@ -36,20 +36,22 @@ import { Icon } from './Icon';
  * the moment the feedback is actually useful.</p>
  */
 
-/**
- * Section headings. Dark enough to read as headings and break a long form into
- * parts — the lighter grey they had sat below the field labels in weight.
- */
-const LEGEND_CLASS = 'text-xs font-semibold uppercase tracking-wide text-slate-600';
-
 const fieldId = (field: CompanyTextField) => `company-${field}`;
 const errorId = (field: CompanyTextField) => `company-${field}-error`;
 
+/**
+ * Kept as a real `<fieldset>`/`<legend>` rather than antd's `Form.Item`
+ * grouping. The pair is what actually associates a heading with the controls
+ * beneath it for assistive tech; antd renders plain divs, which would leave a
+ * 28-field form as one undifferentiated run of inputs.
+ */
 function Fieldset({ legend, children }: Readonly<{ legend: string; children: ReactNode }>) {
   return (
-    <fieldset className="border-t border-slate-100 pt-6">
-      <legend className={LEGEND_CLASS}>{legend}</legend>
-      <div className="mt-4 grid gap-5 sm:grid-cols-2">{children}</div>
+    <fieldset style={{ border: 0, borderTop: '1px solid #f1f5f9', margin: 0, paddingTop: 24 }}>
+      <legend className="tp-legend">{legend}</legend>
+      <Row gutter={[20, 20]} style={{ marginTop: 16 }}>
+        {children}
+      </Row>
     </fieldset>
   );
 }
@@ -58,30 +60,40 @@ function Field({
   field,
   error,
   hint,
-  className = '',
+  span = 12,
   children,
 }: Readonly<{
   field: CompanyTextField;
   error?: string;
   hint?: ReactNode;
-  className?: string;
+  /** Columns out of 24 at `sm` and up; full width below. */
+  span?: number;
   children: ReactNode;
 }>) {
   return (
-    <div className={className}>
-      <label htmlFor={fieldId(field)} className="block text-sm font-medium text-slate-700">
+    <Col xs={24} sm={span}>
+      <label htmlFor={fieldId(field)} style={{ display: 'block', fontWeight: 500, marginBottom: 6 }}>
         {FIELD_LABELS[field]}
       </label>
       {children}
       {error ? (
-        <p id={errorId(field)} role="alert" className="mt-1.5 flex items-start gap-1 text-xs text-red-600">
-          <Icon name="warning" className="mt-px h-3.5 w-3.5 shrink-0" />
+        <Typography.Paragraph
+          id={errorId(field)}
+          role="alert"
+          type="danger"
+          style={{ display: 'flex', alignItems: 'flex-start', gap: 4, fontSize: 12, margin: '6px 0 0' }}
+        >
+          <Icon name="warning" size={14} style={{ marginTop: 1 }} />
           {error}
-        </p>
+        </Typography.Paragraph>
       ) : (
-        hint && <p className="mt-1.5 text-xs text-slate-400">{hint}</p>
+        hint && (
+          <Typography.Text type="secondary" style={{ display: 'block', fontSize: 12, marginTop: 6 }}>
+            {hint}
+          </Typography.Text>
+        )
       )}
-    </div>
+    </Col>
   );
 }
 
@@ -92,37 +104,43 @@ function CheckboxGroup({
   options,
   selected,
   onToggle,
-  columns = 'sm:grid-cols-2',
 }: Readonly<{
   legend: string;
   hint: string;
   options: { id: string; label: string }[];
   selected: string[];
   onToggle: (id: string) => void;
-  columns?: string;
 }>) {
   return (
-    <fieldset className="border-t border-slate-100 pt-6">
-      <legend className={LEGEND_CLASS}>{legend}</legend>
-      <p className="mt-1 text-xs text-slate-400">{hint}</p>
-      <div className={`mt-4 grid gap-x-6 gap-y-2.5 ${columns}`}>
+    <fieldset style={{ border: 0, borderTop: '1px solid #f1f5f9', margin: 0, paddingTop: 24 }}>
+      <legend className="tp-legend">{legend}</legend>
+      <Typography.Text type="secondary" style={{ display: 'block', fontSize: 12, marginTop: 4 }}>
+        {hint}
+      </Typography.Text>
+      <Row gutter={[24, 10]} style={{ marginTop: 16 }}>
         {options.map((option) => (
-          <label
-            key={option.id}
-            className="flex cursor-pointer items-center gap-2.5 text-sm text-slate-700"
-          >
-            <input
-              type="checkbox"
+          <Col xs={24} sm={12} key={option.id}>
+            <Checkbox
               checked={selected.includes(option.id)}
               onChange={() => onToggle(option.id)}
-              className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-2 focus:ring-indigo-500/40"
-            />
-            {option.label}
-          </label>
+            >
+              {option.label}
+            </Checkbox>
+          </Col>
         ))}
-      </div>
+      </Row>
     </fieldset>
   );
+}
+
+/**
+ * Builds a select's option list, keeping a stored value that is not in the
+ * shortlist as an option of its own — otherwise a value the backend holds
+ * would be silently blanked the first time this form is opened.
+ */
+function optionsFor(shortlist: readonly string[], current: string) {
+  const extra = current && !shortlist.includes(current) ? [{ value: current, label: current }] : [];
+  return [...extra, ...shortlist.map((item) => ({ value: item, label: item }))];
 }
 
 export function CompanyProfileForm({
@@ -177,36 +195,40 @@ export function CompanyProfileForm({
   const overLimit = values.description.trim().length > MAX_DESCRIPTION;
 
   return (
-    <form ref={formRef} onSubmit={handleSubmit} noValidate className="space-y-6">
-      <div className="grid gap-5 sm:grid-cols-2">
-        <CompanyImagePicker
-          kind="logo"
-          imageUrl={logoUrl}
-          companyName={values.name}
-          error={imageErrors.logo}
-          disabled={saving}
-          onPick={(file) => onPickImage('logo', file)}
-          onRemove={() => onRemoveImage('logo')}
-        />
-        <CompanyImagePicker
-          kind="cover"
-          imageUrl={coverUrl}
-          companyName={values.name}
-          error={imageErrors.cover}
-          disabled={saving}
-          onPick={(file) => onPickImage('cover', file)}
-          onRemove={() => onRemoveImage('cover')}
-        />
-      </div>
+    <form ref={formRef} onSubmit={handleSubmit} noValidate>
+      <Flex vertical gap={24}>
+        <Row gutter={[20, 20]}>
+          <Col xs={24} sm={12}>
+            <CompanyImagePicker
+              kind="logo"
+              imageUrl={logoUrl}
+              companyName={values.name}
+              error={imageErrors.logo}
+              disabled={saving}
+              onPick={(file) => onPickImage('logo', file)}
+              onRemove={() => onRemoveImage('logo')}
+            />
+          </Col>
+          <Col xs={24} sm={12}>
+            <CompanyImagePicker
+              kind="cover"
+              imageUrl={coverUrl}
+              companyName={values.name}
+              error={imageErrors.cover}
+              disabled={saving}
+              onPick={(file) => onPickImage('cover', file)}
+              onRemove={() => onRemoveImage('cover')}
+            />
+          </Col>
+        </Row>
 
       <Fieldset legend="Company overview">
         <Field field="name" error={errors.name}>
-          <input
+          <Input
             id={fieldId('name')}
             value={values.name}
             onChange={(e) => onChange('name', e.target.value)}
             autoComplete="organization"
-            className={inputClass}
             {...a11y('name')}
           />
         </Field>
@@ -216,75 +238,62 @@ export function CompanyProfileForm({
           error={errors.tagline}
           hint="One line, shown under the company name."
         >
-          <input
+          <Input
             id={fieldId('tagline')}
             value={values.tagline}
             onChange={(e) => onChange('tagline', e.target.value)}
             placeholder="Hiring software for growing teams"
-            className={inputClass}
             {...a11y('tagline')}
           />
         </Field>
 
         <Field field="industry" error={errors.industry}>
-          <select
+          {/* An explicit "not set" entry, and no `allowClear`: without a way to
+              mean "unanswered", the first industry in the list silently becomes
+              every company's answer. */}
+          <Select
             id={fieldId('industry')}
             value={values.industry}
-            onChange={(e) => onChange('industry', e.target.value)}
-            className={inputClass}
+            onChange={(value: string) => onChange('industry', value)}
+            style={{ width: '100%' }}
+            options={[{ value: '', label: 'Select an industry' }, ...optionsFor(INDUSTRIES, values.industry)]}
             {...a11y('industry')}
-          >
-            {/* An explicit "not set" option: without it the first industry in
-                the list silently becomes every company's answer. */}
-            <option value="">Select an industry</option>
-            {INDUSTRIES.map((industry) => (
-              <option key={industry} value={industry}>
-                {industry}
-              </option>
-            ))}
-          </select>
+          />
         </Field>
 
         <Field field="size" error={errors.size}>
-          <select
+          <Select
             id={fieldId('size')}
             value={values.size}
-            onChange={(e) => onChange('size', e.target.value)}
-            className={inputClass}
+            onChange={(value: string) => onChange('size', value)}
+            style={{ width: '100%' }}
+            options={[
+              { value: '', label: 'Select a size' },
+              ...COMPANY_SIZE_GROUPS.map((group) => ({
+                label: group.label,
+                options: group.options.map((size) => ({ value: size, label: size })),
+              })),
+            ]}
             {...a11y('size')}
-          >
-            <option value="">Select a size</option>
-            {COMPANY_SIZE_GROUPS.map((group) => (
-              <optgroup key={group.label} label={group.label}>
-                {group.options.map((size) => (
-                  <option key={size} value={size}>
-                    {size}
-                  </option>
-                ))}
-              </optgroup>
-            ))}
-          </select>
+          />
         </Field>
 
         <Field field="companyType" error={errors.companyType}>
-          <select
+          <Select
             id={fieldId('companyType')}
             value={values.companyType}
-            onChange={(e) => onChange('companyType', e.target.value)}
-            className={inputClass}
+            onChange={(value: string) => onChange('companyType', value)}
+            style={{ width: '100%' }}
+            options={[
+              { value: '', label: 'Select a type' },
+              ...optionsFor(COMPANY_TYPES, values.companyType),
+            ]}
             {...a11y('companyType')}
-          >
-            <option value="">Select a type</option>
-            {COMPANY_TYPES.map((type) => (
-              <option key={type} value={type}>
-                {type}
-              </option>
-            ))}
-          </select>
+          />
         </Field>
 
         <Field field="foundedYear" error={errors.foundedYear}>
-          <input
+          <Input
             id={fieldId('foundedYear')}
             type="number"
             inputMode="numeric"
@@ -293,7 +302,6 @@ export function CompanyProfileForm({
             value={values.foundedYear}
             onChange={(e) => onChange('foundedYear', e.target.value)}
             placeholder="2015"
-            className={inputClass}
             {...a11y('foundedYear')}
           />
         </Field>
@@ -301,27 +309,33 @@ export function CompanyProfileForm({
         <Field
           field="description"
           error={errors.description}
-          className="sm:col-span-2"
+          span={24}
           hint="What the company does, in a few sentences. Candidates read this first."
         >
-          <textarea
+          <Input.TextArea
             id={fieldId('description')}
             rows={5}
             value={values.description}
             onChange={(e) => onChange('description', e.target.value)}
-            className={`${inputClass} resize-none`}
             {...a11y('description')}
           />
-          <p
-            className={`mt-1 text-right text-xs tabular-nums ${overLimit ? 'font-medium text-red-600' : 'text-slate-400'}`}
+          <Typography.Paragraph
+            type={overLimit ? 'danger' : 'secondary'}
+            style={{
+              margin: '4px 0 0',
+              textAlign: 'right',
+              fontSize: 12,
+              fontVariantNumeric: 'tabular-nums',
+              fontWeight: overLimit ? 500 : undefined,
+            }}
           >
             {values.description.trim().length} / {MAX_DESCRIPTION}
-          </p>
+          </Typography.Paragraph>
         </Field>
 
         {/* Sits with the description, like mission and vision, rather than
             under a heading of its own. */}
-        <div className="sm:col-span-2">
+        <Col xs={24}>
           <CompanyChipListEditor
             id="company-departments"
             label="Departments"
@@ -331,26 +345,24 @@ export function CompanyProfileForm({
             disabled={saving}
             onChange={(next) => onChangeList('departments', next)}
           />
-        </div>
+        </Col>
 
         <Field field="mission" error={errors.mission} hint="Why the company exists.">
-          <textarea
+          <Input.TextArea
             id={fieldId('mission')}
             rows={2}
             value={values.mission}
             onChange={(e) => onChange('mission', e.target.value)}
-            className={`${inputClass} resize-none`}
             {...a11y('mission')}
           />
         </Field>
 
         <Field field="vision" error={errors.vision} hint="Where it is heading.">
-          <textarea
+          <Input.TextArea
             id={fieldId('vision')}
             rows={2}
             value={values.vision}
             onChange={(e) => onChange('vision', e.target.value)}
-            className={`${inputClass} resize-none`}
             {...a11y('vision')}
           />
         </Field>
@@ -369,14 +381,13 @@ export function CompanyProfileForm({
 
       <Fieldset legend="Contact information">
         <Field field="email" error={errors.email} hint="Where candidates and applicants reach you.">
-          <input
+          <Input
             id={fieldId('email')}
             type="email"
             value={values.email}
             onChange={(e) => onChange('email', e.target.value)}
             autoComplete="email"
             placeholder="contact@abc.com"
-            className={inputClass}
             {...a11y('email')}
           />
         </Field>
@@ -386,38 +397,35 @@ export function CompanyProfileForm({
           error={errors.hrEmail}
           hint="Only if applications go somewhere other than the address above."
         >
-          <input
+          <Input
             id={fieldId('hrEmail')}
             type="email"
             value={values.hrEmail}
             onChange={(e) => onChange('hrEmail', e.target.value)}
             placeholder="careers@abc.com"
-            className={inputClass}
             {...a11y('hrEmail')}
           />
         </Field>
 
         <Field field="phone" error={errors.phone}>
-          <input
+          <Input
             id={fieldId('phone')}
             type="tel"
             value={values.phone}
             onChange={(e) => onChange('phone', e.target.value)}
             autoComplete="tel"
             placeholder="+94 11 234 5678"
-            className={inputClass}
             {...a11y('phone')}
           />
         </Field>
 
         <Field field="alternativePhone" error={errors.alternativePhone}>
-          <input
+          <Input
             id={fieldId('alternativePhone')}
             type="tel"
             value={values.alternativePhone}
             onChange={(e) => onChange('alternativePhone', e.target.value)}
             placeholder="+94 77 123 4567"
-            className={inputClass}
             {...a11y('alternativePhone')}
           />
         </Field>
@@ -425,12 +433,12 @@ export function CompanyProfileForm({
         <Field
           field="website"
           error={errors.website}
-          className="sm:col-span-2"
+          span={24}
           hint="We'll add https:// if you leave it out."
         >
           {/* type="text", not "url": type="url" makes the browser reject a bare
               'abc.com' with its own tooltip before our normaliser ever sees it. */}
-          <input
+          <Input
             id={fieldId('website')}
             type="text"
             inputMode="url"
@@ -438,7 +446,6 @@ export function CompanyProfileForm({
             onChange={(e) => onChange('website', e.target.value)}
             autoComplete="url"
             placeholder="abc.com"
-            className={inputClass}
             {...a11y('website')}
           />
         </Field>
@@ -449,14 +456,13 @@ export function CompanyProfileForm({
           <Field key={field} field={field} error={errors[field]}>
             {/* type="text" for the same reason as the website field: the
                 browser's own url validation rejects a bare domain first. */}
-            <input
+            <Input
               id={fieldId(field)}
               type="text"
               inputMode="url"
               value={values[field]}
               onChange={(e) => onChange(field, e.target.value)}
               placeholder={SOCIAL_PLACEHOLDERS[field]}
-              className={inputClass}
               {...a11y(field)}
             />
           </Field>
@@ -464,67 +470,62 @@ export function CompanyProfileForm({
       </Fieldset>
 
       <Fieldset legend="Location">
-        <Field field="address" error={errors.address} className="sm:col-span-2">
-          <input
+        <Field field="address" error={errors.address} span={24}>
+          <Input
             id={fieldId('address')}
             value={values.address}
             onChange={(e) => onChange('address', e.target.value)}
             autoComplete="street-address"
             placeholder="No. 42, Galle Road"
-            className={inputClass}
             {...a11y('address')}
           />
         </Field>
 
         <Field field="city" error={errors.city}>
-          <input
+          <Input
             id={fieldId('city')}
             value={values.city}
             onChange={(e) => onChange('city', e.target.value)}
             autoComplete="address-level2"
             placeholder="Colombo"
-            className={inputClass}
             {...a11y('city')}
           />
         </Field>
 
         <Field field="state" error={errors.state}>
-          <input
+          <Input
             id={fieldId('state')}
             value={values.state}
             onChange={(e) => onChange('state', e.target.value)}
             autoComplete="address-level1"
             placeholder="Western"
-            className={inputClass}
             {...a11y('state')}
           />
         </Field>
 
         <Field field="postalCode" error={errors.postalCode}>
-          <input
+          <Input
             id={fieldId('postalCode')}
             value={values.postalCode}
             onChange={(e) => onChange('postalCode', e.target.value)}
             autoComplete="postal-code"
             placeholder="00300"
-            className={inputClass}
             {...a11y('postalCode')}
           />
         </Field>
 
         <Field field="country" error={errors.country}>
-          <input
+          <Input
             id={fieldId('country')}
             value={values.country}
             onChange={(e) => onChange('country', e.target.value)}
             autoComplete="country-name"
             placeholder="Sri Lanka"
-            className={inputClass}
             {...a11y('country')}
           />
         </Field>
 
-        <div className="sm:col-span-2">
+        <Col xs={24}>
           <CompanyChipListEditor
             id="company-officeLocations"
             label="Other branches"
@@ -534,70 +535,55 @@ export function CompanyProfileForm({
             disabled={saving}
             onChange={(next) => onChangeList('officeLocations', next)}
           />
-        </div>
+        </Col>
       </Fieldset>
 
       <Fieldset legend="Operations">
         <Field field="timezone" error={errors.timezone}>
-          <select
+          {/* `optionsFor` keeps a stored zone outside the shortlist visible, so
+              a value the backend holds is never silently blanked by this list. */}
+          <Select
             id={fieldId('timezone')}
             value={values.timezone}
-            onChange={(e) => onChange('timezone', e.target.value)}
-            className={inputClass}
+            onChange={(value: string) => onChange('timezone', value)}
+            style={{ width: '100%' }}
+            showSearch
+            options={[
+              { value: '', label: 'Select a time zone' },
+              ...optionsFor(TIMEZONES, values.timezone),
+            ]}
             {...a11y('timezone')}
-          >
-            <option value="">Select a time zone</option>
-            {/* A stored zone outside the shortlist still shows, so a value the
-                backend holds is never silently blanked by this select. */}
-            {values.timezone && !TIMEZONES.includes(values.timezone) && (
-              <option value={values.timezone}>{values.timezone}</option>
-            )}
-            {TIMEZONES.map((zone) => (
-              <option key={zone} value={zone}>
-                {zone}
-              </option>
-            ))}
-          </select>
+          />
         </Field>
 
         <Field field="currency" error={errors.currency} hint="Used when a salary is shown.">
-          <select
+          <Select
             id={fieldId('currency')}
             value={values.currency}
-            onChange={(e) => onChange('currency', e.target.value)}
-            className={inputClass}
+            onChange={(value: string) => onChange('currency', value)}
+            style={{ width: '100%' }}
+            showSearch
+            options={[
+              { value: '', label: 'Select a currency' },
+              ...optionsFor(CURRENCIES, values.currency),
+            ]}
             {...a11y('currency')}
-          >
-            <option value="">Select a currency</option>
-            {values.currency && !CURRENCIES.includes(values.currency) && (
-              <option value={values.currency}>{values.currency}</option>
-            )}
-            {CURRENCIES.map((currency) => (
-              <option key={currency} value={currency}>
-                {currency}
-              </option>
-            ))}
-          </select>
+          />
         </Field>
 
         <Field field="language" error={errors.language}>
-          <select
+          <Select
             id={fieldId('language')}
             value={values.language}
-            onChange={(e) => onChange('language', e.target.value)}
-            className={inputClass}
+            onChange={(value: string) => onChange('language', value)}
+            style={{ width: '100%' }}
+            showSearch
+            options={[
+              { value: '', label: 'Select a language' },
+              ...optionsFor(LANGUAGES, values.language),
+            ]}
             {...a11y('language')}
-          >
-            <option value="">Select a language</option>
-            {values.language && !LANGUAGES.includes(values.language) && (
-              <option value={values.language}>{values.language}</option>
-            )}
-            {LANGUAGES.map((language) => (
-              <option key={language} value={language}>
-                {language}
-              </option>
-            ))}
-          </select>
+          />
         </Field>
       </Fieldset>
 
@@ -606,54 +592,59 @@ export function CompanyProfileForm({
         <Field
           field="legalName"
           error={errors.legalName}
-          className="sm:col-span-2"
+          span={24}
           hint="The registered name, if it differs from the trading name."
         >
-          <input
+          <Input
             id={fieldId('legalName')}
             value={values.legalName}
             onChange={(e) => onChange('legalName', e.target.value)}
             placeholder="ABC Technologies (Private) Limited"
-            className={inputClass}
             {...a11y('legalName')}
           />
         </Field>
 
         <Field field="registrationNumber" error={errors.registrationNumber}>
-          <input
+          <Input
             id={fieldId('registrationNumber')}
             value={values.registrationNumber}
             onChange={(e) => onChange('registrationNumber', e.target.value)}
             placeholder="PV 12345"
-            className={inputClass}
             {...a11y('registrationNumber')}
           />
         </Field>
 
       </Fieldset>
 
-      <div className="flex flex-wrap items-center justify-end gap-3 border-t border-slate-100 pt-5">
-        <Button type="button" variant="ghost" onClick={onCancel} disabled={saving}>
-          Cancel
-        </Button>
-        <Button
-          type="submit"
-          variant="primary"
-          // Not disabled on validation errors: a Save that does nothing at
-          // least says why, while a permanently greyed button says nothing.
-          disabled={saving || !dirty}
-          title={dirty ? undefined : 'Nothing has changed yet'}
+        <Flex
+          wrap
+          align="center"
+          justify="flex-end"
+          gap={12}
+          style={{ borderTop: '1px solid #f1f5f9', paddingTop: 20 }}
         >
-          {saving ? (
-            'Saving…'
-          ) : (
-            <>
-              <Icon name="check" className="h-4 w-4" />
-              Save changes
-            </>
-          )}
-        </Button>
-      </div>
+          <Button type="button" variant="ghost" onClick={onCancel} disabled={saving}>
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            variant="primary"
+            // Not disabled on validation errors: a Save that does nothing at
+            // least says why, while a permanently greyed button says nothing.
+            disabled={saving || !dirty}
+            title={dirty ? undefined : 'Nothing has changed yet'}
+          >
+            {saving ? (
+              'Saving…'
+            ) : (
+              <>
+                <Icon name="check" size={16} />
+                Save changes
+              </>
+            )}
+          </Button>
+        </Flex>
+      </Flex>
     </form>
   );
 }

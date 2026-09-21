@@ -1,3 +1,4 @@
+import { Flex, Tag, Typography } from 'antd';
 import type { CompanyFormValues } from '../../dashboard/companyProfile';
 import { Badge } from './Badge';
 import { CompanyCoverImage } from './CompanyCoverImage';
@@ -25,62 +26,58 @@ export function CompanyInformation({
   withCover?: boolean;
   headingLevel?: 'h2' | 'h3';
 }>) {
-  const Heading = headingLevel;
+  const level = headingLevel === 'h2' ? 2 : 3;
+
+  const identity = (
+    <>
+      <Typography.Title level={level} style={{ fontSize: withCover ? 20 : 18, margin: 0 }}>
+        {values.name || 'Unnamed company'}
+      </Typography.Title>
+      <Flex wrap align="center" gap={8} style={{ marginTop: withCover ? 8 : 6 }}>
+        {values.industry ? (
+          <Badge tone="indigo">{values.industry}</Badge>
+        ) : (
+          <Typography.Text type="secondary">Industry not set</Typography.Text>
+        )}
+        {values.size ? <Badge tone="slate">{values.size}</Badge> : null}
+      </Flex>
+    </>
+  );
 
   return (
-    <div className="space-y-6">
+    <Flex vertical gap={24}>
       {withCover ? (
         <div>
           <CompanyCoverImage coverUrl={coverUrl} logoUrl={logoUrl} name={values.name} />
-          <div className="mt-4">
-            <Heading className="truncate text-xl font-semibold tracking-tight text-slate-900">
-              {values.name || 'Unnamed company'}
-            </Heading>
-            <div className="mt-2 flex flex-wrap items-center gap-2">
-              {values.industry ? (
-                <Badge tone="indigo">{values.industry}</Badge>
-              ) : (
-                <span className="text-sm text-slate-400">Industry not set</span>
-              )}
-              {values.size ? <Badge tone="slate">{values.size}</Badge> : null}
-            </div>
-          </div>
+          <div style={{ marginTop: 16 }}>{identity}</div>
         </div>
       ) : (
-        <div className="flex items-start gap-4">
+        <Flex align="flex-start" gap={16}>
           <CompanyLogo src={logoUrl} name={values.name} size="md" />
-          <div className="min-w-0 flex-1">
-            <Heading className="truncate text-lg font-semibold tracking-tight text-slate-900">
-              {values.name || 'Unnamed company'}
-            </Heading>
-            <div className="mt-1.5 flex flex-wrap items-center gap-2">
-              {values.industry ? (
-                <Badge tone="indigo">{values.industry}</Badge>
-              ) : (
-                <span className="text-sm text-slate-400">Industry not set</span>
-              )}
-              {values.size ? <Badge tone="slate">{values.size}</Badge> : null}
-            </div>
-          </div>
-        </div>
+          <div style={{ minWidth: 0, flex: 1 }}>{identity}</div>
+        </Flex>
       )}
 
       <div>
-        <h4 className="text-xs font-medium uppercase tracking-wide text-slate-400">
+        <Typography.Title level={4} className="tp-legend" style={{ margin: 0 }}>
           About the company
-        </h4>
+        </Typography.Title>
         {values.description ? (
-          // whitespace-pre-line so paragraph breaks the admin typed survive.
-          <p
+          // pre-line so paragraph breaks the admin typed survive.
+          <Typography.Paragraph
             data-testid="company-description"
-            className="mt-2 whitespace-pre-line text-sm leading-6 text-slate-700"
+            style={{ marginTop: 8, marginBottom: 0, whiteSpace: 'pre-line' }}
           >
             {values.description}
-          </p>
+          </Typography.Paragraph>
         ) : (
-          <p data-testid="company-description" className="mt-2 text-sm text-slate-400">
+          <Typography.Paragraph
+            data-testid="company-description"
+            type="secondary"
+            style={{ marginTop: 8, marginBottom: 0 }}
+          >
             No description yet. This is what candidates read to understand what the company does.
-          </p>
+          </Typography.Paragraph>
         )}
       </div>
 
@@ -88,21 +85,28 @@ export function CompanyInformation({
           absent otherwise — an empty "Departments" label says nothing. */}
       {values.departments.length > 0 && (
         <div>
-          <h4 className="text-xs font-medium uppercase tracking-wide text-slate-400">
+          <Typography.Title level={4} className="tp-legend" style={{ margin: 0 }}>
             Departments
-          </h4>
-          <ul data-testid="company-departments" className="mt-2 flex flex-wrap gap-2">
+          </Typography.Title>
+          <ul
+            data-testid="company-departments"
+            style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: 8,
+              listStyle: 'none',
+              margin: '8px 0 0',
+              padding: 0,
+            }}
+          >
             {values.departments.map((department) => (
-              <li
-                key={department}
-                className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700"
-              >
-                {department}
+              <li key={department}>
+                <Tag style={{ marginInlineEnd: 0, borderRadius: 999 }}>{department}</Tag>
               </li>
             ))}
           </ul>
         </div>
       )}
-    </div>
+    </Flex>
   );
 }

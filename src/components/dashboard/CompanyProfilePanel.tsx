@@ -1,3 +1,4 @@
+import { Flex, Typography } from 'antd';
 import type { CompanyProfileController } from '../../dashboard/useCompanyProfile';
 import { Alert } from '../ui/Alert';
 import { Button } from '../ui/Button';
@@ -70,18 +71,18 @@ export function CompanyProfilePanel({
       {/* Load and save failures keep separate slots: a rejected save must not
           blank a profile that loaded perfectly well. */}
       {loadError && (
-        <Alert tone="error" className="mb-6">
-          <div className="flex flex-wrap items-center justify-between gap-3">
+        <Alert tone="error" style={{ marginBottom: 24 }}>
+          <Flex wrap align="center" justify="space-between" gap={12}>
             <span>{loadError}</span>
             <Button size="sm" variant="secondary" onClick={() => void reload()}>
               Try again
             </Button>
-          </div>
+          </Flex>
         </Alert>
       )}
 
       {message && (
-        <Alert tone={message.tone} onDismiss={() => setMessage(null)} className="mb-6">
+        <Alert tone={message.tone} onDismiss={() => setMessage(null)} style={{ marginBottom: 24 }}>
           {message.text}
         </Alert>
       )}
@@ -122,21 +123,32 @@ export function CompanyProfilePanel({
             variant={variant}
           />
           {!canEdit && (
-            <p className="mt-5 border-t border-slate-100 pt-5 text-xs text-slate-500">
+            <Typography.Paragraph
+              type="secondary"
+              style={{
+                marginTop: 20,
+                marginBottom: 0,
+                borderTop: '1px solid #f1f5f9',
+                paddingTop: 20,
+                fontSize: 12,
+              }}
+            >
               Your role can view this profile but not change it. Ask a Company Admin to update it.
-            </p>
+            </Typography.Paragraph>
           )}
         </>
       )}
 
-      {previewOpen && (
-        <CompanyPublicPreview
-          values={saved}
-          logoUrl={savedLogoUrl}
-          coverUrl={savedCoverUrl}
-          onClose={closePreview}
-        />
-      )}
+      {/* Driven by `open` rather than conditionally rendered, so the dialog is
+          still mounted as it closes and can hand focus back to the button that
+          opened it. */}
+      <CompanyPublicPreview
+        open={previewOpen}
+        values={saved}
+        logoUrl={savedLogoUrl}
+        coverUrl={savedCoverUrl}
+        onClose={closePreview}
+      />
 
       <ConfirmDialog
         open={confirmDiscard}

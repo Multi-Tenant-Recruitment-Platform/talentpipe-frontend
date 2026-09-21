@@ -1,3 +1,4 @@
+import { Flex, Progress, Typography } from 'antd';
 import type { ReactNode } from 'react';
 import { profileCompleteness, type CompanyFormValues } from '../../dashboard/companyProfile';
 import { formatRelativeTime } from '../../utils/format';
@@ -39,15 +40,19 @@ function Section({
 }>) {
   if (variant === 'compact') {
     return (
-      <section className="border-t border-slate-100 pt-6">
-        <h4 className="mb-4 text-xs font-medium uppercase tracking-wide text-slate-400">{title}</h4>
+      <section style={{ borderTop: '1px solid #f1f5f9', paddingTop: 24 }}>
+        <Typography.Title level={4} className="tp-legend" style={{ margin: '0 0 16px' }}>
+          {title}
+        </Typography.Title>
         {children}
       </section>
     );
   }
   return (
-    <section className="border-t border-slate-100 pt-8">
-      <h3 className="mb-5 text-base font-semibold tracking-tight text-slate-900">{title}</h3>
+    <section style={{ borderTop: '1px solid #f1f5f9', paddingTop: 32 }}>
+      <Typography.Title level={3} style={{ fontSize: 16, margin: '0 0 20px' }}>
+        {title}
+      </Typography.Title>
       {children}
     </section>
   );
@@ -78,7 +83,7 @@ export function CompanyProfileView({
   const incomplete = completeness.missing.length > 0;
 
   return (
-    <div className={profileVariant ? 'space-y-8' : 'space-y-6'}>
+    <Flex vertical gap={profileVariant ? 32 : 24}>
       <CompanyInformation
         values={values}
         logoUrl={logoUrl}
@@ -129,45 +134,64 @@ export function CompanyProfileView({
       {/* Nudge, not nagging: it disappears the moment the profile is complete,
           and only someone who can act on it ever sees it. */}
       {incomplete && canEdit && (
-        <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
-          <div className="flex items-baseline justify-between gap-3 text-xs">
-            <span className="font-medium text-slate-600">
+        <div
+          style={{
+            borderRadius: 12,
+            border: '1px solid #e2e8f0',
+            background: '#f8fafc',
+            padding: '12px 16px',
+          }}
+        >
+          <Flex align="baseline" justify="space-between" gap={12}>
+            <Typography.Text strong style={{ fontSize: 12 }}>
               Profile {completeness.filled} of {completeness.total} complete
-            </span>
-            <span className="tabular-nums text-slate-400">{completeness.percent}%</span>
-          </div>
-          <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-200">
-            <div
-              className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-violet-500 transition-[width] duration-500"
-              style={{ width: `${completeness.percent}%` }}
-            />
-          </div>
+            </Typography.Text>
+            <Typography.Text
+              type="secondary"
+              style={{ fontSize: 12, fontVariantNumeric: 'tabular-nums' }}
+            >
+              {completeness.percent}%
+            </Typography.Text>
+          </Flex>
+          <Progress
+            percent={completeness.percent}
+            showInfo={false}
+            size="small"
+            strokeColor={{ from: '#6366f1', to: '#8b5cf6' }}
+            style={{ marginBottom: 0 }}
+          />
           {/* Naming what is missing turns a number into a next action. */}
-          <p className="mt-2 text-xs text-slate-500">
+          <Typography.Text type="secondary" style={{ display: 'block', fontSize: 12, marginTop: 4 }}>
             Still to add: {completeness.missing.join(', ')}.
-          </p>
+          </Typography.Text>
         </div>
       )}
 
-      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-5">
-        <p className="text-xs text-slate-400">
+      <Flex
+        wrap
+        align="center"
+        justify="space-between"
+        gap={12}
+        style={{ borderTop: '1px solid #f1f5f9', paddingTop: 20 }}
+      >
+        <Typography.Text type="secondary" style={{ fontSize: 12 }}>
           {updatedAt ? `Last updated ${formatRelativeTime(updatedAt)}` : 'Not edited yet'}
-        </p>
-        <div className="flex flex-wrap items-center gap-2">
+        </Typography.Text>
+        <Flex wrap align="center" gap={8}>
           {onPreview && (
             <Button type="button" variant="ghost" onClick={onPreview}>
-              <Icon name="eye" className="h-4 w-4" />
+              <Icon name="eye" size={16} />
               Preview public profile
             </Button>
           )}
           {canEdit && (
             <Button type="button" variant="secondary" onClick={onEdit}>
-              <Icon name="pencil" className="h-4 w-4" />
+              <Icon name="pencil" size={16} />
               Edit profile
             </Button>
           )}
-        </div>
-      </div>
-    </div>
+        </Flex>
+      </Flex>
+    </Flex>
   );
 }
