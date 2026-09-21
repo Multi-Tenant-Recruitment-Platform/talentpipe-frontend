@@ -40,8 +40,8 @@ const MODES: { id: LoginMode; label: string; icon: ReactNode }[] = [
 ];
 
 const TAB_BASE =
-  'flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2';
-const TAB_ON = 'bg-white text-indigo-700 shadow-sm ring-1 ring-slate-900/5';
+  'flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2';
+const TAB_ON = 'bg-white text-blue-700 shadow-sm ring-1 ring-slate-900/5';
 const TAB_OFF = 'text-slate-500 hover:text-slate-700';
 
 /**

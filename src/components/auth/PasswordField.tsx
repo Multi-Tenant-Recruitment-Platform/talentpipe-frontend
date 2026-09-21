@@ -22,7 +22,7 @@ export function PasswordField({
         </label>
         <Link
           to="/forgot-password"
-          className="text-xs font-medium text-indigo-600 hover:text-indigo-500 focus:outline-none focus-visible:underline"
+          className="text-xs font-medium text-blue-600 hover:text-blue-500 focus:outline-none focus-visible:underline"
         >
           Forgot password?
         </Link>
@@ -41,7 +41,7 @@ export function PasswordField({
           type="button"
           onClick={() => setVisible((v) => !v)}
           aria-pressed={visible}
-          className="absolute inset-y-0 right-0 mt-1.5 flex items-center px-3 text-slate-400 hover:text-slate-600 focus:outline-none focus-visible:text-indigo-600"
+          className="absolute inset-y-0 right-0 mt-1.5 flex items-center px-3 text-slate-400 hover:text-slate-600 focus:outline-none focus-visible:text-blue-600"
         >
           {/* Plain text content (not aria-label) so this button's accessible
               name doesn't collide with getByLabelText(/password/i) queries

@@ -13,7 +13,7 @@ export function AuthShell({ children }: Readonly<{ children: ReactNode }>) {
         aria-hidden="true"
         className="pointer-events-none absolute inset-x-0 -top-10 -z-10 flex justify-center blur-3xl"
       >
-        <div className="aspect-[3/1] w-full max-w-4xl bg-gradient-to-tr from-indigo-200 via-violet-100 to-sky-100 opacity-60" />
+        <div className="aspect-[3/1] w-full max-w-4xl bg-gradient-to-tr from-sky-200 via-blue-100 to-cyan-100 opacity-60" />
       </div>
 
       <section className="mx-auto max-w-5xl overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-xl shadow-slate-900/5 ring-1 ring-slate-900/5 lg:grid lg:grid-cols-2">

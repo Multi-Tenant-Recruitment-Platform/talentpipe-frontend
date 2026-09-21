@@ -155,7 +155,7 @@ export function LoginPage() {
 
   return (
     <AuthShell>
-      <span className="text-xs font-semibold uppercase tracking-wider text-indigo-600">Sign in</span>
+      <span className="text-xs font-semibold uppercase tracking-wider text-blue-600">Sign in</span>
       <h1 className="mt-1.5 text-[1.75rem] font-bold tracking-tight text-slate-900">Welcome back</h1>
       <p className="mt-2 text-sm text-slate-500">{copy.subtitle}</p>
 
@@ -192,7 +192,7 @@ export function LoginPage() {
         <button
           type="submit"
           disabled={submitting}
-          className="flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-indigo-600/20 transition-all hover:from-indigo-500 hover:to-violet-500 hover:shadow-md hover:shadow-indigo-600/25 focus:outline-none focus-visible:ring-4 focus-visible:ring-indigo-500/30 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:shadow-sm"
+          className="flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-blue-600 to-sky-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-blue-600/25 transition-all hover:from-blue-500 hover:to-sky-400 hover:shadow-md hover:shadow-blue-600/30 focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-500/35 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:shadow-sm"
         >
           {submitting && (
             <svg
@@ -238,7 +238,7 @@ export function LoginPage() {
       {/* Registration is persona-specific, mirroring the active login tab. */}
       <p className="mt-6 text-center text-sm text-slate-500">
         New to TalentPipe?{' '}
-        <Link to={copy.registerPath} className="font-semibold text-indigo-600 hover:text-indigo-500">
+        <Link to={copy.registerPath} className="font-semibold text-blue-600 hover:text-blue-500">
           Create an account
         </Link>
       </p>
