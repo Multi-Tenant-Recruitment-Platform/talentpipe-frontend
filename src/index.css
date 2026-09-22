@@ -1,5 +1,62 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/*
+ * Ant Design ships no global reset — its styles are scoped to `.ant-*` — so
+ * these few rules replace what Tailwind's Preflight used to provide. Component
+ * styling belongs in the theme (src/theme/antdTheme.ts); anything that genuinely
+ * cannot be expressed there lives in styles/overrides.css.
+ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+:root {
+  /* Mirrors BRAND_GRADIENT in src/theme/antdTheme.ts. Used only by the two
+     brand marks; buttons use the flat colorPrimary token. */
+  --tp-brand-gradient: linear-gradient(135deg, #4f46e5, #7c3aed);
+  --tp-surface: #ffffff;
+}
+
+/*
+ * Ant Design has no screen-reader-only utility, and six components depend on
+ * one. It must clip rather than `display: none` — the file input inside the
+ * company image picker has to stay focusable and clickable.
+ */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
