@@ -1,12 +1,13 @@
+import { Card as AntCard, Typography } from 'antd';
 import type { ReactNode } from 'react';
 
 /**
  * Section card shell shared by every dashboard surface: optional header row
  * (title + subtitle + right-aligned action slot) above a padded body.
  *
- * <p>Shape and elevation deliberately mirror the auth pages' card — same
- * radius, same hairline ring — so signing in and landing on the dashboard
- * reads as one product rather than two.</p>
+ * <p>Kept as a wrapper rather than using antd's `Card` directly so the subtitle
+ * stays part of the header contract — antd has no subtitle slot, and without
+ * this every caller would rebuild the same two-line title by hand.</p>
  */
 export function Card({
   title,
@@ -20,23 +21,35 @@ export function Card({
   subtitle?: string;
   action?: ReactNode;
   children: ReactNode;
+  /** Transitional: callers still passing Tailwind spacing. Removed with Tailwind. */
   className?: string;
   bodyClassName?: string;
 }>) {
+  const header =
+    title || subtitle ? (
+      <div style={{ minWidth: 0, paddingBlock: 4 }}>
+        {title && (
+          <Typography.Title level={2} style={{ fontSize: 16, margin: 0 }}>
+            {title}
+          </Typography.Title>
+        )}
+        {subtitle && (
+          <Typography.Text type="secondary" style={{ display: 'block', fontSize: 12, marginTop: 2 }}>
+            {subtitle}
+          </Typography.Text>
+        )}
+      </div>
+    ) : undefined;
+
   return (
-    <section
-      className={`rounded-2xl border border-slate-200/80 bg-white shadow-sm shadow-slate-900/5 ring-1 ring-slate-900/5 ${className}`}
+    <AntCard
+      className={className}
+      title={header}
+      extra={action}
+      classNames={{ body: bodyClassName }}
+      styles={{ header: { border: 0 } }}
     >
-      {(title || action) && (
-        <header className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-6 py-4">
-          <div className="min-w-0">
-            {title && <h2 className="text-base font-semibold tracking-tight text-slate-900">{title}</h2>}
-            {subtitle && <p className="mt-0.5 text-xs text-slate-500">{subtitle}</p>}
-          </div>
-          {action}
-        </header>
-      )}
-      <div className={bodyClassName || 'p-6'}>{children}</div>
-    </section>
+      {children}
+    </AntCard>
   );
 }

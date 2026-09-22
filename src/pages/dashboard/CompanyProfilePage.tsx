@@ -69,8 +69,8 @@ export function CompanyProfilePage({ mode = 'view' }: Readonly<{ mode?: 'view' |
         title={onEditRoute ? 'Edit company profile' : 'Company profile'}
       />
 
-      <div className="mx-auto max-w-4xl">
-        <Card bodyClassName="p-6 sm:p-8">
+      <div style={{ maxWidth: 896, marginInline: 'auto' }}>
+        <Card>
           <CompanyProfilePanel
             controller={controller}
             variant="profile"

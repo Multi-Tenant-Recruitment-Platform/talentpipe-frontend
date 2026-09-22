@@ -8,7 +8,7 @@ import { DetailItem } from './DetailItem';
  */
 export function CompanyOperations({ values }: Readonly<{ values: CompanyFormValues }>) {
   return (
-    <dl className="grid gap-x-6 gap-y-5 sm:grid-cols-3">
+    <dl className="tp-detail-grid-3">
       <DetailItem icon="clock" label="Time zone" value={values.timezone} testId="company-timezone" />
       <DetailItem
         icon="chart-bar"

@@ -1,3 +1,4 @@
+import { Typography } from 'antd';
 import { benefitLabel, sortBenefits } from '../../dashboard/companyProfile';
 import { Icon } from './Icon';
 
@@ -11,20 +12,17 @@ import { Icon } from './Icon';
 export function CompanyBenefits({ benefits }: Readonly<{ benefits: string[] }>) {
   if (benefits.length === 0) {
     return (
-      <p className="text-sm text-slate-400" data-testid="company-benefits">
+      <Typography.Paragraph type="secondary" data-testid="company-benefits" style={{ margin: 0 }}>
         No benefits listed yet. These are among the first things candidates look for.
-      </p>
+      </Typography.Paragraph>
     );
   }
 
   return (
-    <ul
-      data-testid="company-benefits"
-      className="grid gap-x-6 gap-y-2.5 sm:grid-cols-2"
-    >
+    <ul data-testid="company-benefits" className="tp-benefit-grid">
       {sortBenefits(benefits).map((id) => (
-        <li key={id} className="flex items-start gap-2 text-sm text-slate-700">
-          <Icon name="check" className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
+        <li key={id} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+          <Icon name="check" size={16} style={{ marginTop: 3, color: '#059669' }} />
           {benefitLabel(id)}
         </li>
       ))}

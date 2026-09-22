@@ -1,3 +1,4 @@
+import { Tag, Typography } from 'antd';
 import {
   formatLocation,
   formatStreet,
@@ -16,7 +17,7 @@ import { Icon } from './Icon';
  */
 export function LocationInformation({ values }: Readonly<{ values: CompanyFormValues }>) {
   return (
-    <dl className="grid gap-x-6 gap-y-5 sm:grid-cols-2">
+    <dl className="tp-detail-grid">
       <DetailItem
         icon="building"
         label="Street address"
@@ -29,28 +30,59 @@ export function LocationInformation({ values }: Readonly<{ values: CompanyFormVa
         value={formatLocation(values)}
         testId="company-location"
       />
-      <div className="flex min-w-0 items-start gap-3 sm:col-span-2">
-        <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-50 text-slate-400">
-          <Icon name="building" className="h-4 w-4" />
+      {/* Not a DetailItem: the value is a list of chips rather than one string. */}
+      <div
+        className="tp-detail-grid-full"
+        style={{ display: 'flex', minWidth: 0, alignItems: 'flex-start', gap: 12 }}
+      >
+        <span
+          style={{
+            marginTop: 2,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: 32,
+            height: 32,
+            flexShrink: 0,
+            borderRadius: 8,
+            background: '#f8fafc',
+            color: '#94a3b8',
+          }}
+        >
+          <Icon name="building" size={16} />
         </span>
-        <div className="min-w-0">
-          <dt className="text-xs font-medium uppercase tracking-wide text-slate-400">
+        <div style={{ minWidth: 0 }}>
+          <dt
+            style={{
+              fontSize: 12,
+              fontWeight: 500,
+              textTransform: 'uppercase',
+              letterSpacing: '0.03em',
+              color: '#94a3b8',
+            }}
+          >
             Other branches
           </dt>
-          <dd className="mt-1 min-w-0" data-testid="company-officeLocations">
+          <dd style={{ marginTop: 4, marginInlineStart: 0, minWidth: 0 }} data-testid="company-officeLocations">
             {values.officeLocations.length > 0 ? (
-              <ul className="flex flex-wrap gap-2">
+              <ul
+                style={{
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  gap: 8,
+                  listStyle: 'none',
+                  margin: 0,
+                  padding: 0,
+                }}
+              >
                 {values.officeLocations.map((office) => (
-                  <li
-                    key={office}
-                    className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700"
-                  >
-                    {office}
+                  <li key={office}>
+                    <Tag style={{ marginInlineEnd: 0, borderRadius: 999 }}>{office}</Tag>
                   </li>
                 ))}
               </ul>
             ) : (
-              <span className="text-sm text-slate-400">Not set</span>
+              <Typography.Text type="secondary">Not set</Typography.Text>
             )}
           </dd>
         </div>

@@ -1,17 +1,17 @@
+import { Avatar as AntAvatar } from 'antd';
+
+/** Background/foreground pairs, kept as literals so a name's tint never drifts. */
 const PALETTE = [
-  'bg-indigo-100 text-indigo-700',
-  'bg-violet-100 text-violet-700',
-  'bg-emerald-100 text-emerald-700',
-  'bg-amber-100 text-amber-700',
-  'bg-rose-100 text-rose-700',
-  'bg-sky-100 text-sky-700',
+  { bg: '#e0e7ff', fg: '#4338ca' },
+  { bg: '#ede9fe', fg: '#6d28d9' },
+  { bg: '#d1fae5', fg: '#047857' },
+  { bg: '#fef3c7', fg: '#b45309' },
+  { bg: '#ffe4e6', fg: '#be123c' },
+  { bg: '#e0f2fe', fg: '#0369a1' },
 ];
 
-const SIZES = {
-  sm: 'h-8 w-8 text-xs',
-  md: 'h-10 w-10 text-sm',
-  lg: 'h-12 w-12 text-base',
-} as const;
+const SIZES = { sm: 32, md: 40, lg: 48 } as const;
+const FONT_SIZES = { sm: 12, md: 14, lg: 16 } as const;
 
 /**
  * Initials avatar with a deterministic tint derived from the person's name,
@@ -21,11 +21,14 @@ export function Avatar({
   firstName,
   lastName,
   size = 'md',
-  className = '',
+  style,
+  className,
 }: Readonly<{
   firstName: string;
   lastName?: string;
   size?: keyof typeof SIZES;
+  style?: React.CSSProperties;
+  /** Transitional: callers still passing Tailwind spacing. Removed with Tailwind. */
   className?: string;
 }>) {
   const full = `${firstName} ${lastName ?? ''}`.trim();
@@ -42,11 +45,22 @@ export function Avatar({
   const tone = PALETTE[hash % PALETTE.length];
 
   return (
-    <span
-      className={`inline-flex shrink-0 items-center justify-center rounded-full font-semibold ${SIZES[size]} ${tone} ${className}`}
+    // aria-hidden because the name it abbreviates is always rendered beside it;
+    // announcing "KS" before "Kasun Silva" is noise, not information.
+    <AntAvatar
+      size={SIZES[size]}
+      className={className}
       aria-hidden="true"
+      style={{
+        backgroundColor: tone.bg,
+        color: tone.fg,
+        fontSize: FONT_SIZES[size],
+        fontWeight: 600,
+        flexShrink: 0,
+        ...style,
+      }}
     >
       {initials || '?'}
-    </span>
+    </AntAvatar>
   );
 }

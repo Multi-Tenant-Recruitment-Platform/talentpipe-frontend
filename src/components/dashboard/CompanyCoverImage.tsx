@@ -19,27 +19,24 @@ export function CompanyCoverImage({
   name: string;
 }>) {
   return (
-    <div className="relative">
-      <div
-        data-testid="company-cover"
-        className="h-32 w-full overflow-hidden rounded-xl bg-gradient-to-br from-indigo-500 via-violet-500 to-indigo-600 sm:h-44"
-      >
+    <div style={{ position: 'relative' }}>
+      <div data-testid="company-cover" className="tp-cover-band">
         {coverUrl && (
           <img
             src={coverUrl}
             alt={`${name || 'Company'} cover`}
-            className="h-full w-full object-cover"
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
           />
         )}
       </div>
       {/* Pulled up over the band's lower edge, with a white ring so it reads
           as sitting on top rather than punched out of it. */}
-      <div className="-mt-10 pl-6 sm:-mt-12">
+      <div className="tp-cover-logo">
         <CompanyLogo
           src={logoUrl}
           name={name}
           size="lg"
-          className="ring-4 ring-white drop-shadow-sm"
+          style={{ boxShadow: '0 0 0 4px #fff, 0 1px 2px rgb(15 23 42 / 10%)' }}
         />
       </div>
     </div>

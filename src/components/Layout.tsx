@@ -1,77 +1,88 @@
-import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { Flex, Layout as AntLayout, Menu, Typography } from 'antd';
+import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { can } from '../auth/permissions';
+import { Button } from './ui/Button';
 
 /** Shared page chrome: top navigation + content outlet. */
 export function Layout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
 
   async function handleLogout() {
     await logout();
     navigate('/', { replace: true });
   }
 
-  const navLinkClass = ({ isActive }: { isActive: boolean }) =>
-    `rounded-lg px-3 py-2 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 ${
-      isActive ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-    }`;
+  const items = [
+    { key: '/jobs', label: <Link to="/jobs">Browse jobs</Link> },
+    // The dashboard is the company workspace; candidates have no tenant, so it
+    // isn't shown to them. Asks the permission map rather than naming a role,
+    // so this and the route guard can never drift apart.
+    ...(user && can(user.role, 'dashboard.view')
+      ? [{ key: '/dashboard', label: <Link to="/dashboard">Dashboard</Link> }]
+      : []),
+  ];
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
-      <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/85 backdrop-blur-sm">
-        <nav className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
-          <Link
-            to="/"
-            className="flex items-center gap-2 text-lg font-bold tracking-tight text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
-          >
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-sky-500 text-sm font-extrabold text-white shadow-sm">
+    <AntLayout style={{ minHeight: '100vh' }}>
+      <AntLayout.Header
+        style={{
+          position: 'sticky',
+          top: 0,
+          zIndex: 20,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 16,
+          borderBottom: '1px solid #e2e8f0',
+          background: 'rgb(255 255 255 / 85%)',
+          backdropFilter: 'blur(6px)',
+        }}
+      >
+        <Flex
+          align="center"
+          justify="space-between"
+          gap={16}
+          style={{ width: '100%', maxWidth: 1152, marginInline: 'auto' }}
+        >
+          <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span className="tp-brand-mark" style={{ width: 32, height: 32, fontWeight: 800 }}>
               T
             </span>
-            <span className="hidden sm:inline">TalentPipe</span>
+            <Typography.Text strong style={{ fontSize: 18 }}>
+              TalentPipe
+            </Typography.Text>
           </Link>
-          <div className="flex items-center gap-1">
-            <NavLink to="/jobs" className={navLinkClass}>
-              Browse jobs
-            </NavLink>
+
+          <Flex align="center" gap={8}>
+            <Menu
+              mode="horizontal"
+              selectedKeys={items.filter((i) => pathname.startsWith(i.key)).map((i) => i.key)}
+              items={items}
+              style={{ flex: 1, minWidth: 180, borderBottom: 0, background: 'transparent' }}
+            />
             {user ? (
-              <>
-                {/* The dashboard is the company workspace; candidates have no
-                    tenant, so it isn't shown to them. Asks the permission map
-                    rather than naming a role, so this and the route guard can
-                    never drift apart. */}
-                {can(user.role, 'dashboard.view') && (
-                  <NavLink to="/dashboard" className={navLinkClass}>
-                    Dashboard
-                  </NavLink>
-                )}
-                <button
-                  type="button"
-                  onClick={() => void handleLogout()}
-                  className="ml-1 rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
-                >
-                  Log out
-                </button>
-              </>
+              <Button variant="ghost" onClick={() => void handleLogout()}>
+                Log out
+              </Button>
             ) : (
               <>
-                <NavLink to="/login" className={navLinkClass}>
+                <Button variant="ghost" onClick={() => navigate('/login')}>
                   Log in
-                </NavLink>
-                <NavLink
-                  to="/register"
-                  className="ml-1 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
-                >
+                </Button>
+                <Button variant="primary" onClick={() => navigate('/register')}>
                   Get started
-                </NavLink>
+                </Button>
               </>
             )}
-          </div>
-        </nav>
-      </header>
-      <main className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
+          </Flex>
+        </Flex>
+      </AntLayout.Header>
+
+      <AntLayout.Content style={{ maxWidth: 1152, width: '100%', marginInline: 'auto', padding: '40px 16px' }}>
         <Outlet />
-      </main>
-    </div>
+      </AntLayout.Content>
+    </AntLayout>
   );
 }
