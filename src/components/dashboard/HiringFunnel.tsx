@@ -1,11 +1,13 @@
+import { Flex, Progress, Typography } from 'antd';
 import type { FunnelStage } from '../../data/mockDashboard';
 
-const STAGE_GRADIENTS = [
-  'from-indigo-600 to-indigo-400',
-  'from-violet-600 to-violet-400',
-  'from-purple-600 to-purple-400',
-  'from-fuchsia-600 to-fuchsia-400',
-  'from-emerald-600 to-emerald-400',
+/** One hue per stage, so a stage keeps its colour across both dashboards. */
+const STAGE_COLORS: { from: string; to: string }[] = [
+  { from: '#4f46e5', to: '#818cf8' },
+  { from: '#7c3aed', to: '#a78bfa' },
+  { from: '#9333ea', to: '#c084fc' },
+  { from: '#c026d3', to: '#e879f9' },
+  { from: '#059669', to: '#34d399' },
 ];
 
 /** Conversion percentage from one stage to the next (null for the first). */
@@ -19,37 +21,46 @@ export function stageConversion(stages: FunnelStage[], index: number): number | 
 /**
  * Horizontal-bar hiring funnel: each stage scales against the top of the
  * funnel, with stage-to-stage conversion percentages alongside.
+ *
+ * <p>Built from `Progress` bars rather than a charting library: antd has no
+ * funnel, and five proportional bars need no axes, no legend and no tooltip to
+ * be read correctly.</p>
  */
 export function HiringFunnel({ stages }: Readonly<{ stages: FunnelStage[] }>) {
   const top = stages[0]?.count ?? 1;
 
   return (
-    <div className="space-y-5">
+    <Flex vertical gap={20}>
       {stages.map((stage, i) => {
         const conversion = stageConversion(stages, i);
+        // A floor of 4%, so a stage with very few candidates is still a
+        // visible bar rather than an empty track that reads as "no data".
         const width = Math.max(4, Math.round((stage.count / top) * 100));
+        const color = STAGE_COLORS[i % STAGE_COLORS.length];
         return (
           <div key={stage.label}>
-            <div className="flex items-baseline justify-between gap-4">
-              <span className="text-sm font-medium text-slate-700">{stage.label}</span>
-              <span className="text-sm font-semibold tabular-nums text-slate-900">
+            <Flex align="baseline" justify="space-between" gap={16}>
+              <Typography.Text strong>{stage.label}</Typography.Text>
+              <Typography.Text strong style={{ fontVariantNumeric: 'tabular-nums' }}>
                 {stage.count.toLocaleString()}
                 {conversion !== null && (
-                  <span className="ml-2 text-xs font-normal text-slate-400">
+                  <Typography.Text type="secondary" style={{ marginLeft: 8, fontSize: 12 }}>
                     {conversion}% from {stages[i - 1].label.toLowerCase()}
-                  </span>
+                  </Typography.Text>
                 )}
-              </span>
-            </div>
-            <div className="mt-1.5 h-3 overflow-hidden rounded-full bg-slate-100">
-              <div
-                className={`h-full rounded-full bg-gradient-to-r ${STAGE_GRADIENTS[i % STAGE_GRADIENTS.length]}`}
-                style={{ width: `${width}%` }}
-              />
-            </div>
+              </Typography.Text>
+            </Flex>
+            <Progress
+              percent={width}
+              showInfo={false}
+              strokeColor={color}
+              strokeLinecap="round"
+              size={['100%', 12]}
+              style={{ marginBottom: 0 }}
+            />
           </div>
         );
       })}
-    </div>
+    </Flex>
   );
 }

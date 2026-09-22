@@ -1,59 +1,60 @@
+import { Card, Col, Divider, Flex, Row, Typography } from 'antd';
 import { Link } from 'react-router-dom';
 
 /** Public landing shell: name, one-liner, and a clear entry point per persona. */
 export function LandingPage() {
   return (
-    <section className="flex flex-col items-center py-16 text-center">
-      <h1 className="max-w-2xl text-5xl font-extrabold tracking-tight text-slate-900">
+    <Flex vertical align="center" style={{ paddingBlock: 64, textAlign: 'center' }}>
+      <Typography.Title level={1} style={{ fontSize: 48, maxWidth: 672, margin: 0 }}>
         TalentPipe
-      </h1>
-      <p className="mt-6 max-w-xl text-lg text-slate-600">
-        The multi-tenant recruitment intelligence platform — one place for your
-        jobs, candidates and hiring pipeline.
-      </p>
+      </Typography.Title>
+      <Typography.Paragraph type="secondary" style={{ maxWidth: 576, fontSize: 18, marginTop: 24 }}>
+        The multi-tenant recruitment intelligence platform — one place for your jobs, candidates and
+        hiring pipeline.
+      </Typography.Paragraph>
 
       {/* Two audiences, two doors — employers and job seekers each get their own. */}
-      <div className="mt-12 grid w-full max-w-3xl gap-6 sm:grid-cols-2">
-        <div className="flex flex-col rounded-2xl border border-slate-200 bg-white p-8 text-left shadow-sm">
-          <h2 className="text-lg font-bold text-slate-900">For employers</h2>
-          <p className="mt-2 flex-1 text-sm text-slate-600">
-            Create your company workspace, invite your hiring team, and manage
-            your pipeline end to end.
-          </p>
-          <Link
-            to="/register"
-            className="mt-6 inline-block rounded-md bg-gradient-to-r from-indigo-600 to-violet-600 px-5 py-2.5 text-center text-sm font-semibold text-white shadow-sm transition-opacity hover:opacity-90"
-          >
-            Register your company
-          </Link>
-        </div>
+      <Row gutter={[24, 24]} style={{ width: '100%', maxWidth: 768, marginTop: 48 }}>
+        <Col xs={24} sm={12}>
+          <Card style={{ height: '100%', textAlign: 'left' }} styles={{ body: { padding: 32 } }}>
+            <Flex vertical style={{ height: '100%' }}>
+              <Typography.Title level={2} style={{ fontSize: 18, margin: 0 }}>
+                For employers
+              </Typography.Title>
+              <Typography.Paragraph type="secondary" style={{ flex: 1, marginTop: 8 }}>
+                Create your company workspace, invite your hiring team, and manage your pipeline end
+                to end.
+              </Typography.Paragraph>
+              <Link to="/register" className="tp-cta-link" style={{ marginTop: 24 }}>
+                Register your company
+              </Link>
+            </Flex>
+          </Card>
+        </Col>
 
-        <div className="flex flex-col rounded-2xl border border-slate-200 bg-white p-8 text-left shadow-sm">
-          <h2 className="text-lg font-bold text-slate-900">For job seekers</h2>
-          <p className="mt-2 flex-1 text-sm text-slate-600">
-            Create one candidate account, apply to every company hiring on
-            TalentPipe, and get discovered again.
-          </p>
-          <Link
-            to="/register-candidate"
-            className="mt-6 inline-block rounded-md border border-indigo-600 px-5 py-2.5 text-center text-sm font-semibold text-indigo-700 transition-colors hover:bg-indigo-50"
-          >
-            Create a candidate account
-          </Link>
-        </div>
-      </div>
+        <Col xs={24} sm={12}>
+          <Card style={{ height: '100%', textAlign: 'left' }} styles={{ body: { padding: 32 } }}>
+            <Flex vertical style={{ height: '100%' }}>
+              <Typography.Title level={2} style={{ fontSize: 18, margin: 0 }}>
+                For job seekers
+              </Typography.Title>
+              <Typography.Paragraph type="secondary" style={{ flex: 1, marginTop: 8 }}>
+                Create one candidate account, apply to every company hiring on TalentPipe, and get
+                discovered again.
+              </Typography.Paragraph>
+              <Link to="/register-candidate" className="tp-cta-link tp-cta-link-ghost" style={{ marginTop: 24 }}>
+                Create a candidate account
+              </Link>
+            </Flex>
+          </Card>
+        </Col>
+      </Row>
 
-      <div className="mt-10 flex items-center gap-6 text-sm">
-        <Link to="/login" className="font-medium text-slate-600 hover:text-slate-900">
-          Already have an account? Log in
-        </Link>
-        <span aria-hidden="true" className="text-slate-300">
-          |
-        </span>
-        <Link to="/jobs" className="font-medium text-indigo-600 hover:text-indigo-500">
-          Browse open positions →
-        </Link>
-      </div>
-    </section>
+      <Flex align="center" gap={24} style={{ marginTop: 40 }}>
+        <Link to="/login">Already have an account? Log in</Link>
+        <Divider type="vertical" aria-hidden="true" style={{ margin: 0 }} />
+        <Link to="/jobs">Browse open positions →</Link>
+      </Flex>
+    </Flex>
   );
 }
