@@ -1,3 +1,4 @@
+import { Flex, Spin, Typography } from 'antd';
 import type { ReactNode } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
@@ -31,9 +32,10 @@ export function ProtectedRoute({
 
   if (initializing) {
     return (
-      <div className="flex min-h-[50vh] items-center justify-center text-slate-500">
-        Loading session…
-      </div>
+      <Flex align="center" justify="center" gap={12} style={{ minHeight: '50vh' }}>
+        <Spin />
+        <Typography.Text type="secondary">Loading session…</Typography.Text>
+      </Flex>
     );
   }
 

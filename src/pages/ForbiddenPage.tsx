@@ -1,3 +1,4 @@
+import { Flex, Result, Typography } from 'antd';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { homeRouteFor, type Permission } from '../auth/permissions';
@@ -27,35 +28,64 @@ export function ForbiddenPage({ requires }: Readonly<{ requires?: Permission }>)
   const home = homeRouteFor(user?.role);
 
   return (
-    <div className="mx-auto flex max-w-lg flex-col items-center rounded-2xl border border-slate-200 bg-white px-8 py-12 text-center shadow-sm">
-      <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-500 to-rose-500 text-white shadow-md shadow-rose-500/20">
-        <Icon name="lock-closed" className="h-7 w-7" />
-      </span>
-
-      <p className="mt-5 text-xs font-semibold uppercase tracking-wide text-slate-400">Error 403</p>
-      <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900">
-        You don’t have access to this page
-      </h1>
-      <p className="mt-2 text-sm leading-relaxed text-slate-500">
-        {(requires && REASONS[requires]) ??
-          'Your role doesn’t include this part of the workspace.'}{' '}
-        Ask a Company Admin if you need it.
-      </p>
-
-      {user && (
-        <div className="mt-5 flex items-center gap-2 rounded-full bg-slate-50 px-3 py-1.5 ring-1 ring-inset ring-slate-200">
-          <span className="text-xs text-slate-500">Signed in as</span>
-          <RoleBadge role={user.role} />
-        </div>
-      )}
-
-      <Link
-        to={home}
-        className="mt-7 inline-flex items-center gap-2 rounded-md bg-gradient-to-r from-indigo-600 to-violet-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-opacity hover:opacity-90"
-      >
-        <Icon name="arrow-left" className="h-4 w-4" />
-        {home === '/dashboard' ? 'Back to overview' : 'Browse jobs'}
-      </Link>
-    </div>
+    <Result
+      style={{ maxWidth: 512, marginInline: 'auto' }}
+      icon={
+        <span
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: 56,
+            height: 56,
+            borderRadius: 16,
+            background: 'linear-gradient(135deg, #f59e0b, #f43f5e)',
+            color: '#fff',
+          }}
+        >
+          <Icon name="lock-closed" size={28} />
+        </span>
+      }
+      title={
+        <>
+          <Typography.Paragraph type="secondary" className="tp-eyebrow" style={{ marginBottom: 4 }}>
+            Error 403
+          </Typography.Paragraph>
+          <Typography.Title level={1} style={{ fontSize: 24, margin: 0 }}>
+            You don&rsquo;t have access to this page
+          </Typography.Title>
+        </>
+      }
+      subTitle={
+        <>
+          {(requires && REASONS[requires]) ??
+            'Your role doesn’t include this part of the workspace.'}{' '}
+          Ask a Company Admin if you need it.
+        </>
+      }
+      extra={
+        <Flex vertical align="center" gap={20}>
+          {user && (
+            <Flex
+              align="center"
+              gap={8}
+              style={{ borderRadius: 999, background: '#f8fafc', padding: '6px 12px' }}
+            >
+              <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+                Signed in as
+              </Typography.Text>
+              <RoleBadge role={user.role} />
+            </Flex>
+          )}
+          {/* An anchor, not a Button: this navigates, and nesting one in the
+              other is invalid markup. The icon is aria-hidden, so the link's
+              accessible name stays exactly its text. */}
+          <Link to={home} className="tp-cta-link">
+            <Icon name="arrow-left" size={16} />
+            {home === '/dashboard' ? 'Back to overview' : 'Browse jobs'}
+          </Link>
+        </Flex>
+      }
+    />
   );
 }

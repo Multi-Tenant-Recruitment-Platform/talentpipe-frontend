@@ -1,12 +1,24 @@
+import {
+  Badge as AntBadge,
+  Drawer,
+  Dropdown,
+  Flex,
+  Input,
+  Layout,
+  Menu,
+  Typography,
+  type InputRef,
+} from 'antd';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import type { Permission } from '../auth/permissions';
 import { useCan } from '../auth/useCan';
 import { Avatar } from '../components/dashboard/Avatar';
+import { CompanyLogo } from '../components/dashboard/CompanyLogo';
 import { Icon, type IconName } from '../components/dashboard/Icon';
 import { RoleBadge } from '../components/dashboard/RoleBadge';
-import { CompanyLogo } from '../components/dashboard/CompanyLogo';
+import { Button } from '../components/ui/Button';
 import { CompanyProfileProvider, useCompanyIdentity } from '../dashboard/CompanyProfileContext';
 import { TeamSummaryProvider } from '../dashboard/TeamSummaryContext';
 import { activeTenant } from '../tenant/activeTenant';
@@ -42,80 +54,77 @@ const NOTIFICATIONS = [
   { id: 'n-3', icon: 'briefcase' as IconName, text: '5 new applications for UX Designer', time: '3 hours ago' },
 ];
 
+/**
+ * Which nav row the current URL selects.
+ *
+ * <p>The Overview item matches its path exactly, mirroring `NavLink`'s `end`:
+ * a prefix match would light it up on every page in the dashboard.</p>
+ */
+function selectedKeyFor(pathname: string): string[] {
+  const match = NAV_ITEMS.filter((item) =>
+    item.end ? pathname === item.to : pathname.startsWith(item.to),
+  );
+  // Longest path wins, so /dashboard/profile/edit selects Profile Management.
+  const best = match.sort((a, b) => b.to.length - a.to.length)[0];
+  return best ? [best.to] : [];
+}
+
 function SidebarContent({ onNavigate }: Readonly<{ onNavigate?: () => void }>) {
   const allow = useCan();
+  const { pathname } = useLocation();
   const navItems = NAV_ITEMS.filter((item) => allow(item.permission));
 
   return (
     // Light chrome: the sidebar recedes so the workspace data is the only
     // thing competing for attention. Brand colour is spent on one mark and
     // the active nav row, nowhere else.
-    <div className="flex h-full flex-col border-r border-slate-200 bg-white">
+    <Flex vertical style={{ height: '100%', background: '#fff', borderRight: '1px solid #e2e8f0' }}>
       {/* Brand */}
-      <div className="flex h-16 items-center gap-2.5 border-b border-slate-200 px-6">
-        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-600 to-violet-600 text-white shadow-sm">
-          <Icon name="funnel" className="h-4 w-4" />
+      <Flex align="center" gap={10} style={{ height: 64, padding: '0 24px', borderBottom: '1px solid #e2e8f0' }}>
+        <span className="tp-brand-mark" style={{ width: 32, height: 32 }}>
+          <Icon name="funnel" size={16} />
         </span>
-        <span className="text-lg font-bold tracking-tight text-slate-900">TalentPipe</span>
-      </div>
+        <Typography.Text strong style={{ fontSize: 18 }}>
+          TalentPipe
+        </Typography.Text>
+      </Flex>
 
       {/* Primary navigation — only what this role may actually open. */}
-      <nav className="mt-6 flex-1 space-y-1 px-4">
-        <p className="px-3 pb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400">Menu</p>
-        {navItems.map((item) => (
-          <NavLink
-            key={item.to}
-            to={item.to}
-            end={item.end}
-            onClick={onNavigate}
-            className={({ isActive }) =>
-              `group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 ${
-                isActive
-                  ? 'bg-indigo-50 text-indigo-700'
-                  : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-              }`
-            }
-          >
-            {({ isActive }) => (
-              <>
-                {/* Left rail marks the active row without relying on fill
-                    alone, so it stays legible at low contrast settings. */}
-                <span
-                  aria-hidden="true"
-                  className={`absolute inset-y-1.5 left-0 w-1 rounded-r-full bg-indigo-600 transition-opacity ${
-                    isActive ? 'opacity-100' : 'opacity-0'
-                  }`}
-                />
-                <Icon
-                  name={item.icon}
-                  className={`h-5 w-5 shrink-0 ${isActive ? 'text-indigo-600' : 'text-slate-400 group-hover:text-slate-600'}`}
-                />
+      <div style={{ flex: 1, marginTop: 24 }}>
+        <Typography.Text type="secondary" className="tp-eyebrow" style={{ display: 'block', padding: '0 28px 8px' }}>
+          Menu
+        </Typography.Text>
+        <Menu
+          mode="inline"
+          selectedKeys={selectedKeyFor(pathname)}
+          style={{ borderInlineEnd: 0, paddingInline: 8 }}
+          items={navItems.map((item) => ({
+            key: item.to,
+            icon: <Icon name={item.icon} size={20} />,
+            label: (
+              <Link to={item.to} onClick={onNavigate}>
                 {item.label}
-              </>
-            )}
-          </NavLink>
-        ))}
-      </nav>
+              </Link>
+            ),
+          }))}
+        />
+      </div>
 
       {/* Footer links */}
-      <div className="border-t border-slate-200 px-4 py-4">
-        <Link
-          to="/"
-          onClick={onNavigate}
-          className="flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
-        >
-          <Icon name="arrow-left" className="h-5 w-5 text-slate-400" />
+      <div style={{ borderTop: '1px solid #e2e8f0', padding: 16 }}>
+        <Link to="/" onClick={onNavigate} className="tp-sidebar-footer-link">
+          <Icon name="arrow-left" size={20} />
           Back to site
         </Link>
       </div>
-    </div>
+    </Flex>
   );
 }
 
 /**
- * Dedicated chrome for the company admin area: dark sidebar navigation,
- * a top bar with search / notifications / account, and the routed content
- * outlet. Collapses to a slide-over drawer on small screens.
+ * Dedicated chrome for the company admin area: sidebar navigation, a top bar
+ * with search / notifications / account, and the routed content outlet.
+ * Collapses to a slide-over drawer on small screens.
  */
 export function DashboardLayout() {
   return (
@@ -134,8 +143,7 @@ function DashboardChrome() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [notificationsOpen, setNotificationsOpen] = useState(false);
-  const searchRef = useRef<HTMLInputElement>(null);
+  const searchRef = useRef<InputRef>(null);
 
   // The profile is the newer answer; the login response is the fallback while
   // it loads. Renaming the company now updates this chip immediately.
@@ -165,10 +173,11 @@ function DashboardChrome() {
   const store = useMemo(() => tenantStorage(activeTenant.get()), []);
   const [unread, setUnread] = useState(() => store.get(NOTIFICATIONS_SEEN) !== 'true');
 
-  function openNotifications() {
-    setNotificationsOpen((open) => !open);
-    setUnread(false);
-    store.set(NOTIFICATIONS_SEEN, 'true');
+  function openNotifications(open: boolean) {
+    if (open) {
+      setUnread(false);
+      store.set(NOTIFICATIONS_SEEN, 'true');
+    }
   }
 
   async function handleLogout() {
@@ -177,157 +186,140 @@ function DashboardChrome() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 antialiased">
+    <Layout style={{ minHeight: '100vh' }}>
       {/* Mobile drawer */}
-      {sidebarOpen && (
-        <div className="fixed inset-0 z-40 lg:hidden">
-          <button
-            type="button"
-            aria-label="Close navigation"
-            onClick={() => setSidebarOpen(false)}
-            className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
-          />
-          <aside className="absolute inset-y-0 left-0 w-72 shadow-2xl">
-            <SidebarContent onNavigate={() => setSidebarOpen(false)} />
-          </aside>
-        </div>
-      )}
+      <Drawer
+        placement="left"
+        width={288}
+        open={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        closable={false}
+        styles={{ body: { padding: 0 } }}
+        rootClassName="tp-sidebar-drawer"
+      >
+        <SidebarContent onNavigate={() => setSidebarOpen(false)} />
+      </Drawer>
 
       {/* Static sidebar */}
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 lg:block">
+      <Layout.Sider width={256} theme="light" className="tp-sidebar" style={{ position: 'fixed', insetBlock: 0, left: 0, zIndex: 30 }}>
         <SidebarContent />
-      </aside>
+      </Layout.Sider>
 
-      <div className="flex min-h-screen flex-col lg:pl-64">
+      <Layout className="tp-dashboard-body">
         {/* Top bar */}
-        <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-slate-200 bg-white/85 px-4 backdrop-blur-md sm:px-6">
-          <button
-            type="button"
+        <Layout.Header className="tp-topbar">
+          <Button
+            variant="ghost"
             onClick={() => setSidebarOpen(true)}
-            className="rounded-lg p-2 text-slate-500 transition-colors hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 lg:hidden"
             aria-label="Open navigation"
+            className="tp-mobile-only"
           >
-            <Icon name="menu" className="h-5 w-5" />
-          </button>
+            <Icon name="menu" size={20} />
+          </Button>
 
           {/* Global search — decorative until the search API lands. */}
-          <div className="group relative hidden max-w-md flex-1 sm:block">
-            <Icon
-              name="search"
-              className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 transition-colors group-focus-within:text-indigo-600"
-            />
+          <div className="tp-topbar-search">
             {/* TODO(sprint2): wire to global search once it exists. */}
-            <input
+            <Input
               ref={searchRef}
               type="search"
               placeholder="Search jobs, candidates, people…"
               aria-label="Search"
               aria-keyshortcuts="Control+K Meta+K"
-              className="w-full rounded-full border border-slate-200 bg-slate-50 py-2.5 pl-11 pr-16 text-sm text-slate-700 shadow-sm transition-all placeholder:text-slate-400 hover:border-slate-300 hover:bg-white focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-indigo-500/15 [&::-webkit-search-cancel-button]:appearance-none"
+              prefix={<Icon name="search" size={16} style={{ opacity: 0.45 }} />}
+              // Discoverability for the shortcut the effect above implements.
+              suffix={
+                <kbd aria-hidden="true" className="tp-kbd">
+                  {shortcutHint}
+                </kbd>
+              }
+              style={{ borderRadius: 999 }}
             />
-            {/* Discoverability for the shortcut below; hidden once typing
-                starts would need state, so it simply sits behind the text. */}
-            <kbd
-              aria-hidden="true"
-              className="pointer-events-none absolute right-3 top-1/2 hidden -translate-y-1/2 items-center gap-0.5 rounded-md border border-slate-200 bg-white px-1.5 py-0.5 font-sans text-[10px] font-semibold text-slate-400 shadow-sm transition-opacity group-focus-within:opacity-0 lg:flex"
-            >
-              {shortcutHint}
-            </kbd>
           </div>
 
-          <div className="ml-auto flex items-center gap-2">
+          <Flex align="center" gap={8} style={{ marginLeft: 'auto' }}>
             {/* Which workspace this session is reading — sits with the account
                 controls because it is identity, not navigation. Clicking the
                 company opens its profile, which is where anyone who clicked
                 the company's name expected to end up. */}
-            <Link
-              to="/dashboard/profile"
-              title="View company profile"
-              className="hidden items-center gap-2.5 rounded-full border border-slate-200 bg-slate-50 py-1 pl-1 pr-3.5 transition-colors hover:border-slate-300 hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 md:flex"
-            >
+            <Link to="/dashboard/profile" title="View company profile" className="tp-company-chip">
               {company.logoUrl ? (
                 <CompanyLogo src={company.logoUrl} name={company.name} size="sm" />
               ) : (
                 <Avatar firstName={company.name} size="sm" />
               )}
-              <p className="min-w-0 max-w-[11rem] truncate text-sm font-semibold text-slate-900">
+              <Typography.Text strong ellipsis style={{ maxWidth: 176 }}>
                 {company.name}
-              </p>
+              </Typography.Text>
             </Link>
 
             {/* Notifications */}
-            <div className="relative">
-              <button
-                type="button"
-                onClick={openNotifications}
-                className="relative rounded-xl p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
-                aria-label="Notifications"
-                aria-expanded={notificationsOpen}
-              >
-                <Icon name="bell" className="h-5 w-5" />
-                {unread && <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-rose-500 ring-2 ring-white" />}
-              </button>
-              {notificationsOpen && (
-                <>
-                  <button
-                    type="button"
-                    aria-label="Dismiss notifications"
-                    onClick={() => setNotificationsOpen(false)}
-                    className="fixed inset-0 z-10 cursor-default"
-                  />
-                  <div className="absolute right-0 z-20 mt-2 w-80 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl shadow-slate-900/10 ring-1 ring-slate-900/5">
-                    <p className="border-b border-slate-100 px-4 py-3 text-sm font-semibold text-slate-900">Notifications</p>
-                    <ul className="divide-y divide-slate-100">
-                      {NOTIFICATIONS.map((n) => (
-                        <li key={n.id} className="flex gap-3 px-4 py-3 transition-colors hover:bg-slate-50">
-                          <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
-                            <Icon name={n.icon} className="h-4 w-4" />
-                          </span>
-                          <div>
-                            <p className="text-sm leading-snug text-slate-700">{n.text}</p>
-                            <p className="mt-0.5 text-xs text-slate-400">{n.time}</p>
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </>
+            <Dropdown
+              trigger={['click']}
+              onOpenChange={openNotifications}
+              placement="bottomRight"
+              popupRender={() => (
+                <div className="tp-notifications">
+                  <Typography.Text strong style={{ display: 'block', padding: '12px 16px', borderBottom: '1px solid #f1f5f9' }}>
+                    Notifications
+                  </Typography.Text>
+                  <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+                    {NOTIFICATIONS.map((n) => (
+                      <li key={n.id} className="tp-notification">
+                        <span className="tp-notification-icon">
+                          <Icon name={n.icon} size={16} />
+                        </span>
+                        <div>
+                          <Typography.Text style={{ display: 'block' }}>{n.text}</Typography.Text>
+                          <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+                            {n.time}
+                          </Typography.Text>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               )}
-            </div>
+            >
+              <Button variant="ghost" aria-label="Notifications">
+                <AntBadge dot={unread} offset={[-2, 2]}>
+                  <Icon name="bell" size={20} />
+                </AntBadge>
+              </Button>
+            </Dropdown>
 
             {/* Account */}
-            <div className="ml-1 flex items-center gap-3 border-l border-slate-200 pl-3">
+            <Flex align="center" gap={12} style={{ marginLeft: 4, borderLeft: '1px solid #e2e8f0', paddingLeft: 12 }}>
               <Avatar firstName={user?.firstName ?? '?'} lastName={user?.lastName} size="sm" />
-              <div className="hidden sm:block">
-                <p className="text-sm font-semibold leading-tight text-slate-900">
+              <div className="tp-account-name">
+                <Typography.Text strong style={{ display: 'block', lineHeight: 1.2 }}>
                   {user?.firstName} {user?.lastName}
-                </p>
+                </Typography.Text>
                 {/* The role decides what this session can reach, so it reads as
                     a pill rather than as grey caption text. */}
                 {user && (
-                  <div className="mt-0.5">
+                  <div style={{ marginTop: 2 }}>
                     <RoleBadge role={user.role} />
                   </div>
                 )}
               </div>
-              <button
-                type="button"
+              <Button
+                variant="ghost"
                 onClick={() => void handleLogout()}
-                className="rounded-xl p-2 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
                 aria-label="Log out"
                 title="Log out"
               >
-                <Icon name="logout" className="h-5 w-5" />
-              </button>
-            </div>
-          </div>
-        </header>
+                <Icon name="logout" size={20} />
+              </Button>
+            </Flex>
+          </Flex>
+        </Layout.Header>
 
         {/* Routed dashboard content */}
-        <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-6 lg:px-8">
+        <Layout.Content className="tp-dashboard-content">
           <Outlet />
-        </main>
-      </div>
-    </div>
+        </Layout.Content>
+      </Layout>
+    </Layout>
   );
 }
