@@ -1,10 +1,12 @@
+import { Button } from '../components/ui/Button';
+import { Alert } from '../components/ui/Alert';
+import { Col, Flex, Input, Row, Typography } from 'antd';
 import { useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { apiErrorMessage } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import { AuthShell } from '../components/AuthShell';
 import { RegisterTabs } from '../components/RegisterTabs';
-import { inputClass } from '../components/ui/inputClass';
 
 /** Company onboarding (PB-001): tenant + first COMPANY_ADMIN, then off to login. */
 export function RegisterPage() {
@@ -44,91 +46,86 @@ export function RegisterPage() {
 
   return (
     <AuthShell>
-      <h1 className="text-2xl font-bold tracking-tight">Create your account</h1>
-      <p className="mt-2 text-sm text-slate-600">
+      <Typography.Title level={1} style={{ fontSize: 26, margin: 0 }}>Create your account</Typography.Title>
+      <Typography.Paragraph type="secondary" style={{ margin: '8px 0 0' }}>
         Choose how you want to use TalentPipe.
-      </p>
+      </Typography.Paragraph>
 
-      <div className="mt-6">
+      <div style={{ marginTop: 24 }}>
         <RegisterTabs active="company" />
       </div>
 
-      <h2 className="mt-6 text-lg font-semibold tracking-tight">Register your company</h2>
-      <p className="mt-1 text-sm text-slate-600">
+      <Typography.Title level={2} style={{ fontSize: 18, marginTop: 24, marginBottom: 0 }}>Register your company</Typography.Title>
+      <Typography.Paragraph type="secondary" style={{ margin: '4px 0 0' }}>
         Creates your company workspace and its first administrator account.
-      </p>
+      </Typography.Paragraph>
 
-      <form onSubmit={(e) => void handleSubmit(e)} className="mt-6 space-y-5">
+      <form onSubmit={(e) => void handleSubmit(e)} style={{ marginTop: 24 }}>
+        <Flex vertical gap={20}>
         {error && (
-          <div role="alert" className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-            {error}
-          </div>
+          <Alert tone="error">{error}</Alert>
         )}
 
         <div>
-          <label htmlFor="companyName" className="block text-sm font-medium text-slate-700">
+          <label htmlFor="companyName" style={{ display: 'block', fontWeight: 500, marginBottom: 6 }}>
             Company name
           </label>
-          <input
+          <Input
             id="companyName"
             required
             maxLength={255}
             value={companyName}
             onChange={(e) => setCompanyName(e.target.value)}
-            className={inputClass}
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label htmlFor="firstName" className="block text-sm font-medium text-slate-700">
+        <Row gutter={16}>
+          <Col xs={24} sm={12}>
+            <label htmlFor="firstName" style={{ display: 'block', fontWeight: 500, marginBottom: 6 }}>
               First name
             </label>
-            <input
+            <Input
               id="firstName"
               required
               maxLength={100}
               value={firstName}
               onChange={(e) => setFirstName(e.target.value)}
-              className={inputClass}
             />
-          </div>
-          <div>
-            <label htmlFor="lastName" className="block text-sm font-medium text-slate-700">
+          </Col>
+          <Col xs={24} sm={12}>
+            <label htmlFor="lastName" style={{ display: 'block', fontWeight: 500, marginBottom: 6 }}>
               Last name
             </label>
-            <input
+            <Input
               id="lastName"
               required
               maxLength={100}
               value={lastName}
               onChange={(e) => setLastName(e.target.value)}
-              className={inputClass}
             />
-          </div>
-        </div>
+          </Col>
+        </Row>
 
         <div>
-          <label htmlFor="email" className="block text-sm font-medium text-slate-700">
+          <label htmlFor="email" style={{ display: 'block', fontWeight: 500, marginBottom: 6 }}>
             Work email
           </label>
-          <input
+          <Input
             id="email"
             type="email"
             required
             maxLength={255}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className={inputClass}
             autoComplete="email"
           />
         </div>
 
         <div>
-          <label htmlFor="password" className="block text-sm font-medium text-slate-700">
+          <label htmlFor="password" style={{ display: 'block', fontWeight: 500, marginBottom: 6 }}>
             Password
           </label>
-          <input
+          <Input
             id="password"
             type="password"
             required
@@ -136,27 +133,23 @@ export function RegisterPage() {
             maxLength={72}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className={inputClass}
             autoComplete="new-password"
           />
-          <p className="mt-1 text-xs text-slate-500">At least 8 characters.</p>
+          <Typography.Text type="secondary" style={{ display: 'block', fontSize: 12, marginTop: 4 }}>At least 8 characters.</Typography.Text>
         </div>
 
-        <button
-          type="submit"
-          disabled={submitting}
-          className="w-full rounded-md bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-opacity hover:opacity-90 disabled:opacity-60"
-        >
-          {submitting ? 'Creating workspace…' : 'Create company account'}
-        </button>
+          <Button type="submit" variant="primary" loading={submitting} style={{ width: '100%' }}>
+            {submitting ? 'Creating workspace…' : 'Create company account'}
+          </Button>
+        </Flex>
       </form>
 
-      <p className="mt-6 text-center text-sm text-slate-600">
+      <Typography.Paragraph type="secondary" style={{ marginTop: 24, textAlign: 'center' }}>
         Already have an account?{' '}
-        <Link to="/login" className="font-semibold text-indigo-600 hover:text-indigo-500">
+        <Link to="/login">
           Log in
         </Link>
-      </p>
+      </Typography.Paragraph>
     </AuthShell>
   );
 }

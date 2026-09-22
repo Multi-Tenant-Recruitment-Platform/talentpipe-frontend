@@ -1,8 +1,10 @@
+import { Flex, Input, Typography } from 'antd';
+import { Button } from '../components/ui/Button';
+import { Alert } from '../components/ui/Alert';
 import { useState, type FormEvent } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { api, apiErrorMessage } from '../api/client';
 import { AuthShell } from '../components/AuthShell';
-import { inputClass } from '../components/ui/inputClass';
 
 /**
  * Landing page for the link in an invitation email (PB-003 / PB-004). Setting
@@ -50,71 +52,66 @@ export function AcceptInvitePage() {
   if (!token) {
     return (
       <AuthShell>
-        <h1 className="text-2xl font-bold tracking-tight">This link is incomplete</h1>
-        <p className="mt-2 text-sm text-slate-600">
+        <Typography.Title level={1} style={{ fontSize: 26, margin: 0 }}>This link is incomplete</Typography.Title>
+        <Typography.Paragraph type="secondary" style={{ margin: '8px 0 0' }}>
           The invitation token is missing. Please open the link directly from your invitation email.
-        </p>
+        </Typography.Paragraph>
       </AuthShell>
     );
   }
 
   return (
     <AuthShell>
-      <h1 className="text-2xl font-bold tracking-tight">Accept your invitation</h1>
-      <p className="mt-2 text-sm text-slate-600">
+      <Typography.Title level={1} style={{ fontSize: 26, margin: 0 }}>Accept your invitation</Typography.Title>
+      <Typography.Paragraph type="secondary" style={{ margin: '8px 0 0' }}>
         Choose a password to activate your account and join the workspace.
-      </p>
+      </Typography.Paragraph>
 
-      <form onSubmit={(e) => void handleSubmit(e)} className="mt-6 space-y-5">
+      <form onSubmit={(e) => void handleSubmit(e)} style={{ marginTop: 24 }}>
+        <Flex vertical gap={20}>
         {error && (
-          <div role="alert" className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-            {error}
-          </div>
+          <Alert tone="error">{error}</Alert>
         )}
 
         <div>
-          <label htmlFor="password" className="block text-sm font-medium text-slate-700">
+          <label htmlFor="password" style={{ display: 'block', fontWeight: 500, marginBottom: 6 }}>
             Password
           </label>
-          <input
+          <Input
             id="password"
             type="password"
             required
             minLength={8}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className={inputClass}
             autoComplete="new-password"
           />
-          <p className="mt-1 text-xs text-slate-500">At least 8 characters.</p>
+          <Typography.Text type="secondary" style={{ display: 'block', fontSize: 12, marginTop: 4 }}>At least 8 characters.</Typography.Text>
         </div>
 
         <div>
-          <label htmlFor="confirmPassword" className="block text-sm font-medium text-slate-700">
+          <label htmlFor="confirmPassword" style={{ display: 'block', fontWeight: 500, marginBottom: 6 }}>
             Confirm password
           </label>
-          <input
+          <Input
             id="confirmPassword"
             type="password"
             required
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
-            className={inputClass}
             autoComplete="new-password"
           />
         </div>
 
-        <button
-          type="submit"
-          disabled={submitting}
-          className="w-full rounded-md bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-opacity hover:opacity-90 disabled:opacity-60"
-        >
+        <Button type="submit" variant="primary" loading={submitting} style={{ width: '100%' }}>
           {submitting ? 'Activating…' : 'Accept invitation'}
-        </button>
+        </Button>
 
-        <Link to="/login" className="block text-center text-sm font-medium text-slate-600 hover:text-slate-900">
+        <Link to="/login"
+          style={{ display: 'block', textAlign: 'center', fontWeight: 500 }}>
           Back to sign in
         </Link>
+        </Flex>
       </form>
     </AuthShell>
   );

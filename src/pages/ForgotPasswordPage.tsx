@@ -1,12 +1,19 @@
+import { Flex, Input, Typography } from 'antd';
 import { useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api/client';
-import { inputClass } from '../components/ui/inputClass';
+import { AuthShell } from '../components/AuthShell';
+import { Alert } from '../components/ui/Alert';
+import { Button } from '../components/ui/Button';
 
 /**
  * Password-reset request. The confirmation is intentionally identical whether
  * or not the email is registered, so the endpoint can't be used to probe for
  * existing accounts.
+ *
+ * <p>For the same reason the outcome is never reported as a success or a
+ * failure — no toast, no error banner. `sent` is set in `finally`, so the same
+ * neutral confirmation appears whatever the request did.</p>
  */
 export function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
@@ -27,60 +34,51 @@ export function ForgotPasswordPage() {
   }
 
   return (
-    <section className="mx-auto max-w-md">
-      <h1 className="text-3xl font-bold tracking-tight">Reset your password</h1>
-      <p className="mt-2 text-sm text-slate-600">
-        Enter your account email and we'll send you a reset link.
-      </p>
+    <AuthShell>
+      <Typography.Text className="tp-eyebrow">Account</Typography.Text>
+      <Typography.Title level={1} style={{ fontSize: 28, margin: '6px 0 0' }}>
+        Reset your password
+      </Typography.Title>
+      <Typography.Paragraph type="secondary" style={{ margin: '8px 0 0' }}>
+        Enter your account email and we&apos;ll send you a reset link.
+      </Typography.Paragraph>
 
       {sent ? (
-        <div className="mt-6 space-y-5 rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-          <output className="block rounded-md border border-green-200 bg-green-50 p-3 text-sm text-green-700">
+        <Flex vertical gap={20} style={{ marginTop: 24 }}>
+          <Alert tone="success">
             If an account exists for {email}, a password reset link is on its way.
-          </output>
-          <Link
-            to="/login"
-            className="block text-center text-sm font-semibold text-indigo-600 hover:text-indigo-500"
-          >
+          </Alert>
+          <Link to="/login" style={{ textAlign: 'center', fontWeight: 600 }}>
             Back to log in
           </Link>
-        </div>
+        </Flex>
       ) : (
-        <form
-          onSubmit={(e) => void handleSubmit(e)}
-          className="mt-6 space-y-5 rounded-lg border border-slate-200 bg-white p-6 shadow-sm"
-        >
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-slate-700">
-              Email
-            </label>
-            <input
-              id="email"
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className={inputClass}
-              autoComplete="email"
-            />
-          </div>
+        <form onSubmit={(e) => void handleSubmit(e)} style={{ marginTop: 24 }}>
+          <Flex vertical gap={20}>
+            <div>
+              <label htmlFor="email" style={{ display: 'block', fontWeight: 500, marginBottom: 6 }}>
+                Email
+              </label>
+              <Input
+                id="email"
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
+              />
+            </div>
 
-          <button
-            type="submit"
-            disabled={submitting}
-            className="w-full rounded-md bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 disabled:opacity-60"
-          >
-            {submitting ? 'Sending…' : 'Send reset link'}
-          </button>
+            <Button type="submit" variant="primary" loading={submitting} style={{ width: '100%' }}>
+              {submitting ? 'Sending…' : 'Send reset link'}
+            </Button>
 
-          <Link
-            to="/login"
-            className="block text-center text-sm font-medium text-slate-600 hover:text-slate-900"
-          >
-            Back to log in
-          </Link>
+            <Link to="/login" style={{ textAlign: 'center', fontWeight: 500 }}>
+              Back to log in
+            </Link>
+          </Flex>
         </form>
       )}
-    </section>
+    </AuthShell>
   );
 }

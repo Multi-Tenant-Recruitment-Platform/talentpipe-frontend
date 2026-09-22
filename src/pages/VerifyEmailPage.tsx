@@ -1,7 +1,10 @@
+import { Typography } from 'antd';
+import { Alert } from '../components/ui/Alert';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { api, apiErrorMessage } from '../api/client';
 import { AuthShell } from '../components/AuthShell';
+import { Icon } from '../components/dashboard/Icon';
 
 type Status = 'verifying' | 'success' | 'error';
 
@@ -50,25 +53,37 @@ export function VerifyEmailPage() {
     <AuthShell>
       {status === 'verifying' && (
         <>
-          <h1 className="text-2xl font-bold tracking-tight">Verifying your email…</h1>
-          <p className="mt-2 text-sm text-slate-600">This only takes a moment.</p>
+          <Typography.Title level={1} style={{ fontSize: 26, margin: 0 }}>Verifying your email…</Typography.Title>
+          <Typography.Paragraph type="secondary" style={{ margin: '8px 0 0' }}>This only takes a moment.</Typography.Paragraph>
         </>
       )}
 
       {status === 'success' && (
         <>
-          <span className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
-            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
-            </svg>
+          <span
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 48,
+              height: 48,
+              borderRadius: '50%',
+              background: '#d1fae5',
+              color: '#059669',
+            }}
+          >
+            <Icon name="check" size={24} />
           </span>
-          <h1 className="mt-4 text-2xl font-bold tracking-tight">Email verified</h1>
-          <p className="mt-2 text-sm text-slate-600">
+          <Typography.Title level={1} style={{ fontSize: 26, marginTop: 16, marginBottom: 0 }}>
+            Email verified
+          </Typography.Title>
+          <Typography.Paragraph type="secondary" style={{ margin: '8px 0 0' }}>
             Your account is active. You can sign in now.
-          </p>
+          </Typography.Paragraph>
           <Link
             to="/login"
-            className="mt-6 inline-block rounded-md bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-opacity hover:opacity-90"
+            className="tp-cta-link"
+            style={{ marginTop: 24 }}
           >
             Continue to sign in
           </Link>
@@ -77,17 +92,17 @@ export function VerifyEmailPage() {
 
       {status === 'error' && (
         <>
-          <h1 className="text-2xl font-bold tracking-tight">We couldn't verify this link</h1>
-          <div role="alert" className="mt-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-            {message}
+          <Typography.Title level={1} style={{ fontSize: 26, margin: 0 }}>We couldn't verify this link</Typography.Title>
+          <div style={{ marginTop: 16 }}>
+            <Alert tone="error">{message}</Alert>
           </div>
-          <p className="mt-4 text-sm text-slate-600">
-            Verification links expire after 24 hours and can only be used once. Request a fresh
-            one from the sign-in page.
-          </p>
+          <Typography.Paragraph type="secondary" style={{ marginTop: 16, marginBottom: 0 }}>
+            Verification links expire after 24 hours and can only be used once. Request a fresh one
+            from the sign-in page.
+          </Typography.Paragraph>
           <Link
             to="/login"
-            className="mt-6 inline-block text-sm font-semibold text-indigo-600 hover:text-indigo-500"
+          style={{ display: 'inline-block', marginTop: 24, fontWeight: 600 }}
           >
             Back to sign in
           </Link>

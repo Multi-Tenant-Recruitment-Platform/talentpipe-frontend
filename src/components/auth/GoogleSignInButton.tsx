@@ -1,15 +1,20 @@
+import { Button } from '../ui/Button';
+
 /**
  * Google sign-in affordance. Federated login is not wired up yet, so the page
  * owns what pressing this says — the button only reports the intent.
  */
 export function GoogleSignInButton({ onClick }: Readonly<{ onClick: () => void }>) {
   return (
-    <button
+    <Button
       type="button"
+      variant="secondary"
       onClick={onClick}
-      className="mt-4 flex w-full items-center justify-center gap-3 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition-colors hover:border-slate-400 hover:bg-slate-50 focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-500/15"
+      style={{ marginTop: 16, width: '100%', display: 'inline-flex', gap: 12 }}
     >
-      <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
+      {/* The real Google mark, so it stays recognisable; aria-hidden because
+          the button's own text already names the action. */}
+      <svg viewBox="0 0 24 24" width={20} height={20} aria-hidden="true">
         <path
           fill="#4285F4"
           d="M23.49 12.27c0-.79-.07-1.54-.19-2.27H12v4.51h6.47a5.57 5.57 0 0 1-2.4 3.58v3h3.86c2.26-2.09 3.56-5.17 3.56-8.82Z"
@@ -28,6 +33,6 @@ export function GoogleSignInButton({ onClick }: Readonly<{ onClick: () => void }
         />
       </svg>
       Continue with Google
-    </button>
+    </Button>
   );
 }

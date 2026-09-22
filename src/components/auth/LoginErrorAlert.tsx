@@ -12,13 +12,9 @@ export function LoginErrorAlert({
 }: Readonly<{ message: string; onResend?: () => void }>) {
   return (
     <Alert tone="error">
-      <p>{message}</p>
+      <p style={{ margin: 0 }}>{message}</p>
       {onResend && (
-        <button
-          type="button"
-          onClick={onResend}
-          className="mt-1.5 font-semibold text-red-800 underline decoration-red-300 underline-offset-2 hover:text-red-900"
-        >
+        <button type="button" onClick={onResend} className="tp-link-button" style={{ marginTop: 6 }}>
           Send me a new verification link
         </button>
       )}

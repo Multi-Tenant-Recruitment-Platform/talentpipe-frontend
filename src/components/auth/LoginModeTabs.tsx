@@ -1,9 +1,12 @@
+import { Tabs } from 'antd';
 import type { ReactNode } from 'react';
 
 export type LoginMode = 'candidate' | 'company';
 
 const iconProps = {
-  className: 'h-4 w-4',
+  width: 16,
+  height: 16,
+  'aria-hidden': true,
   fill: 'none',
   viewBox: '0 0 24 24',
   strokeWidth: 1.5,
@@ -39,39 +42,37 @@ const MODES: { id: LoginMode; label: string; icon: ReactNode }[] = [
   },
 ];
 
-const TAB_BASE =
-  'flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2';
-const TAB_ON = 'bg-white text-blue-700 shadow-sm ring-1 ring-slate-900/5';
-const TAB_OFF = 'text-slate-500 hover:text-slate-700';
-
 /**
  * Persona switch on the login page: candidate vs. company. The two personas
  * authenticate differently (only a company login carries a tenant), so the
  * choice drives the form rather than merely labelling it.
+ *
+ * <p>antd's `Tabs`, not `Segmented`: these are genuinely tabs — each selects a
+ * different form beneath — and only `Tabs` emits `role="tab"`. `Segmented`
+ * renders radios, which would say the wrong thing about what the control does.
+ * The icons stay `aria-hidden`, so each tab's accessible name is exactly its
+ * word.</p>
  */
 export function LoginModeTabs({
   mode,
   onSelect,
 }: Readonly<{ mode: LoginMode; onSelect: (next: LoginMode) => void }>) {
   return (
-    <div
-      role="tablist"
+    <Tabs
+      activeKey={mode}
+      onChange={(key) => onSelect(key as LoginMode)}
+      centered
       aria-label="Login type"
-      className="mt-6 grid grid-cols-2 gap-1 rounded-xl bg-slate-100 p-1"
-    >
-      {MODES.map(({ id, label, icon }) => (
-        <button
-          key={id}
-          type="button"
-          role="tab"
-          aria-selected={mode === id}
-          onClick={() => onSelect(id)}
-          className={`${TAB_BASE} ${mode === id ? TAB_ON : TAB_OFF}`}
-        >
-          {icon}
-          {label}
-        </button>
-      ))}
-    </div>
+      style={{ marginTop: 24 }}
+      items={MODES.map(({ id, label, icon }) => ({
+        key: id,
+        label: (
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+            {icon}
+            {label}
+          </span>
+        ),
+      }))}
+    />
   );
 }

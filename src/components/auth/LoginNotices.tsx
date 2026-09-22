@@ -84,7 +84,7 @@ export function LoginNotices({
       {notices
         .filter((notice) => notice.when)
         .map((notice) => (
-          <div key={notice.key} className="mt-6">
+          <div key={notice.key} style={{ marginTop: 24 }}>
             <Alert tone={notice.tone} role={notice.role}>
               {notice.text}
             </Alert>

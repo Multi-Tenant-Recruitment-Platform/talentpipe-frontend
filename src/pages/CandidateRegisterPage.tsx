@@ -1,17 +1,46 @@
+import { Col, Divider, Flex, Input, Row, Typography } from 'antd';
 import { useState, type FormEvent, type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api, apiErrorMessage } from '../api/client';
 import type { CandidateRegisterRequest } from '../api/types';
 import { AuthShell } from '../components/AuthShell';
 import { RegisterTabs } from '../components/RegisterTabs';
-import { inputClass } from '../components/ui/inputClass';
+import { Alert } from '../components/ui/Alert';
+import { Button } from '../components/ui/Button';
 
-/** Small divider that labels a group of fields inside the form. */
+/**
+ * Small divider that labels a group of fields inside the form. `aria-hidden`
+ * because the labels beneath already name every field — this is a visual
+ * grouping cue, not information of its own.
+ */
 function SectionLabel({ children }: Readonly<{ children: ReactNode }>) {
   return (
-    <div className="flex items-center gap-3" aria-hidden="true">
-      <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">{children}</span>
-      <span className="h-px flex-1 bg-slate-200" />
+    <Divider titlePlacement="start" style={{ marginBlock: 0 }} aria-hidden="true">
+      <Typography.Text className="tp-eyebrow" type="secondary">
+        {children}
+      </Typography.Text>
+    </Divider>
+  );
+}
+
+/** A labelled field, with optional helper text beneath. */
+function Field({
+  id,
+  label,
+  hint,
+  children,
+}: Readonly<{ id: string; label: string; hint?: string; children: ReactNode }>) {
+  return (
+    <div>
+      <label htmlFor={id} style={{ display: 'block', fontWeight: 500, marginBottom: 6 }}>
+        {label}
+      </label>
+      {children}
+      {hint && (
+        <Typography.Text type="secondary" style={{ display: 'block', fontSize: 12, marginTop: 4 }}>
+          {hint}
+        </Typography.Text>
+      )}
     </div>
   );
 }
@@ -62,164 +91,142 @@ export function CandidateRegisterPage() {
 
   return (
     <AuthShell>
-      <h1 className="text-2xl font-bold tracking-tight">Create your account</h1>
-      <p className="mt-2 text-sm text-slate-600">
+      <Typography.Title level={1} style={{ fontSize: 26, margin: 0 }}>
+        Create your account
+      </Typography.Title>
+      <Typography.Paragraph type="secondary" style={{ margin: '8px 0 0' }}>
         Choose how you want to use TalentPipe.
-      </p>
+      </Typography.Paragraph>
 
-      <div className="mt-6">
+      <div style={{ marginTop: 24 }}>
         <RegisterTabs active="candidate" />
       </div>
 
-      <h2 className="mt-6 text-lg font-semibold tracking-tight">Create your candidate account</h2>
-      <p className="mt-1 text-sm text-slate-600">
+      <Typography.Title level={2} style={{ fontSize: 18, marginTop: 24, marginBottom: 0 }}>
+        Create your candidate account
+      </Typography.Title>
+      <Typography.Paragraph type="secondary" style={{ margin: '4px 0 0' }}>
         One account for every company hiring on TalentPipe — apply once, get discovered again.
-      </p>
+      </Typography.Paragraph>
 
-      <form onSubmit={(e) => void handleSubmit(e)} className="mt-6 space-y-5">
-        {error && (
-          <div role="alert" className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-            {error}
-          </div>
-        )}
+      <form onSubmit={(e) => void handleSubmit(e)} style={{ marginTop: 24 }}>
+        <Flex vertical gap={20}>
+          {error && <Alert tone="error">{error}</Alert>}
 
-        <SectionLabel>Personal details</SectionLabel>
+          <SectionLabel>Personal details</SectionLabel>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div>
-            <label htmlFor="fullName" className="block text-sm font-medium text-slate-700">
-              Full name
-            </label>
-            <input
-              id="fullName"
+          <Row gutter={[16, 16]}>
+            <Col xs={24} sm={12}>
+              <Field id="fullName" label="Full name">
+                <Input
+                  id="fullName"
+                  required
+                  maxLength={200}
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  autoComplete="name"
+                />
+              </Field>
+            </Col>
+            <Col xs={24} sm={12}>
+              <Field id="identityCardNumber" label="ID card number">
+                <Input
+                  id="identityCardNumber"
+                  required
+                  maxLength={30}
+                  value={identityCardNumber}
+                  onChange={(e) => setIdentityCardNumber(e.target.value)}
+                  autoComplete="off"
+                />
+              </Field>
+            </Col>
+          </Row>
+
+          <Field id="address" label="Address">
+            <Input
+              id="address"
               required
-              maxLength={200}
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              className={inputClass}
-              autoComplete="name"
+              maxLength={500}
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              autoComplete="street-address"
             />
-          </div>
-          <div>
-            <label htmlFor="identityCardNumber" className="block text-sm font-medium text-slate-700">
-              ID card number
-            </label>
-            <input
-              id="identityCardNumber"
-              required
-              maxLength={30}
-              value={identityCardNumber}
-              onChange={(e) => setIdentityCardNumber(e.target.value)}
-              className={inputClass}
-              autoComplete="off"
-            />
-          </div>
-        </div>
+          </Field>
 
-        <div>
-          <label htmlFor="address" className="block text-sm font-medium text-slate-700">
-            Address
-          </label>
-          <input
-            id="address"
-            required
-            maxLength={500}
-            value={address}
-            onChange={(e) => setAddress(e.target.value)}
-            className={inputClass}
-            autoComplete="street-address"
-          />
-        </div>
+          <SectionLabel>Contact details</SectionLabel>
 
-        <SectionLabel>Contact details</SectionLabel>
+          <Row gutter={[16, 16]}>
+            <Col xs={24} sm={12}>
+              <Field id="contactNumber" label="Contact number">
+                <Input
+                  id="contactNumber"
+                  type="tel"
+                  required
+                  maxLength={20}
+                  value={contactNumber}
+                  onChange={(e) => setContactNumber(e.target.value)}
+                  autoComplete="tel"
+                  placeholder="+94 77 123 4567"
+                />
+              </Field>
+            </Col>
+            <Col xs={24} sm={12}>
+              <Field id="email" label="Email">
+                <Input
+                  id="email"
+                  type="email"
+                  required
+                  maxLength={255}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  autoComplete="email"
+                />
+              </Field>
+            </Col>
+          </Row>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div>
-            <label htmlFor="contactNumber" className="block text-sm font-medium text-slate-700">
-              Contact number
-            </label>
-            <input
-              id="contactNumber"
-              type="tel"
-              required
-              maxLength={20}
-              value={contactNumber}
-              onChange={(e) => setContactNumber(e.target.value)}
-              className={inputClass}
-              autoComplete="tel"
-              placeholder="+94 77 123 4567"
-            />
-          </div>
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-slate-700">
-              Email
-            </label>
-            <input
-              id="email"
-              type="email"
-              required
-              maxLength={255}
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className={inputClass}
-              autoComplete="email"
-            />
-          </div>
-        </div>
+          <SectionLabel>Account security</SectionLabel>
 
-        <SectionLabel>Account security</SectionLabel>
+          <Row gutter={[16, 16]}>
+            <Col xs={24} sm={12}>
+              <Field id="password" label="Password" hint="At least 8 characters.">
+                <Input
+                  id="password"
+                  type="password"
+                  required
+                  minLength={8}
+                  maxLength={72}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="new-password"
+                />
+              </Field>
+            </Col>
+            <Col xs={24} sm={12}>
+              <Field id="confirmPassword" label="Confirm password">
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  required
+                  minLength={8}
+                  maxLength={72}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  autoComplete="new-password"
+                />
+              </Field>
+            </Col>
+          </Row>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-slate-700">
-              Password
-            </label>
-            <input
-              id="password"
-              type="password"
-              required
-              minLength={8}
-              maxLength={72}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className={inputClass}
-              autoComplete="new-password"
-            />
-            <p className="mt-1 text-xs text-slate-500">At least 8 characters.</p>
-          </div>
-          <div>
-            <label htmlFor="confirmPassword" className="block text-sm font-medium text-slate-700">
-              Confirm password
-            </label>
-            <input
-              id="confirmPassword"
-              type="password"
-              required
-              minLength={8}
-              maxLength={72}
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              className={inputClass}
-              autoComplete="new-password"
-            />
-          </div>
-        </div>
-
-        <button
-          type="submit"
-          disabled={submitting}
-          className="w-full rounded-md bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-opacity hover:opacity-90 disabled:opacity-60"
-        >
-          {submitting ? 'Creating account…' : 'Create candidate account'}
-        </button>
+          <Button type="submit" variant="primary" loading={submitting} style={{ width: '100%' }}>
+            {submitting ? 'Creating account…' : 'Create candidate account'}
+          </Button>
+        </Flex>
       </form>
 
-      <p className="mt-6 text-center text-sm text-slate-600">
-        Already have an account?{' '}
-        <Link to="/login" className="font-semibold text-indigo-600 hover:text-indigo-500">
-          Log in
-        </Link>
-      </p>
+      <Typography.Paragraph type="secondary" style={{ marginTop: 24, textAlign: 'center' }}>
+        Already have an account? <Link to="/login">Log in</Link>
+      </Typography.Paragraph>
     </AuthShell>
   );
 }

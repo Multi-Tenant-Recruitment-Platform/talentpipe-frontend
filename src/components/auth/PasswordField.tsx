@@ -1,55 +1,36 @@
-import { useState } from 'react';
+import { Flex, Input } from 'antd';
 import { Link } from 'react-router-dom';
-import { Icon } from '../dashboard/Icon';
-import { inputClass } from '../ui/inputClass';
 
 /**
- * Password input with a reveal toggle and the reset link. Whether the
- * characters are visible is nobody else's business, so that state lives here
- * rather than in the page.
+ * Password input with a reveal toggle and the reset link.
+ *
+ * <p>antd's `Input.Password` owns the toggle, including whether the characters
+ * are visible — which is nobody else's business, so it belongs there rather
+ * than in the page. Its toggle is named "Show"/"Hide", which cannot collide
+ * with a `getByLabelText(/password/i)` query for the field itself, and a
+ * password input contributes no `textbox` role of its own.</p>
  */
 export function PasswordField({
   value,
   onChange,
 }: Readonly<{ value: string; onChange: (next: string) => void }>) {
-  const [visible, setVisible] = useState(false);
-
   return (
     <div>
-      <div className="flex items-center justify-between">
-        <label htmlFor="password" className="block text-sm font-medium text-slate-700">
+      <Flex align="center" justify="space-between" style={{ marginBottom: 6 }}>
+        <label htmlFor="password" style={{ fontWeight: 500 }}>
           Password
         </label>
-        <Link
-          to="/forgot-password"
-          className="text-xs font-medium text-blue-600 hover:text-blue-500 focus:outline-none focus-visible:underline"
-        >
+        <Link to="/forgot-password" style={{ fontSize: 12, fontWeight: 500 }}>
           Forgot password?
         </Link>
-      </div>
-      <div className="relative">
-        <input
-          id="password"
-          type={visible ? 'text' : 'password'}
-          required
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className={`${inputClass} pr-10`}
-          autoComplete="current-password"
-        />
-        <button
-          type="button"
-          onClick={() => setVisible((v) => !v)}
-          aria-pressed={visible}
-          className="absolute inset-y-0 right-0 mt-1.5 flex items-center px-3 text-slate-400 hover:text-slate-600 focus:outline-none focus-visible:text-blue-600"
-        >
-          {/* Plain text content (not aria-label) so this button's accessible
-              name doesn't collide with getByLabelText(/password/i) queries
-              that target the field itself. */}
-          <span className="sr-only">{visible ? 'Hide password' : 'Show password'}</span>
-          <Icon name={visible ? 'eye-slash' : 'eye'} className="h-4 w-4" />
-        </button>
-      </div>
+      </Flex>
+      <Input.Password
+        id="password"
+        required
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        autoComplete="current-password"
+      />
     </div>
   );
 }

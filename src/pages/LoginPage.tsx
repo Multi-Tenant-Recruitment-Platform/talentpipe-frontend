@@ -1,3 +1,4 @@
+import { Divider, Flex, Input, Typography } from 'antd';
 import axios from 'axios';
 import { useState, type FormEvent } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
@@ -10,7 +11,7 @@ import { LoginModeTabs, type LoginMode } from '../components/auth/LoginModeTabs'
 import { LoginNotices } from '../components/auth/LoginNotices';
 import { PasswordField } from '../components/auth/PasswordField';
 import { Alert } from '../components/ui/Alert';
-import { inputClass } from '../components/ui/inputClass';
+import { Button } from '../components/ui/Button';
 
 interface LoginLocationState {
   /** Set by the registration pages after a successful sign-up. */
@@ -155,9 +156,13 @@ export function LoginPage() {
 
   return (
     <AuthShell>
-      <span className="text-xs font-semibold uppercase tracking-wider text-blue-600">Sign in</span>
-      <h1 className="mt-1.5 text-[1.75rem] font-bold tracking-tight text-slate-900">Welcome back</h1>
-      <p className="mt-2 text-sm text-slate-500">{copy.subtitle}</p>
+      <Typography.Text className="tp-eyebrow">Sign in</Typography.Text>
+      <Typography.Title level={1} style={{ fontSize: 28, margin: '6px 0 0' }}>
+        Welcome back
+      </Typography.Title>
+      <Typography.Paragraph type="secondary" style={{ margin: '8px 0 0' }}>
+        {copy.subtitle}
+      </Typography.Paragraph>
 
       <LoginNotices
         sessionEndReason={sessionEndReason}
@@ -168,65 +173,38 @@ export function LoginPage() {
 
       <LoginModeTabs mode={mode} onSelect={switchMode} />
 
-      <form onSubmit={(e) => void handleSubmit(e)} className="mt-6 space-y-5">
-        {error && <LoginErrorAlert message={error} onResend={onResend} />}
-        {notice && <Alert tone="info">{notice}</Alert>}
+      <form onSubmit={(e) => void handleSubmit(e)}>
+        <Flex vertical gap={20}>
+          {error && <LoginErrorAlert message={error} onResend={onResend} />}
+          {notice && <Alert tone="info">{notice}</Alert>}
 
-        <div>
-          <label htmlFor="email" className="block text-sm font-medium text-slate-700">
-            Email
-          </label>
-          <input
-            id="email"
-            type="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className={inputClass}
-            autoComplete="email"
-          />
-        </div>
+          <div>
+            <label htmlFor="email" style={{ display: 'block', fontWeight: 500, marginBottom: 6 }}>
+              Email
+            </label>
+            <Input
+              id="email"
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              autoComplete="email"
+            />
+          </div>
 
-        <PasswordField value={password} onChange={setPassword} />
+          <PasswordField value={password} onChange={setPassword} />
 
-        <button
-          type="submit"
-          disabled={submitting}
-          className="flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-blue-600 to-sky-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-blue-600/25 transition-all hover:from-blue-500 hover:to-sky-400 hover:shadow-md hover:shadow-blue-600/30 focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-500/35 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:shadow-sm"
-        >
-          {submitting && (
-            <svg
-              className="h-4 w-4 animate-spin text-white/80"
-              viewBox="0 0 24 24"
-              fill="none"
-              aria-hidden="true"
-            >
-              <circle
-                className="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                strokeWidth="4"
-              />
-              <path
-                className="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 0 1 8-8V0C5.373 0 0 5.373 0 12h4Z"
-              />
-            </svg>
-          )}
-          {submitting ? 'Signing in…' : copy.submit}
-        </button>
+          <Button type="submit" variant="primary" loading={submitting} style={{ width: '100%' }}>
+            {submitting ? 'Signing in…' : copy.submit}
+          </Button>
+        </Flex>
       </form>
 
-      <div className="mt-6 flex items-center gap-3" aria-hidden="true">
-        <span className="h-px flex-1 bg-slate-200" />
-        <span className="text-xs font-medium uppercase tracking-wide text-slate-400">
+      <Divider plain style={{ marginBlock: 24 }}>
+        <Typography.Text className="tp-eyebrow" type="secondary">
           or continue with
-        </span>
-        <span className="h-px flex-1 bg-slate-200" />
-      </div>
+        </Typography.Text>
+      </Divider>
 
       <GoogleSignInButton
         onClick={() => {
@@ -236,12 +214,9 @@ export function LoginPage() {
       />
 
       {/* Registration is persona-specific, mirroring the active login tab. */}
-      <p className="mt-6 text-center text-sm text-slate-500">
-        New to TalentPipe?{' '}
-        <Link to={copy.registerPath} className="font-semibold text-blue-600 hover:text-blue-500">
-          Create an account
-        </Link>
-      </p>
+      <Typography.Paragraph type="secondary" style={{ marginTop: 24, textAlign: 'center' }}>
+        New to TalentPipe? <Link to={copy.registerPath}>Create an account</Link>
+      </Typography.Paragraph>
     </AuthShell>
   );
 }
