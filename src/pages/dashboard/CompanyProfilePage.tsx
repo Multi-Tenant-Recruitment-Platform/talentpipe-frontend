@@ -65,7 +65,6 @@ export function CompanyProfilePage({ mode = 'view' }: Readonly<{ mode?: 'view' |
   return (
     <>
       <PageHeader
-        eyebrow="Company"
         title={onEditRoute ? 'Edit company profile' : 'Company profile'}
       />
 

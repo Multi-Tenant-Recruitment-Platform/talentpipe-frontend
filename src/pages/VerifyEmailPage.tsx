@@ -5,6 +5,8 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { api, apiErrorMessage } from '../api/client';
 import { AuthShell } from '../components/AuthShell';
 import { Icon } from '../components/dashboard/Icon';
+// Aliased: this page already has a `status` state variable.
+import { fontSize, status as statusColor } from '../theme/tokens';
 
 type Status = 'verifying' | 'success' | 'error';
 
@@ -53,7 +55,7 @@ export function VerifyEmailPage() {
     <AuthShell>
       {status === 'verifying' && (
         <>
-          <Typography.Title level={1} style={{ fontSize: 26, margin: 0 }}>Verifying your email…</Typography.Title>
+          <Typography.Title level={1} style={{ fontSize: fontSize.heading, margin: 0 }}>Verifying your email…</Typography.Title>
           <Typography.Paragraph type="secondary" style={{ margin: '8px 0 0' }}>This only takes a moment.</Typography.Paragraph>
         </>
       )}
@@ -68,13 +70,13 @@ export function VerifyEmailPage() {
               width: 48,
               height: 48,
               borderRadius: '50%',
-              background: '#d1fae5',
-              color: '#059669',
+              background: statusColor.successBg,
+              color: statusColor.successText,
             }}
           >
             <Icon name="check" size={24} />
           </span>
-          <Typography.Title level={1} style={{ fontSize: 26, marginTop: 16, marginBottom: 0 }}>
+          <Typography.Title level={1} style={{ fontSize: fontSize.heading, marginTop: 16, marginBottom: 0 }}>
             Email verified
           </Typography.Title>
           <Typography.Paragraph type="secondary" style={{ margin: '8px 0 0' }}>
@@ -92,7 +94,7 @@ export function VerifyEmailPage() {
 
       {status === 'error' && (
         <>
-          <Typography.Title level={1} style={{ fontSize: 26, margin: 0 }}>We couldn't verify this link</Typography.Title>
+          <Typography.Title level={1} style={{ fontSize: fontSize.heading, margin: 0 }}>We couldn't verify this link</Typography.Title>
           <div style={{ marginTop: 16 }}>
             <Alert tone="error">{message}</Alert>
           </div>

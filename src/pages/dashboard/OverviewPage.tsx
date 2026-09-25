@@ -23,19 +23,14 @@ import {
   recruitmentHealth,
   upcomingInterviews,
 } from '../../data/mockDashboard';
+import { fontSize, radius, slate } from '../../theme/tokens';
 
-const INTERVIEW_TYPE_BADGE: Record<string, { tone: 'sky' | 'violet' | 'amber'; label: string }> = {
-  VIDEO: { tone: 'sky', label: 'Video' },
-  ONSITE: { tone: 'violet', label: 'On-site' },
-  PHONE: { tone: 'amber', label: 'Phone' },
-};
-
-const ACTIVITY_TONES: Record<string, string> = {
-  'user-plus': '#4f46e5',
-  briefcase: '#7c3aed',
-  calendar: '#0284c7',
-  check: '#059669',
-  envelope: '#d97706',
+/** Each type already carries its own icon and word; colour would be a third
+    encoding of the same fact, in three hues the palette does not have. */
+const INTERVIEW_TYPE_BADGE: Record<string, { label: string }> = {
+  VIDEO: { label: 'Video' },
+  ONSITE: { label: 'On-site' },
+  PHONE: { label: 'Phone' },
 };
 
 function greeting(): string {
@@ -92,34 +87,30 @@ export function OverviewPage() {
     }
   }
 
-  const healthMetrics: { icon: IconName; label: string; value: string; hint: string; tone: string }[] = [
+  const healthMetrics: { icon: IconName; label: string; value: string; hint: string }[] = [
     {
       icon: 'clock',
       label: 'Avg. time-to-hire',
       value: `${recruitmentHealth.avgTimeToHireDays} days`,
       hint: '2 days faster than last quarter',
-      tone: '#4f46e5',
     },
     {
       icon: 'check',
       label: 'Offer acceptance',
       value: `${recruitmentHealth.offerAcceptanceRate}%`,
       hint: '11 of 13 offers accepted',
-      tone: '#059669',
     },
     {
       icon: 'sparkles',
       label: 'Hired this month',
       value: String(recruitmentHealth.hiredThisMonth),
       hint: 'Across 3 departments',
-      tone: '#7c3aed',
     },
   ];
 
   return (
     <>
       <PageHeader
-        eyebrow="Overview"
         title={`${greeting()}, ${user?.firstName ?? 'there'}`}
         subtitle={`Here's what's happening with your hiring — ${today}`}
       >
@@ -159,7 +150,6 @@ export function OverviewPage() {
             label="Active jobs"
             value={String(overviewStats.activeJobs)}
             icon="briefcase"
-            tone="indigo"
             delta={{ value: '+2', direction: 'up', hint: 'this month' }}
           />
         </Col>
@@ -168,7 +158,6 @@ export function OverviewPage() {
             label="Candidates in pipeline"
             value={overviewStats.candidatesInPipeline.toLocaleString()}
             icon="users"
-            tone="violet"
             delta={{ value: '+18%', direction: 'up', hint: 'vs last week' }}
           />
         </Col>
@@ -177,7 +166,6 @@ export function OverviewPage() {
             label="Interviews this week"
             value={String(overviewStats.interviewsThisWeek)}
             icon="calendar"
-            tone="emerald"
             delta={{ value: '+4', direction: 'up', hint: 'vs last week' }}
           />
         </Col>
@@ -188,7 +176,6 @@ export function OverviewPage() {
             label="Pending invites"
             value={teamLoading ? '—' : String(pendingInvites.length)}
             icon="envelope"
-            tone="amber"
           />
         </Col>
       </Row>
@@ -223,21 +210,21 @@ export function OverviewPage() {
                       width: 44,
                       height: 44,
                       flexShrink: 0,
-                      borderRadius: 12,
-                      background: `${metric.tone}1a`,
-                      color: metric.tone,
+                      borderRadius: radius.lg,
+                      background: slate[100],
+                      color: slate[600],
                     }}
                   >
                     <Icon name={metric.icon} size={20} />
                   </span>
                   <div style={{ minWidth: 0 }}>
-                    <Typography.Text type="secondary" style={{ display: 'block', fontSize: 12 }}>
+                    <Typography.Text type="secondary" style={{ display: 'block', fontSize: fontSize.caption }}>
                       {metric.label}
                     </Typography.Text>
-                    <Typography.Text strong style={{ display: 'block', fontSize: 18 }}>
+                    <Typography.Text strong style={{ display: 'block', fontSize: fontSize.title }}>
                       {metric.value}
                     </Typography.Text>
-                    <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+                    <Typography.Text type="secondary" style={{ fontSize: fontSize.caption }}>
                       {metric.hint}
                     </Typography.Text>
                   </div>
@@ -263,7 +250,7 @@ export function OverviewPage() {
                         <Typography.Text strong style={{ display: 'block' }}>
                           {interview.dayLabel}
                         </Typography.Text>
-                        <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+                        <Typography.Text type="secondary" style={{ fontSize: fontSize.caption }}>
                           {interview.time}
                         </Typography.Text>
                       </div>
@@ -272,11 +259,11 @@ export function OverviewPage() {
                         <Typography.Text strong ellipsis style={{ display: 'block' }}>
                           {interview.candidateName}
                         </Typography.Text>
-                        <Typography.Text type="secondary" ellipsis style={{ fontSize: 12 }}>
+                        <Typography.Text type="secondary" ellipsis style={{ fontSize: fontSize.caption }}>
                           {interview.jobTitle} · with {interview.interviewerName}
                         </Typography.Text>
                       </div>
-                      <Badge tone={type.tone}>
+                      <Badge>
                         {interview.type === 'VIDEO' && <Icon name="video-camera" size={14} />}
                         {interview.type === 'ONSITE' && <Icon name="building" size={14} />}
                         {interview.type === 'PHONE' && <Icon name="clock" size={14} />}
@@ -306,8 +293,11 @@ export function OverviewPage() {
                       width: 28,
                       height: 28,
                       borderRadius: '50%',
-                      background: `${ACTIVITY_TONES[item.icon]}1a`,
-                      color: ACTIVITY_TONES[item.icon],
+                      // Neutral by design: a feed of five hues turns a
+                      // chronology into a colour key nobody is given. The icon
+                      // already says what kind of event this was.
+                      background: slate[100],
+                      color: slate[600],
                     }}
                   >
                     <Icon name={item.icon as IconName} size={16} />
@@ -316,7 +306,7 @@ export function OverviewPage() {
                 children: (
                   <>
                     <Typography.Text style={{ display: 'block' }}>{item.text}</Typography.Text>
-                    <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+                    <Typography.Text type="secondary" style={{ fontSize: fontSize.caption }}>
                       {item.time}
                     </Typography.Text>
                   </>

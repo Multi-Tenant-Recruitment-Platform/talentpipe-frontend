@@ -1,5 +1,6 @@
 import { Card as AntCard, Typography } from 'antd';
 import type { ReactNode } from 'react';
+import { fontSize } from '../../theme/tokens';
 
 /**
  * Section card shell shared by every dashboard surface: optional header row
@@ -14,27 +15,29 @@ export function Card({
   subtitle,
   action,
   children,
-  className = '',
   bodyClassName = '',
 }: Readonly<{
   title?: string;
   subtitle?: string;
   action?: ReactNode;
   children: ReactNode;
-  /** Transitional: callers still passing Tailwind spacing. Removed with Tailwind. */
-  className?: string;
+  /**
+   * For bodies that must break the card's own padding — a table that bleeds to
+   * the edges, a list with its own inner rhythm. Layout only; a caller reaching
+   * for it to restyle the card is working around the system rather than in it.
+   */
   bodyClassName?: string;
 }>) {
   const header =
     title || subtitle ? (
       <div style={{ minWidth: 0, paddingBlock: 4 }}>
         {title && (
-          <Typography.Title level={2} style={{ fontSize: 16, margin: 0 }}>
+          <Typography.Title level={2} style={{ fontSize: fontSize.lead, margin: 0 }}>
             {title}
           </Typography.Title>
         )}
         {subtitle && (
-          <Typography.Text type="secondary" style={{ display: 'block', fontSize: 12, marginTop: 2 }}>
+          <Typography.Text type="secondary" style={{ display: 'block', fontSize: fontSize.caption, marginTop: 2 }}>
             {subtitle}
           </Typography.Text>
         )}
@@ -43,7 +46,6 @@ export function Card({
 
   return (
     <AntCard
-      className={className}
       title={header}
       extra={action}
       classNames={{ body: bodyClassName }}

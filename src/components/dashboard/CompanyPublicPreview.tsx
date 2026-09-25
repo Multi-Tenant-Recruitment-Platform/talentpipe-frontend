@@ -7,6 +7,7 @@ import { CompanyCoverImage } from './CompanyCoverImage';
 import { CompanySocialRow } from './CompanySocialLinks';
 import { CompanyStoryInformation } from './CompanyStoryInformation';
 import { Icon } from './Icon';
+import { fontSize, slate } from '../../theme/tokens';
 
 /**
  * The company profile as a candidate would meet it.
@@ -31,11 +32,11 @@ function Fact({ label, value }: Readonly<{ label: string; value: string }>) {
     <div style={{ minWidth: 0 }}>
       <dt
         style={{
-          fontSize: 12,
+          fontSize: fontSize.caption,
           fontWeight: 500,
           textTransform: 'uppercase',
           letterSpacing: '0.03em',
-          color: '#94a3b8',
+          color: slate[400],
         }}
       >
         {label}
@@ -84,7 +85,7 @@ export function CompanyPublicPreview({
       title={
         /* Says plainly that this is a rehearsal, not the live page. */
         <Flex align="center" justify="space-between" gap={12}>
-          <Typography.Text type="secondary" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 12 }}>
+          <Typography.Text type="secondary" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: fontSize.caption }}>
             <Icon name="eye" size={16} />
             Preview — this is how your profile reads to a candidate
           </Typography.Text>
@@ -100,7 +101,7 @@ export function CompanyPublicPreview({
           <CompanyCoverImage coverUrl={coverUrl} logoUrl={logoUrl} name={values.name} />
           <Flex wrap align="flex-end" justify="space-between" gap={12} style={{ marginTop: 16 }}>
             <div style={{ minWidth: 0 }}>
-              <Typography.Title id="public-preview-title" level={2} style={{ fontSize: 24, margin: 0 }}>
+              <Typography.Title id="public-preview-title" level={2} style={{ fontSize: fontSize.heading, margin: 0 }}>
                 {values.name || 'Unnamed company'}
               </Typography.Title>
               {values.tagline && (
@@ -128,7 +129,7 @@ export function CompanyPublicPreview({
         </div>
 
         <section>
-          <Typography.Title level={3} style={{ fontSize: 14, margin: 0 }}>
+          <Typography.Title level={3} style={{ fontSize: fontSize.body, margin: 0 }}>
             About us
           </Typography.Title>
           <Typography.Paragraph style={{ marginTop: 8, marginBottom: 0, whiteSpace: 'pre-line' }}>
@@ -145,7 +146,7 @@ export function CompanyPublicPreview({
 
         {(values.mission || values.vision) && (
           <section>
-            <Typography.Title level={3} style={{ fontSize: 14, margin: '0 0 12px' }}>
+            <Typography.Title level={3} style={{ fontSize: fontSize.body, margin: '0 0 12px' }}>
               What we stand for
             </Typography.Title>
             <CompanyStoryInformation values={values} />
@@ -154,7 +155,7 @@ export function CompanyPublicPreview({
 
         {values.benefits.length > 0 && (
           <section>
-            <Typography.Title level={3} style={{ fontSize: 14, margin: '0 0 12px' }}>
+            <Typography.Title level={3} style={{ fontSize: fontSize.body, margin: '0 0 12px' }}>
               Benefits &amp; perks
             </Typography.Title>
             <CompanyBenefits benefits={values.benefits} />
@@ -167,7 +168,7 @@ export function CompanyPublicPreview({
           justify="space-between"
           gap={12}
           component="section"
-          style={{ borderTop: '1px solid #f1f5f9', paddingTop: 24 }}
+          style={{ borderTop: `1px solid ${slate[100]}`, paddingTop: 24 }}
         >
           <div style={{ minWidth: 0 }}>
             {/* The recruitment address wins where there is one — that is the

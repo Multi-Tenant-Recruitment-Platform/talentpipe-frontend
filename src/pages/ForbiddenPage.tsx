@@ -4,6 +4,8 @@ import { useAuth } from '../auth/AuthContext';
 import { homeRouteFor, type Permission } from '../auth/permissions';
 import { Icon } from '../components/dashboard/Icon';
 import { RoleBadge } from '../components/dashboard/RoleBadge';
+import { fontSize, slate } from '../theme/tokens';
+import { status } from '../theme/tokens';
 
 /**
  * Why this particular door is closed. Generic copy is a dead end — naming the
@@ -39,28 +41,27 @@ export function ForbiddenPage({ requires }: Readonly<{ requires?: Permission }>)
             width: 56,
             height: 56,
             borderRadius: 16,
-            background: 'linear-gradient(135deg, #f59e0b, #f43f5e)',
-            color: '#fff',
+            background: status.warningBg,
+            color: status.warningText,
           }}
         >
           <Icon name="lock-closed" size={28} />
         </span>
       }
       title={
-        <>
-          <Typography.Paragraph type="secondary" className="tp-eyebrow" style={{ marginBottom: 4 }}>
-            Error 403
-          </Typography.Paragraph>
-          <Typography.Title level={1} style={{ fontSize: 24, margin: 0 }}>
-            You don&rsquo;t have access to this page
-          </Typography.Title>
-        </>
+        <Typography.Title level={1} style={{ fontSize: fontSize.heading, margin: 0 }}>
+          You don&rsquo;t have access to this page
+        </Typography.Title>
       }
       subTitle={
         <>
           {(requires && REASONS[requires]) ??
             'Your role doesn’t include this part of the workspace.'}{' '}
-          Ask a Company Admin if you need it.
+          Ask a Company Admin if you need it.{' '}
+          {/* The code stays, but as a trailing detail rather than a kicker over
+              the heading: it is what someone quotes when asking for help, not
+              the first thing they need to read. */}
+          <Typography.Text type="secondary">(Error 403)</Typography.Text>
         </>
       }
       extra={
@@ -69,9 +70,9 @@ export function ForbiddenPage({ requires }: Readonly<{ requires?: Permission }>)
             <Flex
               align="center"
               gap={8}
-              style={{ borderRadius: 999, background: '#f8fafc', padding: '6px 12px' }}
+              style={{ borderRadius: 999, background: slate[50], padding: '6px 12px' }}
             >
-              <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+              <Typography.Text type="secondary" style={{ fontSize: fontSize.caption }}>
                 Signed in as
               </Typography.Text>
               <RoleBadge role={user.role} />

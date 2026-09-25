@@ -12,6 +12,7 @@ import { LoginNotices } from '../components/auth/LoginNotices';
 import { PasswordField } from '../components/auth/PasswordField';
 import { Alert } from '../components/ui/Alert';
 import { Button } from '../components/ui/Button';
+import { fontSize } from '../theme/tokens';
 
 interface LoginLocationState {
   /** Set by the registration pages after a successful sign-up. */
@@ -156,8 +157,7 @@ export function LoginPage() {
 
   return (
     <AuthShell>
-      <Typography.Text className="tp-eyebrow">Sign in</Typography.Text>
-      <Typography.Title level={1} style={{ fontSize: 28, margin: '6px 0 0' }}>
+      <Typography.Title level={1} style={{ fontSize: fontSize.heading, margin: 0 }}>
         Welcome back
       </Typography.Title>
       <Typography.Paragraph type="secondary" style={{ margin: '8px 0 0' }}>
@@ -201,7 +201,7 @@ export function LoginPage() {
       </form>
 
       <Divider plain style={{ marginBlock: 24 }}>
-        <Typography.Text className="tp-eyebrow" type="secondary">
+        <Typography.Text className="tp-divider-label" type="secondary">
           or continue with
         </Typography.Text>
       </Divider>

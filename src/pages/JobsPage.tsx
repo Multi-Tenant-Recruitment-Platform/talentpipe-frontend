@@ -1,8 +1,10 @@
-import { Card, Empty, Flex, List, Spin, Typography } from 'antd';
-import { useEffect, useState } from 'react';
+import { Card, List, Typography } from 'antd';
+import { useCallback, useEffect, useState } from 'react';
 import { api, apiErrorMessage } from '../api/client';
 import type { JobSummary, PageResponse } from '../api/types';
-import { Alert } from '../components/ui/Alert';
+import { EmptyState } from '../components/dashboard/EmptyState';
+import { ErrorState, RowsSkeleton } from '../components/dashboard/ErrorState';
+import { fontSize, space } from '../theme/tokens';
 
 /**
  * Public job board (PB-005, partial). Calls GET /public/jobs — which returns
@@ -12,6 +14,15 @@ import { Alert } from '../components/ui/Alert';
 export function JobsPage() {
   const [jobs, setJobs] = useState<JobSummary[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Bumped by the retry button to re-run the effect. A counter rather than a
+  // bare function call so the in-flight cleanup still cancels correctly.
+  const [attempt, setAttempt] = useState(0);
+
+  const retry = useCallback(() => {
+    setJobs(null);
+    setError(null);
+    setAttempt((n) => n + 1);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -26,40 +37,38 @@ export function JobsPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [attempt]);
 
   return (
     <section>
-      <Typography.Title level={1} style={{ fontSize: 30, margin: 0 }}>
+      <Typography.Title level={1} style={{ fontSize: fontSize.display, margin: 0 }}>
         Open positions
       </Typography.Title>
-      <Typography.Paragraph type="secondary" style={{ margin: '8px 0 0' }}>
+      <Typography.Paragraph type="secondary" style={{ margin: `${space[1]}px 0 0` }}>
         Roles published by companies hiring on TalentPipe.
       </Typography.Paragraph>
 
-      <div style={{ marginTop: 32 }}>
-        {error && <Alert tone="error">{error}</Alert>}
+      <div style={{ marginTop: space[4] }}>
+        {/* The panel is the content here, so a failure replaces it rather than
+            stacking an alert above an empty box. */}
+        {error && (
+          <Card>
+            <ErrorState title="Could not load open positions" description={error} onRetry={retry} />
+          </Card>
+        )}
 
         {!error && jobs === null && (
-          <Flex align="center" gap={12}>
-            <Spin />
-            <Typography.Text type="secondary">Loading jobs…</Typography.Text>
-          </Flex>
+          <Card styles={{ body: { padding: `${space[1]}px ${space[3]}px` } }}>
+            <RowsSkeleton rows={4} label="Loading open positions…" />
+          </Card>
         )}
 
         {!error && jobs !== null && jobs.length === 0 && (
           <Card>
-            <Empty
-              description={
-                <>
-                  <Typography.Paragraph strong style={{ marginBottom: 4 }}>
-                    No open positions yet
-                  </Typography.Paragraph>
-                  <Typography.Text type="secondary">
-                    Companies are just getting set up — check back soon.
-                  </Typography.Text>
-                </>
-              }
+            <EmptyState
+              icon="briefcase"
+              title="No open positions yet"
+              description="Companies are just getting set up — check back soon."
             />
           </Card>
         )}
@@ -76,7 +85,7 @@ export function JobsPage() {
                   />
                 </List.Item>
               )}
-              style={{ paddingInline: 16 }}
+              style={{ paddingInline: space[2] }}
             />
           </Card>
         )}

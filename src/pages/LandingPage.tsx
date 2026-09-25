@@ -1,14 +1,15 @@
 import { Card, Col, Divider, Flex, Row, Typography } from 'antd';
 import { Link } from 'react-router-dom';
+import { fontSize } from '../theme/tokens';
 
 /** Public landing shell: name, one-liner, and a clear entry point per persona. */
 export function LandingPage() {
   return (
     <Flex vertical align="center" style={{ paddingBlock: 64, textAlign: 'center' }}>
-      <Typography.Title level={1} style={{ fontSize: 48, maxWidth: 672, margin: 0 }}>
+      <Typography.Title level={1} style={{ fontSize: fontSize.hero, maxWidth: 672, margin: 0 }}>
         TalentPipe
       </Typography.Title>
-      <Typography.Paragraph type="secondary" style={{ maxWidth: 576, fontSize: 18, marginTop: 24 }}>
+      <Typography.Paragraph type="secondary" style={{ maxWidth: 576, fontSize: fontSize.title, marginTop: 24 }}>
         The multi-tenant recruitment intelligence platform — one place for your jobs, candidates and
         hiring pipeline.
       </Typography.Paragraph>
@@ -18,7 +19,7 @@ export function LandingPage() {
         <Col xs={24} sm={12}>
           <Card style={{ height: '100%', textAlign: 'left' }} styles={{ body: { padding: 32 } }}>
             <Flex vertical style={{ height: '100%' }}>
-              <Typography.Title level={2} style={{ fontSize: 18, margin: 0 }}>
+              <Typography.Title level={2} style={{ fontSize: fontSize.title, margin: 0 }}>
                 For employers
               </Typography.Title>
               <Typography.Paragraph type="secondary" style={{ flex: 1, marginTop: 8 }}>
@@ -35,7 +36,7 @@ export function LandingPage() {
         <Col xs={24} sm={12}>
           <Card style={{ height: '100%', textAlign: 'left' }} styles={{ body: { padding: 32 } }}>
             <Flex vertical style={{ height: '100%' }}>
-              <Typography.Title level={2} style={{ fontSize: 18, margin: 0 }}>
+              <Typography.Title level={2} style={{ fontSize: fontSize.title, margin: 0 }}>
                 For job seekers
               </Typography.Title>
               <Typography.Paragraph type="secondary" style={{ flex: 1, marginTop: 8 }}>

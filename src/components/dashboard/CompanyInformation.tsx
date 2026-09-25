@@ -35,11 +35,11 @@ export function CompanyInformation({
       </Typography.Title>
       <Flex wrap align="center" gap={8} style={{ marginTop: withCover ? 8 : 6 }}>
         {values.industry ? (
-          <Badge tone="indigo">{values.industry}</Badge>
+          <Badge>{values.industry}</Badge>
         ) : (
           <Typography.Text type="secondary">Industry not set</Typography.Text>
         )}
-        {values.size ? <Badge tone="slate">{values.size}</Badge> : null}
+        {values.size ? <Badge>{values.size}</Badge> : null}
       </Flex>
     </>
   );

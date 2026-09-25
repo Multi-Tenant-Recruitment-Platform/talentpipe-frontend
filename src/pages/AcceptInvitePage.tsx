@@ -5,6 +5,7 @@ import { useState, type FormEvent } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { api, apiErrorMessage } from '../api/client';
 import { AuthShell } from '../components/AuthShell';
+import { fontSize } from '../theme/tokens';
 
 /**
  * Landing page for the link in an invitation email (PB-003 / PB-004). Setting
@@ -52,7 +53,7 @@ export function AcceptInvitePage() {
   if (!token) {
     return (
       <AuthShell>
-        <Typography.Title level={1} style={{ fontSize: 26, margin: 0 }}>This link is incomplete</Typography.Title>
+        <Typography.Title level={1} style={{ fontSize: fontSize.heading, margin: 0 }}>This link is incomplete</Typography.Title>
         <Typography.Paragraph type="secondary" style={{ margin: '8px 0 0' }}>
           The invitation token is missing. Please open the link directly from your invitation email.
         </Typography.Paragraph>
@@ -62,7 +63,7 @@ export function AcceptInvitePage() {
 
   return (
     <AuthShell>
-      <Typography.Title level={1} style={{ fontSize: 26, margin: 0 }}>Accept your invitation</Typography.Title>
+      <Typography.Title level={1} style={{ fontSize: fontSize.heading, margin: 0 }}>Accept your invitation</Typography.Title>
       <Typography.Paragraph type="secondary" style={{ margin: '8px 0 0' }}>
         Choose a password to activate your account and join the workspace.
       </Typography.Paragraph>
@@ -86,7 +87,7 @@ export function AcceptInvitePage() {
             onChange={(e) => setPassword(e.target.value)}
             autoComplete="new-password"
           />
-          <Typography.Text type="secondary" style={{ display: 'block', fontSize: 12, marginTop: 4 }}>At least 8 characters.</Typography.Text>
+          <Typography.Text type="secondary" style={{ display: 'block', fontSize: fontSize.caption, marginTop: 4 }}>At least 8 characters.</Typography.Text>
         </div>
 
         <div>

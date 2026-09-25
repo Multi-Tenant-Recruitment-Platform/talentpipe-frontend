@@ -8,9 +8,12 @@ import { PageHeader } from '../../components/dashboard/PageHeader';
 import { Alert } from '../../components/ui/Alert';
 import { hiringFunnel, jobPipelines, pipelineInsights } from '../../data/mockDashboard';
 import type { JobPipeline } from '../../data/mockDashboard';
+import { fontSize, status } from '../../theme/tokens';
+import { dataMarkRing, dataSequence, radius, slate } from '../../theme/tokens';
 
 const STAGE_LABELS = ['Applied', 'Screening', 'Interview', 'Offer', 'Hired'];
-const STAGE_COLORS = ['#6366f1', '#8b5cf6', '#a855f7', '#d946ef', '#10b981'];
+/** Ordered stages read as one measure deepening, not five categories. */
+const STAGE_COLORS = dataSequence;
 
 /**
  * Recruitment pipeline: the full-funnel view of how candidates move from
@@ -22,27 +25,42 @@ export function PipelinePage() {
   const hired = hiringFunnel[hiringFunnel.length - 1]?.count ?? 0;
   const overallConversion = totalInFunnel > 0 ? Math.round((hired / totalInFunnel) * 1000) / 10 : 0;
 
-  const insights: { icon: IconName; label: string; value: string; hint: string; tone: string }[] = [
+  /**
+   * Explicit tint/ink pairs rather than one colour with an alpha suffix
+   * appended to its hex: that trick only works on a literal, and it produced
+   * a tint whose contrast nobody had checked. These pairs are the ones the
+   * contrast suite verifies.
+   *
+   * Two of the three carry real meaning — fastest is good, slowest is the
+   * bottleneck. The third is a fact with no valence, so it stays neutral.
+   */
+  const insights: {
+    icon: IconName;
+    label: string;
+    value: string;
+    hint: string;
+    chip: { bg: string; fg: string };
+  }[] = [
     {
       icon: 'bolt',
       label: 'Fastest stage',
       value: pipelineInsights.fastestStage.label,
       hint: `~${pipelineInsights.fastestStage.days} days on average`,
-      tone: '#059669',
+      chip: { bg: status.successBg, fg: status.successText },
     },
     {
       icon: 'clock',
       label: 'Slowest stage',
       value: pipelineInsights.slowestStage.label,
       hint: `~${pipelineInsights.slowestStage.days} days on average`,
-      tone: '#d97706',
+      chip: { bg: status.warningBg, fg: status.warningText },
     },
     {
       icon: 'globe',
       label: 'Top candidate source',
       value: pipelineInsights.topSource.label,
       hint: `${pipelineInsights.topSource.share}% of all applicants`,
-      tone: '#4f46e5',
+      chip: { bg: slate[100], fg: slate[600] },
     },
   ];
 
@@ -55,7 +73,7 @@ export function PipelinePage() {
           <Typography.Text strong style={{ display: 'block' }}>
             {job.title}
           </Typography.Text>
-          <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+          <Typography.Text type="secondary" style={{ fontSize: fontSize.caption }}>
             {job.department} · {job.location}
           </Typography.Text>
         </>
@@ -84,14 +102,18 @@ export function PipelinePage() {
                 count > 0 ? (
                   <span
                     key={STAGE_LABELS[i]}
-                    style={{ width: `${(count / total) * 100}%`, background: STAGE_COLORS[i] }}
+                    style={{
+                      width: `${(count / total) * 100}%`,
+                      background: STAGE_COLORS[i],
+                      boxShadow: dataMarkRing,
+                    }}
                   />
                 ) : null,
               )}
             </div>
             <Typography.Text
               type="secondary"
-              style={{ display: 'block', marginTop: 6, fontSize: 12, fontVariantNumeric: 'tabular-nums' }}
+              style={{ display: 'block', marginTop: 6, fontSize: fontSize.caption, fontVariantNumeric: 'tabular-nums' }}
             >
               {job.stageCounts.map((n, i) => `${STAGE_LABELS[i].slice(0, 1)}${n}`).join('  ')}
             </Typography.Text>
@@ -112,7 +134,7 @@ export function PipelinePage() {
       key: 'status',
       title: 'Status',
       render: (_, job) => (
-        <Badge tone={job.status === 'OPEN' ? 'emerald' : 'amber'}>
+        <Badge tone={job.status === 'OPEN' ? 'success' : 'warning'}>
           {job.status === 'OPEN' ? 'Open' : 'On hold'}
         </Badge>
       ),
@@ -122,7 +144,6 @@ export function PipelinePage() {
   return (
     <>
       <PageHeader
-        eyebrow="Analytics"
         title="Recruitment pipeline"
         subtitle="Understand how candidates flow through your hiring process — and where they get stuck."
       />
@@ -141,21 +162,21 @@ export function PipelinePage() {
                     width: 44,
                     height: 44,
                     flexShrink: 0,
-                    borderRadius: 12,
-                    background: `${insight.tone}1a`,
-                    color: insight.tone,
+                    borderRadius: radius.lg,
+                    background: insight.chip.bg,
+                    color: insight.chip.fg,
                   }}
                 >
                   <Icon name={insight.icon} size={20} />
                 </span>
                 <div style={{ minWidth: 0 }}>
-                  <Typography.Text type="secondary" style={{ display: 'block', fontSize: 12 }}>
+                  <Typography.Text type="secondary" style={{ display: 'block', fontSize: fontSize.caption }}>
                     {insight.label}
                   </Typography.Text>
-                  <Typography.Text strong style={{ display: 'block', fontSize: 16 }}>
+                  <Typography.Text strong style={{ display: 'block', fontSize: fontSize.lead }}>
                     {insight.value}
                   </Typography.Text>
-                  <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+                  <Typography.Text type="secondary" style={{ fontSize: fontSize.caption }}>
                     {insight.hint}
                   </Typography.Text>
                 </div>
@@ -192,7 +213,7 @@ export function PipelinePage() {
                 <Typography.Text
                   key={label}
                   type="secondary"
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12 }}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: fontSize.caption }}
                 >
                   <span
                     aria-hidden="true"
@@ -201,6 +222,7 @@ export function PipelinePage() {
                       height: 8,
                       borderRadius: '50%',
                       background: STAGE_COLORS[i],
+                      boxShadow: dataMarkRing,
                     }}
                   />
                   {label}

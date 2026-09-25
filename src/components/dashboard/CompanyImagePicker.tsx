@@ -11,6 +11,7 @@ import {
 import { Button } from '../ui/Button';
 import { CompanyLogo } from './CompanyLogo';
 import { Icon } from './Icon';
+import { fontSize, slate } from '../../theme/tokens';
 
 /**
  * Choosing one of the company's images: the current picture, a button to
@@ -75,7 +76,7 @@ export function CompanyImagePicker({
             flexShrink: 0,
             overflow: 'hidden',
             borderRadius: 8,
-            border: '1px solid #e2e8f0',
+            border: `1px solid ${slate[200]}`,
             background: 'var(--tp-brand-gradient)',
           }}
         >
@@ -126,13 +127,13 @@ export function CompanyImagePicker({
           <Typography.Paragraph
             role="alert"
             type="danger"
-            style={{ display: 'flex', alignItems: 'flex-start', gap: 4, fontSize: 12, margin: '6px 0 0' }}
+            style={{ display: 'flex', alignItems: 'flex-start', gap: 4, fontSize: fontSize.caption, margin: '6px 0 0' }}
           >
             <Icon name="warning" size={14} style={{ marginTop: 1 }} />
             {error}
           </Typography.Paragraph>
         ) : (
-          <Typography.Text type="secondary" style={{ display: 'block', fontSize: 12, marginTop: 6 }}>
+          <Typography.Text type="secondary" style={{ display: 'block', fontSize: fontSize.caption, marginTop: 6 }}>
             PNG, JPG, SVG or WebP, up to {formatBytes(MAX_IMAGE_BYTES[kind])}. {IMAGE_HINTS[kind]}
           </Typography.Text>
         )}

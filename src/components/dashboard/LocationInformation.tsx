@@ -6,6 +6,7 @@ import {
 } from '../../dashboard/companyProfile';
 import { DetailItem } from './DetailItem';
 import { Icon } from './Icon';
+import { fontSize, slate } from '../../theme/tokens';
 
 /**
  * Where the company is: the street line, then the administrative parts.
@@ -45,8 +46,8 @@ export function LocationInformation({ values }: Readonly<{ values: CompanyFormVa
             height: 32,
             flexShrink: 0,
             borderRadius: 8,
-            background: '#f8fafc',
-            color: '#94a3b8',
+            background: slate[50],
+            color: slate[400],
           }}
         >
           <Icon name="building" size={16} />
@@ -54,11 +55,11 @@ export function LocationInformation({ values }: Readonly<{ values: CompanyFormVa
         <div style={{ minWidth: 0 }}>
           <dt
             style={{
-              fontSize: 12,
+              fontSize: fontSize.caption,
               fontWeight: 500,
               textTransform: 'uppercase',
               letterSpacing: '0.03em',
-              color: '#94a3b8',
+              color: slate[400],
             }}
           >
             Other branches

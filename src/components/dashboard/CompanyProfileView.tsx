@@ -12,6 +12,8 @@ import { CompanyStoryInformation } from './CompanyStoryInformation';
 import { ContactInformation } from './ContactInformation';
 import { Icon } from './Icon';
 import { LocationInformation } from './LocationInformation';
+import { fontSize, slate } from '../../theme/tokens';
+import { primary } from '../../theme/tokens';
 
 /**
  * Read-only company profile, composed from the section components.
@@ -40,7 +42,7 @@ function Section({
 }>) {
   if (variant === 'compact') {
     return (
-      <section style={{ borderTop: '1px solid #f1f5f9', paddingTop: 24 }}>
+      <section style={{ borderTop: `1px solid ${slate[100]}`, paddingTop: 24 }}>
         <Typography.Title level={4} className="tp-legend" style={{ margin: '0 0 16px' }}>
           {title}
         </Typography.Title>
@@ -49,8 +51,8 @@ function Section({
     );
   }
   return (
-    <section style={{ borderTop: '1px solid #f1f5f9', paddingTop: 32 }}>
-      <Typography.Title level={3} style={{ fontSize: 16, margin: '0 0 20px' }}>
+    <section style={{ borderTop: `1px solid ${slate[100]}`, paddingTop: 32 }}>
+      <Typography.Title level={3} style={{ fontSize: fontSize.lead, margin: '0 0 20px' }}>
         {title}
       </Typography.Title>
       {children}
@@ -137,18 +139,18 @@ export function CompanyProfileView({
         <div
           style={{
             borderRadius: 12,
-            border: '1px solid #e2e8f0',
-            background: '#f8fafc',
+            border: `1px solid ${slate[200]}`,
+            background: slate[50],
             padding: '12px 16px',
           }}
         >
           <Flex align="baseline" justify="space-between" gap={12}>
-            <Typography.Text strong style={{ fontSize: 12 }}>
+            <Typography.Text strong style={{ fontSize: fontSize.caption }}>
               Profile {completeness.filled} of {completeness.total} complete
             </Typography.Text>
             <Typography.Text
               type="secondary"
-              style={{ fontSize: 12, fontVariantNumeric: 'tabular-nums' }}
+              style={{ fontSize: fontSize.caption, fontVariantNumeric: 'tabular-nums' }}
             >
               {completeness.percent}%
             </Typography.Text>
@@ -157,11 +159,11 @@ export function CompanyProfileView({
             percent={completeness.percent}
             showInfo={false}
             size="small"
-            strokeColor={{ from: '#6366f1', to: '#8b5cf6' }}
+            strokeColor={primary[600]}
             style={{ marginBottom: 0 }}
           />
           {/* Naming what is missing turns a number into a next action. */}
-          <Typography.Text type="secondary" style={{ display: 'block', fontSize: 12, marginTop: 4 }}>
+          <Typography.Text type="secondary" style={{ display: 'block', fontSize: fontSize.caption, marginTop: 4 }}>
             Still to add: {completeness.missing.join(', ')}.
           </Typography.Text>
         </div>
@@ -172,9 +174,9 @@ export function CompanyProfileView({
         align="center"
         justify="space-between"
         gap={12}
-        style={{ borderTop: '1px solid #f1f5f9', paddingTop: 20 }}
+        style={{ borderTop: `1px solid ${slate[100]}`, paddingTop: 20 }}
       >
-        <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+        <Typography.Text type="secondary" style={{ fontSize: fontSize.caption }}>
           {updatedAt ? `Last updated ${formatRelativeTime(updatedAt)}` : 'Not edited yet'}
         </Typography.Text>
         <Flex wrap align="center" gap={8}>

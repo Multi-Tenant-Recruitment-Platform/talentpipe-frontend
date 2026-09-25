@@ -23,6 +23,7 @@ import { Button } from '../ui/Button';
 import { CompanyImagePicker } from './CompanyImagePicker';
 import { CompanyChipListEditor } from './CompanyChipListEditor';
 import { Icon } from './Icon';
+import { fontSize, slate } from '../../theme/tokens';
 
 /**
  * Edit mode for the company profile, laid out in the same three sections the
@@ -47,7 +48,7 @@ const errorId = (field: CompanyTextField) => `company-${field}-error`;
  */
 function Fieldset({ legend, children }: Readonly<{ legend: string; children: ReactNode }>) {
   return (
-    <fieldset style={{ border: 0, borderTop: '1px solid #f1f5f9', margin: 0, paddingTop: 24 }}>
+    <fieldset style={{ border: 0, borderTop: `1px solid ${slate[100]}`, margin: 0, paddingTop: 24 }}>
       <legend className="tp-legend">{legend}</legend>
       <Row gutter={[20, 20]} style={{ marginTop: 16 }}>
         {children}
@@ -81,14 +82,14 @@ function Field({
           id={errorId(field)}
           role="alert"
           type="danger"
-          style={{ display: 'flex', alignItems: 'flex-start', gap: 4, fontSize: 12, margin: '6px 0 0' }}
+          style={{ display: 'flex', alignItems: 'flex-start', gap: 4, fontSize: fontSize.caption, margin: '6px 0 0' }}
         >
           <Icon name="warning" size={14} style={{ marginTop: 1 }} />
           {error}
         </Typography.Paragraph>
       ) : (
         hint && (
-          <Typography.Text type="secondary" style={{ display: 'block', fontSize: 12, marginTop: 6 }}>
+          <Typography.Text type="secondary" style={{ display: 'block', fontSize: fontSize.caption, marginTop: 6 }}>
             {hint}
           </Typography.Text>
         )
@@ -112,9 +113,9 @@ function CheckboxGroup({
   onToggle: (id: string) => void;
 }>) {
   return (
-    <fieldset style={{ border: 0, borderTop: '1px solid #f1f5f9', margin: 0, paddingTop: 24 }}>
+    <fieldset style={{ border: 0, borderTop: `1px solid ${slate[100]}`, margin: 0, paddingTop: 24 }}>
       <legend className="tp-legend">{legend}</legend>
-      <Typography.Text type="secondary" style={{ display: 'block', fontSize: 12, marginTop: 4 }}>
+      <Typography.Text type="secondary" style={{ display: 'block', fontSize: fontSize.caption, marginTop: 4 }}>
         {hint}
       </Typography.Text>
       <Row gutter={[24, 10]} style={{ marginTop: 16 }}>
@@ -324,7 +325,7 @@ export function CompanyProfileForm({
             style={{
               margin: '4px 0 0',
               textAlign: 'right',
-              fontSize: 12,
+              fontSize: fontSize.caption,
               fontVariantNumeric: 'tabular-nums',
               fontWeight: overLimit ? 500 : undefined,
             }}
@@ -621,7 +622,7 @@ export function CompanyProfileForm({
           align="center"
           justify="flex-end"
           gap={12}
-          style={{ borderTop: '1px solid #f1f5f9', paddingTop: 20 }}
+          style={{ borderTop: `1px solid ${slate[100]}`, paddingTop: 20 }}
         >
           <Button type="button" variant="ghost" onClick={onCancel} disabled={saving}>
             Cancel

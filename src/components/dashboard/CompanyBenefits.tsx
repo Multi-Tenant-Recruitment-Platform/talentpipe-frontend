@@ -1,6 +1,7 @@
 import { Typography } from 'antd';
 import { benefitLabel, sortBenefits } from '../../dashboard/companyProfile';
 import { Icon } from './Icon';
+import { status } from '../../theme/tokens';
 
 /**
  * The perks a company advertises, as a checked list.
@@ -22,7 +23,7 @@ export function CompanyBenefits({ benefits }: Readonly<{ benefits: string[] }>) 
     <ul data-testid="company-benefits" className="tp-benefit-grid">
       {sortBenefits(benefits).map((id) => (
         <li key={id} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-          <Icon name="check" size={16} style={{ marginTop: 3, color: '#059669' }} />
+          <Icon name="check" size={16} style={{ marginTop: 3, color: status.success }} />
           {benefitLabel(id)}
         </li>
       ))}

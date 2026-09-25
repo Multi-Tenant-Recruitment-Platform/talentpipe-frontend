@@ -1,14 +1,18 @@
 import { Flex, Progress, Typography } from 'antd';
 import type { FunnelStage } from '../../data/mockDashboard';
+import { fontSize, primary, slate, space } from '../../theme/tokens';
 
-/** One hue per stage, so a stage keeps its colour across both dashboards. */
-const STAGE_COLORS: { from: string; to: string }[] = [
-  { from: '#4f46e5', to: '#818cf8' },
-  { from: '#7c3aed', to: '#a78bfa' },
-  { from: '#9333ea', to: '#c084fc' },
-  { from: '#c026d3', to: '#e879f9' },
-  { from: '#059669', to: '#34d399' },
-];
+/**
+ * One accent for every bar.
+ *
+ * <p>This was five hues, each a two-stop gradient. Neither encoded anything:
+ * the stage is named in the label beside its own bar, so the colour restated
+ * a fact the row already stated — while the rainbow implied a categorical
+ * scale across what is actually one measure, candidates, at five points in
+ * time. The comparison the funnel exists to make is between bar *lengths*, and
+ * a single accent is what lets the eye make it.</p>
+ */
+const STAGE_COLOR = primary[600];
 
 /** Conversion percentage from one stage to the next (null for the first). */
 export function stageConversion(stages: FunnelStage[], index: number): number | null {
@@ -30,21 +34,20 @@ export function HiringFunnel({ stages }: Readonly<{ stages: FunnelStage[] }>) {
   const top = stages[0]?.count ?? 1;
 
   return (
-    <Flex vertical gap={20}>
+    <Flex vertical gap={space[2.5]}>
       {stages.map((stage, i) => {
         const conversion = stageConversion(stages, i);
         // A floor of 4%, so a stage with very few candidates is still a
         // visible bar rather than an empty track that reads as "no data".
         const width = Math.max(4, Math.round((stage.count / top) * 100));
-        const color = STAGE_COLORS[i % STAGE_COLORS.length];
         return (
           <div key={stage.label}>
-            <Flex align="baseline" justify="space-between" gap={16}>
+            <Flex align="baseline" justify="space-between" gap={space[2]}>
               <Typography.Text strong>{stage.label}</Typography.Text>
               <Typography.Text strong style={{ fontVariantNumeric: 'tabular-nums' }}>
                 {stage.count.toLocaleString()}
                 {conversion !== null && (
-                  <Typography.Text type="secondary" style={{ marginLeft: 8, fontSize: 12 }}>
+                  <Typography.Text type="secondary" style={{ marginLeft: space[1], fontSize: fontSize.caption }}>
                     {conversion}% from {stages[i - 1].label.toLowerCase()}
                   </Typography.Text>
                 )}
@@ -53,9 +56,10 @@ export function HiringFunnel({ stages }: Readonly<{ stages: FunnelStage[] }>) {
             <Progress
               percent={width}
               showInfo={false}
-              strokeColor={color}
+              strokeColor={STAGE_COLOR}
               strokeLinecap="round"
-              size={['100%', 12]}
+              size={['100%', 10]}
+              trailColor={slate[100]}
               style={{ marginBottom: 0 }}
             />
           </div>

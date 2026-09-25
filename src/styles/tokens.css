@@ -1,0 +1,132 @@
+/*
+ * CSS mirror of src/theme/tokens.ts.
+ *
+ * Hand-written CSS reads these; the antd theme reads the TypeScript. They must
+ * agree, so src/theme/tokens.test.ts parses this file and fails the build if a
+ * value here ever drifts from its TypeScript counterpart. Change the value in
+ * tokens.ts first, then mirror it here — never only one.
+ */
+
+:root {
+  /* --- Slate neutrals --------------------------------------------------- */
+  --tp-slate-50: #f8fafc;
+  --tp-slate-100: #f1f5f9;
+  --tp-slate-200: #e2e8f0;
+  --tp-slate-300: #cbd5e1;
+  --tp-slate-400: #94a3b8;
+  --tp-slate-500: #64748b;
+  --tp-slate-600: #475569;
+  --tp-slate-700: #334155;
+  --tp-slate-800: #1e293b;
+  --tp-slate-900: #0f172a;
+
+  /* --- Brand blue ------------------------------------------------------- */
+  --tp-primary-50: #eef3ff;
+  --tp-primary-100: #dce6ff;
+  --tp-primary-200: #c7d6ff;
+  --tp-primary-500: #3b6bf6;
+  --tp-primary-600: #2f5eff;
+  --tp-primary-700: #2348d6;
+  --tp-primary-900: #16307f;
+  --tp-primary-950: #0d1f52;
+
+  /* --- Data ramp (see dataSequence in tokens.ts) ------------------------- */
+  --tp-data-1: #a8bdfd;
+  --tp-data-2: #6f8ffa;
+  --tp-data-3: #3b6bf6;
+  --tp-data-4: #2348d6;
+  --tp-data-5: #16307f;
+  --tp-data-ring: inset 0 0 0 1px rgb(15 23 42 / 12%);
+
+  /* --- Status ----------------------------------------------------------- */
+  --tp-success: #059669;
+  --tp-success-bg: #d1fae5;
+  --tp-success-text: #047857;
+  --tp-warning: #d97706;
+  --tp-warning-bg: #fef3c7;
+  --tp-warning-text: #b45309;
+  --tp-error: #dc2626;
+  --tp-error-bg: #fee2e2;
+  --tp-error-text: #b91c1c;
+
+  /* --- Surfaces --------------------------------------------------------- */
+  --tp-surface: #ffffff;
+  --tp-canvas: #f7f9fc;
+  --tp-sunken: #f1f5f9;
+
+  /* --- Spacing ---------------------------------------------------------- */
+  --tp-space-0-5: 4px;
+  --tp-space-0-75: 6px;
+  --tp-space-1: 8px;
+  --tp-space-1-5: 12px;
+  --tp-space-2: 16px;
+  --tp-space-2-5: 20px;
+  --tp-space-3: 24px;
+  --tp-space-4: 32px;
+  --tp-space-5: 40px;
+  --tp-space-6: 48px;
+  --tp-space-8: 64px;
+
+  /* --- Type ------------------------------------------------------------- */
+  --tp-font-caption: 12px;
+  --tp-font-small: 13px;
+  --tp-font-body: 14px;
+  --tp-font-lead: 16px;
+  --tp-font-title: 18px;
+  --tp-font-section: 20px;
+  --tp-font-heading: 26px;
+  --tp-font-display: 30px;
+  --tp-font-hero: 48px;
+
+  --tp-weight-normal: 400;
+  --tp-weight-medium: 500;
+  --tp-weight-semibold: 600;
+  --tp-weight-bold: 700;
+
+  --tp-leading-tight: 1.2;
+  --tp-leading-snug: 1.35;
+  --tp-leading-normal: 1.55;
+
+  --tp-tracking-display: -0.02em;
+  --tp-tracking-heading: -0.01em;
+  --tp-tracking-caps: 0.06em;
+
+  /* --- Radius ----------------------------------------------------------- */
+  --tp-radius-sm: 8px;
+  --tp-radius-md: 10px;
+  --tp-radius-lg: 12px;
+  --tp-radius-xl: 16px;
+  --tp-radius-2xl: 24px;
+  --tp-radius-pill: 999px;
+
+  /* --- Elevation -------------------------------------------------------- */
+  --tp-shadow-xs: 0 1px 2px rgb(15 23 42 / 4%);
+  --tp-shadow-sm: 0 1px 2px rgb(15 23 42 / 6%), 0 1px 3px rgb(15 23 42 / 8%);
+  --tp-shadow-md: 0 4px 12px -2px rgb(15 23 42 / 8%), 0 2px 4px -2px rgb(15 23 42 / 6%);
+  --tp-shadow-lg: 0 12px 32px -8px rgb(15 23 42 / 18%), 0 4px 8px -4px rgb(15 23 42 / 8%);
+  --tp-shadow-xl: 0 24px 48px -12px rgb(15 23 42 / 25%);
+  --tp-shadow-primary: 0 1px 2px rgb(47 94 255 / 24%);
+  --tp-focus-ring: 0 0 0 3px rgb(47 94 255 / 12%);
+
+  /* --- Layout ----------------------------------------------------------- */
+  --tp-header-height: 64px;
+  --tp-sidebar-width: 256px;
+  --tp-content-max-width: 1280px;
+
+  /* --- Motion ----------------------------------------------------------- */
+  --tp-motion-fast: 120ms;
+  --tp-motion-base: 200ms;
+  --tp-motion-slow: 320ms;
+  --tp-motion-ease: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* --- Derived ---------------------------------------------------------- *
+   * Composed from the values above rather than mirrored from TypeScript, so
+   * the sync test does not enumerate them. Anything here must be built only
+   * from other --tp-* variables, never from a fresh literal.
+   */
+
+  /* Reserved for the two brand marks — the sidebar logo and the public header
+     logo — and nothing else. Never for text, buttons or panels: gradient text
+     substitutes decoration for the weight and size that carry emphasis. */
+  --tp-brand-gradient: linear-gradient(135deg, var(--tp-primary-600), var(--tp-primary-500));
+}

@@ -23,7 +23,6 @@ export function Alert({
   role = tone === 'error' || tone === 'warning' ? 'alert' : 'status',
   onDismiss,
   style,
-  className,
   children,
 }: Readonly<{
   tone: AlertTone;
@@ -31,8 +30,6 @@ export function Alert({
   /** When given, renders a dismiss affordance on the right. */
   onDismiss?: () => void;
   style?: CSSProperties;
-  /** Transitional: callers still passing Tailwind spacing. Removed with Tailwind. */
-  className?: string;
   children: ReactNode;
 }>) {
   const { token } = theme.useToken();
@@ -109,11 +106,11 @@ export function Alert({
   );
 
   return role === 'status' ? (
-    <output className={className} style={wrapStyle}>
+    <output style={wrapStyle}>
       {content}
     </output>
   ) : (
-    <div role="alert" className={className} style={wrapStyle}>
+    <div role="alert" style={wrapStyle}>
       {content}
     </div>
   );

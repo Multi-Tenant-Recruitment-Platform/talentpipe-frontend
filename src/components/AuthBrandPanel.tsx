@@ -1,6 +1,7 @@
 import { Flex, Typography } from 'antd';
 import type { ReactNode } from 'react';
 import interviewImage from '../assets/interview.jpg';
+import { fontSize } from '../theme/tokens';
 
 interface Feature {
   title: string;
@@ -108,7 +109,7 @@ export function AuthBrandPanel() {
       <Flex vertical justify="space-between" className="tp-brand-body">
         <Flex align="center" gap={10}>
           <span className="tp-brand-chip">T</span>
-          <Typography.Text strong style={{ fontSize: 18, color: '#fff' }}>
+          <Typography.Text strong style={{ fontSize: fontSize.title, color: '#fff' }}>
             TalentPipe
           </Typography.Text>
         </Flex>

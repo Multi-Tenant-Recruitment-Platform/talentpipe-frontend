@@ -1,6 +1,7 @@
 import { Typography, theme } from 'antd';
 import type { ReactNode } from 'react';
 import { Icon, type IconName } from './Icon';
+import { fontSize } from '../../theme/tokens';
 
 /**
  * One labelled fact in a profile section: icon, label, value.
@@ -70,7 +71,7 @@ export function DetailItem({
       <div style={{ minWidth: 0 }}>
         <dt
           style={{
-            fontSize: 12,
+            fontSize: fontSize.caption,
             fontWeight: 500,
             textTransform: 'uppercase',
             letterSpacing: '0.03em',

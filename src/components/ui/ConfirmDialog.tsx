@@ -3,6 +3,8 @@ import { useEffect, useRef, type ReactNode } from 'react';
 import { Icon } from '../dashboard/Icon';
 import { Button } from './Button';
 import { useFocusTrap } from './useFocusTrap';
+import { fontSize, status } from '../../theme/tokens';
+import { primary } from '../../theme/tokens';
 
 /**
  * Confirmation step for an irreversible action.
@@ -73,8 +75,8 @@ export function ConfirmDialog({
 
   const chip =
     tone === 'danger'
-      ? { background: '#fee2e2', color: '#dc2626' }
-      : { background: '#eef2ff', color: '#4f46e5' };
+      ? { background: status.errorBg, color: status.errorText }
+      : { background: primary[50], color: primary[700] };
 
   return (
     <div className="tp-dialog-overlay">
@@ -106,7 +108,7 @@ export function ConfirmDialog({
             <Icon name="warning" size={20} />
           </span>
           <div style={{ minWidth: 0 }}>
-            <Typography.Title id="confirm-dialog-title" level={2} style={{ fontSize: 16, margin: 0 }}>
+            <Typography.Title id="confirm-dialog-title" level={2} style={{ fontSize: fontSize.lead, margin: 0 }}>
               {title}
             </Typography.Title>
             <div id="confirm-dialog-description" style={{ marginTop: 6, lineHeight: 1.6 }}>

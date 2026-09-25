@@ -3,6 +3,7 @@ import type { Segment } from '../../dashboard/teamRoster';
 import { formatRole } from '../../utils/format';
 import { Button } from '../ui/Button';
 import { Icon } from './Icon';
+import { fontSize } from '../../theme/tokens';
 
 const SEGMENTS: { id: Segment; label: string }[] = [
   { id: 'all', label: 'All' },
@@ -127,7 +128,7 @@ export function TeamToolbar({
           role="status"
           aria-live="polite"
           type="secondary"
-          style={{ fontSize: 12 }}
+          style={{ fontSize: fontSize.caption }}
         >
           Showing {visibleCount} of {totalCount} {totalCount === 1 ? 'person' : 'people'}
         </Typography.Text>

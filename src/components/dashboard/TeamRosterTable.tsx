@@ -8,6 +8,7 @@ import { Avatar } from './Avatar';
 import { Icon } from './Icon';
 import { MemberStatusBadge } from './MemberStatusBadge';
 import { RoleBadge } from './RoleBadge';
+import { fontSize, primary } from '../../theme/tokens';
 
 const ARIA_SORT = { asc: 'ascending', desc: 'descending' } as const;
 
@@ -162,10 +163,10 @@ export function TeamRosterTable({
                   <span
                     style={{
                       borderRadius: 999,
-                      background: '#e0e7ff',
-                      color: '#4338ca',
+                      background: primary[50],
+                      color: primary[700],
                       padding: '1px 8px',
-                      fontSize: 10,
+                      fontSize: fontSize.caption,
                       fontWeight: 600,
                       textTransform: 'uppercase',
                       letterSpacing: '0.04em',
@@ -175,7 +176,7 @@ export function TeamRosterTable({
                   </span>
                 )}
               </Flex>
-              <Typography.Text type="secondary" style={{ display: 'block', fontSize: 12 }}>
+              <Typography.Text type="secondary" style={{ display: 'block', fontSize: fontSize.caption }}>
                 {row.email}
               </Typography.Text>
               {/* Echoes the columns hidden at this breakpoint. The wrapper
@@ -185,12 +186,12 @@ export function TeamRosterTable({
                 <span className="tp-row-echo-role">
                   <RoleBadge role={row.role} />
                 </span>
-                <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+                <Typography.Text type="secondary" style={{ fontSize: fontSize.caption }}>
                   Joined {formatDate(row.createdAt)}
                 </Typography.Text>
               </span>
               {lastResend && (
-                <Typography.Text type="secondary" style={{ display: 'block', fontSize: 12 }}>
+                <Typography.Text type="secondary" style={{ display: 'block', fontSize: fontSize.caption }}>
                   Re-sent {formatRelativeTime(lastResend)}
                 </Typography.Text>
               )}

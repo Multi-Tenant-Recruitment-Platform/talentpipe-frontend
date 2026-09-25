@@ -1,88 +1,158 @@
 import type { ThemeConfig } from 'antd';
+import {
+  fontFamily,
+  fontSize,
+  fontWeight,
+  focusRing,
+  focusRingColor,
+  layout,
+  lineHeight,
+  motion,
+  primary,
+  radius,
+  shadow,
+  slate,
+  space,
+  status,
+  surface,
+} from './tokens';
 
 /**
- * The single source of truth for TalentPipe's visual language.
+ * TalentPipe's Ant Design theme — the projection of {@link './tokens'} onto
+ * antd's token API.
  *
- * <p>These values are not new design work: they are the Tailwind palette the
- * screens were already built against, lifted into antd tokens so one theme
- * drives every control instead of each screen re-deriving its own spacing,
- * focus ring and form rhythm.</p>
+ * <p>This file decides nothing. Every value here comes from tokens.ts, so the
+ * theme and the hand-written CSS cannot disagree; if a value looks wrong,
+ * change it there. A colour or type literal appearing in this file is a bug.</p>
  *
- * <p>The app previously carried two competing brand gradients —
- * indigo-600→violet-600 across the dashboard and blue-600→sky-500 across the
- * auth pages. Indigo wins: it owned the dashboard, the shared button and every
- * badge tone, so it is the larger surface and the one users see after sign-in.</p>
+ * <p>Blue is the accent on purpose. This tool mediates decisions about
+ * people's careers, so the palette has to read as trustworthy and
+ * institutional — green would signal "revenue", purple would signal
+ * "consumer". Every neutral is slate, which keeps blue meaning exactly one
+ * thing: this is actionable, or this is where you are.</p>
  */
-
-/** slate-900 — body copy. */
-const SLATE_900 = '#0f172a';
-/** slate-500 — secondary copy. */
-const SLATE_500 = '#64748b';
-/** slate-50 — the app canvas behind every card. */
-const SLATE_50 = '#f8fafc';
-/** slate-200 / slate-300 — hairlines and control borders. */
-const SLATE_200 = '#e2e8f0';
-const SLATE_300 = '#cbd5e1';
-/** indigo-600 — brand. */
-const INDIGO_600 = '#4f46e5';
-/** indigo-50 / indigo-700 — selected navigation. */
-const INDIGO_50 = '#eef2ff';
-const INDIGO_700 = '#4338ca';
-
-/**
- * Reserved for the two brand marks (the dashboard sidebar logo and the public
- * header logo) and nothing else.
- *
- * <p>Deliberately not applied to buttons: antd exposes no gradient API, so
- * faking one means a bespoke class per button — exactly the hand-rolled CSS
- * this migration removes. Buttons use the flat `colorPrimary` instead.</p>
- */
-export const BRAND_GRADIENT = `linear-gradient(135deg, ${INDIGO_600}, #7c3aed)`;
 
 export const antdTheme: ThemeConfig = {
   token: {
-    colorPrimary: INDIGO_600,
-    colorInfo: INDIGO_600,
-    colorSuccess: '#059669',
-    colorWarning: '#d97706',
-    colorError: '#dc2626',
+    colorPrimary: primary[600],
+    colorPrimaryHover: primary[500],
+    colorPrimaryActive: primary[700],
+    colorPrimaryBg: primary[50],
+    colorPrimaryBgHover: primary[100],
+    colorPrimaryBorder: primary[200],
+    colorInfo: primary[600],
+    colorSuccess: status.success,
+    colorWarning: status.warning,
+    colorError: status.error,
 
-    colorTextBase: SLATE_900,
-    colorTextSecondary: SLATE_500,
-    colorBgLayout: SLATE_50,
-    colorBorder: SLATE_300,
-    colorBorderSecondary: SLATE_200,
+    colorTextBase: slate[900],
+    // slate-500 clears 4.5:1 on white and on the canvas — the only grounds
+    // antd places secondary text on. Secondary text on a tinted chip uses
+    // slate-600 at the call site; see the contrast suite in tokens.test.ts.
+    colorTextSecondary: slate[500],
+    colorTextTertiary: slate[500],
+    colorBgLayout: surface.canvas,
+    colorBgContainer: surface.base,
+    colorBorder: slate[300],
+    colorBorderSecondary: slate[200],
 
-    borderRadius: 8,
-    borderRadiusLG: 12,
+    // ~10–12px on interactive surfaces: soft enough to read as modern, tight
+    // enough to still look like enterprise software rather than a toy.
+    borderRadius: radius.md,
+    borderRadiusLG: radius.lg,
+    borderRadiusSM: radius.sm,
 
     // Inter is loaded by the @import in index.css; naming it here only selects it.
-    fontFamily: "'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif",
-    fontSize: 14,
+    fontFamily,
+    fontSize: fontSize.body,
+    fontSizeSM: fontSize.small,
+    fontSizeLG: fontSize.lead,
+    // h1 is the page title, h2 a card or section title, and so down. The
+    // components mostly set their own size; these are the honest defaults for
+    // the ones that do not.
+    fontSizeHeading1: fontSize.heading,
+    fontSizeHeading2: fontSize.section,
+    fontSizeHeading3: fontSize.title,
+    fontSizeHeading4: fontSize.lead,
+    fontSizeHeading5: fontSize.body,
+    lineHeight: lineHeight.normal,
+    lineHeightHeading1: lineHeight.tight,
+    lineHeightHeading2: lineHeight.tight,
+    lineHeightHeading3: lineHeight.snug,
 
-    // Matches the px-3.5 py-2.5 text-sm control height the forms were built to.
-    controlHeight: 40,
+    controlHeight: layout.controlHeight,
+
+    boxShadow: shadow.sm,
+    boxShadowSecondary: shadow.lg,
+    boxShadowTertiary: shadow.xs,
+
+    motionDurationFast: motion.fast,
+    motionDurationMid: motion.base,
+    motionDurationSlow: motion.slow,
 
     wireframe: false,
   },
   components: {
     Layout: {
-      headerBg: '#ffffff',
-      siderBg: '#ffffff',
-      bodyBg: SLATE_50,
-      headerPadding: '0 24px',
+      headerBg: surface.base,
+      siderBg: surface.base,
+      bodyBg: surface.canvas,
+      headerHeight: layout.headerHeight,
+      headerPadding: `0 ${space[3]}px`,
     },
     Menu: {
-      itemSelectedBg: INDIGO_50,
-      itemSelectedColor: INDIGO_700,
+      // The rounded active pill, and the rhythm around it.
+      itemHeight: layout.controlHeight,
+      itemBorderRadius: radius.sm,
+      itemMarginInline: space[1],
+      itemMarginBlock: 2,
+      itemSelectedBg: primary[50],
+      itemSelectedColor: primary[700],
+      itemHoverBg: slate[100],
+      itemHoverColor: slate[900],
+      itemColor: slate[600],
+      iconSize: 20,
+      // One gap value for every row — this is what keeps the nav items and the
+      // pinned "Back to site" link on the same optical left edge.
+      iconMarginInlineEnd: space[1.5],
+      // The pill already carries the selected state; the rail would double it.
+      activeBarWidth: 0,
     },
     Button: {
-      fontWeight: 600,
+      fontWeight: fontWeight.semibold,
+      primaryShadow: shadow.primary,
+      defaultShadow: shadow.xs,
+    },
+    Input: {
+      activeShadow: focusRing,
+    },
+    Select: {
+      activeOutlineColor: focusRingColor,
+    },
+    Dropdown: {
+      borderRadiusLG: radius.xl,
+      controlItemBgHover: slate[100],
+    },
+    Tag: {
+      defaultBg: slate[50],
+      defaultColor: slate[600],
+      borderRadiusSM: radius.pill,
     },
     Table: {
-      headerBg: SLATE_50,
-      headerColor: SLATE_500,
-      rowHoverBg: SLATE_50,
+      headerBg: surface.canvas,
+      headerColor: slate[600],
+      rowHoverBg: surface.canvas,
+      borderColor: slate[200],
+    },
+    Card: {
+      colorBorderSecondary: slate[200],
+    },
+    Modal: {
+      borderRadiusLG: radius.xl,
+    },
+    Segmented: {
+      itemSelectedBg: surface.base,
+      trackBg: slate[100],
     },
   },
 };

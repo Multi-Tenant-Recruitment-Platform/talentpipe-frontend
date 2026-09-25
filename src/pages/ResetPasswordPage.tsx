@@ -5,6 +5,7 @@ import { useState, type FormEvent } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { api, apiErrorMessage } from '../api/client';
 import { AuthShell } from '../components/AuthShell';
+import { fontSize } from '../theme/tokens';
 
 /**
  * Landing page for the link in a password-reset email (PB-008). Sets a new
@@ -52,7 +53,7 @@ export function ResetPasswordPage() {
   if (!token) {
     return (
       <AuthShell>
-        <Typography.Title level={1} style={{ fontSize: 26, margin: 0 }}>This link is incomplete</Typography.Title>
+        <Typography.Title level={1} style={{ fontSize: fontSize.heading, margin: 0 }}>This link is incomplete</Typography.Title>
         <Typography.Paragraph type="secondary" style={{ margin: '8px 0 0' }}>
           The reset token is missing. Please open the link directly from your email.
         </Typography.Paragraph>
@@ -68,7 +69,7 @@ export function ResetPasswordPage() {
 
   return (
     <AuthShell>
-      <Typography.Title level={1} style={{ fontSize: 26, margin: 0 }}>Choose a new password</Typography.Title>
+      <Typography.Title level={1} style={{ fontSize: fontSize.heading, margin: 0 }}>Choose a new password</Typography.Title>
       <Typography.Paragraph type="secondary" style={{ margin: '8px 0 0' }}>
         Signing you out everywhere else — any other active session ends when you save this.
       </Typography.Paragraph>
@@ -92,7 +93,7 @@ export function ResetPasswordPage() {
             onChange={(e) => setPassword(e.target.value)}
             autoComplete="new-password"
           />
-          <Typography.Text type="secondary" style={{ display: 'block', fontSize: 12, marginTop: 4 }}>At least 8 characters.</Typography.Text>
+          <Typography.Text type="secondary" style={{ display: 'block', fontSize: fontSize.caption, marginTop: 4 }}>At least 8 characters.</Typography.Text>
         </div>
 
         <div>

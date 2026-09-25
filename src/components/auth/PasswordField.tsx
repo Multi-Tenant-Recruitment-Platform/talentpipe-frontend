@@ -1,5 +1,6 @@
 import { Flex, Input } from 'antd';
 import { Link } from 'react-router-dom';
+import { fontSize } from '../../theme/tokens';
 
 /**
  * Password input with a reveal toggle and the reset link.
@@ -20,7 +21,7 @@ export function PasswordField({
         <label htmlFor="password" style={{ fontWeight: 500 }}>
           Password
         </label>
-        <Link to="/forgot-password" style={{ fontSize: 12, fontWeight: 500 }}>
+        <Link to="/forgot-password" style={{ fontSize: fontSize.caption, fontWeight: 500 }}>
           Forgot password?
         </Link>
       </Flex>

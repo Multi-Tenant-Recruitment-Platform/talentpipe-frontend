@@ -1,44 +1,45 @@
 import { Card, Flex, Statistic, Typography } from 'antd';
+import {
+  fontSize,
+  fontWeight,
+  radius,
+  slate,
+  space,
+  status as statusColor,
+} from '../../theme/tokens';
 import { Icon, type IconName } from './Icon';
 
-export type StatTone = 'indigo' | 'violet' | 'emerald' | 'amber';
-
-/** Icon chip tint per tone. */
-const TONE_CHIP: Record<StatTone, { bg: string; fg: string }> = {
-  indigo: { bg: '#eef2ff', fg: '#4f46e5' },
-  violet: { bg: '#ede9fe', fg: '#7c3aed' },
-  emerald: { bg: '#d1fae5', fg: '#059669' },
-  amber: { bg: '#fef3c7', fg: '#d97706' },
-};
-
-const DELTA_TONE = {
-  up: { bg: '#d1fae5', fg: '#047857' },
-  down: { bg: '#fee2e2', fg: '#b91c1c' },
-} as const;
-
 /**
- * KPI tile: tinted icon chip, bold value, label, and an optional trend delta
- * (e.g. "+12% vs last week"). The value is the loudest thing on the card —
- * it is what an admin scans for, so it outranks both label and icon.
+ * KPI tile: a neutral icon chip, the value, its label, and an optional trend
+ * delta.
+ *
+ * <p>The value is the loudest thing on the card — it is what an admin scans a
+ * KPI row for, so it outranks both label and icon. The icon is a signpost for
+ * finding the right tile again, not a category marker, which is why it is
+ * neutral: four tiles in four hues make the row look like a legend for a
+ * classification that does not exist, and they compete with the one place on
+ * the card where colour carries real information — the delta.</p>
  */
 export function StatCard({
   label,
   value,
   icon,
-  tone,
   delta,
 }: Readonly<{
   label: string;
   value: string;
   icon: IconName;
-  tone: StatTone;
   delta?: { value: string; direction: 'up' | 'down'; hint?: string };
 }>) {
-  const chip = TONE_CHIP[tone];
-  const deltaTone = delta ? DELTA_TONE[delta.direction] : null;
+  // The only colour on the tile, and it is genuinely semantic: which way the
+  // number moved. Contrast-checked against its own tint in tokens.test.ts.
+  const deltaStyle =
+    delta?.direction === 'up'
+      ? { bg: statusColor.successBg, fg: statusColor.successText }
+      : { bg: statusColor.errorBg, fg: statusColor.errorText };
 
   return (
-    <Card styles={{ body: { padding: 20 } }} style={{ height: '100%' }}>
+    <Card styles={{ body: { padding: space[2.5] } }} style={{ height: '100%' }}>
       <Flex align="center" justify="space-between">
         <span
           style={{
@@ -47,25 +48,25 @@ export function StatCard({
             justifyContent: 'center',
             width: 44,
             height: 44,
-            borderRadius: 12,
-            background: chip.bg,
-            color: chip.fg,
+            borderRadius: radius.lg,
+            background: slate[100],
+            color: slate[600],
           }}
         >
           <Icon name={icon} size={20} />
         </span>
-        {delta && deltaTone && (
+        {delta && (
           <span
             style={{
               display: 'inline-flex',
               alignItems: 'center',
-              gap: 4,
-              padding: '2px 8px',
-              borderRadius: 999,
-              fontSize: 12,
-              fontWeight: 600,
-              background: deltaTone.bg,
-              color: deltaTone.fg,
+              gap: space[0.5],
+              padding: `2px ${space[1]}px`,
+              borderRadius: radius.pill,
+              fontSize: fontSize.caption,
+              fontWeight: fontWeight.semibold,
+              background: deltaStyle.bg,
+              color: deltaStyle.fg,
             }}
           >
             <Icon name={delta.direction === 'up' ? 'trending-up' : 'trending-down'} size={14} />
@@ -76,10 +77,15 @@ export function StatCard({
 
       <Statistic
         value={value}
-        valueStyle={{ fontSize: 30, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}
-        style={{ marginTop: 16 }}
+        valueStyle={{
+          fontSize: fontSize.display,
+          fontWeight: fontWeight.bold,
+          color: slate[900],
+          lineHeight: 1.15,
+        }}
+        style={{ marginTop: space[2] }}
       />
-      <Typography.Text type="secondary" style={{ display: 'block', marginTop: 4 }}>
+      <Typography.Text type="secondary" style={{ display: 'block', marginTop: space[0.5] }}>
         {label}
         {delta?.hint && <span style={{ opacity: 0.75 }}> · {delta.hint}</span>}
       </Typography.Text>

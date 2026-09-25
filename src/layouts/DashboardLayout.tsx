@@ -1,11 +1,15 @@
 import {
-  Badge as AntBadge,
+  Badge,
+  Button,
+  Divider,
   Drawer,
   Dropdown,
   Flex,
   Input,
   Layout,
   Menu,
+  Space,
+  Tag,
   Typography,
   type InputRef,
 } from 'antd';
@@ -18,11 +22,12 @@ import { Avatar } from '../components/dashboard/Avatar';
 import { CompanyLogo } from '../components/dashboard/CompanyLogo';
 import { Icon, type IconName } from '../components/dashboard/Icon';
 import { RoleBadge } from '../components/dashboard/RoleBadge';
-import { Button } from '../components/ui/Button';
 import { CompanyProfileProvider, useCompanyIdentity } from '../dashboard/CompanyProfileContext';
 import { TeamSummaryProvider } from '../dashboard/TeamSummaryContext';
 import { activeTenant } from '../tenant/activeTenant';
+import { formatRole } from '../utils/format';
 import { tenantStorage } from '../utils/tenantStorage';
+import { fontSize, slate } from '../theme/tokens';
 
 /** Each entry names the permission that earns it a place in the sidebar. */
 const NAV_ITEMS: {
@@ -78,26 +83,26 @@ function SidebarContent({ onNavigate }: Readonly<{ onNavigate?: () => void }>) {
     // Light chrome: the sidebar recedes so the workspace data is the only
     // thing competing for attention. Brand colour is spent on one mark and
     // the active nav row, nowhere else.
-    <Flex vertical style={{ height: '100%', background: '#fff', borderRight: '1px solid #e2e8f0' }}>
-      {/* Brand */}
-      <Flex align="center" gap={10} style={{ height: 64, padding: '0 24px', borderBottom: '1px solid #e2e8f0' }}>
-        <span className="tp-brand-mark" style={{ width: 32, height: 32 }}>
+    <Flex vertical className="tp-sidebar-inner">
+      {/* Brand. Exactly the header's height, so this divider and the top bar's
+          bottom border form one continuous line across the fold. */}
+      <Flex align="center" gap={10} className="tp-sidebar-brand">
+        <span className="tp-brand-mark tp-brand-mark-sm">
           <Icon name="funnel" size={16} />
         </span>
-        <Typography.Text strong style={{ fontSize: 18 }}>
+        <Typography.Text strong style={{ fontSize: fontSize.lead, letterSpacing: '-0.01em' }}>
           TalentPipe
         </Typography.Text>
       </Flex>
 
       {/* Primary navigation — only what this role may actually open. */}
-      <div style={{ flex: 1, marginTop: 24 }}>
-        <Typography.Text type="secondary" className="tp-eyebrow" style={{ display: 'block', padding: '0 28px 8px' }}>
+      <div className="tp-sidebar-nav">
+        <Typography.Text type="secondary" className="tp-sidebar-caption">
           Menu
         </Typography.Text>
         <Menu
           mode="inline"
           selectedKeys={selectedKeyFor(pathname)}
-          style={{ borderInlineEnd: 0, paddingInline: 8 }}
           items={navItems.map((item) => ({
             key: item.to,
             icon: <Icon name={item.icon} size={20} />,
@@ -110,12 +115,26 @@ function SidebarContent({ onNavigate }: Readonly<{ onNavigate?: () => void }>) {
         />
       </div>
 
-      {/* Footer links */}
-      <div style={{ borderTop: '1px solid #e2e8f0', padding: 16 }}>
-        <Link to="/" onClick={onNavigate} className="tp-sidebar-footer-link">
-          <Icon name="arrow-left" size={20} />
-          Back to site
-        </Link>
+      {/* Pinned to the bottom edge. Rendered through a Menu as well, rather
+          than as a hand-styled link, so its icon gap and left padding are
+          structurally identical to the rows above instead of two numbers that
+          drift apart later. */}
+      <div className="tp-sidebar-foot">
+        <Menu
+          mode="inline"
+          selectable={false}
+          items={[
+            {
+              key: 'back-to-site',
+              icon: <Icon name="arrow-left" size={20} />,
+              label: (
+                <Link to="/" onClick={onNavigate}>
+                  Back to site
+                </Link>
+              ),
+            },
+          ]}
+        />
       </div>
     </Flex>
   );
@@ -185,9 +204,11 @@ function DashboardChrome() {
     navigate('/', { replace: true });
   }
 
+  const fullName = `${user?.firstName ?? ''} ${user?.lastName ?? ''}`.trim();
+
   return (
     <Layout style={{ minHeight: '100vh' }}>
-      {/* Mobile drawer */}
+      {/* Mobile drawer — the same sidebar, so the two never diverge. */}
       <Drawer
         placement="left"
         width={288}
@@ -201,56 +222,75 @@ function DashboardChrome() {
       </Drawer>
 
       {/* Static sidebar */}
-      <Layout.Sider width={256} theme="light" className="tp-sidebar" style={{ position: 'fixed', insetBlock: 0, left: 0, zIndex: 30 }}>
+      <Layout.Sider
+        width={256}
+        theme="light"
+        className="tp-sidebar"
+        style={{ position: 'fixed', insetBlock: 0, left: 0, zIndex: 30 }}
+      >
         <SidebarContent />
       </Layout.Sider>
 
       <Layout className="tp-dashboard-body">
-        {/* Top bar */}
+        {/* Top bar. One flex row with a single centre axis — every child is a
+            flex item with no vertical margin of its own, which is what stops
+            the bell or the org tag sitting a pixel proud of the search box. */}
         <Layout.Header className="tp-topbar">
           <Button
-            variant="ghost"
+            type="text"
+            shape="circle"
             onClick={() => setSidebarOpen(true)}
             aria-label="Open navigation"
             className="tp-mobile-only"
-          >
-            <Icon name="menu" size={20} />
-          </Button>
+            icon={<Icon name="menu" size={20} />}
+          />
 
-          {/* Global search — decorative until the search API lands. */}
+          {/* Search leads: it is the highest-frequency action in a recruiter's
+              day, so it gets the largest target and the left anchor.
+              Decorative until the search API lands. */}
           <div className="tp-topbar-search">
             {/* TODO(sprint2): wire to global search once it exists. */}
             <Input
               ref={searchRef}
               type="search"
+              size="large"
               placeholder="Search jobs, candidates, people…"
               aria-label="Search"
               aria-keyshortcuts="Control+K Meta+K"
-              prefix={<Icon name="search" size={16} style={{ opacity: 0.45 }} />}
+              prefix={<Icon name="search" size={18} style={{ color: slate[400] }} />}
               // Discoverability for the shortcut the effect above implements.
               suffix={
-                <kbd aria-hidden="true" className="tp-kbd">
+                <Tag aria-hidden="true" className="tp-kbd">
                   {shortcutHint}
-                </kbd>
+                </Tag>
               }
-              style={{ borderRadius: 999 }}
             />
           </div>
 
-          <Flex align="center" gap={8} style={{ marginLeft: 'auto' }}>
-            {/* Which workspace this session is reading — sits with the account
-                controls because it is identity, not navigation. Clicking the
-                company opens its profile, which is where anyone who clicked
-                the company's name expected to end up. */}
-            <Link to="/dashboard/profile" title="View company profile" className="tp-company-chip">
-              {company.logoUrl ? (
-                <CompanyLogo src={company.logoUrl} name={company.name} size="sm" />
-              ) : (
-                <Avatar firstName={company.name} size="sm" />
-              )}
-              <Typography.Text strong ellipsis style={{ maxWidth: 176 }}>
-                {company.name}
-              </Typography.Text>
+          {/* Hard spacer, so the action cluster is pinned to the right edge
+              regardless of how wide the search grows. */}
+          <div style={{ flex: 1 }} />
+
+          <Space size={8} align="center">
+            {/* Workspace context, not navigation — a Tag reads deliberately
+                lighter than the profile block beside it, so in an agency
+                juggling tenants the two identities never compete. */}
+            <Link
+              to="/dashboard/profile"
+              title="View company profile"
+              className="tp-org-tag"
+              aria-label={`Current workspace: ${company.name}. View company profile`}
+            >
+              <Tag className="tp-org-tag-inner">
+                <Flex align="center" gap={7}>
+                  {company.logoUrl ? (
+                    <CompanyLogo src={company.logoUrl} name={company.name} size="sm" style={{ width: 18, height: 18, borderRadius: 5 }} />
+                  ) : (
+                    <Icon name="building" size={14} style={{ color: slate[500] }} />
+                  )}
+                  <span className="tp-org-tag-name">{company.name}</span>
+                </Flex>
+              </Tag>
             </Link>
 
             {/* Notifications */}
@@ -259,11 +299,11 @@ function DashboardChrome() {
               onOpenChange={openNotifications}
               placement="bottomRight"
               popupRender={() => (
-                <div className="tp-notifications">
-                  <Typography.Text strong style={{ display: 'block', padding: '12px 16px', borderBottom: '1px solid #f1f5f9' }}>
+                <div className="tp-popover">
+                  <Typography.Text strong className="tp-popover-head">
                     Notifications
                   </Typography.Text>
-                  <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+                  <ul className="tp-notification-list">
                     {NOTIFICATIONS.map((n) => (
                       <li key={n.id} className="tp-notification">
                         <span className="tp-notification-icon">
@@ -271,7 +311,7 @@ function DashboardChrome() {
                         </span>
                         <div>
                           <Typography.Text style={{ display: 'block' }}>{n.text}</Typography.Text>
-                          <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+                          <Typography.Text type="secondary" style={{ fontSize: fontSize.caption }}>
                             {n.time}
                           </Typography.Text>
                         </div>
@@ -281,38 +321,82 @@ function DashboardChrome() {
                 </div>
               )}
             >
-              <Button variant="ghost" aria-label="Notifications">
-                <AntBadge dot={unread} offset={[-2, 2]}>
-                  <Icon name="bell" size={20} />
-                </AntBadge>
-              </Button>
+              <Button
+                type="text"
+                shape="circle"
+                aria-label="Notifications"
+                className="tp-icon-button"
+                icon={
+                  <Badge dot={unread} offset={[-1, 2]}>
+                    <Icon name="bell" size={20} />
+                  </Badge>
+                }
+              />
             </Dropdown>
 
-            {/* Account */}
-            <Flex align="center" gap={12} style={{ marginLeft: 4, borderLeft: '1px solid #e2e8f0', paddingLeft: 12 }}>
-              <Avatar firstName={user?.firstName ?? '?'} lastName={user?.lastName} size="sm" />
-              <div className="tp-account-name">
-                <Typography.Text strong style={{ display: 'block', lineHeight: 1.2 }}>
-                  {user?.firstName} {user?.lastName}
-                </Typography.Text>
-                {/* The role decides what this session can reach, so it reads as
-                    a pill rather than as grey caption text. */}
-                {user && (
-                  <div style={{ marginTop: 2 }}>
-                    <RoleBadge role={user.role} />
-                  </div>
-                )}
-              </div>
-              <Button
-                variant="ghost"
-                onClick={() => void handleLogout()}
-                aria-label="Log out"
-                title="Log out"
+            <Divider type="vertical" className="tp-topbar-divider" />
+
+            {/* Account. The whole block is the trigger — avatar, name, role and
+                chevron together — so the hit target matches what reads as one
+                control, and the chevron says it opens rather than navigates. */}
+            <Dropdown
+              trigger={['click']}
+              placement="bottomRight"
+              popupRender={() => (
+                <div className="tp-popover tp-profile-popover">
+                  <Flex align="center" gap={12} className="tp-profile-identity">
+                    <Avatar firstName={user?.firstName ?? '?'} lastName={user?.lastName} size="md" />
+                    <div style={{ minWidth: 0 }}>
+                      <Typography.Text strong ellipsis style={{ display: 'block' }}>
+                        {fullName}
+                      </Typography.Text>
+                      <Typography.Text type="secondary" ellipsis style={{ fontSize: fontSize.caption, display: 'block' }}>
+                        {user?.email}
+                      </Typography.Text>
+                      {user && (
+                        <div style={{ marginTop: 6 }}>
+                          <RoleBadge role={user.role} />
+                        </div>
+                      )}
+                    </div>
+                  </Flex>
+                  <Menu
+                    selectable={false}
+                    className="tp-profile-menu"
+                    items={[
+                      {
+                        key: 'logout',
+                        // Ending a session is destructive enough to be labelled
+                        // and to turn red under the cursor — never a faint
+                        // unlabelled icon sitting a click away from the avatar.
+                        danger: true,
+                        icon: <Icon name="logout" size={16} />,
+                        label: 'Log out',
+                        onClick: () => void handleLogout(),
+                      },
+                    ]}
+                  />
+                </div>
+              )}
+            >
+              <button
+                type="button"
+                className="tp-profile-trigger"
+                aria-label={`Account menu for ${fullName}`}
               >
-                <Icon name="logout" size={20} />
-              </Button>
-            </Flex>
-          </Flex>
+                <Avatar
+                  firstName={user?.firstName ?? '?'}
+                  lastName={user?.lastName}
+                  size="sm"
+                        />
+                <span className="tp-profile-meta">
+                  <span className="tp-profile-name">{fullName}</span>
+                  <span className="tp-profile-role">{user ? formatRole(user.role) : ''}</span>
+                </span>
+                <Icon name="chevron-down" size={16} className="tp-profile-chevron" />
+              </button>
+            </Dropdown>
+          </Space>
         </Layout.Header>
 
         {/* Routed dashboard content */}

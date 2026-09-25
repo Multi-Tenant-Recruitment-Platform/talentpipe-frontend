@@ -1,10 +1,12 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap');
+@import './styles/tokens.css';
 
 /*
  * Ant Design ships no global reset — its styles are scoped to `.ant-*` — so
  * these few rules replace what Tailwind's Preflight used to provide. Component
  * styling belongs in the theme (src/theme/antdTheme.ts); anything that genuinely
- * cannot be expressed there lives in styles/overrides.css.
+ * cannot be expressed there lives in styles/overrides.css. Every value comes
+ * from styles/tokens.css.
  */
 
 *,
@@ -22,6 +24,10 @@ body,
 body {
   margin: 0;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* Contextual alternates only. IBM Plex Sans needs no stylistic-set
+     overrides — its default forms are the institutional ones. */
+  font-feature-settings: 'calt';
 }
 
 img,
@@ -37,11 +43,97 @@ textarea {
   font: inherit;
 }
 
+/*
+ * ==========================================================================
+ * Browser surfaces
+ * ==========================================================================
+ * The parts nobody draws. Selection, the caret, scrollbars and focus rings
+ * ship with OS defaults that belong to no design system, and leaving them
+ * default is the clearest signal that a page was assembled rather than built.
+ */
+
+::selection {
+  background: var(--tp-primary-100);
+  color: var(--tp-primary-900);
+}
+
 :root {
-  /* Mirrors BRAND_GRADIENT in src/theme/antdTheme.ts. Used only by the two
-     brand marks; buttons use the flat colorPrimary token. */
-  --tp-brand-gradient: linear-gradient(135deg, #4f46e5, #7c3aed);
-  --tp-surface: #ffffff;
+  /* The caret matches the accent, so the insertion point is unmistakably the
+     same "you are here" blue as the active nav item. */
+  caret-color: var(--tp-primary-600);
+  accent-color: var(--tp-primary-600);
+  color-scheme: light;
+  scrollbar-color: var(--tp-slate-300) transparent;
+  scrollbar-width: thin;
+}
+
+/* WebKit needs the long form; it ignores scrollbar-color. */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: var(--tp-radius-pill);
+  background: var(--tp-slate-300);
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--tp-slate-400);
+  background-clip: content-box;
+}
+
+/*
+ * One focus ring for everything antd does not already ring. Keyboard-only —
+ * `:focus-visible` keeps it off mouse clicks — and it never removes the
+ * outline without putting an equivalent ring back.
+ *
+ * No `border-radius` here on purpose: the outline already follows whatever
+ * radius the element has, and setting one would square off the pill-shaped
+ * controls (.tp-social-chip, .tp-org-tag-inner) the moment they take focus.
+ */
+:where(a, button, [role='button'], summary):focus-visible {
+  outline: 2px solid var(--tp-primary-600);
+  outline-offset: 2px;
+}
+
+/* Links carry the accent and a readable underline offset, not a 1px crowd. */
+a {
+  color: var(--tp-primary-700);
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+}
+
+/*
+ * Figures that must be comparable down a column. Applied to the elements that
+ * genuinely tabulate — tables, statistics, KPI values — rather than globally,
+ * because tabular digits in running prose read as slightly loose.
+ */
+.ant-table-cell,
+.ant-statistic-content,
+[data-numeric] {
+  font-variant-numeric: tabular-nums;
+}
+
+/*
+ * Motion is an acknowledgement here, never a performance. Anyone who has asked
+ * the OS for less gets none of it.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 /*

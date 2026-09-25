@@ -1,5 +1,6 @@
 import type { CSSProperties } from 'react';
 import { companyInitials } from '../../dashboard/companyProfile';
+import { slate } from '../../theme/tokens';
 
 /**
  * The company's logo, or a monogram when there isn't one.
@@ -48,7 +49,7 @@ export function CompanyLogo({
         alt={name || 'Company logo'}
         style={{
           ...shape,
-          border: '1px solid #e2e8f0',
+          border: `1px solid ${slate[200]}`,
           background: '#fff',
           objectFit: 'contain',
         }}

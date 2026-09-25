@@ -167,7 +167,6 @@ export function TeamPage() {
   const empty = (
     <EmptyState
       icon="search"
-      tone="slate"
       title={roster.query.trim() ? `No one matches “${roster.query.trim()}”` : 'No one matches these filters'}
       description="Try a different name, email or role — or clear the filters to see everyone."
       action={
@@ -186,7 +185,6 @@ export function TeamPage() {
   return (
     <>
       <PageHeader
-        eyebrow="Workspace"
         title="Team & invitations"
         subtitle="Manage who can access your hiring workspace and what they can do."
       >
@@ -214,21 +212,20 @@ export function TeamPage() {
 
       <Row gutter={[20, 20]}>
         <Col xs={24} sm={12} xl={6}>
-          <StatCard label="Workspace access" value={kpi(activeCount)} icon="users" tone="indigo" />
+          <StatCard label="Workspace access" value={kpi(activeCount)} icon="users" />
         </Col>
         <Col xs={24} sm={12} xl={6}>
-          <StatCard label="HR Managers" value={kpi(hrCount)} icon="briefcase" tone="violet" />
+          <StatCard label="HR Managers" value={kpi(hrCount)} icon="briefcase" />
         </Col>
         <Col xs={24} sm={12} xl={6}>
           <StatCard
             label="Interviewers"
             value={kpi(interviewerCount)}
             icon="identification"
-            tone="emerald"
           />
         </Col>
         <Col xs={24} sm={12} xl={6}>
-          <StatCard label="Pending invites" value={kpi(pendingCount)} icon="envelope" tone="amber" />
+          <StatCard label="Pending invites" value={kpi(pendingCount)} icon="envelope" />
         </Col>
       </Row>
 

@@ -4,6 +4,7 @@ import type { InvitableRole } from '../../api/types';
 import { Alert, type AlertTone } from '../ui/Alert';
 import { Button } from '../ui/Button';
 import { Icon, type IconName } from './Icon';
+import { fontSize } from '../../theme/tokens';
 
 export interface InviteFormValues {
   firstName: string;
@@ -123,10 +124,10 @@ export function InviteMemberModal({
             <Icon name="user-plus" size={20} />
           </span>
           <div>
-            <Typography.Title level={2} style={{ fontSize: 16, margin: 0 }}>
+            <Typography.Title level={2} style={{ fontSize: fontSize.lead, margin: 0 }}>
               Invite team member
             </Typography.Title>
-            <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+            <Typography.Text type="secondary" style={{ fontSize: fontSize.caption }}>
               They&apos;ll get an email with a link to join your workspace. It expires in 7 days.
             </Typography.Text>
           </div>
@@ -185,7 +186,7 @@ export function InviteMemberModal({
           </div>
 
           <fieldset disabled={submitting} style={{ border: 0, margin: 0, padding: 0 }}>
-            <legend style={{ fontSize: 14, fontWeight: 500 }}>Role</legend>
+            <legend style={{ fontSize: fontSize.body, fontWeight: 500 }}>Role</legend>
             <Radio.Group
               value={role}
               onChange={(e) => setRole(e.target.value as InvitableRole)}
@@ -200,7 +201,7 @@ export function InviteMemberModal({
                         <Icon name={option.icon} size={16} />
                         <Typography.Text strong>{option.label}</Typography.Text>
                       </Flex>
-                      <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+                      <Typography.Text type="secondary" style={{ fontSize: fontSize.caption }}>
                         {option.description}
                       </Typography.Text>
                     </Radio>

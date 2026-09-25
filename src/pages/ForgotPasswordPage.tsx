@@ -5,6 +5,7 @@ import { api } from '../api/client';
 import { AuthShell } from '../components/AuthShell';
 import { Alert } from '../components/ui/Alert';
 import { Button } from '../components/ui/Button';
+import { fontSize } from '../theme/tokens';
 
 /**
  * Password-reset request. The confirmation is intentionally identical whether
@@ -35,8 +36,7 @@ export function ForgotPasswordPage() {
 
   return (
     <AuthShell>
-      <Typography.Text className="tp-eyebrow">Account</Typography.Text>
-      <Typography.Title level={1} style={{ fontSize: 28, margin: '6px 0 0' }}>
+      <Typography.Title level={1} style={{ fontSize: fontSize.heading, margin: 0 }}>
         Reset your password
       </Typography.Title>
       <Typography.Paragraph type="secondary" style={{ margin: '8px 0 0' }}>

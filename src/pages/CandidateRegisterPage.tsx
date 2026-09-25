@@ -7,6 +7,7 @@ import { AuthShell } from '../components/AuthShell';
 import { RegisterTabs } from '../components/RegisterTabs';
 import { Alert } from '../components/ui/Alert';
 import { Button } from '../components/ui/Button';
+import { fontSize } from '../theme/tokens';
 
 /**
  * Small divider that labels a group of fields inside the form. `aria-hidden`
@@ -16,7 +17,7 @@ import { Button } from '../components/ui/Button';
 function SectionLabel({ children }: Readonly<{ children: ReactNode }>) {
   return (
     <Divider titlePlacement="start" style={{ marginBlock: 0 }} aria-hidden="true">
-      <Typography.Text className="tp-eyebrow" type="secondary">
+      <Typography.Text className="tp-divider-label" type="secondary">
         {children}
       </Typography.Text>
     </Divider>
@@ -37,7 +38,7 @@ function Field({
       </label>
       {children}
       {hint && (
-        <Typography.Text type="secondary" style={{ display: 'block', fontSize: 12, marginTop: 4 }}>
+        <Typography.Text type="secondary" style={{ display: 'block', fontSize: fontSize.caption, marginTop: 4 }}>
           {hint}
         </Typography.Text>
       )}
@@ -91,7 +92,7 @@ export function CandidateRegisterPage() {
 
   return (
     <AuthShell>
-      <Typography.Title level={1} style={{ fontSize: 26, margin: 0 }}>
+      <Typography.Title level={1} style={{ fontSize: fontSize.heading, margin: 0 }}>
         Create your account
       </Typography.Title>
       <Typography.Paragraph type="secondary" style={{ margin: '8px 0 0' }}>
@@ -102,7 +103,7 @@ export function CandidateRegisterPage() {
         <RegisterTabs active="candidate" />
       </div>
 
-      <Typography.Title level={2} style={{ fontSize: 18, marginTop: 24, marginBottom: 0 }}>
+      <Typography.Title level={2} style={{ fontSize: fontSize.title, marginTop: 24, marginBottom: 0 }}>
         Create your candidate account
       </Typography.Title>
       <Typography.Paragraph type="secondary" style={{ margin: '4px 0 0' }}>

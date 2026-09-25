@@ -9,6 +9,7 @@ import { Button } from '../../components/ui/Button';
 import { useTeamSummary } from '../../dashboard/TeamSummaryContext';
 import { useCompanyProfileContext } from '../../dashboard/CompanyProfileContext';
 import { planUsage } from '../../data/mockDashboard';
+import { fontSize, primary } from '../../theme/tokens';
 
 /**
  * Company settings — the workspace identity and the plan.
@@ -20,9 +21,9 @@ import { planUsage } from '../../data/mockDashboard';
  */
 
 const STATUS_TONES: Record<string, BadgeTone> = {
-  ACTIVE: 'emerald',
-  TRIAL: 'amber',
-  SUSPENDED: 'red',
+  ACTIVE: 'success',
+  TRIAL: 'warning',
+  SUSPENDED: 'danger',
 };
 
 /** 'ACTIVE' → 'Active'. Keeps an unknown future status readable. */
@@ -43,7 +44,6 @@ export function CompanySettingsPage() {
   return (
     <>
       <PageHeader
-        eyebrow="Workspace"
         title="Company settings"
         subtitle="Manage your workspace identity and plan."
       />
@@ -69,7 +69,7 @@ export function CompanySettingsPage() {
                       reading "Unknown" is a claim about the workspace rather
                       than an admission that we have not looked yet. */}
                   {controller.profile ? (
-                    <Badge tone={STATUS_TONES[controller.profile.status] ?? 'slate'}>
+                    <Badge tone={STATUS_TONES[controller.profile.status] ?? 'neutral'}>
                       {statusLabel(controller.profile.status)}
                     </Badge>
                   ) : (
@@ -85,10 +85,10 @@ export function CompanySettingsPage() {
               <Card title="Plan & usage" subtitle="Current subscription">
                 <Flex align="center" justify="space-between">
                   <Typography.Text strong style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                    <Icon name="sparkles" size={16} style={{ color: '#8b5cf6' }} />
+                    <Icon name="sparkles" size={16} style={{ color: primary[600] }} />
                     {planUsage.tier} plan
                   </Typography.Text>
-                  <Badge tone="indigo">Monthly</Badge>
+                  <Badge>Monthly</Badge>
                 </Flex>
                 <div style={{ marginTop: 16 }}>
                   <Flex align="baseline" justify="space-between">
@@ -100,10 +100,10 @@ export function CompanySettingsPage() {
                   <Progress
                     percent={seatsPercent}
                     showInfo={false}
-                    strokeColor={{ from: '#6366f1', to: '#8b5cf6' }}
+                    strokeColor={primary[600]}
                     style={{ marginBottom: 0 }}
                   />
-                  <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+                  <Typography.Text type="secondary" style={{ fontSize: fontSize.caption }}>
                     {seatsLeft} {seatsLeft === 1 ? 'seat' : 'seats'} left — invite HR managers and
                     interviewers anytime.
                   </Typography.Text>
@@ -124,7 +124,7 @@ export function CompanySettingsPage() {
             concludes it was removed. */}
         <Typography.Paragraph
           type="secondary"
-          style={{ marginTop: 16, marginBottom: 0, fontSize: 12 }}
+          style={{ marginTop: 16, marginBottom: 0, fontSize: fontSize.caption }}
         >
           <Icon name="building" size={14} style={{ display: 'inline', verticalAlign: '-2px' }} />{' '}
           Company details are managed on <Link to="/dashboard/profile">Profile Management</Link>.

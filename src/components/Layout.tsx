@@ -3,6 +3,7 @@ import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { can } from '../auth/permissions';
 import { Button } from './ui/Button';
+import { fontSize, fontWeight, slate } from '../theme/tokens';
 
 /** Shared page chrome: top navigation + content outlet. */
 export function Layout() {
@@ -35,7 +36,7 @@ export function Layout() {
           display: 'flex',
           alignItems: 'center',
           gap: 16,
-          borderBottom: '1px solid #e2e8f0',
+          borderBottom: `1px solid ${slate[200]}`,
           background: 'rgb(255 255 255 / 85%)',
           backdropFilter: 'blur(6px)',
         }}
@@ -47,10 +48,10 @@ export function Layout() {
           style={{ width: '100%', maxWidth: 1152, marginInline: 'auto' }}
         >
           <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span className="tp-brand-mark" style={{ width: 32, height: 32, fontWeight: 800 }}>
+            <span className="tp-brand-mark" style={{ width: 32, height: 32, fontWeight: fontWeight.bold }}>
               T
             </span>
-            <Typography.Text strong style={{ fontSize: 18 }}>
+            <Typography.Text strong style={{ fontSize: fontSize.title }}>
               TalentPipe
             </Typography.Text>
           </Link>

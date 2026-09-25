@@ -3,6 +3,7 @@ import { useState, type KeyboardEvent } from 'react';
 import { cleanValues } from '../../dashboard/companyProfile';
 import { Button } from '../ui/Button';
 import { Icon } from './Icon';
+import { fontSize } from '../../theme/tokens';
 
 /**
  * A free-text list edited as chips: type one, press Enter, it becomes a tag.
@@ -119,7 +120,7 @@ export function CompanyChipListEditor({
           Add
         </Button>
       </Space.Compact>
-      <Typography.Text type="secondary" style={{ display: 'block', fontSize: 12, marginTop: 6 }}>
+      <Typography.Text type="secondary" style={{ display: 'block', fontSize: fontSize.caption, marginTop: 6 }}>
         {hint}
       </Typography.Text>
     </div>

@@ -29,3 +29,17 @@ coverage
 *.njsproj
 *.sln
 *.sw?
+
+# Local AI/agent tooling — machine-local, never push to shared branches.
+# NOTE: .github/workflows, CODEOWNERS and pull_request_template.md are real
+# project files and stay tracked — only the agent/skill/hook folders are ignored.
+.claude/
+.github/agents/
+.github/hooks/
+.github/skills/
+.impeccable/
+
+# Environment files — never commit real credentials or machine-local values.
+.env
+.env.*
+!.env.example

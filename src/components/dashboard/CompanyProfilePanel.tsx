@@ -7,6 +7,7 @@ import { CompanyProfileForm } from './CompanyProfileForm';
 import { CompanyProfileSkeleton } from './CompanyProfileSkeleton';
 import { CompanyProfileView, type CompanyProfileVariant } from './CompanyProfileView';
 import { CompanyPublicPreview } from './CompanyPublicPreview';
+import { fontSize, slate } from '../../theme/tokens';
 
 /**
  * The whole view/edit exchange for one company profile: loading, the read
@@ -128,9 +129,9 @@ export function CompanyProfilePanel({
               style={{
                 marginTop: 20,
                 marginBottom: 0,
-                borderTop: '1px solid #f1f5f9',
+                borderTop: `1px solid ${slate[100]}`,
                 paddingTop: 20,
-                fontSize: 12,
+                fontSize: fontSize.caption,
               }}
             >
               Your role can view this profile but not change it. Ask a Company Admin to update it.

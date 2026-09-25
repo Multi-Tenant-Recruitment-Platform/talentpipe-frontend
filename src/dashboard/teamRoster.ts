@@ -36,22 +36,22 @@ export interface StatusMeta {
  * view. Anything not listed here still renders — see {@link statusMeta}.</p>
  */
 export const MEMBER_STATUS_META: Record<string, StatusMeta> = {
-  ACTIVE: { label: 'Active', tone: 'emerald', segment: 'active' },
+  ACTIVE: { label: 'Active', tone: 'success', segment: 'active' },
   INVITED: {
     label: 'Invited',
-    tone: 'amber',
+    tone: 'warning',
     segment: 'pending',
     hint: 'Invitation link expires 7 days after it was sent.',
   },
   PENDING_VERIFICATION: {
     label: 'Unverified',
-    tone: 'sky',
+    tone: 'neutral',
     segment: 'other',
     hint: 'Signed up but has not confirmed their email yet, so they cannot sign in.',
   },
   DISABLED: {
     label: 'Disabled',
-    tone: 'slate',
+    tone: 'neutral',
     segment: 'other',
     hint: 'This account cannot sign in. Re-enabling is not available yet.',
   },
@@ -62,7 +62,7 @@ export function statusMeta(status: string): StatusMeta {
   return (
     MEMBER_STATUS_META[status] ?? {
       label: formatRole(status), // title-cases an unknown SCREAMING_CASE value
-      tone: 'slate',
+      tone: 'neutral',
       segment: 'other',
     }
   );

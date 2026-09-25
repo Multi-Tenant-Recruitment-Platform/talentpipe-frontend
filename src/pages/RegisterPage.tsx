@@ -7,6 +7,7 @@ import { apiErrorMessage } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import { AuthShell } from '../components/AuthShell';
 import { RegisterTabs } from '../components/RegisterTabs';
+import { fontSize } from '../theme/tokens';
 
 /** Company onboarding (PB-001): tenant + first COMPANY_ADMIN, then off to login. */
 export function RegisterPage() {
@@ -46,7 +47,7 @@ export function RegisterPage() {
 
   return (
     <AuthShell>
-      <Typography.Title level={1} style={{ fontSize: 26, margin: 0 }}>Create your account</Typography.Title>
+      <Typography.Title level={1} style={{ fontSize: fontSize.heading, margin: 0 }}>Create your account</Typography.Title>
       <Typography.Paragraph type="secondary" style={{ margin: '8px 0 0' }}>
         Choose how you want to use TalentPipe.
       </Typography.Paragraph>
@@ -55,7 +56,7 @@ export function RegisterPage() {
         <RegisterTabs active="company" />
       </div>
 
-      <Typography.Title level={2} style={{ fontSize: 18, marginTop: 24, marginBottom: 0 }}>Register your company</Typography.Title>
+      <Typography.Title level={2} style={{ fontSize: fontSize.title, marginTop: 24, marginBottom: 0 }}>Register your company</Typography.Title>
       <Typography.Paragraph type="secondary" style={{ margin: '4px 0 0' }}>
         Creates your company workspace and its first administrator account.
       </Typography.Paragraph>
@@ -135,7 +136,7 @@ export function RegisterPage() {
             onChange={(e) => setPassword(e.target.value)}
             autoComplete="new-password"
           />
-          <Typography.Text type="secondary" style={{ display: 'block', fontSize: 12, marginTop: 4 }}>At least 8 characters.</Typography.Text>
+          <Typography.Text type="secondary" style={{ display: 'block', fontSize: fontSize.caption, marginTop: 4 }}>At least 8 characters.</Typography.Text>
         </div>
 
           <Button type="submit" variant="primary" loading={submitting} style={{ width: '100%' }}>
