@@ -26,6 +26,13 @@ export function formatDate(iso: string | null | undefined): string {
     : EM_DASH;
 }
 
+const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/;
+
+/** A calendar date such as "2026-10-31", read as local midnight so it never shifts by a day. */
+export function formatCalendarDate(iso: string | null | undefined): string {
+  return formatDate(iso && DATE_ONLY.test(iso) ? `${iso}T00:00:00` : iso);
+}
+
 /**
  * Coarse relative time — "just now", "2 hours ago", "3 days ago".
  *

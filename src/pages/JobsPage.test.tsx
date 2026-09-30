@@ -69,7 +69,7 @@ describe('JobsPage', () => {
     expect(c.getByText(/^Apply by .*31.*2026$/)).toBeInTheDocument();
     const skills = c.getByRole('list', { name: 'Skills' });
     expect(within(skills).getByText('React')).toBeInTheDocument();
-    expect(within(skills).getByText('+3 more')).toBeInTheDocument();
+    expect(within(skills).getByText('+4 more')).toBeInTheDocument();
   });
 
   it('omits optional details a job does not have', async () => {

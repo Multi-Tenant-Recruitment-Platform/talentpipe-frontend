@@ -6,23 +6,30 @@ import { Button } from '../ui/Button';
 import { JobCard } from './JobCard';
 
 const SKELETON_COUNT = 6;
-const GRID = 'grid gap-5 sm:grid-cols-2 lg:grid-cols-3';
+const GRID = 'grid gap-6 sm:grid-cols-2 lg:grid-cols-3';
 
 function JobCardSkeleton() {
   return (
-    <div className="animate-pulse rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-      <div className="flex items-start gap-3">
-        <div className="h-11 w-11 rounded-xl bg-slate-200" />
-        <div className="flex-1 space-y-2">
-          <div className="h-4 w-3/4 rounded bg-slate-200" />
-          <div className="h-3 w-1/2 rounded bg-slate-100" />
+    <div className="animate-pulse rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <div className="p-6">
+        <div className="flex items-center gap-3">
+          <div className="h-12 w-12 rounded-xl bg-slate-200" />
+          <div className="h-3 w-1/3 rounded bg-slate-100" />
+        </div>
+        <div className="mt-4 h-5 w-3/4 rounded bg-slate-200" />
+        <div className="mt-3 flex gap-2">
+          <div className="h-5 w-16 rounded-full bg-slate-100" />
+          <div className="h-5 w-14 rounded-full bg-slate-100" />
+        </div>
+        <div className="mt-3 space-y-2">
+          <div className="h-3 w-full rounded bg-slate-100" />
+          <div className="h-3 w-5/6 rounded bg-slate-100" />
         </div>
       </div>
-      <div className="mt-4 space-y-2">
-        <div className="h-3 w-full rounded bg-slate-100" />
-        <div className="h-3 w-5/6 rounded bg-slate-100" />
+      <div className="flex items-center justify-between border-t border-slate-100 px-6 py-4">
+        <div className="h-3 w-28 rounded bg-slate-100" />
+        <div className="h-9 w-24 rounded-lg bg-slate-200" />
       </div>
-      <div className="mt-5 h-9 w-24 rounded-lg bg-slate-200" />
     </div>
   );
 }
