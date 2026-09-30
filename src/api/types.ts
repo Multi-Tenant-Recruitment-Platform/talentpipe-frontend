@@ -256,10 +256,31 @@ export interface PageResponse<T> {
   totalPages: number;
 }
 
+/**
+ * Public job-board item. The backend currently guarantees only id, title and
+ * companyName; the optional fields are ASSUMED names for what the Job module
+ * will add — align them with the real DTO when it lands. Text fields are plain
+ * text, never HTML.
+ */
 export interface JobSummary {
   id: string;
   title: string;
   companyName: string;
+  companyLogoUrl?: string | null;
+  summary?: string | null;
+  location?: string | null;
+  category?: string | null;
+  skills?: string[] | null;
+  employmentType?: string | null;
+  workplaceType?: string | null;
+  /** ISO date. */
+  applicationDeadline?: string | null;
+}
+
+/** Public vacancy details. ASSUMED shape; there is no details endpoint yet. */
+export interface JobDetail extends JobSummary {
+  description?: string | null;
+  requirements?: string[] | null;
 }
 
 /** Uniform error envelope returned by the backend on every failure. */

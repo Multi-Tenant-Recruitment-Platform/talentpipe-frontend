@@ -1,65 +1,44 @@
-import { useEffect, useState } from 'react';
-import { api, apiErrorMessage } from '../api/client';
-import type { JobSummary, PageResponse } from '../api/types';
+import { JobList } from '../components/jobs/JobList';
+import { Alert } from '../components/ui/Alert';
+import { Button } from '../components/ui/Button';
+import { usePublicJobs } from '../jobs/usePublicJobs';
 
-/**
- * Public job board (PB-005, partial). Calls GET /public/jobs — which returns
- * an empty page until the Job module lands — and renders the empty state
- * gracefully.
- */
+function countLabel(shown: number, total: number) {
+  const noun = total === 1 ? 'open position' : 'open positions';
+  return shown < total ? `Showing ${shown} of ${total} ${noun}` : `${total} ${noun}`;
+}
+
+/** Public job board (PB-017): published vacancies, open to everyone. */
 export function JobsPage() {
-  const [jobs, setJobs] = useState<JobSummary[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    api
-      .get<PageResponse<JobSummary>>('/public/jobs')
-      .then(({ data }) => {
-        if (!cancelled) setJobs(data.content);
-      })
-      .catch((err: unknown) => {
-        if (!cancelled) setError(apiErrorMessage(err, 'Could not load jobs. Is the backend running?'));
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const { status, error, jobs, total, hasMore, loadingMore, loadMoreError, loadMore, retry } = usePublicJobs();
 
   return (
     <section>
-      <h1 className="text-3xl font-bold tracking-tight">Open positions</h1>
-      <p className="mt-2 text-slate-600">Roles published by companies hiring on TalentPipe.</p>
+      <header>
+        <h1 className="text-3xl font-bold tracking-tight text-slate-900">Explore Job Opportunities</h1>
+        <p className="mt-2 max-w-2xl text-slate-600">
+          Browse roles published by companies hiring on TalentPipe and find your next opportunity.
+        </p>
+        {status === 'ready' && total !== null && total > 0 && (
+          <p className="mt-4 text-sm font-medium text-slate-500">{countLabel(jobs.length, total)}</p>
+        )}
+      </header>
+
+      {/* Search & filter controls (PB-017 sub-task 4) go here; they pass their
+          results and a "No matching jobs found" message to JobList below. */}
 
       <div className="mt-8">
-        {error && (
-          <div className="rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-            {error}
-          </div>
-        )}
-
-        {!error && jobs === null && <p className="text-slate-500">Loading jobs…</p>}
-
-        {!error && jobs !== null && jobs.length === 0 && (
-          <div className="rounded-lg border border-dashed border-slate-300 bg-white p-12 text-center">
-            <h2 className="text-lg font-semibold text-slate-900">No open positions yet</h2>
-            <p className="mt-2 text-sm text-slate-500">
-              Companies are just getting set up — check back soon.
-            </p>
-          </div>
-        )}
-
-        {!error && jobs !== null && jobs.length > 0 && (
-          <ul className="divide-y divide-slate-200 rounded-lg border border-slate-200 bg-white">
-            {jobs.map((job) => (
-              <li key={job.id} className="p-4">
-                <span className="font-medium text-slate-900">{job.title}</span>
-                <span className="ml-2 text-sm text-slate-500">{job.companyName}</span>
-              </li>
-            ))}
-          </ul>
-        )}
+        <JobList status={status} jobs={jobs} error={error} onRetry={retry} />
       </div>
+
+      {status === 'ready' && hasMore && (
+        <div className="mt-8 flex flex-col items-center gap-3">
+          {loadMoreError && <Alert tone="error">{loadMoreError}</Alert>}
+          <Button onClick={() => void loadMore()} disabled={loadingMore}>
+            {loadingMore ? 'Loading…' : 'Load more jobs'}
+          </Button>
+        </div>
+      )}
     </section>
   );
 }
