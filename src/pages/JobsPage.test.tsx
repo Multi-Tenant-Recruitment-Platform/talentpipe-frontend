@@ -38,7 +38,7 @@ function renderAt(path: string) {
     <MemoryRouter initialEntries={[path]}>
       <Routes>
         <Route path="/jobs" element={<JobsPage />} />
-        <Route path="/jobs/:jobId" element={<JobDetailPage />} />
+        <Route path="/jobs/:jobKey" element={<JobDetailPage />} />
       </Routes>
     </MemoryRouter>,
   );
@@ -139,13 +139,13 @@ describe('JobsPage', () => {
     getPublicJob.mockResolvedValue(FULL_JOB);
     renderAt('/jobs');
     await user.click(within(await screen.findByRole('article', { name: FULL_JOB.title })).getByRole('link', { name: /view job/i }));
-    expect(getPublicJob).toHaveBeenCalledWith('job-1');
+    expect(getPublicJob).toHaveBeenCalledWith('senior-frontend-engineer-demo-company');
     expect(await screen.findByRole('heading', { level: 1, name: FULL_JOB.title })).toBeInTheDocument();
     expect(screen.getByText('The full description of the role.')).toBeInTheDocument();
     expect(screen.getByText('4+ years of React')).toBeInTheDocument();
     // Details show every skill, not the card's shortened list.
     expect(within(screen.getByRole('list', { name: 'Skills' })).getByText('Git')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /apply/i })).toBeNull();
+    expect(screen.getByRole('link', { name: 'Apply Now' })).toHaveAttribute('href', '/jobs/senior-frontend-engineer-demo-company/apply');
   });
 });
 

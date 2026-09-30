@@ -264,6 +264,8 @@ export interface PageResponse<T> {
  */
 export interface JobSummary {
   id: string;
+  /** Unique, URL-safe name used in job links, e.g. "data-analyst-northwind-analytics". */
+  slug?: string | null;
   title: string;
   companyName: string;
   companyLogoUrl?: string | null;
@@ -275,6 +277,25 @@ export interface JobSummary {
   workplaceType?: string | null;
   /** ISO date. */
   applicationDeadline?: string | null;
+}
+
+/**
+ * Application for one vacancy. ASSUMED shape; the application API (PB-019) is
+ * not built yet. Optional fields are sent as null rather than omitted.
+ */
+export interface JobApplicationRequest {
+  fullName: string;
+  email: string;
+  phone: string;
+  portfolioUrl: string | null;
+  coverLetter: string | null;
+}
+
+export interface JobApplicationResponse {
+  id: string;
+  jobId: string;
+  status: string;
+  submittedAt: string;
 }
 
 /** Public vacancy details. ASSUMED shape; there is no details endpoint yet. */

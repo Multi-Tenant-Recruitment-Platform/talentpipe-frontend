@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { MOCK_PUBLIC_JOBS } from '../data/mockPublicJobs';
+import { jobUrlKey } from '../jobs/jobPaths';
 import { api } from './client';
 import type { JobDetail, JobSummary, PageResponse } from './types';
 
@@ -32,16 +33,17 @@ export async function listPublicJobs(page = 0, size = PUBLIC_JOBS_PAGE_SIZE): Pr
 }
 
 /**
- * One published vacancy, or null when it does not exist or is not public.
- * ASSUMPTION: GET /public/jobs/{id} is not implemented by the backend yet.
+ * One published vacancy by the name in its link (see jobUrlKey), or null when
+ * it does not exist or is not public.
+ * ASSUMPTION: GET /public/jobs/{slug} is not implemented by the backend yet.
  */
-export async function getPublicJob(id: string): Promise<JobDetail | null> {
+export async function getPublicJob(slug: string): Promise<JobDetail | null> {
   if (USE_MOCK) {
     await delay();
-    return MOCK_PUBLIC_JOBS.find((job) => job.id === id) ?? null;
+    return MOCK_PUBLIC_JOBS.find((job) => jobUrlKey(job) === slug) ?? null;
   }
   try {
-    const { data } = await api.get<JobDetail>(`/public/jobs/${encodeURIComponent(id)}`);
+    const { data } = await api.get<JobDetail>(`/public/jobs/${encodeURIComponent(slug)}`);
     return data;
   } catch (err) {
     if (axios.isAxiosError(err) && err.response?.status === 404) {

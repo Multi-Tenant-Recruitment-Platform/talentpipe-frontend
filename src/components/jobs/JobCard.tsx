@@ -1,12 +1,12 @@
 import { useId } from 'react';
 import { Link } from 'react-router-dom';
 import type { JobSummary } from '../../api/types';
+import { jobPath } from '../../jobs/jobPaths';
 import { Icon } from '../dashboard/Icon';
 import { CompanyMark, Deadline, JobBadges, JobMeta, SkillTags } from './JobParts';
 
 const MAX_SKILLS = 4;
 
-const jobDetailPath = (id: string) => `/jobs/${encodeURIComponent(id)}`;
 
 /**
  * One vacancy on the public board. Long titles and previews are clamped here;
@@ -48,7 +48,7 @@ export function JobCard({ job }: Readonly<{ job: JobSummary }>) {
       <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 px-6 py-4">
         {job.applicationDeadline ? <Deadline date={job.applicationDeadline} /> : <span />}
         <Link
-          to={jobDetailPath(job.id)}
+          to={jobPath(job)}
           className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:from-indigo-500 hover:to-violet-500 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
         >
           View Job<span className="sr-only">: {job.title}</span>
