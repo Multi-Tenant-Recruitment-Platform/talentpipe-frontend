@@ -1,4 +1,4 @@
-import { useRef, useState, type ChangeEvent, type FormEvent, type ReactNode } from 'react';
+import { useRef, useState, type ChangeEvent, type DragEvent, type FormEvent, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { submitApplication } from '../../api/applications';
 import { apiErrorMessage } from '../../api/client';
@@ -8,13 +8,22 @@ import {
   APPLICATION_FIELDS,
   MAX_COVER_LETTER,
   MAX_EMAIL,
+  MAX_LOCATION,
   MAX_NAME,
+  MAX_RESUME_BYTES,
+  MAX_TITLE,
   MAX_URL,
+  MAX_YEARS,
+  RESUME_ACCEPT,
+  formatFileSize,
   initialApplicationValues,
   toApplicationRequest,
   validateApplication,
+  validateResume,
   type ApplicationErrors,
   type ApplicationField,
+  type ApplicationFormValues,
+  type ApplicationTextField,
 } from '../../jobs/applicationForm';
 import { jobPath } from '../../jobs/jobPaths';
 import { Icon } from '../dashboard/Icon';
@@ -26,6 +35,15 @@ import { CompanyMark, JobBadges } from './JobParts';
 const LEGEND = 'text-sm font-semibold uppercase tracking-wide text-slate-600';
 
 const fieldId = (name: ApplicationField) => `application-${name}`;
+
+function FieldError({ id, children }: Readonly<{ id: string; children: ReactNode }>) {
+  return (
+    <p id={id} role="alert" className="mt-1.5 flex items-start gap-1 text-xs text-red-600">
+      <Icon name="warning" className="mt-px h-3.5 w-3.5 shrink-0" />
+      {children}
+    </p>
+  );
+}
 
 function Field({
   id,
@@ -48,16 +66,111 @@ function Field({
       </label>
       {children}
       {error ? (
-        <p id={`${id}-error`} role="alert" className="mt-1.5 flex items-start gap-1 text-xs text-red-600">
-          <Icon name="warning" className="mt-px h-3.5 w-3.5 shrink-0" />
-          {error}
-        </p>
+        <FieldError id={`${id}-error`}>{error}</FieldError>
       ) : (
         hint && (
           <p id={`${id}-hint`} className="mt-1.5 text-xs text-slate-500">
             {hint}
           </p>
         )
+      )}
+    </div>
+  );
+}
+
+/**
+ * File input for the CV. The real input stays in the tab order (visually
+ * hidden) so keyboard and screen-reader users get the native picker; the
+ * visible drop zone and file card are pointer conveniences on top of it.
+ */
+function ResumePicker({
+  id,
+  file,
+  invalid,
+  describedBy,
+  onChange,
+}: Readonly<{ id: string; file: File | null; invalid: boolean; describedBy?: string; onChange: (file: File | null) => void }>) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [dragging, setDragging] = useState(false);
+  // Inherits the surrounding fieldset's disabled state while submitting.
+  const isDisabled = () => inputRef.current?.matches(':disabled') ?? false;
+
+  const choose = (next: File | null) => {
+    // Cleared every time so picking the same file again after removing it still fires a change.
+    if (inputRef.current) inputRef.current.value = '';
+    onChange(next);
+  };
+  const openPicker = () => {
+    if (!isDisabled()) inputRef.current?.click();
+  };
+  const onDragOver = (event: DragEvent) => {
+    event.preventDefault();
+    if (!isDisabled()) setDragging(true);
+  };
+  const onDrop = (event: DragEvent) => {
+    event.preventDefault();
+    setDragging(false);
+    const dropped = event.dataTransfer.files[0];
+    if (dropped && !isDisabled()) choose(dropped);
+  };
+
+  const ring = 'peer-focus-visible:ring-4 peer-focus-visible:ring-indigo-500/25';
+  let tone = 'border-slate-200 bg-slate-50';
+  if (invalid) tone = 'border-red-300 bg-red-50';
+  else if (dragging) tone = 'border-indigo-400 bg-indigo-50';
+  let zoneTone = 'border-slate-300 bg-white hover:border-indigo-400 hover:bg-slate-50';
+  if (dragging) zoneTone = 'border-indigo-500 bg-indigo-50';
+  else if (invalid) zoneTone = 'border-red-300 bg-red-50/50 hover:border-red-400';
+
+  return (
+    <div className="mt-1.5" onDragOver={onDragOver} onDragLeave={() => setDragging(false)} onDrop={onDrop}>
+      <input
+        ref={inputRef}
+        id={id}
+        name="resume"
+        type="file"
+        accept={RESUME_ACCEPT}
+        aria-required="true"
+        aria-invalid={invalid || undefined}
+        aria-describedby={describedBy}
+        onChange={(event) => choose(event.target.files?.[0] ?? null)}
+        className="peer sr-only"
+      />
+      {file ? (
+        <div className={`flex items-center gap-3 rounded-lg border px-4 py-3 ${ring} ${tone}`}>
+          <Icon name="document" className={`h-8 w-8 shrink-0 ${invalid ? 'text-red-500' : 'text-indigo-600'}`} />
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-medium text-slate-900">{file.name}</p>
+            <p className="text-xs text-slate-500">{formatFileSize(file.size)}</p>
+          </div>
+          <button
+            type="button"
+            onClick={openPicker}
+            className="rounded-md px-2 py-1 text-sm font-semibold text-indigo-600 hover:bg-indigo-50 hover:text-indigo-700 focus:outline-none focus-visible:ring-4 focus-visible:ring-indigo-500/25 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Replace
+          </button>
+          <button
+            type="button"
+            onClick={() => choose(null)}
+            aria-label={`Remove ${file.name}`}
+            className="rounded-md p-1.5 text-slate-500 hover:bg-slate-200 hover:text-slate-700 focus:outline-none focus-visible:ring-4 focus-visible:ring-indigo-500/25 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <Icon name="x-mark" className="h-4 w-4" />
+          </button>
+        </div>
+      ) : (
+        // Pointer-only shortcut to the input above, which carries the accessible name.
+        <div
+          aria-hidden="true"
+          onClick={openPicker}
+          className={`flex cursor-pointer flex-col items-center rounded-lg border-2 border-dashed px-6 py-8 text-center transition-colors ${ring} ${zoneTone}`}
+        >
+          <Icon name="upload" className={`h-8 w-8 ${dragging ? 'text-indigo-600' : 'text-slate-400'}`} />
+          <p className="mt-2 text-sm text-slate-700">
+            <span className="font-semibold text-indigo-600">Choose a file</span> or drag it here
+          </p>
+        </div>
       )}
     </div>
   );
@@ -80,21 +193,31 @@ export function ApplicationForm({
   const [submitError, setSubmitError] = useState<string | null>(null);
   const inFlight = useRef(false);
 
-  const field = (name: ApplicationField, hasHint = false) => {
-    const id = fieldId(name);
-    const describedBy = errors[name] ? `${id}-error` : hasHint ? `${id}-hint` : undefined;
-    return {
-      id,
-      name,
-      value: values[name],
-      onChange: (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-        const next = { ...values, [name]: event.target.value };
-        setValues(next);
-        if (attempted) setErrors(validateApplication(next));
-      },
-      'aria-invalid': errors[name] ? true : undefined,
-      'aria-describedby': describedBy,
-    };
+  const describedBy = (name: ApplicationField, hasHint = false) => {
+    if (errors[name]) return `${fieldId(name)}-error`;
+    return hasHint ? `${fieldId(name)}-hint` : undefined;
+  };
+
+  const update = (next: ApplicationFormValues) => {
+    setValues(next);
+    if (attempted) setErrors(validateApplication(next));
+  };
+
+  const field = (name: ApplicationTextField, hasHint = false) => ({
+    id: fieldId(name),
+    name,
+    value: values[name],
+    onChange: (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => update({ ...values, [name]: event.target.value }),
+    'aria-invalid': errors[name] ? true : undefined,
+    'aria-describedby': describedBy(name, hasHint),
+  });
+
+  const setResume = (resume: File | null) => {
+    const next = { ...values, resume };
+    setValues(next);
+    // A wrong file type or size is reported as soon as it is picked, not only on submit.
+    if (attempted) setErrors(validateApplication(next));
+    else setErrors((current) => ({ ...current, resume: resume ? validateResume(resume) : undefined }));
   };
 
   async function handleSubmit(event: FormEvent) {
@@ -114,7 +237,8 @@ export function ApplicationForm({
     setSubmitting(true);
     setSubmitError(null);
     try {
-      onSubmitted(await submitApplication(job.id, toApplicationRequest(values)));
+      // validateApplication guarantees a resume is present here.
+      onSubmitted(await submitApplication(job.id, toApplicationRequest(values), values.resume!));
     } catch (err) {
       setSubmitError(apiErrorMessage(err, 'We could not submit your application. Please check your connection and try again.'));
       inFlight.current = false;
@@ -167,6 +291,59 @@ export function ApplicationForm({
                   className={inputClass}
                 />
               </Field>
+              <Field id="application-location" label="Current location" error={errors.location} className="sm:col-span-2">
+                <input
+                  {...field('location')}
+                  maxLength={MAX_LOCATION}
+                  autoComplete="address-level2"
+                  placeholder="City, country"
+                  className={inputClass}
+                />
+              </Field>
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend className={LEGEND}>Experience</legend>
+            <p className="mt-1 text-xs text-slate-500">Your CV and where you are in your career today.</p>
+            <div className="mt-4 grid gap-5 sm:grid-cols-3">
+              <Field
+                id="application-resume"
+                label="Resume / CV"
+                required
+                error={errors.resume}
+                hint={`PDF, DOC or DOCX, up to ${formatFileSize(MAX_RESUME_BYTES)}.`}
+                className="sm:col-span-3"
+              >
+                <ResumePicker
+                  id={fieldId('resume')}
+                  file={values.resume}
+                  invalid={Boolean(errors.resume)}
+                  describedBy={describedBy('resume', true)}
+                  onChange={setResume}
+                />
+              </Field>
+              <Field id="application-currentTitle" label="Current job title" error={errors.currentTitle} className="sm:col-span-2">
+                <input
+                  {...field('currentTitle')}
+                  maxLength={MAX_TITLE}
+                  autoComplete="organization-title"
+                  placeholder="e.g. Frontend Engineer"
+                  className={inputClass}
+                />
+              </Field>
+              <Field id="application-yearsOfExperience" label="Years of experience" error={errors.yearsOfExperience}>
+                <input
+                  {...field('yearsOfExperience')}
+                  type="number"
+                  inputMode="numeric"
+                  min={0}
+                  max={MAX_YEARS}
+                  step={1}
+                  placeholder="0"
+                  className={inputClass}
+                />
+              </Field>
             </div>
           </fieldset>
 
@@ -205,6 +382,29 @@ export function ApplicationForm({
               </Field>
             </div>
           </fieldset>
+
+          <div>
+            <div className="flex items-start gap-3">
+              <input
+                id={fieldId('consent')}
+                name="consent"
+                type="checkbox"
+                checked={values.consent}
+                onChange={(event) => update({ ...values, consent: event.target.checked })}
+                aria-required="true"
+                aria-invalid={errors.consent ? true : undefined}
+                aria-describedby={describedBy('consent')}
+                className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded border-slate-300 accent-indigo-600 disabled:cursor-not-allowed"
+              />
+              <label htmlFor={fieldId('consent')} className="cursor-pointer text-sm text-slate-700">
+                I agree to {job.companyName} storing and processing my personal data to assess this application.
+                <span aria-hidden="true" className="ml-0.5 text-red-600">
+                  *
+                </span>
+              </label>
+            </div>
+            {errors.consent && <FieldError id={`${fieldId('consent')}-error`}>{errors.consent}</FieldError>}
+          </div>
         </fieldset>
 
         <div className="mt-8 flex flex-col-reverse gap-3 border-t border-slate-100 pt-6 sm:flex-row sm:justify-end">

@@ -1,19 +1,37 @@
 import { describe, expect, it } from 'vitest';
 import { makeUser } from '../test/authHarness';
-import { initialApplicationValues, toApplicationRequest, validateApplication, type ApplicationFormValues } from './applicationForm';
+import {
+  formatFileSize,
+  initialApplicationValues,
+  toApplicationRequest,
+  validateApplication,
+  validateResume,
+  type ApplicationFormValues,
+} from './applicationForm';
+
+function makeFile(name: string, size = 1024) {
+  const file = new File(['x'], name);
+  Object.defineProperty(file, 'size', { value: size });
+  return file;
+}
 
 const VALID: ApplicationFormValues = {
   fullName: 'Ada Lovelace',
   email: 'ada@example.com',
   phone: '+94 77 123 4567',
+  location: '',
+  resume: makeFile('ada-cv.pdf'),
+  currentTitle: '',
+  yearsOfExperience: '',
   portfolioUrl: '',
   coverLetter: '',
+  consent: true,
 };
 
 describe('initialApplicationValues', () => {
   it('prefills name and email for a signed-in candidate', () => {
     const values = initialApplicationValues(makeUser({ role: 'CANDIDATE', firstName: 'Ada', lastName: 'Lovelace', email: 'ada@x.test' }));
-    expect(values).toMatchObject({ fullName: 'Ada Lovelace', email: 'ada@x.test', phone: '' });
+    expect(values).toMatchObject({ fullName: 'Ada Lovelace', email: 'ada@x.test', phone: '', resume: null, consent: false });
   });
 
   it('starts empty for visitors and company users', () => {
@@ -27,9 +45,21 @@ describe('validateApplication', () => {
     expect(validateApplication(VALID)).toEqual({});
   });
 
-  it('requires name, email and phone, ignoring whitespace', () => {
-    const errors = validateApplication({ ...VALID, fullName: '  ', email: '', phone: ' ' });
-    expect(Object.keys(errors).sort()).toEqual(['email', 'fullName', 'phone']);
+  it('requires name, email, phone, a resume and consent, ignoring whitespace', () => {
+    const errors = validateApplication({ ...VALID, fullName: '  ', email: '', phone: ' ', resume: null, consent: false });
+    expect(Object.keys(errors).sort()).toEqual(['consent', 'email', 'fullName', 'phone', 'resume']);
+  });
+
+  it('leaves location, job title and experience optional', () => {
+    expect(validateApplication({ ...VALID, location: ' ', currentTitle: '', yearsOfExperience: '' })).toEqual({});
+  });
+
+  it.each(['0', '7', '60'])('accepts %j years of experience', (yearsOfExperience) => {
+    expect(validateApplication({ ...VALID, yearsOfExperience }).yearsOfExperience).toBeUndefined();
+  });
+
+  it.each(['-1', '2.5', '61', 'five'])('rejects %j years of experience', (yearsOfExperience) => {
+    expect(validateApplication({ ...VALID, yearsOfExperience }).yearsOfExperience).toBeTruthy();
   });
 
   it.each(['ada', 'ada@', 'ada@example', 'a da@example.com'])('rejects the email %j', (email) => {
@@ -55,14 +85,49 @@ describe('validateApplication', () => {
   });
 });
 
+describe('validateResume', () => {
+  it.each(['cv.pdf', 'CV.DOCX', 'resume.doc'])('accepts %j', (name) => {
+    expect(validateResume(makeFile(name))).toBeUndefined();
+  });
+
+  it('rejects other file types', () => {
+    expect(validateResume(makeFile('cv.png'))).toMatch(/PDF, DOC or DOCX/);
+    expect(validateResume(makeFile('cv.pdf.exe'))).toMatch(/PDF, DOC or DOCX/);
+  });
+
+  it('rejects empty files and files over 5 MB', () => {
+    expect(validateResume(makeFile('cv.pdf', 0))).toMatch(/empty/);
+    expect(validateResume(makeFile('cv.pdf', 5 * 1024 * 1024))).toBeUndefined();
+    expect(validateResume(makeFile('cv.pdf', 5 * 1024 * 1024 + 1))).toMatch(/under 5\.0 MB/);
+  });
+});
+
+describe('formatFileSize', () => {
+  it('shows small files in KB and larger ones in MB', () => {
+    expect(formatFileSize(200)).toBe('1 KB');
+    expect(formatFileSize(340 * 1024)).toBe('340 KB');
+    expect(formatFileSize(1.25 * 1024 * 1024)).toBe('1.3 MB');
+  });
+});
+
 describe('toApplicationRequest', () => {
   it('trims values and sends empty optional fields as null', () => {
-    expect(toApplicationRequest({ ...VALID, fullName: '  Ada Lovelace ', portfolioUrl: '  ', coverLetter: '' })).toEqual({
+    expect(toApplicationRequest({ ...VALID, fullName: '  Ada Lovelace ', location: ' ', portfolioUrl: '  ', coverLetter: '' })).toEqual({
       fullName: 'Ada Lovelace',
       email: 'ada@example.com',
       phone: '+94 77 123 4567',
+      location: null,
+      currentTitle: null,
+      yearsOfExperience: null,
       portfolioUrl: null,
       coverLetter: null,
+      consentGiven: true,
     });
+  });
+
+  it('sends the optional career details when given', () => {
+    expect(
+      toApplicationRequest({ ...VALID, location: ' Colombo, Sri Lanka ', currentTitle: 'Engineer ', yearsOfExperience: '07' }),
+    ).toMatchObject({ location: 'Colombo, Sri Lanka', currentTitle: 'Engineer', yearsOfExperience: 7 });
   });
 });

@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -40,6 +40,9 @@ function renderAt(path: string) {
 const nameInput = () => screen.getByLabelText(/full name/i);
 const emailInput = () => screen.getByLabelText(/^email/i);
 const phoneInput = () => screen.getByLabelText(/phone number/i);
+const resumeInput = () => screen.getByLabelText(/resume \/ cv/i);
+const consentBox = () => screen.getByRole('checkbox', { name: /I agree to Demo Company/ });
+const CV = new File(['%PDF-1.7'], 'ada-cv.pdf', { type: 'application/pdf' });
 const submitButton = () => screen.getByRole('button', { name: /submit application|submitting/i });
 
 async function openForm() {
@@ -51,6 +54,8 @@ async function fillRequired(user: ReturnType<typeof userEvent.setup>) {
   await user.type(nameInput(), '  Ada Lovelace ');
   await user.type(emailInput(), 'ada@example.com');
   await user.type(phoneInput(), '+94 77 123 4567');
+  await user.upload(resumeInput(), CV);
+  await user.click(consentBox());
 }
 
 beforeEach(() => {
@@ -78,6 +83,11 @@ describe('ApplyPage', () => {
     expect(nameInput()).toBeRequired();
     expect(emailInput()).toBeRequired();
     expect(phoneInput()).toBeRequired();
+    expect(resumeInput()).toHaveAttribute('aria-required', 'true');
+    expect(consentBox()).toHaveAttribute('aria-required', 'true');
+    expect(screen.getByLabelText(/current location/i)).not.toBeRequired();
+    expect(screen.getByLabelText(/current job title/i)).not.toBeRequired();
+    expect(screen.getByLabelText(/years of experience/i)).not.toBeRequired();
     expect(screen.getByLabelText(/cover letter/i)).not.toBeRequired();
     expect(submitButton()).toHaveTextContent('Submit Application');
     expect(screen.getByRole('link', { name: 'Cancel' })).toHaveAttribute('href', JOB_PATH);
@@ -99,6 +109,48 @@ describe('ApplyPage', () => {
     expect(nameInput()).toHaveAccessibleDescription('Enter your full name.');
     expect(emailInput()).toHaveAttribute('aria-invalid', 'true');
     expect(phoneInput()).toHaveAttribute('aria-invalid', 'true');
+    expect(resumeInput()).toHaveAccessibleDescription('Upload your resume or CV.');
+    expect(consentBox()).toHaveAttribute('aria-invalid', 'true');
+  });
+
+  it('focuses the resume when it is the only thing missing', async () => {
+    const user = userEvent.setup();
+    await openForm();
+    await fillRequired(user);
+    await user.click(screen.getByRole('button', { name: 'Remove ada-cv.pdf' }));
+    await user.click(submitButton());
+    expect(submitApplication).not.toHaveBeenCalled();
+    expect(resumeInput()).toHaveFocus();
+  });
+
+  it('shows the chosen resume and lets the candidate remove it', async () => {
+    const user = userEvent.setup();
+    await openForm();
+    expect(resumeInput()).toHaveAccessibleDescription('PDF, DOC or DOCX, up to 5.0 MB.');
+    await user.upload(resumeInput(), CV);
+    expect(screen.getByText('ada-cv.pdf')).toBeInTheDocument();
+    expect(screen.getByText('1 KB')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Remove ada-cv.pdf' }));
+    expect(screen.queryByText('ada-cv.pdf')).toBeNull();
+    expect(screen.getByText('Choose a file')).toBeInTheDocument();
+  });
+
+  it('rejects a resume of the wrong type as soon as it is picked', async () => {
+    const user = userEvent.setup({ applyAccept: false });
+    await openForm();
+    await user.upload(resumeInput(), new File(['png'], 'photo.png', { type: 'image/png' }));
+    expect(resumeInput()).toHaveAttribute('aria-invalid', 'true');
+    expect(resumeInput()).toHaveAccessibleDescription('Upload a PDF, DOC or DOCX file.');
+
+    await user.upload(resumeInput(), CV);
+    expect(resumeInput()).not.toHaveAttribute('aria-invalid');
+  });
+
+  it('accepts a resume dropped onto the upload area', async () => {
+    await openForm();
+    fireEvent.drop(screen.getByText('Choose a file'), { dataTransfer: { files: [CV] } });
+    expect(await screen.findByText('ada-cv.pdf')).toBeInTheDocument();
   });
 
   it('re-checks a field as it is corrected after a failed attempt', async () => {
@@ -115,19 +167,30 @@ describe('ApplyPage', () => {
     const user = userEvent.setup();
     await openForm();
     await fillRequired(user);
+    await user.type(screen.getByLabelText(/current location/i), 'Colombo, Sri Lanka');
+    await user.type(screen.getByLabelText(/current job title/i), 'Frontend Engineer');
+    await user.type(screen.getByLabelText(/years of experience/i), '6');
     await user.type(screen.getByLabelText(/cover letter/i), 'I love accessible UI.');
     await user.click(submitButton());
 
     const heading = await screen.findByRole('heading', { name: 'Application submitted successfully!' });
     expect(heading).toHaveFocus();
     expect(submitApplication).toHaveBeenCalledTimes(1);
-    expect(submitApplication).toHaveBeenCalledWith('job-1', {
-      fullName: 'Ada Lovelace',
-      email: 'ada@example.com',
-      phone: '+94 77 123 4567',
-      portfolioUrl: null,
-      coverLetter: 'I love accessible UI.',
-    });
+    expect(submitApplication).toHaveBeenCalledWith(
+      'job-1',
+      {
+        fullName: 'Ada Lovelace',
+        email: 'ada@example.com',
+        phone: '+94 77 123 4567',
+        location: 'Colombo, Sri Lanka',
+        currentTitle: 'Frontend Engineer',
+        yearsOfExperience: 6,
+        portfolioUrl: null,
+        coverLetter: 'I love accessible UI.',
+        consentGiven: true,
+      },
+      CV,
+    );
     expect(screen.getByText('app-123')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /submit application/i })).toBeNull();
     expect(screen.getByRole('link', { name: 'Browse more jobs' })).toHaveAttribute('href', '/jobs');
@@ -144,6 +207,8 @@ describe('ApplyPage', () => {
     expect(submitButton()).toBeDisabled();
     expect(submitButton()).toHaveTextContent('Submitting…');
     expect(nameInput()).toBeDisabled();
+    expect(resumeInput()).toBeDisabled();
+    expect(consentBox()).toBeDisabled();
     await user.dblClick(submitButton());
     await user.keyboard('{Enter}');
     expect(submitApplication).toHaveBeenCalledTimes(1);

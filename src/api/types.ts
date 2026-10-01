@@ -281,14 +281,20 @@ export interface JobSummary {
 
 /**
  * Application for one vacancy. ASSUMED shape; the application API (PB-019) is
- * not built yet. Optional fields are sent as null rather than omitted.
+ * not built yet. Sent as the JSON `application` part of a multipart request,
+ * next to the `resume` file part. Optional fields are sent as null rather than omitted.
  */
 export interface JobApplicationRequest {
   fullName: string;
   email: string;
   phone: string;
+  location: string | null;
+  currentTitle: string | null;
+  yearsOfExperience: number | null;
   portfolioUrl: string | null;
   coverLetter: string | null;
+  /** The candidate agreed to the company processing their data for this application. */
+  consentGiven: true;
 }
 
 export interface JobApplicationResponse {
