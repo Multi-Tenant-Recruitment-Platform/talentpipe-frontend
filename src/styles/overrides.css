@@ -977,6 +977,371 @@
   background: transparent;
 }
 
+/* ==========================================================================
+   Job vacancy form — the long form and its rail
+   ==========================================================================
+   The form is one scrollable page rather than a wizard, so the reader needs a
+   permanent answer to "where am I and how much is left". That is the rail's
+   whole job, and these rules cover the three things antd has no component for:
+   the two-column shell, the sticky rail and action bar, and the numbered
+   section headings that keep a real <fieldset>/<legend> underneath.
+   -------------------------------------------------------------------------- */
+
+.tp-vacancy-layout {
+  display: grid;
+  align-items: start;
+  gap: var(--tp-space-3);
+}
+
+/* A grid item's automatic minimum size is its content, not the track — so a
+   wide control inside the form column (the segmented workplace picker, a
+   textarea's counter row) would push the whole page past the viewport and
+   scroll the body sideways. This is what keeps the column inside the screen. */
+.tp-vacancy-layout > * {
+  min-width: 0;
+}
+
+@media (min-width: 1024px) {
+  .tp-vacancy-layout {
+    grid-template-columns: 220px minmax(0, 1fr);
+    gap: var(--tp-space-4);
+  }
+}
+
+/* --- The rail ------------------------------------------------------------ */
+/* Below the large breakpoint it is a scrollable strip pinned under the top
+   bar; at large it becomes the left column and sticks beside the form. */
+.tp-vacancy-rail {
+  position: sticky;
+  top: var(--tp-header-height);
+  z-index: 10;
+  /* Bleeds to the content edges so the strip reads as chrome, not as a card. */
+  margin-inline: calc(-1 * var(--tp-space-2));
+  padding: var(--tp-space-1) var(--tp-space-2);
+  border-bottom: 1px solid var(--tp-slate-200);
+  background: var(--tp-canvas);
+  overflow-x: auto;
+}
+
+.tp-vacancy-rail-list {
+  display: flex;
+  gap: var(--tp-space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (min-width: 1024px) {
+  .tp-vacancy-rail {
+    /* Clear of the sticky top bar, aligned with the content's own top gutter. */
+    top: calc(var(--tp-header-height) + var(--tp-space-3));
+    margin-inline: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    overflow: visible;
+  }
+
+  .tp-vacancy-rail-list {
+    flex-direction: column;
+    gap: 2px;
+  }
+}
+
+.tp-vacancy-rail-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: var(--tp-space-1) 10px;
+  border: 1px solid transparent;
+  border-radius: var(--tp-radius-sm);
+  background: none;
+  color: var(--tp-slate-600);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition-property: background, color, border-color;
+  transition-duration: var(--tp-motion-base);
+  transition-timing-function: var(--tp-motion-ease);
+}
+
+.tp-vacancy-rail-item:hover {
+  background: var(--tp-slate-100);
+  color: var(--tp-slate-900);
+}
+
+.tp-vacancy-rail-item:focus-visible {
+  outline: none;
+  border-color: var(--tp-primary-600);
+  box-shadow: var(--tp-focus-ring);
+}
+
+.tp-vacancy-rail-item[data-current='true'] {
+  background: var(--tp-primary-50);
+  color: var(--tp-primary-700);
+}
+
+.tp-vacancy-rail-mark {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--tp-radius-pill);
+  background: var(--tp-slate-100);
+  color: var(--tp-slate-500);
+  font-size: var(--tp-font-caption);
+  font-weight: var(--tp-weight-semibold);
+  font-variant-numeric: tabular-nums;
+}
+
+.tp-vacancy-rail-item[data-state='started'] .tp-vacancy-rail-mark {
+  background: var(--tp-primary-100);
+  color: var(--tp-primary-700);
+}
+
+.tp-vacancy-rail-item[data-state='done'] .tp-vacancy-rail-mark {
+  background: var(--tp-success-bg);
+  color: var(--tp-success-text);
+}
+
+.tp-vacancy-rail-item[data-state='error'] .tp-vacancy-rail-mark {
+  background: var(--tp-error-bg);
+  color: var(--tp-error-text);
+}
+
+.tp-vacancy-rail-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.tp-vacancy-rail-title {
+  font-size: var(--tp-font-small);
+  font-weight: var(--tp-weight-semibold);
+  white-space: nowrap;
+}
+
+.tp-vacancy-rail-state {
+  color: var(--tp-slate-500);
+  font-size: 11.5px;
+  white-space: nowrap;
+}
+
+.tp-vacancy-rail-item[data-state='error'] .tp-vacancy-rail-state {
+  color: var(--tp-error-text);
+}
+
+/* The second line is wayfinding detail; the strip has room for names only. */
+@media (max-width: 1023px) {
+  .tp-vacancy-rail-state {
+    display: none;
+  }
+}
+
+/* --- Sections ------------------------------------------------------------ */
+/* Clears the sticky chrome when the rail jumps to a section — without this the
+   heading lands underneath the top bar and reads as the wrong section. */
+.tp-vacancy-section {
+  scroll-margin-top: 132px;
+}
+
+@media (min-width: 1024px) {
+  .tp-vacancy-section {
+    scroll-margin-top: calc(var(--tp-header-height) + var(--tp-space-2));
+  }
+}
+
+/* A fieldset carries an intrinsic minimum width that would stop the grid
+   inside it from ever shrinking; min-width:0 is what lets the columns wrap. */
+.tp-vacancy-fieldset {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.tp-vacancy-legend {
+  display: flex;
+  align-items: center;
+  gap: var(--tp-space-1-5);
+  width: 100%;
+  padding: 0;
+  margin-bottom: var(--tp-space-0-75);
+}
+
+.tp-vacancy-index {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--tp-radius-sm);
+  background: var(--tp-slate-100);
+  color: var(--tp-slate-500);
+  font-size: var(--tp-font-small);
+  font-weight: var(--tp-weight-semibold);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+
+.tp-vacancy-index[data-state='done'] {
+  background: var(--tp-primary-50);
+  color: var(--tp-primary-700);
+}
+
+.tp-vacancy-legend-text {
+  color: var(--tp-slate-900);
+  font-size: var(--tp-font-title);
+  font-weight: var(--tp-weight-semibold);
+  letter-spacing: var(--tp-tracking-heading);
+}
+
+.tp-vacancy-count {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--tp-space-0-5);
+  margin-inline-start: auto;
+  color: var(--tp-slate-500);
+  font-size: var(--tp-font-caption);
+  font-weight: var(--tp-weight-medium);
+  white-space: nowrap;
+}
+
+.tp-vacancy-count[data-state='done'] {
+  color: var(--tp-success-text);
+}
+
+.tp-vacancy-count[data-state='error'] {
+  color: var(--tp-error-text);
+}
+
+/* The count is detail, not structure — at phone width the heading keeps it. */
+@media (max-width: 639px) {
+  .tp-vacancy-count {
+    display: none;
+  }
+}
+
+.tp-vacancy-label {
+  display: block;
+  margin-bottom: var(--tp-space-0-75);
+  font-weight: var(--tp-weight-medium);
+}
+
+/* --- Action bar ---------------------------------------------------------- */
+/* Sticky, not fixed: it rides the bottom of the viewport while the form is
+   taller than the screen, then settles at the end of the column instead of
+   hovering over the last inch of the page forever. The translucency is the
+   same treatment the top bar uses, for the same reason — content passes
+   underneath it. */
+.tp-vacancy-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 15;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--tp-space-1);
+  margin-top: var(--tp-space-2-5);
+  padding: var(--tp-space-1-5) var(--tp-space-2);
+  border: 1px solid var(--tp-slate-200);
+  border-radius: var(--tp-radius-lg);
+  background: rgb(255 255 255 / 92%);
+  box-shadow: var(--tp-shadow-md);
+  backdrop-filter: blur(10px);
+}
+
+.tp-vacancy-action-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tp-space-1);
+  margin-inline-start: auto;
+}
+
+@media (max-width: 639px) {
+  /* The progress line takes its own row so the three controls stay together. */
+  .tp-vacancy-actions > :first-child {
+    flex-basis: 100%;
+  }
+}
+
+/* --- Bullet list editor --------------------------------------------------- */
+.tp-bullet-rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tp-space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tp-bullet-row {
+  display: flex;
+  align-items: center;
+  gap: var(--tp-space-1);
+}
+
+.tp-bullet-marker {
+  flex-shrink: 0;
+  width: 18px;
+  color: var(--tp-slate-400);
+  font-size: var(--tp-font-caption);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+/* --- Checkbox groups ------------------------------------------------------ */
+/* antd spaces sibling checkboxes with an inline margin, which fights any grid
+   or wrap layout put around them. */
+.tp-benefit-checks.ant-checkbox-group,
+.tp-day-checks.ant-checkbox-group {
+  display: grid;
+  gap: 10px var(--tp-space-3);
+}
+
+.tp-benefit-checks .ant-checkbox-wrapper,
+.tp-day-checks .ant-checkbox-wrapper {
+  margin-inline-start: 0;
+}
+
+@media (min-width: 640px) {
+  .tp-benefit-checks.ant-checkbox-group {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1280px) {
+  .tp-benefit-checks.ant-checkbox-group {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.tp-day-checks.ant-checkbox-group {
+  grid-auto-flow: column;
+  grid-auto-columns: max-content;
+  gap: var(--tp-space-1-5);
+}
+
+@media (max-width: 639px) {
+  /* Seven columns do not fit a phone; let them wrap instead of scroll. */
+  .tp-day-checks.ant-checkbox-group {
+    grid-auto-flow: row;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+/* --- Vacancy table -------------------------------------------------------- */
+/* The rows open a drawer, so they are focusable; a focusable thing that shows
+   no focus is the single most common keyboard failure in a data table. */
+.tp-vacancy-table .ant-table-tbody > tr:focus-visible {
+  outline: 2px solid var(--tp-primary-600);
+  outline-offset: -2px;
+}
+
 /* --- Dashboard content --------------------------------------------------- */
 .tp-dashboard-content {
   width: 100%;

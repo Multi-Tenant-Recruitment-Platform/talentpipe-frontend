@@ -262,6 +262,80 @@ export interface JobSummary {
   companyName: string;
 }
 
+/* --- Job vacancies (PB-011) ---------------------------------------------- */
+
+export type EmploymentType = 'FULL_TIME' | 'PART_TIME' | 'CONTRACT' | 'INTERNSHIP' | 'TEMPORARY';
+export type WorkplaceType = 'ON_SITE' | 'REMOTE' | 'HYBRID';
+export type PayPeriod = 'HOURLY' | 'MONTHLY' | 'ANNUAL';
+export type ShiftType = 'DAY' | 'NIGHT' | 'ROTATING' | 'FLEXIBLE';
+/** Weekday identifiers, so a working week survives translation. */
+export type WeekDay = 'MON' | 'TUE' | 'WED' | 'THU' | 'FRI' | 'SAT' | 'SUN';
+/** A draft is visible only inside the workspace; published is candidate-facing. */
+export type VacancyStatus = 'DRAFT' | 'PUBLISHED';
+
+/**
+ * A vacancy as the creation form submits it.
+ *
+ * <p>PROPOSED CONTRACT — no endpoint serves this yet, exactly like
+ * {@link CompanyProfileResponse} before `/tenant` landed. It follows the same
+ * conventions so that wiring `POST /jobs` is a change to `src/api/jobs.ts` and
+ * the hook behind it, and nothing in the form: blank optionals travel as
+ * `null`, lists are always arrays and never null, and every enumerated value is
+ * a stable identifier rather than the words the UI happens to show.</p>
+ *
+ * <p>Tenant scope is absent by design — the backend derives it from the access
+ * token, as `team.ts` and `company.ts` already do, so there is no request shape
+ * that could file a vacancy under another company.</p>
+ */
+export interface JobVacancyRequest {
+  title: string;
+  department: string;
+  openings: number;
+  employmentType: EmploymentType;
+  workplaceType: WorkplaceType;
+  location: string;
+  /** ISO date, no time: a deadline is a day, not an instant. */
+  applicationDeadline: string;
+
+  jobSummary: string;
+  jobDescription: string;
+  keyResponsibilities: string[];
+
+  requiredSkills: string[];
+  preferredSkills: string[];
+  minimumExperienceYears: number | null;
+  education: string | null;
+  certifications: string[];
+  languageRequirements: string[];
+  otherRequirements: string | null;
+
+  salaryMin: number | null;
+  salaryMax: number | null;
+  currency: string | null;
+  payPeriod: PayPeriod | null;
+  benefits: string[];
+
+  workingDays: WeekDay[];
+  workingHours: string | null;
+  shiftType: ShiftType | null;
+  expectedHoursPerWeek: number | null;
+
+  /** Workspace user ids. Null until someone is assigned. */
+  assignedRecruiterId: string | null;
+  hiringManagerId: string | null;
+  recruitmentPipelineId: string | null;
+  screeningQuestions: string[];
+
+  status: VacancyStatus;
+}
+
+/** A stored vacancy: everything submitted, plus what only the server knows. */
+export interface JobVacancyResponse extends JobVacancyRequest {
+  id: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 /** Uniform error envelope returned by the backend on every failure. */
 export interface ApiError {
   timestamp: string;

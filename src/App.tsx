@@ -8,6 +8,8 @@ import { AcceptInvitePage } from './pages/AcceptInvitePage';
 import { CandidateRegisterPage } from './pages/CandidateRegisterPage';
 import { CompanyProfilePage } from './pages/dashboard/CompanyProfilePage';
 import { CompanySettingsPage } from './pages/dashboard/CompanySettingsPage';
+import { CreateJobVacancyPage } from './pages/dashboard/CreateJobVacancyPage';
+import { JobVacanciesPage } from './pages/dashboard/JobVacanciesPage';
 import { OverviewPage } from './pages/dashboard/OverviewPage';
 import { PipelinePage } from './pages/dashboard/PipelinePage';
 import { TeamPage } from './pages/dashboard/TeamPage';
@@ -70,6 +72,25 @@ export default function App() {
             element={
               <RequirePermission permission="pipeline.view">
                 <PipelinePage />
+              </RequirePermission>
+            }
+          />
+          {/* The form has its own URL for the same reasons the profile editor
+              does: it survives a reload, it can be linked to, and Back leaves
+              it rather than unwinding one field at a time. */}
+          <Route
+            path="jobs"
+            element={
+              <RequirePermission permission="jobs.manage">
+                <JobVacanciesPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="jobs/new"
+            element={
+              <RequirePermission permission="jobs.manage">
+                <CreateJobVacancyPage />
               </RequirePermission>
             }
           />

@@ -38,8 +38,11 @@ const NAV_ITEMS: {
   permission: Permission;
 }[] = [
   { to: '/dashboard', label: 'Overview', icon: 'squares-2x2', end: true, permission: 'overview.view' },
-  { to: '/dashboard/team', label: 'Team', icon: 'users', permission: 'team.view' },
+  // Vacancies sit above Pipeline because that is the order the work happens
+  // in: a role is opened, then its candidates move through it.
+  { to: '/dashboard/jobs', label: 'Job Vacancies', icon: 'briefcase', permission: 'jobs.manage' },
   { to: '/dashboard/pipeline', label: 'Pipeline', icon: 'funnel', permission: 'pipeline.view' },
+  { to: '/dashboard/team', label: 'Team', icon: 'users', permission: 'team.view' },
   {
     to: '/dashboard/profile',
     label: 'Profile Management',

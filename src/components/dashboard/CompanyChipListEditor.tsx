@@ -3,7 +3,7 @@ import { useState, type KeyboardEvent } from 'react';
 import { cleanValues } from '../../dashboard/companyProfile';
 import { Button } from '../ui/Button';
 import { Icon } from './Icon';
-import { fontSize } from '../../theme/tokens';
+import { fontSize, slate } from '../../theme/tokens';
 
 /**
  * A free-text list edited as chips: type one, press Enter, it becomes a tag.
@@ -30,6 +30,8 @@ export function CompanyChipListEditor({
   hint,
   values,
   disabled = false,
+  required = false,
+  error,
   onChange,
 }: Readonly<{
   id: string;
@@ -38,6 +40,10 @@ export function CompanyChipListEditor({
   hint: string;
   values: string[];
   disabled?: boolean;
+  /** Marks the label, for forms that enforce the list on submit. */
+  required?: boolean;
+  /** Replaces the hint and is announced — the vacancy form submits all at once. */
+  error?: string;
   onChange: (next: string[]) => void;
 }>) {
   const [draft, setDraft] = useState('');
@@ -67,6 +73,15 @@ export function CompanyChipListEditor({
     <div>
       <label htmlFor={id} style={{ display: 'block', fontWeight: 500, marginBottom: 6 }}>
         {label}
+        {required && (
+          <>
+            {' '}
+            <span aria-hidden="true" style={{ color: slate[400], fontWeight: 400 }}>
+              *
+            </span>
+            <span className="sr-only"> (required)</span>
+          </>
+        )}
       </label>
 
       {values.length > 0 && (
@@ -104,6 +119,9 @@ export function CompanyChipListEditor({
           id={id}
           value={draft}
           disabled={disabled}
+          status={error ? 'error' : undefined}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? `${id}-error` : undefined}
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={handleKeyDown}
           // Committing on blur too: typing an entry and clicking Save without
@@ -120,9 +138,27 @@ export function CompanyChipListEditor({
           Add
         </Button>
       </Space.Compact>
-      <Typography.Text type="secondary" style={{ display: 'block', fontSize: fontSize.caption, marginTop: 6 }}>
-        {hint}
-      </Typography.Text>
+      {error ? (
+        <Typography.Paragraph
+          id={`${id}-error`}
+          role="alert"
+          type="danger"
+          style={{
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: 4,
+            fontSize: fontSize.caption,
+            margin: '6px 0 0',
+          }}
+        >
+          <Icon name="warning" size={14} style={{ marginTop: 1 }} />
+          {error}
+        </Typography.Paragraph>
+      ) : (
+        <Typography.Text type="secondary" style={{ display: 'block', fontSize: fontSize.caption, marginTop: 6 }}>
+          {hint}
+        </Typography.Text>
+      )}
     </div>
   );
 }
