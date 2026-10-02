@@ -14,6 +14,7 @@ import { TeamPage } from './pages/dashboard/TeamPage';
 import { VacancyFeaturePreviewPage } from './pages/dashboard/VacancyFeaturePreviewPage';
 import { ForbiddenPage } from './pages/ForbiddenPage';
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
+import { JobDetailPage } from './pages/JobDetailPage';
 import { JobsPage } from './pages/JobsPage';
 import { LandingPage } from './pages/LandingPage';
 import { LoginPage } from './pages/LoginPage';
@@ -29,6 +30,7 @@ export default function App() {
         <Route element={<Layout />}>
           <Route path="/" element={<LandingPage />} />
           <Route path="/jobs" element={<JobsPage />} />
+          <Route path="/jobs/:jobId" element={<JobDetailPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/register-candidate" element={<CandidateRegisterPage />} />
           <Route path="/login" element={<LoginPage />} />
