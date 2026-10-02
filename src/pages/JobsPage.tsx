@@ -1,6 +1,10 @@
-import { useEffect, useState } from 'react';
+import { Card, List, Typography } from 'antd';
+import { useCallback, useEffect, useState } from 'react';
 import { api, apiErrorMessage } from '../api/client';
 import type { JobSummary, PageResponse } from '../api/types';
+import { EmptyState } from '../components/dashboard/EmptyState';
+import { ErrorState, RowsSkeleton } from '../components/dashboard/ErrorState';
+import { fontSize, space } from '../theme/tokens';
 
 /**
  * Public job board (PB-005, partial). Calls GET /public/jobs — which returns
@@ -10,6 +14,15 @@ import type { JobSummary, PageResponse } from '../api/types';
 export function JobsPage() {
   const [jobs, setJobs] = useState<JobSummary[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Bumped by the retry button to re-run the effect. A counter rather than a
+  // bare function call so the in-flight cleanup still cancels correctly.
+  const [attempt, setAttempt] = useState(0);
+
+  const retry = useCallback(() => {
+    setJobs(null);
+    setError(null);
+    setAttempt((n) => n + 1);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -24,40 +37,57 @@ export function JobsPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [attempt]);
 
   return (
     <section>
-      <h1 className="text-3xl font-bold tracking-tight">Open positions</h1>
-      <p className="mt-2 text-slate-600">Roles published by companies hiring on TalentPipe.</p>
+      <Typography.Title level={1} style={{ fontSize: fontSize.display, margin: 0 }}>
+        Open positions
+      </Typography.Title>
+      <Typography.Paragraph type="secondary" style={{ margin: `${space[1]}px 0 0` }}>
+        Roles published by companies hiring on TalentPipe.
+      </Typography.Paragraph>
 
-      <div className="mt-8">
+      <div style={{ marginTop: space[4] }}>
+        {/* The panel is the content here, so a failure replaces it rather than
+            stacking an alert above an empty box. */}
         {error && (
-          <div className="rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-            {error}
-          </div>
+          <Card>
+            <ErrorState title="Could not load open positions" description={error} onRetry={retry} />
+          </Card>
         )}
 
-        {!error && jobs === null && <p className="text-slate-500">Loading jobs…</p>}
+        {!error && jobs === null && (
+          <Card styles={{ body: { padding: `${space[1]}px ${space[3]}px` } }}>
+            <RowsSkeleton rows={4} label="Loading open positions…" />
+          </Card>
+        )}
 
         {!error && jobs !== null && jobs.length === 0 && (
-          <div className="rounded-lg border border-dashed border-slate-300 bg-white p-12 text-center">
-            <h2 className="text-lg font-semibold text-slate-900">No open positions yet</h2>
-            <p className="mt-2 text-sm text-slate-500">
-              Companies are just getting set up — check back soon.
-            </p>
-          </div>
+          <Card>
+            <EmptyState
+              icon="briefcase"
+              title="No open positions yet"
+              description="Companies are just getting set up — check back soon."
+            />
+          </Card>
         )}
 
         {!error && jobs !== null && jobs.length > 0 && (
-          <ul className="divide-y divide-slate-200 rounded-lg border border-slate-200 bg-white">
-            {jobs.map((job) => (
-              <li key={job.id} className="p-4">
-                <span className="font-medium text-slate-900">{job.title}</span>
-                <span className="ml-2 text-sm text-slate-500">{job.companyName}</span>
-              </li>
-            ))}
-          </ul>
+          <Card styles={{ body: { padding: 0 } }}>
+            <List
+              dataSource={jobs}
+              renderItem={(job) => (
+                <List.Item key={job.id}>
+                  <List.Item.Meta
+                    title={job.title}
+                    description={<Typography.Text type="secondary">{job.companyName}</Typography.Text>}
+                  />
+                </List.Item>
+              )}
+              style={{ paddingInline: space[2] }}
+            />
+          </Card>
         )}
       </div>
     </section>

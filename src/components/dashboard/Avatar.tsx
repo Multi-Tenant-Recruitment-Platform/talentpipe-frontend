@@ -1,32 +1,28 @@
-const PALETTE = [
-  'bg-indigo-100 text-indigo-700',
-  'bg-violet-100 text-violet-700',
-  'bg-emerald-100 text-emerald-700',
-  'bg-amber-100 text-amber-700',
-  'bg-rose-100 text-rose-700',
-  'bg-sky-100 text-sky-700',
-];
+import { Avatar as AntAvatar } from 'antd';
+import { fontWeight, slate } from '../../theme/tokens';
 
-const SIZES = {
-  sm: 'h-8 w-8 text-xs',
-  md: 'h-10 w-10 text-sm',
-  lg: 'h-12 w-12 text-base',
-} as const;
+const SIZES = { sm: 32, md: 40, lg: 48 } as const;
+const FONT_SIZES = { sm: 12, md: 14, lg: 16 } as const;
 
 /**
- * Initials avatar with a deterministic tint derived from the person's name,
- * so the same name always renders in the same colour across the dashboard.
+ * Initials avatar.
+ *
+ * <p>Deliberately one neutral treatment rather than a tint derived from the
+ * name. A per-person colour looks like it encodes something — seniority,
+ * status, team — and a roster of six rotating hues is the loudest thing on a
+ * page whose actual signal is the status column. The name is always rendered
+ * beside the initials, so identity never depended on the colour.</p>
  */
 export function Avatar({
   firstName,
   lastName,
   size = 'md',
-  className = '',
+  style,
 }: Readonly<{
   firstName: string;
   lastName?: string;
   size?: keyof typeof SIZES;
-  className?: string;
+  style?: React.CSSProperties;
 }>) {
   const full = `${firstName} ${lastName ?? ''}`.trim();
   const initials = full
@@ -34,19 +30,23 @@ export function Avatar({
     .slice(0, 2)
     .map((part) => part.charAt(0).toUpperCase())
     .join('');
-  // codePointAt over charCodeAt: charCodeAt reads one UTF-16 code unit, which
-  // splits a surrogate pair (e.g. an emoji in a name) into two mismatched
-  // halves. The tint only needs a stable number, but it should be stable per
-  // character, not per code unit.
-  const hash = [...full].reduce((acc, ch) => acc + (ch.codePointAt(0) ?? 0), 0);
-  const tone = PALETTE[hash % PALETTE.length];
 
   return (
-    <span
-      className={`inline-flex shrink-0 items-center justify-center rounded-full font-semibold ${SIZES[size]} ${tone} ${className}`}
+    // aria-hidden because the name it abbreviates is always rendered beside it;
+    // announcing "KS" before "Kasun Silva" is noise, not information.
+    <AntAvatar
+      size={SIZES[size]}
       aria-hidden="true"
+      style={{
+        backgroundColor: slate[100],
+        color: slate[600],
+        fontSize: FONT_SIZES[size],
+        fontWeight: fontWeight.semibold,
+        flexShrink: 0,
+        ...style,
+      }}
     >
       {initials || '?'}
-    </span>
+    </AntAvatar>
   );
 }
