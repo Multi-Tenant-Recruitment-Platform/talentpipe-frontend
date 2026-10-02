@@ -32,6 +32,7 @@ export function ConfirmDialog({
   cancelLabel = 'Cancel',
   tone = 'danger',
   busy = false,
+  fallbackFocusId = 'team-search',
   onConfirm,
   onCancel,
 }: Readonly<{
@@ -43,6 +44,12 @@ export function ConfirmDialog({
   cancelLabel?: string;
   tone?: 'danger' | 'primary';
   busy?: boolean;
+  /**
+   * Where focus goes on close when the control that opened the dialog is gone
+   * — a revoked invitation's row, a menu item that unmounted. Defaults to the
+   * team search box, the first page that needed it.
+   */
+  fallbackFocusId?: string;
   onConfirm: () => void;
   onCancel: () => void;
 }>) {
@@ -52,7 +59,7 @@ export function ConfirmDialog({
   useFocusTrap(dialogRef, open, {
     initialFocusRef: cancelRef,
     // After a successful revoke the triggering row no longer exists.
-    fallbackFocusId: 'team-search',
+    fallbackFocusId,
   });
 
   useEffect(() => {

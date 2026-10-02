@@ -1334,12 +1334,511 @@
   }
 }
 
-/* --- Vacancy table -------------------------------------------------------- */
-/* The rows open a drawer, so they are focusable; a focusable thing that shows
-   no focus is the single most common keyboard failure in a data table. */
-.tp-vacancy-table .ant-table-tbody > tr:focus-visible {
-  outline: 2px solid var(--tp-primary-600);
-  outline-offset: -2px;
+/* --- Vacancy management (list, detail) ---------------------------------- *
+ * The list is a <ul> of grid rows rather than an antd Table: each row reads
+ * as one sentence (this role, in this state, closing then, do this) and its
+ * zones stack in that order as the screen narrows, where table columns would
+ * have to be hidden one at a time.
+ */
+
+/* Status: colour only for "live"; the rest are told apart by mark and weight. */
+.tp-vacancy-status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--tp-space-0-75);
+  padding: 2px 10px;
+  border: 1px solid transparent;
+  border-radius: var(--tp-radius-pill);
+  background: var(--tp-slate-100);
+  color: var(--tp-slate-600);
+  font-size: var(--tp-font-caption);
+  font-weight: var(--tp-weight-semibold);
+  line-height: var(--tp-leading-normal);
+  white-space: nowrap;
+}
+
+.tp-vacancy-status-dot {
+  width: 7px;
+  height: 7px;
+  flex-shrink: 0;
+  border: 1.5px solid currentColor;
+  border-radius: var(--tp-radius-pill);
+}
+
+.tp-vacancy-status[data-status='PUBLISHED'] {
+  background: var(--tp-success-bg);
+  color: var(--tp-success-text);
+}
+
+.tp-vacancy-status[data-status='PUBLISHED'] .tp-vacancy-status-dot {
+  background: currentColor;
+}
+
+.tp-vacancy-status[data-status='CLOSED'] {
+  background: var(--tp-slate-200);
+  color: var(--tp-slate-700);
+}
+
+.tp-vacancy-status[data-status='ARCHIVED'] {
+  border-color: var(--tp-slate-300);
+  background: transparent;
+  color: var(--tp-slate-500);
+}
+
+.tp-vacancy-status[data-status='ARCHIVED'] .tp-vacancy-status-dot {
+  border-style: dashed;
+}
+
+/* Deadline proximity. Plain words carry it; amber only adds urgency. */
+.tp-deadline-signal {
+  display: block;
+  color: var(--tp-slate-500);
+  font-size: var(--tp-font-caption);
+}
+
+.tp-deadline-signal[data-tone='warning'] {
+  color: var(--tp-warning-text);
+  font-weight: var(--tp-weight-medium);
+}
+
+.tp-vacancy-detail-deadline .tp-deadline-signal {
+  display: inline;
+  margin-inline-start: var(--tp-space-1);
+}
+
+.tp-vacancy-summary {
+  margin: calc(-1 * var(--tp-space-2)) 0 var(--tp-space-3);
+  color: var(--tp-slate-600);
+  font-size: var(--tp-font-small);
+}
+
+.tp-vacancy-summary .tp-link-button {
+  font-weight: var(--tp-weight-medium);
+  text-decoration-color: var(--tp-slate-300);
+}
+
+/* Focus target after an action whose row has left the view. The Alert inside
+   already carries the visible frame, so the wrapper adds a ring, not a box. */
+.tp-vacancy-notice {
+  margin-bottom: var(--tp-space-3);
+  border-radius: var(--tp-radius-lg);
+  outline: none;
+}
+
+.tp-vacancy-notice:focus-visible {
+  box-shadow: var(--tp-focus-ring);
+}
+
+/* --- Toolbar ------------------------------------------------------------- */
+.tp-vacancy-toolbar-wrap {
+  padding: var(--tp-space-2-5) var(--tp-space-3) var(--tp-space-1-5);
+  border-bottom: 1px solid var(--tp-slate-200);
+}
+
+/* Five segments do not fit a phone. They scroll rather than wrap, and the
+   padding keeps each button's focus ring inside the scroll box. */
+.tp-segment-scroll {
+  margin: calc(-1 * var(--tp-space-0-5));
+  padding: var(--tp-space-0-5);
+  overflow-x: auto;
+}
+
+.tp-segment-scroll .ant-radio-group {
+  display: inline-flex;
+  white-space: nowrap;
+}
+
+.tp-vacancy-filters {
+  display: grid;
+  gap: var(--tp-space-1-5);
+}
+
+@media (min-width: 768px) {
+  .tp-vacancy-filters {
+    grid-template-columns: minmax(0, 1fr) 200px 200px;
+  }
+}
+
+/* --- Rows ---------------------------------------------------------------- */
+.tp-vacancy-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tp-vacancy-row {
+  transition: background var(--tp-motion-base) var(--tp-motion-ease);
+}
+
+.tp-vacancy-row + .tp-vacancy-row {
+  border-top: 1px solid var(--tp-slate-100);
+}
+
+.tp-vacancy-row:hover {
+  background: var(--tp-canvas);
+}
+
+/* After an action: one tint that fades back, so the eye finds the row that
+   changed without anything moving. */
+.tp-vacancy-row[data-flash] {
+  animation: tp-row-flash 1.6s var(--tp-motion-ease);
+}
+
+@keyframes tp-row-flash {
+  from {
+    background: var(--tp-primary-50);
+  }
+
+  to {
+    background: transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tp-vacancy-row,
+  .tp-vacancy-row[data-flash] {
+    transition: none;
+    animation: none;
+  }
+}
+
+.tp-vacancy-row-grid {
+  display: grid;
+  grid-template-areas:
+    'identity actions'
+    'state state';
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--tp-space-1-5) var(--tp-space-2);
+  align-items: start;
+  padding: var(--tp-space-2) var(--tp-space-3);
+}
+
+@media (min-width: 1024px) {
+  .tp-vacancy-row-grid {
+    grid-template-areas: 'identity state actions';
+    grid-template-columns: minmax(0, 1fr) minmax(0, 420px) 200px;
+    align-items: center;
+    gap: var(--tp-space-3);
+  }
+}
+
+.tp-vacancy-row-identity {
+  grid-area: identity;
+  min-width: 0;
+}
+
+.tp-vacancy-row-title {
+  margin: 0;
+  font-size: var(--tp-font-lead);
+  font-weight: var(--tp-weight-semibold);
+  line-height: var(--tp-leading-snug);
+  letter-spacing: var(--tp-tracking-heading);
+}
+
+.tp-vacancy-row-title a {
+  border-radius: var(--tp-space-0-5);
+  color: var(--tp-slate-900);
+  text-decoration: none;
+}
+
+.tp-vacancy-row-title a:hover {
+  color: var(--tp-primary-700);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.tp-vacancy-row-title a:focus-visible {
+  outline: none;
+  box-shadow: var(--tp-focus-ring);
+}
+
+.tp-vacancy-row-meta {
+  margin: 2px 0 0;
+  overflow: hidden;
+  color: var(--tp-slate-500);
+  font-size: var(--tp-font-small);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tp-vacancy-row-updated {
+  margin: 2px 0 0;
+  color: var(--tp-slate-500);
+  font-size: var(--tp-font-caption);
+}
+
+/* Three facts on one line: status, deadline, applicants (or completeness). */
+.tp-vacancy-row-state {
+  grid-area: state;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--tp-space-2);
+  align-items: center;
+  margin: 0;
+}
+
+.tp-vacancy-row-state dd {
+  margin: 0;
+}
+
+.tp-vacancy-row-term {
+  color: var(--tp-slate-500);
+  font-size: var(--tp-font-caption);
+  font-weight: var(--tp-weight-medium);
+}
+
+.tp-vacancy-row-figure {
+  display: block;
+  color: var(--tp-slate-900);
+  font-size: var(--tp-font-body);
+  font-variant-numeric: tabular-nums;
+}
+
+.tp-vacancy-row-muted {
+  color: var(--tp-slate-400);
+}
+
+.tp-vacancy-row-sub {
+  display: block;
+  color: var(--tp-slate-500);
+  font-size: var(--tp-font-caption);
+}
+
+.tp-vacancy-row-actions {
+  grid-area: actions;
+  justify-self: end;
+}
+
+.tp-vacancy-actions-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--tp-space-1);
+}
+
+/* Inline actions give way as the row narrows; the ⋮ menu gains the same
+   items at the same widths, so each action is reachable exactly once.
+   !important because antd sets display on its own button and menu-item
+   classes with equal specificity. */
+.tp-inline-from-md,
+.tp-inline-from-lg {
+  display: none !important;
+}
+
+@media (min-width: 768px) {
+  .tp-inline-from-md {
+    display: inline-flex !important;
+  }
+
+  .tp-menu-until-md {
+    display: none !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  .tp-inline-from-lg {
+    display: inline-flex !important;
+  }
+
+  .tp-menu-until-lg {
+    display: none !important;
+  }
+}
+
+.tp-vacancy-more.ant-btn {
+  padding-inline: var(--tp-space-0-75);
+}
+
+/* --- Detail page --------------------------------------------------------- */
+.tp-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--tp-space-0-75);
+  margin-bottom: var(--tp-space-2);
+  color: var(--tp-slate-600);
+  font-size: var(--tp-font-small);
+  font-weight: var(--tp-weight-medium);
+  text-decoration: none;
+}
+
+.tp-back-link:hover {
+  color: var(--tp-primary-700);
+}
+
+.tp-vacancy-detail-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--tp-space-2);
+  margin-bottom: var(--tp-space-4);
+}
+
+.tp-vacancy-detail-title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--tp-space-1-5);
+}
+
+.tp-vacancy-detail-title.ant-typography {
+  margin: 0;
+  font-size: var(--tp-font-heading);
+  letter-spacing: var(--tp-tracking-heading);
+}
+
+.tp-vacancy-detail-deadline {
+  margin: var(--tp-space-0-5) 0 0;
+  color: var(--tp-slate-600);
+  font-size: var(--tp-font-small);
+  font-variant-numeric: tabular-nums;
+}
+
+.tp-vacancy-detail-layout {
+  display: grid;
+  gap: var(--tp-space-3);
+  align-items: start;
+}
+
+.tp-vacancy-detail-layout > * {
+  min-width: 0;
+}
+
+/* On a narrow screen the lifecycle comes first: it says what state the
+   vacancy is in before the reader commits to scrolling its whole advert. */
+.tp-vacancy-detail-layout > aside {
+  order: -1;
+}
+
+@media (min-width: 1024px) {
+  .tp-vacancy-detail-layout {
+    grid-template-columns: minmax(0, 1fr) 300px;
+  }
+
+  .tp-vacancy-detail-layout > aside {
+    position: sticky;
+    top: calc(var(--tp-header-height) + var(--tp-space-3));
+    order: 0;
+  }
+}
+
+.tp-vacancy-block + .tp-vacancy-block {
+  margin-top: var(--tp-space-4);
+  padding-top: var(--tp-space-3);
+  border-top: 1px solid var(--tp-slate-100);
+}
+
+/* Lifecycle stepper: a vertical rail of four stages. */
+.tp-lifecycle {
+  margin: var(--tp-space-2) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tp-lifecycle-step {
+  position: relative;
+  display: flex;
+  gap: var(--tp-space-1-5);
+  padding-bottom: var(--tp-space-2);
+}
+
+.tp-lifecycle-step:last-child {
+  padding-bottom: 0;
+}
+
+/* The connector, drawn from each mark down to the next one. */
+.tp-lifecycle-step:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  top: 22px;
+  bottom: 2px;
+  left: 9px;
+  width: 2px;
+  border-radius: var(--tp-radius-pill);
+  background: var(--tp-slate-200);
+}
+
+.tp-lifecycle-step[data-state='done']:not(:last-child)::after {
+  background: var(--tp-slate-400);
+}
+
+.tp-lifecycle-mark {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--tp-slate-300);
+  border-radius: var(--tp-radius-pill);
+  background: var(--tp-surface);
+  color: var(--tp-surface);
+}
+
+.tp-lifecycle-step[data-state='done'] .tp-lifecycle-mark {
+  border-color: var(--tp-slate-500);
+  background: var(--tp-slate-500);
+}
+
+.tp-lifecycle-step[data-state='current'] .tp-lifecycle-mark {
+  border-color: var(--tp-primary-600);
+  box-shadow: var(--tp-focus-ring);
+}
+
+.tp-lifecycle-step[data-state='current'] .tp-lifecycle-mark::after {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: var(--tp-radius-pill);
+  background: var(--tp-primary-600);
+}
+
+.tp-lifecycle-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.tp-lifecycle-name {
+  color: var(--tp-slate-700);
+  font-size: var(--tp-font-small);
+  font-weight: var(--tp-weight-semibold);
+}
+
+.tp-lifecycle-step[data-state='current'] .tp-lifecycle-name {
+  color: var(--tp-primary-700);
+}
+
+.tp-lifecycle-step[data-state='upcoming'] .tp-lifecycle-name {
+  color: var(--tp-slate-500);
+  font-weight: var(--tp-weight-medium);
+}
+
+.tp-lifecycle-date {
+  min-height: var(--tp-space-2);
+  color: var(--tp-slate-500);
+  font-size: var(--tp-font-caption);
+  font-variant-numeric: tabular-nums;
+}
+
+.tp-vacancy-side-facts {
+  display: grid;
+  gap: var(--tp-space-1-5);
+  margin: var(--tp-space-2) 0 0;
+  padding-top: var(--tp-space-2);
+  border-top: 1px solid var(--tp-slate-100);
+}
+
+.tp-vacancy-side-facts dt {
+  color: var(--tp-slate-500);
+  font-size: var(--tp-font-caption);
+  font-weight: var(--tp-weight-medium);
+}
+
+.tp-vacancy-side-facts dd {
+  margin: 2px 0 0;
+  font-size: var(--tp-font-small);
 }
 
 /* --- Dashboard content --------------------------------------------------- */

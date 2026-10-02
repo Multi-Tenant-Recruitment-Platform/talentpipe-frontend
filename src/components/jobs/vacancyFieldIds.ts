@@ -24,3 +24,6 @@ export function fieldAria(field: JobVacancyField, error?: string) {
     'aria-describedby': error ? vacancyErrorId(field) : undefined,
   } as const;
 }
+
+/** The id of a vacancy's ⋮ trigger — where focus returns after an action on it. */
+export const moreButtonId = (vacancyId: string) => `vacancy-more-${vacancyId}`;

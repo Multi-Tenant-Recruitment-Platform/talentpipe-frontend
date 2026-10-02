@@ -2,6 +2,7 @@ import type {
   EmploymentType,
   JobVacancyRequest,
   JobVacancyResponse,
+  JobVacancyUpdateRequest,
   PayPeriod,
   ShiftType,
   VacancyStatus,
@@ -626,16 +627,42 @@ export function sectionProgress(
   };
 }
 
-/** Anything entered at all — what Cancel checks before confirming. */
-export function isVacancyDirty(values: JobVacancyFormValues): boolean {
+/** Required fields across the whole form — the denominator of every "7 of 11". */
+export const REQUIRED_TOTAL = VACANCY_SECTIONS.reduce(
+  (count, section) => count + section.required.length,
+  0,
+);
+
+/** Required fields answered across every section. */
+export function requiredFilled(values: JobVacancyFormValues): number {
+  return VACANCY_SECTIONS.reduce(
+    (count, section) => count + sectionProgress(values, section).filled,
+    0,
+  );
+}
+
+/**
+ * Anything changed since the form opened — what Cancel checks before asking.
+ *
+ * <p>Compared against where the form started, not against an empty form: an
+ * edit opens full, and measuring it against blank would call an untouched edit
+ * "unsaved changes" and make Cancel ask about nothing. Both sides are
+ * normalised first, so a trailing space or an empty bullet row is not a
+ * change.</p>
+ */
+export function isVacancyDirty(
+  values: JobVacancyFormValues,
+  initial: JobVacancyFormValues = EMPTY_VACANCY_VALUES,
+): boolean {
   const n = normalizeVacancy(values);
+  const start = normalizeVacancy(initial);
   return VACANCY_FIELD_ORDER.some((field) => {
     const current = n[field];
-    const empty = EMPTY_VACANCY_VALUES[field];
-    if (Array.isArray(current) && Array.isArray(empty)) {
-      return current.length !== empty.length;
+    const before = start[field];
+    if (Array.isArray(current) && Array.isArray(before)) {
+      return current.length !== before.length || current.some((entry, i) => entry !== before[i]);
     }
-    return current !== empty;
+    return current !== before;
   });
 }
 
@@ -646,20 +673,38 @@ export function toVacancyRequest(
   values: JobVacancyFormValues,
   status: VacancyStatus,
 ): JobVacancyRequest {
+  return { ...toVacancyContent(values), status };
+}
+
+/**
+ * Form state → the body of an edit. Status is not part of it — every status
+ * change has its own endpoint — and `version` is the lock the edit was made
+ * against, so a save that lost a race is refused rather than winning it.
+ */
+export function toVacancyUpdate(
+  values: JobVacancyFormValues,
+  version: number,
+): JobVacancyUpdateRequest {
+  return { ...toVacancyContent(values), version };
+}
+
+/** The content fields both a create and an edit carry. */
+function toVacancyContent(values: JobVacancyFormValues): Omit<JobVacancyRequest, 'status'> {
   const n = normalizeVacancy(values);
   const orNull = (value: string) => (value === '' ? null : value);
 
   return {
-    // Required on the wire. A draft can legitimately be missing these, so the
-    // empty string stands in rather than a lie — the backend rejects a publish
-    // without them, and the form never reaches PUBLISHED without validating.
+    // Required to publish, optional on a draft. Text stays a string; a choice
+    // or a date nobody made travels as null rather than as a default someone
+    // could mistake for an answer — the backend refuses to publish without
+    // them, and the form never reaches PUBLISHED without validating.
     title: n.title,
     department: n.department,
     openings: n.openings ?? 1,
-    employmentType: (n.employmentType || 'FULL_TIME') as EmploymentType,
-    workplaceType: (n.workplaceType || 'ON_SITE') as WorkplaceType,
+    employmentType: n.employmentType === '' ? null : n.employmentType,
+    workplaceType: n.workplaceType === '' ? null : n.workplaceType,
     location: n.location,
-    applicationDeadline: n.applicationDeadline,
+    applicationDeadline: orNull(n.applicationDeadline),
 
     jobSummary: n.jobSummary,
     jobDescription: n.jobDescription,
@@ -688,8 +733,66 @@ export function toVacancyRequest(
     hiringManagerId: orNull(n.hiringManagerId),
     recruitmentPipelineId: orNull(n.recruitmentPipelineId),
     screeningQuestions: n.screeningQuestions,
+  };
+}
 
-    status,
+/**
+ * A stored vacancy → form state, for Edit and Duplicate.
+ *
+ * <p>The inverse of {@link toVacancyContent}: every null the wire carries for
+ * "not chosen" becomes the `''` an empty control yields, and lists are copied
+ * so the form can never mutate the record it was opened from.</p>
+ */
+export function toFormValues(vacancy: JobVacancyResponse): JobVacancyFormValues {
+  return {
+    title: vacancy.title ?? '',
+    department: vacancy.department ?? '',
+    openings: vacancy.openings ?? 1,
+    employmentType: vacancy.employmentType ?? '',
+    workplaceType: vacancy.workplaceType ?? '',
+    location: vacancy.location ?? '',
+    applicationDeadline: vacancy.applicationDeadline ?? '',
+    jobSummary: vacancy.jobSummary ?? '',
+    jobDescription: vacancy.jobDescription ?? '',
+    keyResponsibilities: [...(vacancy.keyResponsibilities ?? [])],
+    requiredSkills: [...(vacancy.requiredSkills ?? [])],
+    preferredSkills: [...(vacancy.preferredSkills ?? [])],
+    minimumExperienceYears: vacancy.minimumExperienceYears ?? null,
+    education: vacancy.education ?? '',
+    certifications: [...(vacancy.certifications ?? [])],
+    languageRequirements: [...(vacancy.languageRequirements ?? [])],
+    otherRequirements: vacancy.otherRequirements ?? '',
+    salaryMin: vacancy.salaryMin ?? null,
+    salaryMax: vacancy.salaryMax ?? null,
+    currency: vacancy.currency ?? '',
+    payPeriod: vacancy.payPeriod ?? '',
+    benefits: [...(vacancy.benefits ?? [])],
+    workingDays: [...(vacancy.workingDays ?? [])],
+    workingHours: vacancy.workingHours ?? '',
+    shiftType: vacancy.shiftType ?? '',
+    expectedHoursPerWeek: vacancy.expectedHoursPerWeek ?? null,
+    assignedRecruiterId: vacancy.assignedRecruiterId ?? '',
+    hiringManagerId: vacancy.hiringManagerId ?? '',
+    recruitmentPipelineId: vacancy.recruitmentPipelineId ?? '',
+    screeningQuestions: [...(vacancy.screeningQuestions ?? [])],
+  };
+}
+
+/**
+ * The starting point for a duplicate (PB-021).
+ *
+ * <p>Content is copied; everything that describes *that* vacancy's life is not.
+ * No id, status, timestamps or applicant count — the copy is a new vacancy that
+ * has not been anywhere yet. The deadline is cleared because the original's
+ * date is almost never right for the new round, and a copied one that happens
+ * to still be valid is exactly the kind that gets published unchecked.</p>
+ */
+export function duplicateValues(vacancy: JobVacancyResponse): JobVacancyFormValues {
+  const values = toFormValues(vacancy);
+  return {
+    ...values,
+    title: values.title.trim() === '' ? '' : `${values.title.trim()} (copy)`,
+    applicationDeadline: '',
   };
 }
 
@@ -748,4 +851,185 @@ export function formatSalary(vacancy: JobVacancyResponse): string {
   const code = currencyCode(currency);
   const period = payPeriodLabel(payPeriod);
   return [range, code, period].filter(Boolean).join(' ');
+}
+
+/* --- Lifecycle (PB-018 → PB-022) ----------------------------------------- */
+
+/**
+ * Every legal status move, and nothing else.
+ *
+ * <p>The backlog defines publishing, closing and archiving but not their
+ * inverses, so there is no reopen, unpublish or unarchive here — inventing one
+ * would put a button on screen that the backend has never agreed to honour.
+ * This table is the one place to change when that agreement is made; every
+ * menu, header and guard below reads from it.</p>
+ */
+export const VACANCY_TRANSITIONS: Record<VacancyStatus, readonly VacancyStatus[]> = {
+  DRAFT: ['PUBLISHED'],
+  PUBLISHED: ['CLOSED'],
+  CLOSED: ['ARCHIVED'],
+  ARCHIVED: [],
+};
+
+export const VACANCY_STATUS_LABEL: Record<VacancyStatus, string> = {
+  DRAFT: 'Draft',
+  PUBLISHED: 'Published',
+  CLOSED: 'Closed',
+  ARCHIVED: 'Archived',
+};
+
+export function canTransition(from: VacancyStatus, to: VacancyStatus): boolean {
+  return VACANCY_TRANSITIONS[from].includes(to);
+}
+
+/**
+ * Content can change while a vacancy is a draft or live. Once closed, the
+ * advert candidates applied to is the record of what they applied to, and
+ * rewriting it would change history under them.
+ */
+export function canEditVacancy(status: VacancyStatus): boolean {
+  return status === 'DRAFT' || status === 'PUBLISHED';
+}
+
+export type VacancyAction = 'view' | 'edit' | 'publish' | 'duplicate' | 'close' | 'archive';
+
+export interface VacancyActionSet {
+  /** Shown as buttons, in this order. */
+  primary: VacancyAction[];
+  /** Behind the ⋮ menu. Destructive moves come last, below a divider. */
+  overflow: VacancyAction[];
+}
+
+/** Actions that end something. Separated in menus and confirmed in a dialog. */
+export const DESTRUCTIVE_ACTIONS: ReadonlySet<VacancyAction> = new Set(['close', 'archive']);
+
+/**
+ * What a recruiter can do with a vacancy in a given state, and where each
+ * action sits.
+ *
+ * <p>An action the state does not allow is absent, not disabled: a greyed
+ * "Publish" on a closed vacancy can never become clickable, so all it does is
+ * make the reader work out why. The two contexts differ only in that a list row
+ * offers View (the detail page is the destination) and the detail page does
+ * not (it is already there).</p>
+ */
+export function vacancyActions(
+  status: VacancyStatus,
+  context: 'list' | 'detail' = 'list',
+): VacancyActionSet {
+  const sets: Record<VacancyStatus, VacancyActionSet> = {
+    DRAFT: { primary: ['edit', 'publish'], overflow: ['duplicate'] },
+    PUBLISHED: { primary: ['view', 'edit'], overflow: ['duplicate', 'close'] },
+    CLOSED: { primary: ['view'], overflow: ['duplicate', 'archive'] },
+    ARCHIVED: { primary: ['view'], overflow: [] },
+  };
+  const set = sets[status];
+  if (context === 'list') {
+    return set;
+  }
+  // On the detail page the most useful next step leads; for a closed vacancy
+  // that is reusing it, since nothing else about it can change.
+  if (status === 'CLOSED') {
+    return { primary: ['duplicate'], overflow: ['archive'] };
+  }
+  return { primary: set.primary.filter((action) => action !== 'view'), overflow: set.overflow };
+}
+
+/* --- Deadline ------------------------------------------------------------ */
+
+const DAY_MS = 86_400_000;
+
+/** Whole days from `fromIso` to `toIso`, both `YYYY-MM-DD`. Calendar days, not 24h spans. */
+export function daysBetween(fromIso: string, toIso: string): number {
+  return Math.round((Date.parse(`${toIso}T00:00:00Z`) - Date.parse(`${fromIso}T00:00:00Z`)) / DAY_MS);
+}
+
+export interface DeadlineSignal {
+  tone: 'neutral' | 'warning';
+  label: string;
+}
+
+/** Inside this many days a live deadline is worth the recruiter's attention. */
+const DEADLINE_SOON_DAYS = 3;
+
+/**
+ * How close the deadline is, in words.
+ *
+ * <p>Only for a vacancy that is not finished: once closed or archived the date
+ * is history, and "Deadline passed" under a closed vacancy would read as a
+ * problem when it is simply what happened. Amber is spent only where there is
+ * something to do — a live role about to close, or one still live past its own
+ * deadline, or a draft whose date would block publishing.</p>
+ */
+export function deadlineSignal(
+  vacancy: Pick<JobVacancyResponse, 'status' | 'applicationDeadline'>,
+  today: string = todayIso(),
+): DeadlineSignal | null {
+  if (vacancy.status === 'CLOSED' || vacancy.status === 'ARCHIVED') {
+    return null;
+  }
+  if (!vacancy.applicationDeadline) {
+    return { tone: 'neutral', label: 'No deadline set' };
+  }
+  const days = daysBetween(today, vacancy.applicationDeadline);
+  if (days < 0) {
+    return {
+      tone: 'warning',
+      label: vacancy.status === 'PUBLISHED' ? 'Deadline passed' : 'Deadline passed — set a new one',
+    };
+  }
+  if (days === 0) {
+    return { tone: 'warning', label: 'Closes today' };
+  }
+  if (days === 1) {
+    return { tone: 'warning', label: 'Closes tomorrow' };
+  }
+  return { tone: days <= DEADLINE_SOON_DAYS ? 'warning' : 'neutral', label: `Closes in ${days} days` };
+}
+
+/* --- Publish readiness ---------------------------------------------------- */
+
+export interface PublishBlocker {
+  section: VacancySection;
+  /** Field labels, in reading order. */
+  fields: string[];
+}
+
+/**
+ * What stands between a stored draft and publishing it, grouped by section.
+ *
+ * <p>A draft is saved without validation on purpose, which means a Publish
+ * button anywhere outside the form could otherwise push a half-written advert
+ * live. This runs the same rules the form runs, against the record as stored,
+ * so the list and detail pages can refuse in advance — and say where to go —
+ * instead of letting the backend refuse after a confirmation.</p>
+ */
+export function publishBlockers(
+  vacancy: JobVacancyResponse,
+  today: string = todayIso(),
+): PublishBlocker[] {
+  const values = toFormValues(vacancy);
+  const errors = validateVacancy(values);
+  // validateVacancy reads the real clock for the deadline; re-check against the
+  // given day so the answer is the same one the caller is reasoning about.
+  if (values.applicationDeadline !== '' && values.applicationDeadline >= today) {
+    delete errors.applicationDeadline;
+  }
+  return VACANCY_SECTIONS.map((section) => ({
+    section,
+    fields: section.fields.filter((field) => errors[field]).map((field) => FIELD_LABELS[field]),
+  })).filter((blocker) => blocker.fields.length > 0);
+}
+
+/** "Job title, Application deadline and Required skills" — for one sentence. */
+export function joinLabels(labels: string[]): string {
+  if (labels.length <= 1) {
+    return labels.join('');
+  }
+  return `${labels.slice(0, -1).join(', ')} and ${labels[labels.length - 1]}`;
+}
+
+/** How much of a stored vacancy is filled in, for a draft's row. */
+export function vacancyCompleteness(vacancy: JobVacancyResponse): { filled: number; total: number } {
+  return { filled: requiredFilled(toFormValues(vacancy)), total: REQUIRED_TOTAL };
 }

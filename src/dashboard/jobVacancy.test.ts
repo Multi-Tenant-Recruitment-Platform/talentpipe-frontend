@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import {
+  canEditVacancy,
+  canTransition,
+  deadlineSignal,
+  duplicateValues,
   EMPTY_VACANCY_VALUES,
+  publishBlockers,
+  toFormValues,
+  toVacancyUpdate,
+  vacancyActions,
   firstInvalidField,
   formatSalary,
   formatWorkingDays,
@@ -14,6 +22,7 @@ import {
   type JobVacancyFormValues,
 } from './jobVacancy';
 import type { JobVacancyResponse } from '../api/types';
+import { makeVacancy } from '../test/vacancyFixtures';
 
 /**
  * The vacancy rules, tested without a render.
@@ -174,13 +183,8 @@ describe('toVacancyRequest', () => {
 });
 
 describe('reading a vacancy back', () => {
-  const vacancy = (overrides: Partial<JobVacancyResponse>): JobVacancyResponse => ({
-    ...toVacancyRequest(completeValues(), 'PUBLISHED'),
-    id: 'v-1',
-    createdAt: '2026-01-01T00:00:00Z',
-    updatedAt: '2026-01-01T00:00:00Z',
-    ...overrides,
-  });
+  const vacancy = (overrides: Partial<JobVacancyResponse>): JobVacancyResponse =>
+    makeVacancy(overrides);
 
   it('reads a run of days as a range and a scatter as a list', () => {
     expect(formatWorkingDays(['MON', 'TUE', 'WED', 'THU', 'FRI'])).toBe('Mon–Fri');
@@ -196,5 +200,131 @@ describe('reading a vacancy back', () => {
       formatSalary(vacancy({ salaryMin: null, salaryMax: 250_000, currency: 'LKR — Sri Lankan rupee', payPeriod: 'MONTHLY' })),
     ).toBe('Up to 250,000 LKR Per month');
     expect(formatSalary(vacancy({ salaryMin: null, salaryMax: null }))).toBe('');
+  });
+});
+
+describe('the lifecycle', () => {
+  it('allows only the forward moves the backlog defines', () => {
+    expect(canTransition('DRAFT', 'PUBLISHED')).toBe(true);
+    expect(canTransition('PUBLISHED', 'CLOSED')).toBe(true);
+    expect(canTransition('CLOSED', 'ARCHIVED')).toBe(true);
+    // No inverse anywhere — reopening, unpublishing and unarchiving are not agreed.
+    expect(canTransition('PUBLISHED', 'DRAFT')).toBe(false);
+    expect(canTransition('CLOSED', 'PUBLISHED')).toBe(false);
+    expect(canTransition('ARCHIVED', 'CLOSED')).toBe(false);
+    expect(canTransition('DRAFT', 'ARCHIVED')).toBe(false);
+  });
+
+  it('lets content change only while a vacancy is a draft or live', () => {
+    expect(canEditVacancy('DRAFT')).toBe(true);
+    expect(canEditVacancy('PUBLISHED')).toBe(true);
+    expect(canEditVacancy('CLOSED')).toBe(false);
+    expect(canEditVacancy('ARCHIVED')).toBe(false);
+  });
+
+  it('offers each state exactly its own actions on a list row', () => {
+    expect(vacancyActions('DRAFT')).toEqual({ primary: ['edit', 'publish'], overflow: ['duplicate'] });
+    expect(vacancyActions('PUBLISHED')).toEqual({
+      primary: ['view', 'edit'],
+      overflow: ['duplicate', 'close'],
+    });
+    expect(vacancyActions('CLOSED')).toEqual({ primary: ['view'], overflow: ['duplicate', 'archive'] });
+    expect(vacancyActions('ARCHIVED')).toEqual({ primary: ['view'], overflow: [] });
+  });
+
+  it('drops View on the detail page, which is already the view', () => {
+    expect(vacancyActions('PUBLISHED', 'detail').primary).toEqual(['edit']);
+    expect(vacancyActions('CLOSED', 'detail')).toEqual({ primary: ['duplicate'], overflow: ['archive'] });
+    expect(vacancyActions('ARCHIVED', 'detail')).toEqual({ primary: [], overflow: [] });
+  });
+});
+
+describe('editing and duplicating', () => {
+  it('reads a stored vacancy back into the form it was written from', () => {
+    const values = completeValues({ education: 'Diploma', screeningQuestions: ['Right to work?'] });
+    const stored = makeVacancy({ ...toVacancyRequest(values, 'DRAFT') });
+    expect(toFormValues(stored)).toEqual(values);
+  });
+
+  it('turns a blank choice back into an empty control, not a default', () => {
+    const values = toFormValues(makeVacancy({ employmentType: null, applicationDeadline: null }));
+    expect(values.employmentType).toBe('');
+    expect(values.applicationDeadline).toBe('');
+  });
+
+  it('copies the content of a duplicate but none of its history', () => {
+    const copy = duplicateValues(makeVacancy({ status: 'CLOSED', applicantCount: 12 }));
+    expect(copy.title).toBe('Senior Backend Engineer (copy)');
+    expect(copy.applicationDeadline).toBe('');
+    expect(copy.requiredSkills).toEqual(['Java']);
+    // Form values carry no id, status or counts at all.
+    expect(Object.keys(copy)).not.toContain('status');
+    expect(Object.keys(copy)).not.toContain('applicantCount');
+  });
+
+  it('sends no status on an edit, only the lock it was made against', () => {
+    const update = toVacancyUpdate(completeValues(), 4);
+    expect(update.version).toBe(4);
+    expect(Object.keys(update)).not.toContain('status');
+  });
+
+  it('sends a blank choice or date as null, never as an invented default', () => {
+    const request = toVacancyRequest(
+      { ...EMPTY_VACANCY_VALUES, workplaceType: '' },
+      'DRAFT',
+    );
+    expect(request.employmentType).toBeNull();
+    expect(request.workplaceType).toBeNull();
+    expect(request.applicationDeadline).toBeNull();
+  });
+
+  it('does not call an untouched edit unsaved', () => {
+    const start = toFormValues(makeVacancy());
+    expect(isVacancyDirty({ ...start }, start)).toBe(false);
+    expect(isVacancyDirty({ ...start, title: 'Something else' }, start)).toBe(true);
+    // A list that changed in content but not in length is still a change.
+    expect(isVacancyDirty({ ...start, requiredSkills: ['Kotlin'] }, start)).toBe(true);
+  });
+});
+
+describe('deadlineSignal', () => {
+  const today = '2026-10-02';
+  const signal = (applicationDeadline: string | null, status: JobVacancyResponse['status'] = 'PUBLISHED') =>
+    deadlineSignal({ status, applicationDeadline }, today);
+
+  it('counts down in calendar days', () => {
+    expect(signal('2026-10-30')).toEqual({ tone: 'neutral', label: 'Closes in 28 days' });
+    expect(signal('2026-10-05')).toEqual({ tone: 'warning', label: 'Closes in 3 days' });
+    expect(signal('2026-10-03')).toEqual({ tone: 'warning', label: 'Closes tomorrow' });
+    expect(signal('2026-10-02')).toEqual({ tone: 'warning', label: 'Closes today' });
+  });
+
+  it('flags a live vacancy still open past its own deadline', () => {
+    expect(signal('2026-09-30')).toEqual({ tone: 'warning', label: 'Deadline passed' });
+    expect(signal('2026-09-30', 'DRAFT')?.label).toMatch(/set a new one/i);
+  });
+
+  it('says nothing about a deadline once the vacancy is finished', () => {
+    expect(signal('2026-09-30', 'CLOSED')).toBeNull();
+    expect(signal('2026-09-30', 'ARCHIVED')).toBeNull();
+  });
+
+  it('names a missing deadline', () => {
+    expect(signal(null, 'DRAFT')).toEqual({ tone: 'neutral', label: 'No deadline set' });
+  });
+});
+
+describe('publishBlockers', () => {
+  it('has nothing to say about a complete vacancy', () => {
+    expect(publishBlockers(makeVacancy({ status: 'DRAFT' }), '2026-10-02')).toEqual([]);
+  });
+
+  it('names what is missing, grouped by section, in reading order', () => {
+    const blockers = publishBlockers(
+      makeVacancy({ status: 'DRAFT', applicationDeadline: null, jobSummary: '', requiredSkills: [] }),
+      '2026-10-02',
+    );
+    expect(blockers.map((b) => b.section.id)).toEqual(['basics', 'description', 'requirements']);
+    expect(blockers[0].fields).toEqual(['Application deadline']);
   });
 });

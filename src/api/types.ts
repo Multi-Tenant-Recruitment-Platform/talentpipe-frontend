@@ -270,8 +270,17 @@ export type PayPeriod = 'HOURLY' | 'MONTHLY' | 'ANNUAL';
 export type ShiftType = 'DAY' | 'NIGHT' | 'ROTATING' | 'FLEXIBLE';
 /** Weekday identifiers, so a working week survives translation. */
 export type WeekDay = 'MON' | 'TUE' | 'WED' | 'THU' | 'FRI' | 'SAT' | 'SUN';
-/** A draft is visible only inside the workspace; published is candidate-facing. */
-export type VacancyStatus = 'DRAFT' | 'PUBLISHED';
+/**
+ * Where a vacancy is in its life (PB-018 → PB-022).
+ *
+ * <p>DRAFT is visible only inside the workspace; PUBLISHED is on the candidate
+ * portal and accepting applications; CLOSED is still visible to the team but
+ * takes no new applications; ARCHIVED has left every active list and is kept
+ * for reporting. The legal moves between them live in
+ * `VACANCY_TRANSITIONS` (`src/dashboard/jobVacancy.ts`) and are enforced by the
+ * backend — the frontend only declines to offer the others.</p>
+ */
+export type VacancyStatus = 'DRAFT' | 'PUBLISHED' | 'CLOSED' | 'ARCHIVED';
 
 /**
  * A vacancy as the creation form submits it.
@@ -288,14 +297,19 @@ export type VacancyStatus = 'DRAFT' | 'PUBLISHED';
  * that could file a vacancy under another company.</p>
  */
 export interface JobVacancyRequest {
+  /**
+   * The basics are required to PUBLISH and optional on a DRAFT — a draft is a
+   * partial vacancy by definition. Blank text travels as `''`, a blank choice
+   * or date as `null`, so a draft never carries a value nobody chose.
+   */
   title: string;
   department: string;
   openings: number;
-  employmentType: EmploymentType;
-  workplaceType: WorkplaceType;
+  employmentType: EmploymentType | null;
+  workplaceType: WorkplaceType | null;
   location: string;
-  /** ISO date, no time: a deadline is a day, not an instant. */
-  applicationDeadline: string;
+  /** ISO date, no time: a deadline is a day, not an instant. Null on a draft without one. */
+  applicationDeadline: string | null;
 
   jobSummary: string;
   jobDescription: string;
@@ -326,14 +340,42 @@ export interface JobVacancyRequest {
   recruitmentPipelineId: string | null;
   screeningQuestions: string[];
 
+  /**
+   * Only DRAFT or PUBLISHED on create. Every later move goes through its own
+   * lifecycle endpoint, never through a field edit.
+   */
   status: VacancyStatus;
 }
+
+/**
+ * An edit to a stored vacancy: every content field, no status.
+ *
+ * <p>Status is absent on purpose. Publishing, closing and archiving each have
+ * their own endpoint with their own rules, and a PUT that could also flip
+ * status would be a second, unguarded route to the same transition.</p>
+ *
+ * <p>`version` is the optimistic-lock token from the response being edited.
+ * Two recruiters saving the same vacancy is a real case in a shared workspace;
+ * the second save answers 409 rather than silently overwriting the first.</p>
+ */
+export type JobVacancyUpdateRequest = Omit<JobVacancyRequest, 'status'> & { version: number };
 
 /** A stored vacancy: everything submitted, plus what only the server knows. */
 export interface JobVacancyResponse extends JobVacancyRequest {
   id: string;
+  /** Optimistic-lock counter; echoed back on PUT. */
+  version: number;
   createdAt: string;
   updatedAt: string;
+  /** Set on the transition into each state; null until then. */
+  publishedAt: string | null;
+  closedAt: string | null;
+  archivedAt: string | null;
+  /**
+   * Applications received. Null — not zero — until the applications module
+   * exists: zero would claim that nobody applied, which nobody can know yet.
+   */
+  applicantCount: number | null;
 }
 
 /** Uniform error envelope returned by the backend on every failure. */

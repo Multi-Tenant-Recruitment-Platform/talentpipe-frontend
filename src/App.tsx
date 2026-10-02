@@ -9,10 +9,12 @@ import { CandidateRegisterPage } from './pages/CandidateRegisterPage';
 import { CompanyProfilePage } from './pages/dashboard/CompanyProfilePage';
 import { CompanySettingsPage } from './pages/dashboard/CompanySettingsPage';
 import { CreateJobVacancyPage } from './pages/dashboard/CreateJobVacancyPage';
+import { EditJobVacancyPage } from './pages/dashboard/EditJobVacancyPage';
 import { JobVacanciesPage } from './pages/dashboard/JobVacanciesPage';
 import { OverviewPage } from './pages/dashboard/OverviewPage';
 import { PipelinePage } from './pages/dashboard/PipelinePage';
 import { TeamPage } from './pages/dashboard/TeamPage';
+import { VacancyDetailPage } from './pages/dashboard/VacancyDetailPage';
 import { ForbiddenPage } from './pages/ForbiddenPage';
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
 import { JobsPage } from './pages/JobsPage';
@@ -91,6 +93,24 @@ export default function App() {
             element={
               <RequirePermission permission="jobs.manage">
                 <CreateJobVacancyPage />
+              </RequirePermission>
+            }
+          />
+          {/* `jobs/new` is a static segment, so it outranks `:id` whatever the
+              order — a vacancy can never be fetched with the id "new". */}
+          <Route
+            path="jobs/:id"
+            element={
+              <RequirePermission permission="jobs.manage">
+                <VacancyDetailPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="jobs/:id/edit"
+            element={
+              <RequirePermission permission="jobs.manage">
+                <EditJobVacancyPage />
               </RequirePermission>
             }
           />

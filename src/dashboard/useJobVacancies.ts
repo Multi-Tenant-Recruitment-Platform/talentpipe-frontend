@@ -1,93 +1,141 @@
-import { useCallback, useState } from 'react';
-import type { JobVacancyResponse, VacancyStatus } from '../api/types';
-import { activeTenant } from '../tenant/activeTenant';
-import { tenantStorage } from '../utils/tenantStorage';
-import { toVacancyRequest, type JobVacancyFormValues } from './jobVacancy';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { jobsApi } from '../api/jobs';
+import type { JobVacancyResponse } from '../api/types';
+import { useAuth } from '../auth/AuthContext';
+import { describeVacancyError } from './vacancyErrors';
 
 /**
- * The vacancy store, standing in for the Job module.
+ * Vacancy data, read from the Job module (`/api/v1/jobs`).
  *
- * <p>TODO(sprint2): replace the three storage calls below with `jobsApi.list`
- * and `jobsApi.create` from `src/api/jobs.ts`, which already carry the agreed
- * request and response shapes. Nothing outside this file knows where a vacancy
- * is kept — the pages await a promise and render what comes back, which is
- * exactly what they will do against the real endpoint.</p>
+ * <p>Two hooks rather than one store: the list page needs every vacancy, the
+ * detail and edit pages need one, fresh. Writes are not here — each page calls
+ * {@link jobsApi} for the action it performs and hands the response back
+ * through `replace`, so the screen shows what the server stored rather than
+ * what the client hoped it would.</p>
  *
- * <p>Storage is per workspace, through {@link tenantStorage}: signing into a
- * second company on the same device must not surface the first one's drafts.
- * That is the same guarantee the backend's tenant scoping will give, so the
- * demo cannot teach a habit the real thing then breaks.</p>
+ * <p>Both re-fetch when the signed-in identity changes, so signing into a
+ * second workspace on the same device never leaves the first one's vacancies
+ * on screen.</p>
  */
-
-const STORAGE_KEY = 'jobVacancies';
-
-const store = () => tenantStorage(activeTenant.get());
 
 /**
- * What is on disk, or nothing.
- *
- * <p>`localStorage` is outside the app's control — a half-written entry, or one
- * left by an older shape of this record, is a real possibility rather than a
- * defensive fiction. A corrupt entry reads as an empty workspace instead of
- * taking the page down with it.</p>
+ * Drops responses that arrive after a newer request or after unmount. Without
+ * it, a slow first load could land after a fast refresh and overwrite it.
  */
-function readStored(): JobVacancyResponse[] {
-  const raw = store().get(STORAGE_KEY);
-  if (!raw) {
-    return [];
-  }
-  try {
-    const parsed: unknown = JSON.parse(raw);
-    return Array.isArray(parsed) ? (parsed as JobVacancyResponse[]) : [];
-  } catch {
-    return [];
-  }
+function useLatest() {
+  const latest = useRef(0);
+  const mounted = useRef(false);
+  // Set on mount as well as cleared on unmount: StrictMode mounts, unmounts and
+  // mounts again, and a flag only ever cleared would stay false for good.
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
+  return useCallback(() => {
+    const ticket = ++latest.current;
+    return () => mounted.current && ticket === latest.current;
+  }, []);
 }
 
-function writeStored(vacancies: JobVacancyResponse[]): void {
-  store().set(STORAGE_KEY, JSON.stringify(vacancies));
+export interface JobVacancyListController {
+  vacancies: JobVacancyResponse[];
+  /** True until the first answer arrives. A refresh keeps the old rows on screen. */
+  loading: boolean;
+  /** A sentence for the person, or null. */
+  error: string | null;
+  refresh: () => Promise<void>;
+  /** Swaps in the server's copy of one vacancy after an action. */
+  replace: (vacancy: JobVacancyResponse) => void;
+}
+
+export function useJobVacancyList(): JobVacancyListController {
+  const { user } = useAuth();
+  const begin = useLatest();
+  const [vacancies, setVacancies] = useState<JobVacancyResponse[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const refresh = useCallback(async () => {
+    const current = begin();
+    try {
+      const list = await jobsApi.list();
+      if (current()) {
+        setVacancies(list);
+        setError(null);
+      }
+    } catch (err: unknown) {
+      if (current()) {
+        setError(describeVacancyError(err, 'list').message);
+      }
+    } finally {
+      if (current()) {
+        setLoading(false);
+      }
+    }
+  }, [begin]);
+
+  useEffect(() => {
+    void refresh();
+  }, [refresh, user?.id]);
+
+  const replace = useCallback((vacancy: JobVacancyResponse) => {
+    setVacancies((list) => list.map((entry) => (entry.id === vacancy.id ? vacancy : entry)));
+  }, []);
+
+  return { vacancies, loading, error, refresh, replace };
 }
 
 export interface JobVacancyController {
-  /** Newest first: the vacancy someone just filed is the one they look for. */
-  vacancies: JobVacancyResponse[];
-  create: (values: JobVacancyFormValues, status: VacancyStatus) => Promise<JobVacancyResponse>;
-  refresh: () => void;
+  vacancy: JobVacancyResponse | null;
+  loading: boolean;
+  error: string | null;
+  /** The id does not exist in this workspace. Distinct from a failed load. */
+  notFound: boolean;
+  refresh: () => Promise<void>;
+  replace: (vacancy: JobVacancyResponse) => void;
 }
 
-export function useJobVacancies(): JobVacancyController {
-  // Read once, during the first render. There is deliberately no loading state
-  // and no skeleton: this read is synchronous, so a "still loading" branch
-  // could never render, and shipping UI that cannot run is worse than shipping
-  // none. Both arrive with the request that actually takes time.
-  const [vacancies, setVacancies] = useState<JobVacancyResponse[]>(readStored);
+/** One vacancy by id. A null id loads nothing and reports nothing. */
+export function useJobVacancy(id: string | null | undefined): JobVacancyController {
+  const { user } = useAuth();
+  const begin = useLatest();
+  const [vacancy, setVacancy] = useState<JobVacancyResponse | null>(null);
+  const [loading, setLoading] = useState(Boolean(id));
+  const [error, setError] = useState<string | null>(null);
+  const [notFound, setNotFound] = useState(false);
 
-  const refresh = useCallback(() => {
-    setVacancies(readStored());
-  }, []);
+  const refresh = useCallback(async () => {
+    if (!id) {
+      setLoading(false);
+      return;
+    }
+    const current = begin();
+    try {
+      const found = await jobsApi.get(id);
+      if (current()) {
+        setVacancy(found);
+        setError(null);
+        setNotFound(false);
+      }
+    } catch (err: unknown) {
+      if (current()) {
+        const plan = describeVacancyError(err, 'load');
+        setNotFound(plan.notFound);
+        setError(plan.notFound ? null : plan.message);
+      }
+    } finally {
+      if (current()) {
+        setLoading(false);
+      }
+    }
+  }, [id, begin]);
 
-  /**
-   * Async on purpose, though the write is synchronous today: the call sites
-   * await it and hold a submitting state, so swapping in `jobsApi.create`
-   * changes this function and nothing above it. No artificial delay — a fake
-   * spinner would be theatre, and the real one arrives with the real request.
-   */
-  const create = useCallback(
-    async (values: JobVacancyFormValues, status: VacancyStatus) => {
-      const now = new Date().toISOString();
-      const vacancy: JobVacancyResponse = {
-        ...toVacancyRequest(values, status),
-        id: crypto.randomUUID(),
-        createdAt: now,
-        updatedAt: now,
-      };
-      const next = [vacancy, ...readStored()];
-      writeStored(next);
-      setVacancies(next);
-      return vacancy;
-    },
-    [],
-  );
+  useEffect(() => {
+    setLoading(Boolean(id));
+    void refresh();
+  }, [refresh, user?.id, id]);
 
-  return { vacancies, create, refresh };
+  return { vacancy, loading, error, notFound, refresh, replace: setVacancy };
 }
