@@ -32,7 +32,7 @@ import { ConfirmDialog } from '../ui/ConfirmDialog';
 import { BasicInformationSection } from './BasicInformationSection';
 import { CandidateRequirementsSection } from './CandidateRequirementsSection';
 import { JobDescriptionSection } from './JobDescriptionSection';
-import { RecruitmentSettingsSection } from './RecruitmentSettingsSection';
+// import { RecruitmentSettingsSection } from './RecruitmentSettingsSection';
 import { SalaryBenefitsSection } from './SalaryBenefitsSection';
 import type { VacancySectionProps } from './sectionProps';
 import { vacancyFieldId, vacancyGroupId } from './vacancyFieldIds';
@@ -70,13 +70,13 @@ const SECTION_BODIES: Record<string, ComponentType<VacancySectionProps>> = {
   requirements: CandidateRequirementsSection,
   salary: SalaryBenefitsSection,
   schedule: WorkScheduleSection,
-  recruitment: RecruitmentSettingsSection,
+  // recruitment: RecruitmentSettingsSection,
 };
 
 const HEADINGS: Record<VacancyFormMode, { title: string; subtitle: string }> = {
   create: {
     title: 'Create vacancy',
-    subtitle: 'Six sections. Only the marked fields are needed to publish — the rest can follow.',
+    subtitle: 'Five sections. Only the marked fields are needed to publish — the rest can follow.',
   },
   duplicate: {
     title: 'Duplicate vacancy',

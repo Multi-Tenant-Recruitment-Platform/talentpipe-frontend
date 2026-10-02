@@ -323,19 +323,23 @@ export const VACANCY_SECTIONS: VacancySection[] = [
     fields: ['workingDays', 'workingHours', 'shiftType', 'expectedHoursPerWeek'],
     required: [],
   },
-  {
-    id: 'recruitment',
-    index: '06',
-    title: 'Recruitment settings',
-    summary: 'Who runs this hire, and what every applicant is asked.',
-    fields: [
-      'assignedRecruiterId',
-      'hiringManagerId',
-      'recruitmentPipelineId',
-      'screeningQuestions',
-    ],
-    required: [],
-  },
+  // Hidden from the form: every field in it is optional, and the pipeline and
+  // recruiter modules it points at are not built yet. The fields stay in
+  // JobVacancyFormValues and on the wire, so restoring the section is putting
+  // this entry back — nothing stored is lost in the meantime.
+  // {
+  //   id: 'recruitment',
+  //   index: '06',
+  //   title: 'Recruitment settings',
+  //   summary: 'Who runs this hire, and what every applicant is asked.',
+  //   fields: [
+  //     'assignedRecruiterId',
+  //     'hiringManagerId',
+  //     'recruitmentPipelineId',
+  //     'screeningQuestions',
+  //   ],
+  //   required: [],
+  // },
 ];
 
 /** Every field in reading order — the order a failed submit walks. */

@@ -7,7 +7,7 @@ import {
   formatSalary,
   formatWorkingDays,
   payPeriodLabel,
-  pipelineLabel,
+  // pipelineLabel, — with the Recruitment settings block below
   shiftTypeLabel,
   workplaceTypeLabel,
 } from '../../dashboard/jobVacancy';
@@ -192,7 +192,10 @@ export function VacancyDetailsBody({ vacancy }: Readonly<{ vacancy: JobVacancyRe
         </dl>
       </Block>
 
-      <Block title="Recruitment settings">
+      {/* Hidden alongside the form's Recruitment settings section. Block always
+          renders its heading, so leaving it would print an empty one now that
+          nothing can fill these fields in. */}
+      {/* <Block title="Recruitment settings">
         <Flex vertical gap={space[2]}>
           <dl className="tp-detail-grid">
             <Fact label="Pipeline" value={pipelineLabel(vacancy.recruitmentPipelineId) ?? ''} />
@@ -206,7 +209,7 @@ export function VacancyDetailsBody({ vacancy }: Readonly<{ vacancy: JobVacancyRe
             </div>
           )}
         </Flex>
-      </Block>
+      </Block> */}
     </>
   );
 }

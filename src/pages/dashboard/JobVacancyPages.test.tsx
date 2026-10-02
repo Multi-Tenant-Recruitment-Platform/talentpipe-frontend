@@ -96,7 +96,7 @@ beforeEach(() => {
 /* --- Create ------------------------------------------------------------- */
 
 describe('creating a vacancy', () => {
-  it('lays the six sections out in order, each numbered', () => {
+  it('lays the five sections out in order, each numbered', () => {
     render(<VacancyRoutes path="/dashboard/jobs/new" />);
 
     const nav = screen.getByRole('navigation', { name: /vacancy form sections/i });
@@ -106,7 +106,6 @@ describe('creating a vacancy', () => {
       expect.stringContaining('Candidate requirements'),
       expect.stringContaining('Salary & benefits'),
       expect.stringContaining('Work schedule'),
-      expect.stringContaining('Recruitment settings'),
     ]);
     expect(screen.getByRole('group', { name: /basic information/i })).toHaveTextContent('01');
   });
