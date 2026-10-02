@@ -47,6 +47,10 @@ const EXPECTED: Record<Permission, Record<Role, boolean>> = {
   'settings.edit': { COMPANY_ADMIN: true, HR_MANAGER: false, INTERVIEWER: false, CANDIDATE: false },
   'billing.view': { COMPANY_ADMIN: true, HR_MANAGER: false, INTERVIEWER: false, CANDIDATE: false },
   'jobs.browse': { COMPANY_ADMIN: true, HR_MANAGER: true, INTERVIEWER: true, CANDIDATE: true },
+  // Opening a role is the HR manager's day job, so it sits with pipeline.manage
+  // rather than with the admin-only cells. An interviewer reads the pipeline;
+  // they do not decide what the company hires for.
+  'jobs.manage': { COMPANY_ADMIN: true, HR_MANAGER: true, INTERVIEWER: false, CANDIDATE: false },
   'applications.viewOwn': {
     COMPANY_ADMIN: false,
     HR_MANAGER: false,

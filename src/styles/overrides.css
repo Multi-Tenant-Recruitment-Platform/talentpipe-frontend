@@ -1,0 +1,1862 @@
+/*
+ * The whole of TalentPipe's hand-written component CSS.
+ *
+ * Everything here exists because antd has no equivalent — not as a matter of
+ * taste. If a rule below can be expressed with an antd component or a theme
+ * token, it belongs there instead.
+ */
+
+/* --- ConfirmDialog ------------------------------------------------------- *
+ * Kept out of antd Modal on purpose: antd hard-codes role="dialog" on the
+ * dialog panel, and a destructive confirmation needs role="alertdialog" so
+ * assistive tech announces the consequence before the next click. See
+ * src/components/ui/ConfirmDialog.tsx.
+ */
+.tp-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.tp-dialog-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgb(15 23 42 / 50%);
+  backdrop-filter: blur(2px);
+}
+
+.tp-dialog-panel {
+  position: relative;
+  width: 100%;
+  max-width: 28rem;
+  padding: 24px;
+  border-radius: 16px;
+  background: var(--tp-surface, var(--tp-surface));
+  box-shadow: 0 24px 48px -12px rgb(15 23 42 / 25%);
+}
+
+/* --- Team roster responsive columns -------------------------------------- *
+ * Columns are hidden, never re-rendered as a second card list: a dual render
+ * makes every getByRole query match twice in jsdom. antd's `responsive` column
+ * option is not usable here — it reads matchMedia, which the test environment
+ * stubs to `matches: false`, which would delete these columns outright.
+ */
+.tp-col-md {
+  display: none;
+}
+
+.tp-col-lg {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .tp-col-md {
+    display: table-cell;
+  }
+}
+
+@media (min-width: 1024px) {
+  .tp-col-lg {
+    display: table-cell;
+  }
+}
+
+/* The member cell echoes whichever of Role/Joined is currently hidden, so the
+   fact is never missing and never announced twice. */
+.tp-row-echo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  margin-top: 4px;
+}
+
+@media (min-width: 1024px) {
+  .tp-row-echo {
+    display: none;
+  }
+}
+
+@media (min-width: 768px) {
+  .tp-row-echo-role {
+    display: none;
+  }
+}
+
+/* The roster table bleeds to the card's edges; the toolbar above it does not. */
+.tp-roster-body {
+  padding: 20px 0 8px;
+}
+
+.tp-roster-body > *:first-child {
+  padding-inline: 24px;
+}
+
+/* A button that reads as a link — used inside sentences, where a real button
+   would break the line's rhythm but the action is not navigation. */
+.tp-link-button {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-weight: 600;
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.tp-link-button:hover {
+  text-decoration: none;
+}
+
+/* Background-refresh indicator: the rows stay put, this carries the signal. */
+.tp-refresh-bar {
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  z-index: 1;
+  height: 2px;
+  background: var(--tp-primary-500);
+  animation: tp-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes tp-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.35;
+  }
+}
+
+/* --- Company profile form section headings ------------------------------- *
+ * The form keeps a real <fieldset>/<legend> structure (antd Form.Item renders
+ * a div, which would lose the grouping semantics). antd styles neither element.
+ */
+.tp-legend {
+  padding: 0;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--tp-slate-600);
+}
+
+/* --- Profile detail lists ------------------------------------------------ *
+ * Real <dl>/<dt>/<dd>, laid out as a grid. antd's Row renders a <div>, which
+ * would make the terms and definitions inside it invalid, and Descriptions
+ * offers no hook for the per-field test ids these carry.
+ */
+.tp-detail-grid,
+.tp-detail-grid-3 {
+  display: grid;
+  gap: 20px 24px;
+  margin: 0;
+}
+
+@media (min-width: 640px) {
+  .tp-detail-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .tp-detail-grid-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.tp-detail-grid-full {
+  grid-column: 1 / -1;
+}
+
+/* Perks read as a checklist, two columns once there is room for them. */
+.tp-benefit-grid {
+  display: grid;
+  gap: 10px 24px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (min-width: 640px) {
+  .tp-benefit-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* --- Company profile banner ---------------------------------------------- */
+.tp-cover-band {
+  width: 100%;
+  height: 128px;
+  overflow: hidden;
+  border-radius: 12px;
+  background: var(--tp-brand-gradient);
+}
+
+.tp-cover-logo {
+  margin-top: -40px;
+  padding-left: 24px;
+}
+
+@media (min-width: 640px) {
+  .tp-cover-band {
+    height: 176px;
+  }
+
+  .tp-cover-logo {
+    margin-top: -48px;
+  }
+}
+
+/* --- Brand marks --------------------------------------------------------- */
+.tp-brand-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--tp-brand-gradient);
+  color: var(--tp-surface);
+  border-radius: 12px;
+}
+
+/* Compact social links on the candidate-facing preview, where the labelled
+   detail-list treatment would be heavier than the content deserves. */
+.tp-social-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid var(--tp-slate-200);
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--tp-slate-600);
+  text-decoration: none;
+  transition-property: background, border-color, color;
+  transition-duration: var(--tp-motion-base);
+  transition-timing-function: var(--tp-motion-ease);
+}
+
+.tp-social-chip:hover {
+  border-color: var(--tp-slate-300);
+  background: var(--tp-slate-50);
+  color: var(--tp-slate-900);
+}
+
+/* Summary strip on the candidate preview. A real <dl> again, so it cannot be
+   an antd Row — see the note on .tp-detail-grid. */
+.tp-preview-facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px 24px;
+  margin: 0;
+  padding: 16px 20px;
+  border: 1px solid var(--tp-slate-200);
+  border-radius: 12px;
+  background: var(--tp-slate-50);
+}
+
+@media (min-width: 640px) {
+  .tp-preview-facts {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+/* A primary call to action that is genuinely a link. antd's Button cannot be
+   used here: an <a> inside a <button> is invalid, and this navigates. */
+.tp-cta-link {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 8px;
+  background: var(--tp-brand-gradient);
+  color: var(--tp-surface);
+  font-weight: 600;
+  text-decoration: none;
+  box-shadow: 0 1px 2px rgb(47 94 255 / 24%);
+  transition-property: filter, box-shadow;
+  transition-duration: var(--tp-motion-base);
+  transition-timing-function: var(--tp-motion-ease);
+}
+
+.tp-cta-link:hover {
+  filter: brightness(1.08);
+  color: var(--tp-surface);
+  box-shadow: 0 4px 12px rgb(47 94 255 / 28%);
+}
+
+/* --- Auth shell ---------------------------------------------------------- *
+ * The split-screen card behind every sign-in / sign-up page. antd has no
+ * layout for this; Row/Col would need the brand panel to know its own width.
+ */
+.tp-auth-glow {
+  pointer-events: none;
+  position: absolute;
+  inset-inline: 0;
+  top: -40px;
+  z-index: -1;
+  height: 220px;
+  background: radial-gradient(60% 100% at 50% 0%, var(--tp-primary-200) 0%, var(--tp-primary-100) 45%, transparent 100%);
+  opacity: 0.6;
+  filter: blur(48px);
+}
+
+.tp-auth-card {
+  max-width: 1024px;
+  margin-inline: auto;
+  overflow: hidden;
+  border: 1px solid var(--tp-slate-200);
+  border-radius: 24px;
+  background: var(--tp-surface);
+  box-shadow: 0 20px 40px -20px rgb(15 23 42 / 15%);
+}
+
+.tp-auth-form {
+  padding: 40px 24px;
+}
+
+@media (min-width: 640px) {
+  .tp-auth-form {
+    padding: 48px 40px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .tp-auth-card {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .tp-auth-form {
+    padding-block: 56px;
+  }
+}
+
+/* --- Segmented links ------------------------------------------------------ *
+ * A segmented control whose items are real links (they navigate). antd's
+ * Segmented and Tabs both render non-navigating controls.
+ */
+.tp-segment-group {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
+  padding: 4px;
+  border-radius: 10px;
+  background: var(--tp-slate-100);
+}
+
+.tp-segment {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-weight: 600;
+  color: var(--tp-slate-500);
+  text-decoration: none;
+  transition-property: background, color;
+  transition-duration: var(--tp-motion-base);
+  transition-timing-function: var(--tp-motion-ease);
+}
+
+.tp-segment:hover {
+  color: var(--tp-slate-700);
+}
+
+.tp-segment-on {
+  background: var(--tp-surface);
+  color: var(--tp-primary-700);
+  box-shadow: 0 1px 2px rgb(15 23 42 / 8%);
+}
+
+.tp-segment-on:hover {
+  color: var(--tp-primary-700);
+}
+
+/* The small uppercase label inside a Divider — "or continue with". Not a
+   kicker above a heading: those were removed, because the heading carries its
+   own weight and the sidebar already names the section. */
+.tp-divider-label {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* The outline counterpart to .tp-cta-link, for a secondary door. */
+.tp-cta-link-ghost {
+  background: none;
+  border: 1px solid var(--tp-primary-600);
+  color: var(--tp-primary-700);
+  box-shadow: none;
+}
+
+.tp-cta-link-ghost:hover {
+  background: var(--tp-primary-50);
+  color: var(--tp-primary-700);
+  filter: none;
+  box-shadow: none;
+}
+
+/* Stacked proportion bar (pipeline-by-job). A single shared track, because
+   the comparison between segments is the whole point. */
+.tp-stacked-bar {
+  display: flex;
+  width: 100%;
+  min-width: 160px;
+  height: 10px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--tp-slate-100);
+}
+
+/* A List that sits flush inside a Card, with its own inner padding. */
+.tp-flush-list {
+  padding: 0;
+}
+
+.tp-flush-list .ant-list-item {
+  padding-inline: 24px;
+}
+
+/* The date/time column on an upcoming-interview row. */
+.tp-interview-when {
+  width: 96px;
+  flex-shrink: 0;
+  border-left: 2px solid var(--tp-primary-500);
+  padding-left: 12px;
+}
+
+/* --- Auth brand panel ---------------------------------------------------- *
+ * The photographic half of the auth split screen. Bespoke by nature — antd has
+ * no component for a full-bleed image with layered scrims — and hidden below
+ * the large breakpoint, where the form stands alone.
+ */
+.tp-brand-panel {
+  position: relative;
+  display: none;
+  overflow: hidden;
+  background: var(--tp-primary-900);
+}
+
+@media (min-width: 1024px) {
+  .tp-brand-panel {
+    display: flex;
+    flex-direction: column;
+  }
+}
+
+.tp-brand-photo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+.tp-brand-tint {
+  position: absolute;
+  inset: 0;
+  background: rgb(47 94 255 / 32%);
+  mix-blend-mode: multiply;
+}
+
+.tp-brand-scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, var(--tp-primary-950), rgb(13 31 82 / 70%) 50%, rgb(13 31 82 / 25%));
+}
+
+.tp-brand-scrim-top {
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  height: 160px;
+  background: linear-gradient(to bottom, rgb(13 31 82 / 80%), transparent);
+}
+
+.tp-brand-dots {
+  position: absolute;
+  inset: 0;
+  opacity: 0.1;
+  color: var(--tp-surface);
+  background-image: radial-gradient(currentcolor 1px, transparent 1px);
+  background-size: 18px 18px;
+}
+
+.tp-brand-body {
+  position: relative;
+  flex: 1;
+  padding: 40px;
+}
+
+@media (min-width: 1280px) {
+  .tp-brand-body {
+    padding: 48px;
+  }
+}
+
+.tp-brand-chip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid rgb(255 255 255 / 25%);
+  border-radius: 12px;
+  background: rgb(255 255 255 / 15%);
+  color: var(--tp-surface);
+  font-weight: var(--tp-weight-bold);
+  backdrop-filter: blur(4px);
+}
+
+.tp-brand-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border: 1px solid rgb(255 255 255 / 25%);
+  border-radius: 999px;
+  background: rgb(255 255 255 / 10%);
+  color: var(--tp-primary-50);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  backdrop-filter: blur(4px);
+}
+
+/* The antd Typography defaults are overridden here rather than inline: these
+   sit on a photograph and need the whole light-on-dark treatment together. */
+.tp-brand-panel .tp-brand-heading.ant-typography {
+  margin: 20px 0 0;
+  color: var(--tp-surface);
+  font-size: 32px;
+  line-height: 1.15;
+}
+
+.tp-brand-panel .tp-brand-lede.ant-typography {
+  max-width: 384px;
+  margin: 12px 0 0;
+  color: rgb(219 232 255 / 92%);
+}
+
+.tp-brand-features {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 28px 0 0;
+}
+
+.tp-brand-feature {
+  padding: 14px;
+  border: 1px solid rgb(255 255 255 / 15%);
+  border-radius: 16px;
+  background: rgb(255 255 255 / 10%);
+  backdrop-filter: blur(12px);
+  transition-property: background, border-color;
+  transition-duration: var(--tp-motion-base);
+  transition-timing-function: var(--tp-motion-ease);
+}
+
+.tp-brand-feature:hover {
+  border-color: rgb(255 255 255 / 30%);
+  background: rgb(255 255 255 / 18%);
+}
+
+.tp-brand-feature-icon {
+  display: inline-flex;
+  padding: 6px;
+  border-radius: 8px;
+  background: rgb(255 255 255 / 20%);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 15%);
+  color: var(--tp-surface);
+}
+
+.tp-brand-feature-title {
+  margin-top: 10px;
+  color: var(--tp-surface);
+  font-weight: 600;
+}
+
+.tp-brand-feature-text {
+  margin: 4px 0 0;
+  color: rgb(219 232 255 / 88%);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+/* ==========================================================================
+   Dashboard chrome — the recruiter command centre
+   ==========================================================================
+   The shell is antd Layout/Menu/Dropdown; these rules cover only what design
+   tokens cannot express: the responsive breakpoints, the fixed-sidebar offset,
+   and the composite triggers (org tag, profile block) that are single controls
+   made of several elements.
+   -------------------------------------------------------------------------- */
+
+/* --- Sidebar ------------------------------------------------------------- */
+.tp-sidebar {
+  display: none;
+}
+
+.tp-dashboard-body {
+  padding-left: 0;
+}
+
+.tp-mobile-only {
+  display: inline-flex;
+}
+
+@media (min-width: 1024px) {
+  .tp-sidebar {
+    display: block;
+  }
+
+  /* Matches Sider width exactly, so content never slides under the rail. */
+  .tp-dashboard-body {
+    padding-left: 256px;
+  }
+
+  .tp-mobile-only {
+    display: none;
+  }
+
+  .tp-sidebar-drawer {
+    display: none;
+  }
+}
+
+.tp-sidebar-inner {
+  height: 100%;
+  background: var(--tp-surface);
+  border-right: 1px solid var(--tp-slate-200);
+}
+
+/* Exactly the header height: this divider and the top bar bottom border form
+   one unbroken line across the fold. */
+.tp-sidebar-brand {
+  height: 64px;
+  flex-shrink: 0;
+  padding-inline: 24px;
+  border-bottom: 1px solid var(--tp-slate-200);
+}
+
+.tp-sidebar-nav {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-top: 16px;
+}
+
+/* Aligned to where the menu icons start: Menu itemMarginInline (8) plus the
+   item inline padding (16). Section label and icon share a left edge. */
+.tp-sidebar-caption {
+  display: block;
+  padding: 0 24px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.tp-sidebar-inner .ant-menu-inline {
+  border-inline-end: 0;
+}
+
+/* The label is a router Link; it has to fill the row so the whole pill is the
+   hit target rather than just the words. */
+.tp-sidebar-inner .ant-menu-item a {
+  color: inherit;
+  display: block;
+}
+
+.tp-sidebar-foot {
+  flex-shrink: 0;
+  padding: 8px 0;
+  border-top: 1px solid var(--tp-slate-200);
+}
+
+/* --- Top bar ------------------------------------------------------------- */
+.tp-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 64px;
+  padding-inline: 16px;
+  background: rgb(255 255 255 / 92%);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--tp-slate-200);
+  box-shadow: 0 1px 2px rgb(15 23 42 / 4%);
+}
+
+@media (min-width: 640px) {
+  .tp-topbar {
+    padding-inline: 24px;
+  }
+}
+
+/* Flexible but capped: wide enough to read a candidate full name back,
+   narrow enough that the action cluster keeps the right edge. */
+.tp-topbar-search {
+  display: none;
+  flex: 0 1 420px;
+  min-width: 0;
+}
+
+@media (min-width: 640px) {
+  .tp-topbar-search {
+    display: block;
+  }
+}
+
+.tp-topbar-search .ant-input-affix-wrapper {
+  border-radius: 999px;
+  background: var(--tp-canvas);
+  border-color: var(--tp-slate-200);
+  transition-property: background, border-color, box-shadow;
+  transition-duration: var(--tp-motion-base);
+  transition-timing-function: var(--tp-motion-ease);
+}
+
+.tp-topbar-search .ant-input-affix-wrapper:hover {
+  background: var(--tp-surface);
+  border-color: var(--tp-slate-300);
+}
+
+.tp-topbar-search .ant-input-affix-wrapper-focused {
+  background: var(--tp-surface);
+}
+
+/* The shortcut hint is a Tag, reset to read as a keycap rather than a label. */
+.tp-kbd {
+  display: none;
+  margin: 0;
+  padding: 1px 7px;
+  border-color: var(--tp-slate-200);
+  border-radius: 6px;
+  background: var(--tp-surface);
+  color: var(--tp-slate-400);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 18px;
+}
+
+@media (min-width: 1024px) {
+  .tp-kbd {
+    display: inline-block;
+  }
+}
+
+.tp-topbar-divider {
+  height: 24px;
+  margin-inline: 4px;
+  border-color: var(--tp-slate-200);
+}
+
+.tp-icon-button {
+  color: var(--tp-slate-600);
+}
+
+.tp-icon-button:hover {
+  color: var(--tp-slate-900);
+}
+
+/* --- Org badge ----------------------------------------------------------- */
+/* Context, not navigation. Deliberately lighter than the profile block beside
+   it so the workspace identity and the personal identity never compete. */
+.tp-org-tag {
+  display: none;
+  text-decoration: none;
+}
+
+@media (min-width: 768px) {
+  .tp-org-tag {
+    display: inline-flex;
+  }
+}
+
+.tp-org-tag-inner {
+  display: inline-flex;
+  align-items: center;
+  height: 32px;
+  margin: 0;
+  padding-inline: 10px;
+  border-radius: 999px;
+  border-color: var(--tp-slate-200);
+  transition-property: background, border-color;
+  transition-duration: var(--tp-motion-base);
+  transition-timing-function: var(--tp-motion-ease);
+}
+
+.tp-org-tag:hover .tp-org-tag-inner {
+  background: var(--tp-primary-50);
+  border-color: var(--tp-primary-100);
+}
+
+.tp-org-tag-name {
+  max-width: 168px;
+  overflow: hidden;
+  color: var(--tp-slate-700);
+  font-size: 13px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tp-org-tag:hover .tp-org-tag-name {
+  color: var(--tp-primary-700);
+}
+
+/* --- Profile trigger ----------------------------------------------------- */
+/* One control made of four elements, so it is one button with one hit target
+   and one focus ring — not an avatar sitting next to some text. */
+.tp-profile-trigger {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 44px;
+  padding: 0 8px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  transition-property: background, border-color;
+  transition-duration: var(--tp-motion-base);
+  transition-timing-function: var(--tp-motion-ease);
+}
+
+.tp-profile-trigger:hover {
+  background: var(--tp-canvas);
+  border-color: var(--tp-slate-200);
+}
+
+.tp-profile-trigger:focus-visible {
+  outline: none;
+  border-color: var(--tp-primary-600);
+  box-shadow: var(--tp-focus-ring);
+}
+
+/* A ring rather than a border: it frames the person without changing the
+   avatar's own dimensions. Selected as a descendant rather than through a prop
+   — the ring belongs to this trigger, not to every Avatar. */
+.tp-profile-trigger .ant-avatar {
+  box-shadow: 0 0 0 2px var(--tp-surface), 0 0 0 3px var(--tp-slate-200);
+  transition-property: box-shadow;
+  transition-duration: var(--tp-motion-base);
+  transition-timing-function: var(--tp-motion-ease);
+}
+
+.tp-profile-trigger:hover .ant-avatar {
+  box-shadow: 0 0 0 2px var(--tp-surface), 0 0 0 3px var(--tp-primary-100);
+}
+
+.tp-profile-meta {
+  display: none;
+  min-width: 0;
+  text-align: left;
+  line-height: 1.25;
+}
+
+@media (min-width: 640px) {
+  .tp-profile-meta {
+    display: block;
+  }
+}
+
+.tp-profile-name {
+  display: block;
+  max-width: 150px;
+  overflow: hidden;
+  color: var(--tp-slate-900);
+  font-size: 13.5px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tp-profile-role {
+  display: block;
+  color: var(--tp-slate-500);
+  font-size: 11.5px;
+  font-weight: 500;
+}
+
+.tp-profile-chevron {
+  color: var(--tp-slate-400);
+  transition-property: color;
+  transition-duration: var(--tp-motion-base);
+  transition-timing-function: var(--tp-motion-ease);
+}
+
+.tp-profile-trigger:hover .tp-profile-chevron {
+  color: var(--tp-slate-600);
+}
+
+/* --- Popovers (notifications, profile) ----------------------------------- */
+.tp-popover {
+  width: 320px;
+  overflow: hidden;
+  border: 1px solid var(--tp-slate-200);
+  border-radius: 14px;
+  background: var(--tp-surface);
+  box-shadow: var(--tp-shadow-lg);
+}
+
+.tp-popover-head {
+  display: block;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--tp-slate-100);
+}
+
+.tp-notification-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  max-height: 360px;
+  overflow-y: auto;
+}
+
+.tp-notification {
+  display: flex;
+  gap: 12px;
+  padding: 12px 16px;
+  transition-property: background;
+  transition-duration: var(--tp-motion-base);
+  transition-timing-function: var(--tp-motion-ease);
+}
+
+.tp-notification + .tp-notification {
+  border-top: 1px solid var(--tp-slate-100);
+}
+
+.tp-notification:hover {
+  background: var(--tp-canvas);
+}
+
+.tp-notification-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  margin-top: 2px;
+  border-radius: 9px;
+  background: var(--tp-primary-50);
+  color: var(--tp-primary-600);
+}
+
+.tp-profile-popover {
+  width: 268px;
+}
+
+.tp-profile-identity {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--tp-slate-100);
+}
+
+.tp-profile-menu.ant-menu {
+  border-inline-end: 0;
+  padding: 6px;
+  background: transparent;
+}
+
+/* ==========================================================================
+   Job vacancy form — the long form and its rail
+   ==========================================================================
+   The form is one scrollable page rather than a wizard, so the reader needs a
+   permanent answer to "where am I and how much is left". That is the rail's
+   whole job, and these rules cover the three things antd has no component for:
+   the two-column shell, the sticky rail and action bar, and the numbered
+   section headings that keep a real <fieldset>/<legend> underneath.
+   -------------------------------------------------------------------------- */
+
+.tp-vacancy-layout {
+  display: grid;
+  align-items: start;
+  gap: var(--tp-space-3);
+}
+
+/* A grid item's automatic minimum size is its content, not the track — so a
+   wide control inside the form column (the segmented workplace picker, a
+   textarea's counter row) would push the whole page past the viewport and
+   scroll the body sideways. This is what keeps the column inside the screen. */
+.tp-vacancy-layout > * {
+  min-width: 0;
+}
+
+@media (min-width: 1024px) {
+  .tp-vacancy-layout {
+    grid-template-columns: 220px minmax(0, 1fr);
+    gap: var(--tp-space-4);
+  }
+}
+
+/* --- The rail ------------------------------------------------------------ */
+/* Below the large breakpoint it is a scrollable strip pinned under the top
+   bar; at large it becomes the left column and sticks beside the form. */
+.tp-vacancy-rail {
+  position: sticky;
+  top: var(--tp-header-height);
+  z-index: 10;
+  /* Bleeds to the content edges so the strip reads as chrome, not as a card. */
+  margin-inline: calc(-1 * var(--tp-space-2));
+  padding: var(--tp-space-1) var(--tp-space-2);
+  border-bottom: 1px solid var(--tp-slate-200);
+  background: var(--tp-canvas);
+  overflow-x: auto;
+}
+
+.tp-vacancy-rail-list {
+  display: flex;
+  gap: var(--tp-space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (min-width: 1024px) {
+  .tp-vacancy-rail {
+    /* Clear of the sticky top bar, aligned with the content's own top gutter. */
+    top: calc(var(--tp-header-height) + var(--tp-space-3));
+    margin-inline: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    overflow: visible;
+  }
+
+  .tp-vacancy-rail-list {
+    flex-direction: column;
+    gap: 2px;
+  }
+}
+
+.tp-vacancy-rail-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: var(--tp-space-1) 10px;
+  border: 1px solid transparent;
+  border-radius: var(--tp-radius-sm);
+  background: none;
+  color: var(--tp-slate-600);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition-property: background, color, border-color;
+  transition-duration: var(--tp-motion-base);
+  transition-timing-function: var(--tp-motion-ease);
+}
+
+.tp-vacancy-rail-item:hover {
+  background: var(--tp-slate-100);
+  color: var(--tp-slate-900);
+}
+
+.tp-vacancy-rail-item:focus-visible {
+  outline: none;
+  border-color: var(--tp-primary-600);
+  box-shadow: var(--tp-focus-ring);
+}
+
+.tp-vacancy-rail-item[data-current='true'] {
+  background: var(--tp-primary-50);
+  color: var(--tp-primary-700);
+}
+
+.tp-vacancy-rail-mark {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--tp-radius-pill);
+  background: var(--tp-slate-100);
+  color: var(--tp-slate-500);
+  font-size: var(--tp-font-caption);
+  font-weight: var(--tp-weight-semibold);
+  font-variant-numeric: tabular-nums;
+}
+
+.tp-vacancy-rail-item[data-state='started'] .tp-vacancy-rail-mark {
+  background: var(--tp-primary-100);
+  color: var(--tp-primary-700);
+}
+
+.tp-vacancy-rail-item[data-state='done'] .tp-vacancy-rail-mark {
+  background: var(--tp-success-bg);
+  color: var(--tp-success-text);
+}
+
+.tp-vacancy-rail-item[data-state='error'] .tp-vacancy-rail-mark {
+  background: var(--tp-error-bg);
+  color: var(--tp-error-text);
+}
+
+.tp-vacancy-rail-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.tp-vacancy-rail-title {
+  font-size: var(--tp-font-small);
+  font-weight: var(--tp-weight-semibold);
+  white-space: nowrap;
+}
+
+.tp-vacancy-rail-state {
+  color: var(--tp-slate-500);
+  font-size: 11.5px;
+  white-space: nowrap;
+}
+
+.tp-vacancy-rail-item[data-state='error'] .tp-vacancy-rail-state {
+  color: var(--tp-error-text);
+}
+
+/* The second line is wayfinding detail; the strip has room for names only. */
+@media (max-width: 1023px) {
+  .tp-vacancy-rail-state {
+    display: none;
+  }
+}
+
+/* --- Sections ------------------------------------------------------------ */
+/* Clears the sticky chrome when the rail jumps to a section — without this the
+   heading lands underneath the top bar and reads as the wrong section. */
+.tp-vacancy-section {
+  scroll-margin-top: 132px;
+}
+
+@media (min-width: 1024px) {
+  .tp-vacancy-section {
+    scroll-margin-top: calc(var(--tp-header-height) + var(--tp-space-2));
+  }
+}
+
+/* A fieldset carries an intrinsic minimum width that would stop the grid
+   inside it from ever shrinking; min-width:0 is what lets the columns wrap. */
+.tp-vacancy-fieldset {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.tp-vacancy-legend {
+  display: flex;
+  align-items: center;
+  gap: var(--tp-space-1-5);
+  width: 100%;
+  padding: 0;
+  margin-bottom: var(--tp-space-0-75);
+}
+
+.tp-vacancy-index {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--tp-radius-sm);
+  background: var(--tp-slate-100);
+  color: var(--tp-slate-500);
+  font-size: var(--tp-font-small);
+  font-weight: var(--tp-weight-semibold);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+
+.tp-vacancy-index[data-state='done'] {
+  background: var(--tp-primary-50);
+  color: var(--tp-primary-700);
+}
+
+.tp-vacancy-legend-text {
+  color: var(--tp-slate-900);
+  font-size: var(--tp-font-title);
+  font-weight: var(--tp-weight-semibold);
+  letter-spacing: var(--tp-tracking-heading);
+}
+
+.tp-vacancy-count {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--tp-space-0-5);
+  margin-inline-start: auto;
+  color: var(--tp-slate-500);
+  font-size: var(--tp-font-caption);
+  font-weight: var(--tp-weight-medium);
+  white-space: nowrap;
+}
+
+.tp-vacancy-count[data-state='done'] {
+  color: var(--tp-success-text);
+}
+
+.tp-vacancy-count[data-state='error'] {
+  color: var(--tp-error-text);
+}
+
+/* The count is detail, not structure — at phone width the heading keeps it. */
+@media (max-width: 639px) {
+  .tp-vacancy-count {
+    display: none;
+  }
+}
+
+.tp-vacancy-label {
+  display: block;
+  margin-bottom: var(--tp-space-0-75);
+  font-weight: var(--tp-weight-medium);
+}
+
+/* --- Action bar ---------------------------------------------------------- */
+/* Sticky, not fixed: it rides the bottom of the viewport while the form is
+   taller than the screen, then settles at the end of the column instead of
+   hovering over the last inch of the page forever. The translucency is the
+   same treatment the top bar uses, for the same reason — content passes
+   underneath it. */
+.tp-vacancy-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 15;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--tp-space-1);
+  margin-top: var(--tp-space-2-5);
+  padding: var(--tp-space-1-5) var(--tp-space-2);
+  border: 1px solid var(--tp-slate-200);
+  border-radius: var(--tp-radius-lg);
+  background: rgb(255 255 255 / 92%);
+  box-shadow: var(--tp-shadow-md);
+  backdrop-filter: blur(10px);
+}
+
+.tp-vacancy-action-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tp-space-1);
+  margin-inline-start: auto;
+}
+
+@media (max-width: 639px) {
+  /* The progress line takes its own row so the three controls stay together. */
+  .tp-vacancy-actions > :first-child {
+    flex-basis: 100%;
+  }
+}
+
+/* --- Bullet list editor --------------------------------------------------- */
+.tp-bullet-rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tp-space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tp-bullet-row {
+  display: flex;
+  align-items: center;
+  gap: var(--tp-space-1);
+}
+
+.tp-bullet-marker {
+  flex-shrink: 0;
+  width: 18px;
+  color: var(--tp-slate-400);
+  font-size: var(--tp-font-caption);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+/* --- Checkbox groups ------------------------------------------------------ */
+/* antd spaces sibling checkboxes with an inline margin, which fights any grid
+   or wrap layout put around them. */
+.tp-benefit-checks.ant-checkbox-group,
+.tp-day-checks.ant-checkbox-group {
+  display: grid;
+  gap: 10px var(--tp-space-3);
+}
+
+.tp-benefit-checks .ant-checkbox-wrapper,
+.tp-day-checks .ant-checkbox-wrapper {
+  margin-inline-start: 0;
+}
+
+@media (min-width: 640px) {
+  .tp-benefit-checks.ant-checkbox-group {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1280px) {
+  .tp-benefit-checks.ant-checkbox-group {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.tp-day-checks.ant-checkbox-group {
+  grid-auto-flow: column;
+  grid-auto-columns: max-content;
+  gap: var(--tp-space-1-5);
+}
+
+@media (max-width: 639px) {
+  /* Seven columns do not fit a phone; let them wrap instead of scroll. */
+  .tp-day-checks.ant-checkbox-group {
+    grid-auto-flow: row;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+/* --- Vacancy management (list, detail) ---------------------------------- *
+ * The list is a <ul> of grid rows rather than an antd Table: each row reads
+ * as one sentence (this role, in this state, closing then, do this) and its
+ * zones stack in that order as the screen narrows, where table columns would
+ * have to be hidden one at a time.
+ */
+
+/* Status: colour only for "live"; the rest are told apart by mark and weight. */
+.tp-vacancy-status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--tp-space-0-75);
+  padding: 2px 10px;
+  border: 1px solid transparent;
+  border-radius: var(--tp-radius-pill);
+  background: var(--tp-slate-100);
+  color: var(--tp-slate-600);
+  font-size: var(--tp-font-caption);
+  font-weight: var(--tp-weight-semibold);
+  line-height: var(--tp-leading-normal);
+  white-space: nowrap;
+}
+
+.tp-vacancy-status-dot {
+  width: 7px;
+  height: 7px;
+  flex-shrink: 0;
+  border: 1.5px solid currentColor;
+  border-radius: var(--tp-radius-pill);
+}
+
+.tp-vacancy-status[data-status='PUBLISHED'] {
+  background: var(--tp-success-bg);
+  color: var(--tp-success-text);
+}
+
+.tp-vacancy-status[data-status='PUBLISHED'] .tp-vacancy-status-dot {
+  background: currentColor;
+}
+
+.tp-vacancy-status[data-status='CLOSED'] {
+  background: var(--tp-slate-200);
+  color: var(--tp-slate-700);
+}
+
+.tp-vacancy-status[data-status='ARCHIVED'] {
+  border-color: var(--tp-slate-300);
+  background: transparent;
+  color: var(--tp-slate-500);
+}
+
+.tp-vacancy-status[data-status='ARCHIVED'] .tp-vacancy-status-dot {
+  border-style: dashed;
+}
+
+/* Deadline proximity. Plain words carry it; amber only adds urgency. */
+.tp-deadline-signal {
+  display: block;
+  color: var(--tp-slate-500);
+  font-size: var(--tp-font-caption);
+}
+
+.tp-deadline-signal[data-tone='warning'] {
+  color: var(--tp-warning-text);
+  font-weight: var(--tp-weight-medium);
+}
+
+.tp-vacancy-detail-deadline .tp-deadline-signal {
+  display: inline;
+  margin-inline-start: var(--tp-space-1);
+}
+
+.tp-vacancy-summary {
+  margin: calc(-1 * var(--tp-space-2)) 0 var(--tp-space-3);
+  color: var(--tp-slate-600);
+  font-size: var(--tp-font-small);
+}
+
+.tp-vacancy-summary .tp-link-button {
+  font-weight: var(--tp-weight-medium);
+  text-decoration-color: var(--tp-slate-300);
+}
+
+/* Focus target after an action whose row has left the view. The Alert inside
+   already carries the visible frame, so the wrapper adds a ring, not a box. */
+.tp-vacancy-notice {
+  margin-bottom: var(--tp-space-3);
+  border-radius: var(--tp-radius-lg);
+  outline: none;
+}
+
+.tp-vacancy-notice:focus-visible {
+  box-shadow: var(--tp-focus-ring);
+}
+
+/* --- Toolbar ------------------------------------------------------------- */
+.tp-vacancy-toolbar-wrap {
+  padding: var(--tp-space-2-5) var(--tp-space-3) var(--tp-space-1-5);
+  border-bottom: 1px solid var(--tp-slate-200);
+}
+
+/* Five segments do not fit a phone. They scroll rather than wrap, and the
+   padding keeps each button's focus ring inside the scroll box. */
+.tp-segment-scroll {
+  margin: calc(-1 * var(--tp-space-0-5));
+  padding: var(--tp-space-0-5);
+  overflow-x: auto;
+}
+
+.tp-segment-scroll .ant-radio-group {
+  display: inline-flex;
+  white-space: nowrap;
+}
+
+.tp-vacancy-filters {
+  display: grid;
+  gap: var(--tp-space-1-5);
+}
+
+@media (min-width: 768px) {
+  .tp-vacancy-filters {
+    grid-template-columns: minmax(0, 1fr) 200px 200px;
+  }
+}
+
+/* --- Rows ---------------------------------------------------------------- */
+.tp-vacancy-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tp-vacancy-row {
+  transition: background var(--tp-motion-base) var(--tp-motion-ease);
+}
+
+.tp-vacancy-row + .tp-vacancy-row {
+  border-top: 1px solid var(--tp-slate-100);
+}
+
+.tp-vacancy-row:hover {
+  background: var(--tp-canvas);
+}
+
+/* After an action: one tint that fades back, so the eye finds the row that
+   changed without anything moving. */
+.tp-vacancy-row[data-flash] {
+  animation: tp-row-flash 1.6s var(--tp-motion-ease);
+}
+
+@keyframes tp-row-flash {
+  from {
+    background: var(--tp-primary-50);
+  }
+
+  to {
+    background: transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tp-vacancy-row,
+  .tp-vacancy-row[data-flash] {
+    transition: none;
+    animation: none;
+  }
+}
+
+.tp-vacancy-row-grid {
+  display: grid;
+  grid-template-areas:
+    'identity actions'
+    'state state';
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--tp-space-1-5) var(--tp-space-2);
+  align-items: start;
+  padding: var(--tp-space-2) var(--tp-space-3);
+}
+
+@media (min-width: 1024px) {
+  .tp-vacancy-row-grid {
+    grid-template-areas: 'identity state actions';
+    grid-template-columns: minmax(0, 1fr) minmax(0, 420px) 200px;
+    align-items: center;
+    gap: var(--tp-space-3);
+  }
+}
+
+.tp-vacancy-row-identity {
+  grid-area: identity;
+  min-width: 0;
+}
+
+.tp-vacancy-row-title {
+  margin: 0;
+  font-size: var(--tp-font-lead);
+  font-weight: var(--tp-weight-semibold);
+  line-height: var(--tp-leading-snug);
+  letter-spacing: var(--tp-tracking-heading);
+}
+
+.tp-vacancy-row-title a {
+  border-radius: var(--tp-space-0-5);
+  color: var(--tp-slate-900);
+  text-decoration: none;
+}
+
+.tp-vacancy-row-title a:hover {
+  color: var(--tp-primary-700);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.tp-vacancy-row-title a:focus-visible {
+  outline: none;
+  box-shadow: var(--tp-focus-ring);
+}
+
+.tp-vacancy-row-meta {
+  margin: 2px 0 0;
+  overflow: hidden;
+  color: var(--tp-slate-500);
+  font-size: var(--tp-font-small);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tp-vacancy-row-updated {
+  margin: 2px 0 0;
+  color: var(--tp-slate-500);
+  font-size: var(--tp-font-caption);
+}
+
+/* Three facts on one line: status, deadline, applicants (or completeness). */
+.tp-vacancy-row-state {
+  grid-area: state;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--tp-space-2);
+  align-items: center;
+  margin: 0;
+}
+
+.tp-vacancy-row-state dd {
+  margin: 0;
+}
+
+.tp-vacancy-row-term {
+  color: var(--tp-slate-500);
+  font-size: var(--tp-font-caption);
+  font-weight: var(--tp-weight-medium);
+}
+
+.tp-vacancy-row-figure {
+  display: block;
+  color: var(--tp-slate-900);
+  font-size: var(--tp-font-body);
+  font-variant-numeric: tabular-nums;
+}
+
+.tp-vacancy-row-muted {
+  color: var(--tp-slate-400);
+}
+
+.tp-vacancy-row-sub {
+  display: block;
+  color: var(--tp-slate-500);
+  font-size: var(--tp-font-caption);
+}
+
+.tp-vacancy-row-actions {
+  grid-area: actions;
+  justify-self: end;
+}
+
+.tp-vacancy-actions-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--tp-space-1);
+}
+
+/* Inline actions give way as the row narrows; the ⋮ menu gains the same
+   items at the same widths, so each action is reachable exactly once.
+   !important because antd sets display on its own button and menu-item
+   classes with equal specificity. */
+.tp-inline-from-md,
+.tp-inline-from-lg {
+  display: none !important;
+}
+
+@media (min-width: 768px) {
+  .tp-inline-from-md {
+    display: inline-flex !important;
+  }
+
+  .tp-menu-until-md {
+    display: none !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  .tp-inline-from-lg {
+    display: inline-flex !important;
+  }
+
+  .tp-menu-until-lg {
+    display: none !important;
+  }
+}
+
+.tp-vacancy-more.ant-btn {
+  padding-inline: var(--tp-space-0-75);
+}
+
+/* --- Detail page --------------------------------------------------------- */
+.tp-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--tp-space-0-75);
+  margin-bottom: var(--tp-space-2);
+  color: var(--tp-slate-600);
+  font-size: var(--tp-font-small);
+  font-weight: var(--tp-weight-medium);
+  text-decoration: none;
+}
+
+.tp-back-link:hover {
+  color: var(--tp-primary-700);
+}
+
+.tp-vacancy-detail-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--tp-space-2);
+  margin-bottom: var(--tp-space-4);
+}
+
+.tp-vacancy-detail-title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--tp-space-1-5);
+}
+
+.tp-vacancy-detail-title.ant-typography {
+  margin: 0;
+  font-size: var(--tp-font-heading);
+  letter-spacing: var(--tp-tracking-heading);
+}
+
+.tp-vacancy-detail-deadline {
+  margin: var(--tp-space-0-5) 0 0;
+  color: var(--tp-slate-600);
+  font-size: var(--tp-font-small);
+  font-variant-numeric: tabular-nums;
+}
+
+.tp-vacancy-detail-layout {
+  display: grid;
+  gap: var(--tp-space-3);
+  align-items: start;
+}
+
+.tp-vacancy-detail-layout > * {
+  min-width: 0;
+}
+
+/* On a narrow screen the lifecycle comes first: it says what state the
+   vacancy is in before the reader commits to scrolling its whole advert. */
+.tp-vacancy-detail-layout > aside {
+  order: -1;
+}
+
+@media (min-width: 1024px) {
+  .tp-vacancy-detail-layout {
+    grid-template-columns: minmax(0, 1fr) 300px;
+  }
+
+  .tp-vacancy-detail-layout > aside {
+    position: sticky;
+    top: calc(var(--tp-header-height) + var(--tp-space-3));
+    order: 0;
+  }
+}
+
+.tp-vacancy-block + .tp-vacancy-block {
+  margin-top: var(--tp-space-4);
+  padding-top: var(--tp-space-3);
+  border-top: 1px solid var(--tp-slate-100);
+}
+
+/* Lifecycle stepper: a vertical rail of four stages. */
+.tp-lifecycle {
+  margin: var(--tp-space-2) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tp-lifecycle-step {
+  position: relative;
+  display: flex;
+  gap: var(--tp-space-1-5);
+  padding-bottom: var(--tp-space-2);
+}
+
+.tp-lifecycle-step:last-child {
+  padding-bottom: 0;
+}
+
+/* The connector, drawn from each mark down to the next one. */
+.tp-lifecycle-step:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  top: 22px;
+  bottom: 2px;
+  left: 9px;
+  width: 2px;
+  border-radius: var(--tp-radius-pill);
+  background: var(--tp-slate-200);
+}
+
+.tp-lifecycle-step[data-state='done']:not(:last-child)::after {
+  background: var(--tp-slate-400);
+}
+
+.tp-lifecycle-mark {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--tp-slate-300);
+  border-radius: var(--tp-radius-pill);
+  background: var(--tp-surface);
+  color: var(--tp-surface);
+}
+
+.tp-lifecycle-step[data-state='done'] .tp-lifecycle-mark {
+  border-color: var(--tp-slate-500);
+  background: var(--tp-slate-500);
+}
+
+.tp-lifecycle-step[data-state='current'] .tp-lifecycle-mark {
+  border-color: var(--tp-primary-600);
+  box-shadow: var(--tp-focus-ring);
+}
+
+.tp-lifecycle-step[data-state='current'] .tp-lifecycle-mark::after {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: var(--tp-radius-pill);
+  background: var(--tp-primary-600);
+}
+
+.tp-lifecycle-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.tp-lifecycle-name {
+  color: var(--tp-slate-700);
+  font-size: var(--tp-font-small);
+  font-weight: var(--tp-weight-semibold);
+}
+
+.tp-lifecycle-step[data-state='current'] .tp-lifecycle-name {
+  color: var(--tp-primary-700);
+}
+
+.tp-lifecycle-step[data-state='upcoming'] .tp-lifecycle-name {
+  color: var(--tp-slate-500);
+  font-weight: var(--tp-weight-medium);
+}
+
+.tp-lifecycle-date {
+  min-height: var(--tp-space-2);
+  color: var(--tp-slate-500);
+  font-size: var(--tp-font-caption);
+  font-variant-numeric: tabular-nums;
+}
+
+.tp-vacancy-side-facts {
+  display: grid;
+  gap: var(--tp-space-1-5);
+  margin: var(--tp-space-2) 0 0;
+  padding-top: var(--tp-space-2);
+  border-top: 1px solid var(--tp-slate-100);
+}
+
+.tp-vacancy-side-facts dt {
+  color: var(--tp-slate-500);
+  font-size: var(--tp-font-caption);
+  font-weight: var(--tp-weight-medium);
+}
+
+.tp-vacancy-side-facts dd {
+  margin: 2px 0 0;
+  font-size: var(--tp-font-small);
+}
+
+/* --- Dashboard content --------------------------------------------------- */
+.tp-dashboard-content {
+  width: 100%;
+  max-width: 1280px;
+  margin-inline: auto;
+  padding: 32px 16px;
+}
+
+@media (min-width: 640px) {
+  .tp-dashboard-content {
+    padding-inline: 24px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .tp-dashboard-content {
+    padding-inline: 32px;
+  }
+}

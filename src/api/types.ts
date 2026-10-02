@@ -262,6 +262,122 @@ export interface JobSummary {
   companyName: string;
 }
 
+/* --- Job vacancies (PB-011) ---------------------------------------------- */
+
+export type EmploymentType = 'FULL_TIME' | 'PART_TIME' | 'CONTRACT' | 'INTERNSHIP' | 'TEMPORARY';
+export type WorkplaceType = 'ON_SITE' | 'REMOTE' | 'HYBRID';
+export type PayPeriod = 'HOURLY' | 'MONTHLY' | 'ANNUAL';
+export type ShiftType = 'DAY' | 'NIGHT' | 'ROTATING' | 'FLEXIBLE';
+/** Weekday identifiers, so a working week survives translation. */
+export type WeekDay = 'MON' | 'TUE' | 'WED' | 'THU' | 'FRI' | 'SAT' | 'SUN';
+/**
+ * Where a vacancy is in its life (PB-018 → PB-022).
+ *
+ * <p>DRAFT is visible only inside the workspace; PUBLISHED is on the candidate
+ * portal and accepting applications; CLOSED is still visible to the team but
+ * takes no new applications; ARCHIVED has left every active list and is kept
+ * for reporting. The legal moves between them live in
+ * `VACANCY_TRANSITIONS` (`src/dashboard/jobVacancy.ts`) and are enforced by the
+ * backend — the frontend only declines to offer the others.</p>
+ */
+export type VacancyStatus = 'DRAFT' | 'PUBLISHED' | 'CLOSED' | 'ARCHIVED';
+
+/**
+ * A vacancy as the creation form submits it.
+ *
+ * <p>PROPOSED CONTRACT — no endpoint serves this yet, exactly like
+ * {@link CompanyProfileResponse} before `/tenant` landed. It follows the same
+ * conventions so that wiring `POST /jobs` is a change to `src/api/jobs.ts` and
+ * the hook behind it, and nothing in the form: blank optionals travel as
+ * `null`, lists are always arrays and never null, and every enumerated value is
+ * a stable identifier rather than the words the UI happens to show.</p>
+ *
+ * <p>Tenant scope is absent by design — the backend derives it from the access
+ * token, as `team.ts` and `company.ts` already do, so there is no request shape
+ * that could file a vacancy under another company.</p>
+ */
+export interface JobVacancyRequest {
+  /**
+   * The basics are required to PUBLISH and optional on a DRAFT — a draft is a
+   * partial vacancy by definition. Blank text travels as `''`, a blank choice
+   * or date as `null`, so a draft never carries a value nobody chose.
+   */
+  title: string;
+  department: string;
+  openings: number;
+  employmentType: EmploymentType | null;
+  workplaceType: WorkplaceType | null;
+  location: string;
+  /** ISO date, no time: a deadline is a day, not an instant. Null on a draft without one. */
+  applicationDeadline: string | null;
+
+  jobSummary: string;
+  jobDescription: string;
+  keyResponsibilities: string[];
+
+  requiredSkills: string[];
+  preferredSkills: string[];
+  minimumExperienceYears: number | null;
+  education: string | null;
+  certifications: string[];
+  languageRequirements: string[];
+  otherRequirements: string | null;
+
+  salaryMin: number | null;
+  salaryMax: number | null;
+  currency: string | null;
+  payPeriod: PayPeriod | null;
+  benefits: string[];
+
+  workingDays: WeekDay[];
+  workingHours: string | null;
+  shiftType: ShiftType | null;
+  expectedHoursPerWeek: number | null;
+
+  /** Workspace user ids. Null until someone is assigned. */
+  assignedRecruiterId: string | null;
+  hiringManagerId: string | null;
+  recruitmentPipelineId: string | null;
+  screeningQuestions: string[];
+
+  /**
+   * Only DRAFT or PUBLISHED on create. Every later move goes through its own
+   * lifecycle endpoint, never through a field edit.
+   */
+  status: VacancyStatus;
+}
+
+/**
+ * An edit to a stored vacancy: every content field, no status.
+ *
+ * <p>Status is absent on purpose. Publishing, closing and archiving each have
+ * their own endpoint with their own rules, and a PUT that could also flip
+ * status would be a second, unguarded route to the same transition.</p>
+ *
+ * <p>`version` is the optimistic-lock token from the response being edited.
+ * Two recruiters saving the same vacancy is a real case in a shared workspace;
+ * the second save answers 409 rather than silently overwriting the first.</p>
+ */
+export type JobVacancyUpdateRequest = Omit<JobVacancyRequest, 'status'> & { version: number };
+
+/** A stored vacancy: everything submitted, plus what only the server knows. */
+export interface JobVacancyResponse extends JobVacancyRequest {
+  id: string;
+  /** Optimistic-lock counter; echoed back on PUT. */
+  version: number;
+  createdAt: string;
+  updatedAt: string;
+  /** Set on the transition into each state; null until then. */
+  publishedAt: string | null;
+  closedAt: string | null;
+  archivedAt: string | null;
+  /**
+   * Applications received. Null — not zero — until the applications module
+   * exists: zero would claim that nobody applied, which nobody can know yet.
+   */
+  applicantCount: number | null;
+}
+
 /** Uniform error envelope returned by the backend on every failure. */
 export interface ApiError {
   timestamp: string;

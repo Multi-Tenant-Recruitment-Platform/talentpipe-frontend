@@ -1,5 +1,7 @@
+import { Flex, Typography } from 'antd';
 import type { ReactNode } from 'react';
-import heroImage from '../assets/hero.png';
+import interviewImage from '../assets/interview.jpg';
+import { fontSize } from '../theme/tokens';
 
 interface Feature {
   title: string;
@@ -8,7 +10,9 @@ interface Feature {
 }
 
 const iconProps = {
-  className: 'h-5 w-5',
+  width: 20,
+  height: 20,
+  'aria-hidden': true,
   fill: 'none',
   viewBox: '0 0 24 24',
   strokeWidth: 1.5,
@@ -77,57 +81,65 @@ const FEATURES: Feature[] = [
  */
 export function AuthBrandPanel() {
   return (
-    <div className="relative hidden overflow-hidden bg-gradient-to-br from-indigo-700 via-indigo-700 to-violet-900 lg:flex lg:flex-col lg:justify-center">
-      {/* Decorative texture: dot grid + soft glows. Purely visual. */}
-      <div
-        aria-hidden="true"
-        className="absolute inset-0 opacity-[0.15]"
-        style={{
-          backgroundImage: 'radial-gradient(currentColor 1px, transparent 1px)',
-          backgroundSize: '18px 18px',
-          color: '#fff',
-        }}
+    <div className="tp-brand-panel">
+      {/* Full-bleed photograph: the panel *is* the image, everything else
+          layers on top of it. */}
+      <img
+        src={interviewImage}
+        alt="A recruiter reviewing a CV during a video interview"
+        className="tp-brand-photo"
       />
-      <div className="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-white/10 blur-3xl" aria-hidden="true" />
-      <div className="absolute -bottom-24 -left-24 h-72 w-72 rounded-full bg-violet-400/20 blur-3xl" aria-hidden="true" />
-      <div className="absolute inset-0 bg-gradient-to-t from-indigo-950/40 via-transparent to-transparent" aria-hidden="true" />
 
-      <div className="relative px-10 py-12 xl:px-12">
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-white/25 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-indigo-100 backdrop-blur-sm">
-          <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="currentColor" aria-hidden="true">
-            <path d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" />
-          </svg>
-          AI-powered hiring
-        </span>
-        <h2 className="mt-5 text-[2rem] font-bold leading-[1.15] tracking-tight text-white">
-          Multi-Tenant Recruitment Platform
-        </h2>
-        <p className="mt-3 max-w-sm text-sm leading-6 text-indigo-100/90">
-          One intelligent workspace for every company — screen, rediscover and
-          analyse talent without leaving your pipeline.
-        </p>
+      {/* Three stacked treatments, each doing one job:
+          1. a brand multiply tint pulls the photo's warm office tones into the
+             brand family so it matches the buttons and nav;
+          2. a bottom-up scrim builds the dark ground the headline sits on;
+          3. a top scrim does the same, lighter, for the wordmark.
+          Without these the white text lands on mid-tone photo and fails
+          contrast in patches as the image changes. */}
+      <div aria-hidden="true" className="tp-brand-tint" />
+      <div aria-hidden="true" className="tp-brand-scrim" />
+      <div aria-hidden="true" className="tp-brand-scrim-top" />
 
-        <img
-          src={heroImage}
-          alt="TalentPipe platform illustration"
-          className="mx-auto mt-8 w-32 drop-shadow-2xl xl:w-40"
-        />
+      {/* Dot grid, kept very faint so it reads as texture, not pattern. */}
+      <div aria-hidden="true" className="tp-brand-dots" />
 
-        <dl className="mt-8 grid grid-cols-2 gap-3">
-          {FEATURES.map((feature) => (
-            <div
-              key={feature.title}
-              className="rounded-2xl border border-white/15 bg-white/[0.07] p-4 shadow-sm shadow-black/5 backdrop-blur-sm transition-colors hover:bg-white/[0.11]"
-            >
-              <span className="inline-flex rounded-lg bg-white/15 p-1.5 text-white ring-1 ring-white/10">
-                {feature.icon}
-              </span>
-              <dt className="mt-2.5 text-sm font-semibold text-white">{feature.title}</dt>
-              <dd className="mt-1 text-xs leading-5 text-indigo-100/80">{feature.description}</dd>
-            </div>
-          ))}
-        </dl>
-      </div>
+      {/* space-between pins the wordmark to the top and the copy to the
+          bottom, the way the reference layout reads. */}
+      <Flex vertical justify="space-between" className="tp-brand-body">
+        <Flex align="center" gap={10}>
+          <span className="tp-brand-chip">T</span>
+          <Typography.Text strong style={{ fontSize: fontSize.title, color: '#fff' }}>
+            TalentPipe
+          </Typography.Text>
+        </Flex>
+
+        <div style={{ marginTop: 40 }}>
+          <span className="tp-brand-pill">
+            <svg viewBox="0 0 24 24" width={14} height={14} fill="currentColor" aria-hidden="true">
+              <path d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" />
+            </svg>
+            AI-powered hiring
+          </span>
+          <Typography.Title level={2} className="tp-brand-heading">
+            Multi-Tenant Recruitment Platform
+          </Typography.Title>
+          <Typography.Paragraph className="tp-brand-lede">
+            One intelligent workspace for every company — screen, rediscover and analyse talent
+            without leaving your pipeline.
+          </Typography.Paragraph>
+
+          <dl className="tp-brand-features">
+            {FEATURES.map((feature) => (
+              <div key={feature.title} className="tp-brand-feature">
+                <span className="tp-brand-feature-icon">{feature.icon}</span>
+                <dt className="tp-brand-feature-title">{feature.title}</dt>
+                <dd className="tp-brand-feature-text">{feature.description}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+      </Flex>
     </div>
   );
 }

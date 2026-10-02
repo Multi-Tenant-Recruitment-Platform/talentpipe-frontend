@@ -1,61 +1,94 @@
+import { Card, Flex, Statistic, Typography } from 'antd';
+import {
+  fontSize,
+  fontWeight,
+  radius,
+  slate,
+  space,
+  status as statusColor,
+} from '../../theme/tokens';
 import { Icon, type IconName } from './Icon';
 
-export type StatTone = 'indigo' | 'violet' | 'emerald' | 'amber';
-
-/** Icon chip tint plus the hairline that tops the card in the same hue. */
-const TONE_CLASSES: Record<StatTone, { chip: string; rule: string }> = {
-  indigo: { chip: 'bg-indigo-50 text-indigo-600', rule: 'from-indigo-500 to-violet-500' },
-  violet: { chip: 'bg-violet-50 text-violet-600', rule: 'from-violet-500 to-fuchsia-500' },
-  emerald: { chip: 'bg-emerald-50 text-emerald-600', rule: 'from-emerald-500 to-teal-500' },
-  amber: { chip: 'bg-amber-50 text-amber-600', rule: 'from-amber-500 to-orange-500' },
-};
-
 /**
- * KPI tile: tinted icon chip, bold value, label, and an optional trend delta
- * (e.g. "+12% vs last week"). The value is the loudest thing on the card —
- * it is what an admin scans for, so it outranks both label and icon.
+ * KPI tile: a neutral icon chip, the value, its label, and an optional trend
+ * delta.
+ *
+ * <p>The value is the loudest thing on the card — it is what an admin scans a
+ * KPI row for, so it outranks both label and icon. The icon is a signpost for
+ * finding the right tile again, not a category marker, which is why it is
+ * neutral: four tiles in four hues make the row look like a legend for a
+ * classification that does not exist, and they compete with the one place on
+ * the card where colour carries real information — the delta.</p>
  */
 export function StatCard({
   label,
   value,
   icon,
-  tone,
   delta,
 }: Readonly<{
   label: string;
   value: string;
   icon: IconName;
-  tone: StatTone;
   delta?: { value: string; direction: 'up' | 'down'; hint?: string };
 }>) {
-  const tones = TONE_CLASSES[tone];
+  // The only colour on the tile, and it is genuinely semantic: which way the
+  // number moved. Contrast-checked against its own tint in tokens.test.ts.
+  const deltaStyle =
+    delta?.direction === 'up'
+      ? { bg: statusColor.successBg, fg: statusColor.successText }
+      : { bg: statusColor.errorBg, fg: statusColor.errorText };
+
   return (
-    <div className="group relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm shadow-slate-900/5 ring-1 ring-slate-900/5 transition-all hover:-translate-y-0.5 hover:shadow-md hover:shadow-slate-900/10">
-      {/* Tone accent, revealed on hover so a grid of tiles stays calm at rest. */}
-      <span
-        aria-hidden="true"
-        className={`absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r ${tones.rule} opacity-0 transition-opacity group-hover:opacity-100`}
-      />
-      <div className="flex items-center justify-between">
-        <span className={`flex h-11 w-11 items-center justify-center rounded-xl ${tones.chip}`}>
-          <Icon name={icon} className="h-5 w-5" />
+    <Card styles={{ body: { padding: space[2.5] } }} style={{ height: '100%' }}>
+      <Flex align="center" justify="space-between">
+        <span
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: 44,
+            height: 44,
+            borderRadius: radius.lg,
+            background: slate[100],
+            color: slate[600],
+          }}
+        >
+          <Icon name={icon} size={20} />
         </span>
         {delta && (
           <span
-            className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold ${
-              delta.direction === 'up' ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'
-            }`}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: space[0.5],
+              padding: `2px ${space[1]}px`,
+              borderRadius: radius.pill,
+              fontSize: fontSize.caption,
+              fontWeight: fontWeight.semibold,
+              background: deltaStyle.bg,
+              color: deltaStyle.fg,
+            }}
           >
-            <Icon name={delta.direction === 'up' ? 'trending-up' : 'trending-down'} className="h-3.5 w-3.5" />
+            <Icon name={delta.direction === 'up' ? 'trending-up' : 'trending-down'} size={14} />
             {delta.value}
           </span>
         )}
-      </div>
-      <p className="mt-4 text-3xl font-bold tracking-tight tabular-nums text-slate-900">{value}</p>
-      <p className="mt-1 text-sm text-slate-500">
+      </Flex>
+
+      <Statistic
+        value={value}
+        valueStyle={{
+          fontSize: fontSize.display,
+          fontWeight: fontWeight.bold,
+          color: slate[900],
+          lineHeight: 1.15,
+        }}
+        style={{ marginTop: space[2] }}
+      />
+      <Typography.Text type="secondary" style={{ display: 'block', marginTop: space[0.5] }}>
         {label}
-        {delta?.hint && <span className="text-slate-400"> · {delta.hint}</span>}
-      </p>
-    </div>
+        {delta?.hint && <span style={{ opacity: 0.75 }}> · {delta.hint}</span>}
+      </Typography.Text>
+    </Card>
   );
 }
