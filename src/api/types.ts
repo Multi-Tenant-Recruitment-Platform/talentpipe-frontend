@@ -256,10 +256,58 @@ export interface PageResponse<T> {
   totalPages: number;
 }
 
+/**
+ * Public job-board item. The backend currently guarantees only id, title and
+ * companyName; the optional fields are ASSUMED names for what the Job module
+ * will add — align them with the real DTO when it lands. Text fields are plain
+ * text, never HTML.
+ */
 export interface JobSummary {
   id: string;
+  /** Unique, URL-safe name used in job links, e.g. "data-analyst-northwind-analytics". */
+  slug?: string | null;
   title: string;
   companyName: string;
+  companyLogoUrl?: string | null;
+  summary?: string | null;
+  location?: string | null;
+  category?: string | null;
+  skills?: string[] | null;
+  employmentType?: string | null;
+  workplaceType?: string | null;
+  /** ISO date. */
+  applicationDeadline?: string | null;
+}
+
+/**
+ * Application for one vacancy. ASSUMED shape; the application API (PB-019) is
+ * not built yet. Sent as the JSON `application` part of a multipart request,
+ * next to the `resume` file part. Optional fields are sent as null rather than omitted.
+ */
+export interface JobApplicationRequest {
+  fullName: string;
+  email: string;
+  phone: string;
+  location: string | null;
+  currentTitle: string | null;
+  yearsOfExperience: number | null;
+  portfolioUrl: string | null;
+  coverLetter: string | null;
+  /** The candidate agreed to the company processing their data for this application. */
+  consentGiven: true;
+}
+
+export interface JobApplicationResponse {
+  id: string;
+  jobId: string;
+  status: string;
+  submittedAt: string;
+}
+
+/** Public vacancy details. ASSUMED shape; there is no details endpoint yet. */
+export interface JobDetail extends JobSummary {
+  description?: string | null;
+  requirements?: string[] | null;
 }
 
 /** Uniform error envelope returned by the backend on every failure. */
