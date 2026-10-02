@@ -68,9 +68,15 @@ Object.defineProperty(window, 'matchMedia', {
 // textarea autosize. The casts are required because a bare class assignment
 // does not satisfy the constructor signature under `strict`.
 class ResizeObserverStub {
-  observe() {}
-  unobserve() {}
-  disconnect() {}
+  observe() {
+    // No-op: jsdom has no layout, so there is never a resize to report.
+  }
+  unobserve() {
+    // No-op: nothing is tracked, so there is nothing to release.
+  }
+  disconnect() {
+    // No-op: nothing is tracked, so there is nothing to release.
+  }
 }
 globalThis.ResizeObserver ??= ResizeObserverStub as unknown as typeof ResizeObserver;
 
@@ -78,9 +84,15 @@ class IntersectionObserverStub {
   readonly root = null;
   readonly rootMargin = '';
   readonly thresholds: readonly number[] = [];
-  observe() {}
-  unobserve() {}
-  disconnect() {}
+  observe() {
+    // No-op: jsdom has no viewport, so no element ever intersects it.
+  }
+  unobserve() {
+    // No-op: nothing is tracked, so there is nothing to release.
+  }
+  disconnect() {
+    // No-op: nothing is tracked, so there is nothing to release.
+  }
   takeRecords(): IntersectionObserverEntry[] {
     return [];
   }
@@ -98,10 +110,8 @@ window.scrollTo ??= () => {};
 // but it prints a stack trace for every portal and every table, which would
 // bury real failures. Drop the pseudo-element argument instead.
 const realGetComputedStyle = window.getComputedStyle.bind(window);
-window.getComputedStyle = ((element: Element, pseudoElement?: string | null) =>
-  pseudoElement
-    ? realGetComputedStyle(element)
-    : realGetComputedStyle(element)) as typeof window.getComputedStyle;
+window.getComputedStyle = ((element: Element) =>
+  realGetComputedStyle(element)) as typeof window.getComputedStyle;
 
 // Testing Library only auto-registers cleanup when Vitest's globals are on.
 // We use explicit imports instead (so no tsconfig `types` entry is needed),

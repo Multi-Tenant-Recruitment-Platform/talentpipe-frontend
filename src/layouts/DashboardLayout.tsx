@@ -16,6 +16,7 @@ import {
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
+import type { UserResponse } from '../api/types';
 import type { Permission } from '../auth/permissions';
 import { useCan } from '../auth/useCan';
 import { Avatar } from '../components/dashboard/Avatar';
@@ -70,9 +71,98 @@ function selectedKeyFor(pathname: string): string[] {
     item.end ? pathname === item.to : pathname.startsWith(item.to),
   );
   // Longest path wins, so /dashboard/profile/edit selects Profile Management.
-  const best = match.sort((a, b) => b.to.length - a.to.length)[0];
+  const best = match.reduce<(typeof NAV_ITEMS)[number] | undefined>(
+    (longest, item) => (!longest || item.to.length > longest.to.length ? item : longest),
+    undefined,
+  );
   return best ? [best.to] : [];
 }
+
+function fullNameOf(user: UserResponse | null): string {
+  return `${user?.firstName ?? ''} ${user?.lastName ?? ''}`.trim();
+}
+
+function NotificationsPanel() {
+  return (
+    <div className="tp-popover">
+      <Typography.Text strong className="tp-popover-head">
+        Notifications
+      </Typography.Text>
+      <ul className="tp-notification-list">
+        {NOTIFICATIONS.map((n) => (
+          <li key={n.id} className="tp-notification">
+            <span className="tp-notification-icon">
+              <Icon name={n.icon} size={16} />
+            </span>
+            <div>
+              <Typography.Text style={{ display: 'block' }}>{n.text}</Typography.Text>
+              <Typography.Text type="secondary" style={{ fontSize: fontSize.caption }}>
+                {n.time}
+              </Typography.Text>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+/**
+ * The account dropdown's body. It reads the session itself rather than taking
+ * it as props: the popup is portalled, but portals keep React context, and
+ * this lets the Dropdown take a stable module-level render function.
+ */
+function AccountPanel() {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  async function handleLogout() {
+    await logout();
+    navigate('/', { replace: true });
+  }
+
+  return (
+    <div className="tp-popover tp-profile-popover">
+      <Flex align="center" gap={12} className="tp-profile-identity">
+        <Avatar firstName={user?.firstName ?? '?'} lastName={user?.lastName} size="md" />
+        <div style={{ minWidth: 0 }}>
+          <Typography.Text strong ellipsis style={{ display: 'block' }}>
+            {fullNameOf(user)}
+          </Typography.Text>
+          <Typography.Text type="secondary" ellipsis style={{ fontSize: fontSize.caption, display: 'block' }}>
+            {user?.email}
+          </Typography.Text>
+          {user && (
+            <div style={{ marginTop: 6 }}>
+              <RoleBadge role={user.role} />
+            </div>
+          )}
+        </div>
+      </Flex>
+      <Menu
+        selectable={false}
+        className="tp-profile-menu"
+        items={[
+          {
+            key: 'logout',
+            // Ending a session is destructive enough to be labelled
+            // and to turn red under the cursor — never a faint
+            // unlabelled icon sitting a click away from the avatar.
+            danger: true,
+            icon: <Icon name="logout" size={16} />,
+            label: 'Log out',
+            onClick: () => void handleLogout(),
+          },
+        ]}
+      />
+    </div>
+  );
+}
+
+// Defined at module scope so the Dropdowns receive stable render functions
+// instead of a new component definition on every render of the top bar.
+const renderNotificationsPanel = () => <NotificationsPanel />;
+const renderAccountPanel = () => <AccountPanel />;
 
 function SidebarContent({ onNavigate }: Readonly<{ onNavigate?: () => void }>) {
   const allow = useCan();
@@ -159,8 +249,7 @@ export function DashboardLayout() {
 }
 
 function DashboardChrome() {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
+  const { user } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const searchRef = useRef<InputRef>(null);
 
@@ -199,12 +288,7 @@ function DashboardChrome() {
     }
   }
 
-  async function handleLogout() {
-    await logout();
-    navigate('/', { replace: true });
-  }
-
-  const fullName = `${user?.firstName ?? ''} ${user?.lastName ?? ''}`.trim();
+  const fullName = fullNameOf(user);
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
@@ -298,28 +382,7 @@ function DashboardChrome() {
               trigger={['click']}
               onOpenChange={openNotifications}
               placement="bottomRight"
-              popupRender={() => (
-                <div className="tp-popover">
-                  <Typography.Text strong className="tp-popover-head">
-                    Notifications
-                  </Typography.Text>
-                  <ul className="tp-notification-list">
-                    {NOTIFICATIONS.map((n) => (
-                      <li key={n.id} className="tp-notification">
-                        <span className="tp-notification-icon">
-                          <Icon name={n.icon} size={16} />
-                        </span>
-                        <div>
-                          <Typography.Text style={{ display: 'block' }}>{n.text}</Typography.Text>
-                          <Typography.Text type="secondary" style={{ fontSize: fontSize.caption }}>
-                            {n.time}
-                          </Typography.Text>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
+              popupRender={renderNotificationsPanel}
             >
               <Button
                 type="text"
@@ -342,42 +405,7 @@ function DashboardChrome() {
             <Dropdown
               trigger={['click']}
               placement="bottomRight"
-              popupRender={() => (
-                <div className="tp-popover tp-profile-popover">
-                  <Flex align="center" gap={12} className="tp-profile-identity">
-                    <Avatar firstName={user?.firstName ?? '?'} lastName={user?.lastName} size="md" />
-                    <div style={{ minWidth: 0 }}>
-                      <Typography.Text strong ellipsis style={{ display: 'block' }}>
-                        {fullName}
-                      </Typography.Text>
-                      <Typography.Text type="secondary" ellipsis style={{ fontSize: fontSize.caption, display: 'block' }}>
-                        {user?.email}
-                      </Typography.Text>
-                      {user && (
-                        <div style={{ marginTop: 6 }}>
-                          <RoleBadge role={user.role} />
-                        </div>
-                      )}
-                    </div>
-                  </Flex>
-                  <Menu
-                    selectable={false}
-                    className="tp-profile-menu"
-                    items={[
-                      {
-                        key: 'logout',
-                        // Ending a session is destructive enough to be labelled
-                        // and to turn red under the cursor — never a faint
-                        // unlabelled icon sitting a click away from the avatar.
-                        danger: true,
-                        icon: <Icon name="logout" size={16} />,
-                        label: 'Log out',
-                        onClick: () => void handleLogout(),
-                      },
-                    ]}
-                  />
-                </div>
-              )}
+              popupRender={renderAccountPanel}
             >
               <button
                 type="button"

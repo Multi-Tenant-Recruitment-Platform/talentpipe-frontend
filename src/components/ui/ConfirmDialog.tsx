@@ -3,8 +3,7 @@ import { useEffect, useRef, type ReactNode } from 'react';
 import { Icon } from '../dashboard/Icon';
 import { Button } from './Button';
 import { useFocusTrap } from './useFocusTrap';
-import { fontSize, status } from '../../theme/tokens';
-import { primary } from '../../theme/tokens';
+import { fontSize, primary, status } from '../../theme/tokens';
 
 /**
  * Confirmation step for an irreversible action.

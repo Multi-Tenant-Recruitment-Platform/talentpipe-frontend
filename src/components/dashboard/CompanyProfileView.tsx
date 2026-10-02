@@ -12,8 +12,7 @@ import { CompanyStoryInformation } from './CompanyStoryInformation';
 import { ContactInformation } from './ContactInformation';
 import { Icon } from './Icon';
 import { LocationInformation } from './LocationInformation';
-import { fontSize, slate } from '../../theme/tokens';
-import { primary } from '../../theme/tokens';
+import { fontSize, primary, slate } from '../../theme/tokens';
 
 /**
  * Read-only company profile, composed from the section components.
