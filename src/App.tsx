@@ -11,6 +11,7 @@ import { CompanySettingsPage } from './pages/dashboard/CompanySettingsPage';
 import { OverviewPage } from './pages/dashboard/OverviewPage';
 import { PipelinePage } from './pages/dashboard/PipelinePage';
 import { TeamPage } from './pages/dashboard/TeamPage';
+import { VacancyFeaturePreviewPage } from './pages/dashboard/VacancyFeaturePreviewPage';
 import { ForbiddenPage } from './pages/ForbiddenPage';
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
 import { JobDetailPage } from './pages/JobDetailPage';
@@ -102,6 +103,7 @@ export default function App() {
               </RequirePermission>
             }
           />
+          {import.meta.env.DEV && <Route path="vacancy-preview" element={<VacancyFeaturePreviewPage />} />}
           {/* Without this, /dashboard/typo renders an empty <main>. */}
           <Route path="*" element={<ForbiddenPage />} />
         </Route>
