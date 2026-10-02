@@ -2,7 +2,7 @@ import { useId } from 'react';
 import { Link } from 'react-router-dom';
 import type { JobSummary } from '../../api/types';
 import { Icon } from '../dashboard/Icon';
-import { CompanyMark, Deadline, JobBadges, JobMeta, SkillTags } from './JobParts';
+import { CompanyMark, Deadline, JobBadges, JobMeta, PostedAt, SkillTags } from './JobParts';
 
 const MAX_SKILLS = 4;
 
@@ -23,9 +23,10 @@ export function JobCard({ job }: Readonly<{ job: JobSummary }>) {
       <div className="flex flex-1 flex-col p-6">
         <div className="flex min-w-0 items-center gap-3">
           <CompanyMark name={job.companyName} logoUrl={job.companyLogoUrl} />
-          <p title={job.companyName} className="min-w-0 truncate text-sm font-medium text-slate-600">
+          <p title={job.companyName} className="min-w-0 flex-1 truncate text-sm font-medium text-slate-600">
             {job.companyName}
           </p>
+          <PostedAt iso={job.publishedAt} />
         </div>
 
         <h2
@@ -38,11 +39,15 @@ export function JobCard({ job }: Readonly<{ job: JobSummary }>) {
 
         <JobBadges job={job} className="mt-3" />
 
-        {job.summary && <p className="mt-3 line-clamp-2 break-words text-sm leading-relaxed text-slate-600">{job.summary}</p>}
+        {job.jobSummary && (
+          <p className="mt-3 line-clamp-2 break-words text-sm leading-relaxed text-slate-600">{job.jobSummary}</p>
+        )}
 
         <JobMeta job={job} showDeadline={false} className="mt-4" />
 
-        {job.skills && job.skills.length > 0 && <SkillTags skills={job.skills} max={MAX_SKILLS} className="mt-4" />}
+        {job.requiredSkills && job.requiredSkills.length > 0 && (
+          <SkillTags skills={job.requiredSkills} max={MAX_SKILLS} className="mt-4" />
+        )}
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 px-6 py-4">

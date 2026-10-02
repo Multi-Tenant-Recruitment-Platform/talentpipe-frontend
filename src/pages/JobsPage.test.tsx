@@ -13,19 +13,39 @@ vi.mock('../api/publicJobs', () => ({
 }));
 const { listPublicJobs, getPublicJob } = vi.mocked(await import('../api/publicJobs'));
 
+const THREE_DAYS_AGO = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString();
+
+/** Every field the vacancy form collects that is public. */
 const FULL_JOB: JobDetail = {
   id: 'job-1',
   title: 'Senior Frontend Engineer',
   companyName: 'Demo Company',
-  summary: 'Build candidate experiences with React.',
-  description: 'The full description of the role.',
-  requirements: ['4+ years of React'],
+  department: 'Engineering',
+  openings: 2,
+  employmentType: 'FULL_TIME',
+  workplaceType: 'HYBRID',
   location: 'Colombo, Sri Lanka',
-  category: 'Engineering',
-  skills: ['React', 'TypeScript', 'Testing', 'CSS', 'HTML', 'Node', 'Vite', 'Git'],
-  employmentType: 'Full-time',
-  workplaceType: 'Hybrid',
   applicationDeadline: '2026-10-31',
+  publishedAt: THREE_DAYS_AGO,
+  jobSummary: 'Build candidate experiences with React.',
+  jobDescription: 'The full description of the role.',
+  keyResponsibilities: ['Own the job board'],
+  requiredSkills: ['React', 'TypeScript', 'Testing', 'CSS', 'HTML', 'Node', 'Vite', 'Git'],
+  preferredSkills: ['Kubernetes'],
+  minimumExperienceYears: 4,
+  education: 'Bachelor’s degree',
+  certifications: ['AWS Solutions Architect'],
+  languageRequirements: ['English', 'Sinhala'],
+  otherRequirements: 'A valid driving licence.',
+  salaryMin: 450000,
+  salaryMax: 650000,
+  currency: 'LKR — Sri Lankan rupee',
+  payPeriod: 'MONTHLY',
+  benefits: ['TRAINING', 'HEALTH_INSURANCE'],
+  workingDays: ['MON', 'TUE', 'WED', 'THU', 'FRI'],
+  workingHours: '9:00 AM – 6:00 PM',
+  shiftType: 'DAY',
+  expectedHoursPerWeek: 40,
 };
 const MINIMAL_JOB: JobSummary = { id: 'job-2', title: 'Data Analyst', companyName: 'Northwind' };
 
@@ -63,11 +83,24 @@ describe('JobsPage', () => {
     listPublicJobs.mockResolvedValue(page([FULL_JOB]));
     renderAt('/jobs');
     const c = within(await screen.findByRole('article', { name: FULL_JOB.title }));
-    for (const text of ['Demo Company', FULL_JOB.summary!, 'Colombo, Sri Lanka', 'Engineering', 'Full-time', 'Hybrid']) {
+    for (const text of [
+      'Demo Company',
+      FULL_JOB.jobSummary!,
+      'Colombo, Sri Lanka',
+      'Engineering',
+      'Full time',
+      'Hybrid',
+      '2 openings',
+      'LKR 450,000 – 650,000 / month',
+      '4+ years experience',
+      'Posted 3 days ago',
+    ]) {
       expect(c.getByText(text)).toBeInTheDocument();
     }
     expect(c.getByText(/^Apply by .*31.*2026$/)).toBeInTheDocument();
-    const skills = c.getByRole('list', { name: 'Skills' });
+    // Internal details stay off the public card.
+    expect(c.queryByText(/day shift|bachelor|health insurance/i)).toBeNull();
+    const skills = c.getByRole('list', { name: 'Required skills' });
     expect(within(skills).getByText('React')).toBeInTheDocument();
     expect(within(skills).getByText('+4 more')).toBeInTheDocument();
   });
@@ -77,7 +110,8 @@ describe('JobsPage', () => {
     renderAt('/jobs');
     const c = within(await screen.findByRole('article', { name: MINIMAL_JOB.title }));
     expect(c.queryByText(/apply by/i)).toBeNull();
-    expect(c.queryByRole('list', { name: 'Skills' })).toBeNull();
+    expect(c.queryByRole('list', { name: 'Required skills' })).toBeNull();
+    expect(c.queryByText(/posted|openings|experience/i)).toBeNull();
     // The link names its job, so a list of "View Job" links is still distinguishable.
     expect(c.getByRole('link', { name: /^view job\W+data analyst$/i })).toBeInTheDocument();
   });
@@ -142,14 +176,55 @@ describe('JobsPage', () => {
     expect(getPublicJob).toHaveBeenCalledWith('job-1');
     expect(await screen.findByRole('heading', { level: 1, name: FULL_JOB.title })).toBeInTheDocument();
     expect(screen.getByText('The full description of the role.')).toBeInTheDocument();
-    expect(screen.getByText('4+ years of React')).toBeInTheDocument();
     // Details show every skill, not the card's shortened list.
-    expect(within(screen.getByRole('list', { name: 'Skills' })).getByText('Git')).toBeInTheDocument();
+    expect(within(screen.getByRole('list', { name: 'Required skills' })).getByText('Git')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /apply/i })).toBeNull();
   });
 });
 
 describe('JobDetailPage', () => {
+  it('shows every public part of the vacancy form, grouped like the form', async () => {
+    getPublicJob.mockResolvedValue(FULL_JOB);
+    renderAt('/jobs/job-1');
+    await screen.findByRole('heading', { level: 1, name: FULL_JOB.title });
+
+    const overview = within(screen.getByRole('region', { name: 'Job overview' }));
+    const facts: [string, string][] = [
+      ['Department', 'Engineering'],
+      ['Openings', '2'],
+      ['Experience', '4+ years experience'],
+      ['Education', 'Bachelor’s degree'],
+      ['Salary', 'LKR 450,000 – 650,000 / month'],
+      ['Working days', 'Mon–Fri'],
+      ['Working hours', '9:00 AM – 6:00 PM'],
+      ['Shift', 'Day shift'],
+      ['Hours per week', '40 hours'],
+    ];
+    for (const [label, value] of facts) {
+      expect(overview.getByText(label).nextElementSibling).toHaveTextContent(value);
+    }
+
+    expect(screen.getByText(FULL_JOB.jobSummary!)).toBeInTheDocument();
+    expect(within(screen.getByRole('list', { name: 'Key responsibilities' })).getByText('Own the job board')).toBeInTheDocument();
+    expect(within(screen.getByRole('list', { name: 'Preferred skills' })).getByText('Kubernetes')).toBeInTheDocument();
+    expect(within(screen.getByRole('list', { name: 'Certifications' })).getByText('AWS Solutions Architect')).toBeInTheDocument();
+    expect(screen.getByText('English, Sinhala')).toBeInTheDocument();
+    expect(screen.getByText('A valid driving licence.')).toBeInTheDocument();
+    // Benefit ids become their labels, in catalogue order.
+    const perks = within(screen.getByRole('list', { name: 'Benefits and perks' })).getAllByRole('listitem');
+    expect(perks.map((li) => li.textContent)).toEqual(['Health insurance', 'Training & development']);
+  });
+
+  it('leaves out sections the company did not fill in', async () => {
+    getPublicJob.mockResolvedValue(MINIMAL_JOB);
+    renderAt('/jobs/job-2');
+    await screen.findByRole('heading', { level: 1, name: MINIMAL_JOB.title });
+    expect(screen.queryByRole('region', { name: 'Job overview' })).toBeNull();
+    for (const heading of ['About the role', 'Key responsibilities', 'Requirements', 'Benefits & perks']) {
+      expect(screen.queryByRole('heading', { name: heading })).toBeNull();
+    }
+  });
+
   it('explains when the vacancy does not exist or is not public', async () => {
     getPublicJob.mockResolvedValue(null);
     renderAt('/jobs/unknown');
