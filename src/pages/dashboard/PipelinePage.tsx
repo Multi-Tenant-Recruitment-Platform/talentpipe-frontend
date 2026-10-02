@@ -8,8 +8,14 @@ import { PageHeader } from '../../components/dashboard/PageHeader';
 import { Alert } from '../../components/ui/Alert';
 import { hiringFunnel, jobPipelines, pipelineInsights } from '../../data/mockDashboard';
 import type { JobPipeline } from '../../data/mockDashboard';
-import { fontSize, status } from '../../theme/tokens';
-import { dataMarkRing, dataSequence, radius, slate } from '../../theme/tokens';
+import {
+  dataMarkRing,
+  dataSequence,
+  fontSize,
+  radius,
+  slate,
+  status,
+} from '../../theme/tokens';
 
 const STAGE_LABELS = ['Applied', 'Screening', 'Interview', 'Offer', 'Hired'];
 /** Ordered stages read as one measure deepening, not five categories. */

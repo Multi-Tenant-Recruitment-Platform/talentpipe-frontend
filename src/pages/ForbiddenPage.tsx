@@ -4,8 +4,7 @@ import { useAuth } from '../auth/AuthContext';
 import { homeRouteFor, type Permission } from '../auth/permissions';
 import { Icon } from '../components/dashboard/Icon';
 import { RoleBadge } from '../components/dashboard/RoleBadge';
-import { fontSize, slate } from '../theme/tokens';
-import { status } from '../theme/tokens';
+import { fontSize, slate, status } from '../theme/tokens';
 
 /**
  * Why this particular door is closed. Generic copy is a dead end — naming the
