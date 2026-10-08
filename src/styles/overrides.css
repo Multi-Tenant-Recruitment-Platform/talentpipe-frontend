@@ -1860,3 +1860,467 @@
     padding-inline: 32px;
   }
 }
+
+/* ==========================================================================
+   Public job board — the candidate-facing listing and advert
+   ==========================================================================
+   The board is cards and a long-form advert, neither of which antd has a
+   component for: Card cannot clamp a title or stretch to its grid row, and
+   List.Grid renders divs where the board needs a real <ul> of <article>s.
+   These rules cover the responsive grid, the card's hover and clamping, and
+   the pills and tags the cards and the advert share.
+   -------------------------------------------------------------------------- */
+
+/* --- Hero ---------------------------------------------------------------- */
+.tp-jobs-hero {
+  padding: var(--tp-space-5) var(--tp-space-3);
+  border-radius: var(--tp-radius-2xl);
+  /* The scrim blues, not the brand gradient: this is a panel, and it has to
+     hold white text at body size. */
+  background:
+    radial-gradient(circle at 92% 0%, rgb(255 255 255 / 14%), transparent 42%),
+    linear-gradient(135deg, var(--tp-primary-700), var(--tp-primary-900));
+  color: var(--tp-surface);
+  box-shadow: var(--tp-shadow-lg);
+}
+
+@media (min-width: 640px) {
+  .tp-jobs-hero {
+    padding: var(--tp-space-6) var(--tp-space-5);
+  }
+}
+
+.tp-jobs-hero-inner {
+  max-width: 672px;
+}
+
+.tp-jobs-hero h1 {
+  margin: var(--tp-space-2) 0 0;
+  font-size: var(--tp-font-display);
+  font-weight: var(--tp-weight-bold);
+  line-height: var(--tp-leading-tight);
+  letter-spacing: var(--tp-tracking-display);
+}
+
+.tp-jobs-hero-lede {
+  margin: var(--tp-space-1-5) 0 0;
+  color: var(--tp-primary-100);
+  font-size: var(--tp-font-lead);
+  line-height: var(--tp-leading-normal);
+}
+
+.tp-jobs-eyebrow,
+.tp-jobs-count {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--tp-space-0-75);
+  margin: 0;
+  border-radius: var(--tp-radius-pill);
+  font-weight: var(--tp-weight-semibold);
+}
+
+.tp-jobs-eyebrow {
+  padding: var(--tp-space-0-5) var(--tp-space-1-5);
+  background: rgb(255 255 255 / 15%);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 25%);
+  font-size: var(--tp-font-caption);
+  letter-spacing: var(--tp-tracking-caps);
+  text-transform: uppercase;
+}
+
+.tp-jobs-count {
+  margin-top: var(--tp-space-3);
+  padding: var(--tp-space-0-75) var(--tp-space-2);
+  background: var(--tp-surface);
+  color: var(--tp-primary-700);
+  font-size: var(--tp-font-body);
+  box-shadow: var(--tp-shadow-sm);
+}
+
+/* --- Grid and card ------------------------------------------------------- */
+.tp-job-grid {
+  display: grid;
+  gap: var(--tp-space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Grid items default to min-width: auto, so one long unbroken title would
+   widen its column past the viewport. */
+.tp-job-grid > * {
+  min-width: 0;
+}
+
+@media (min-width: 640px) {
+  .tp-job-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .tp-job-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.tp-job-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  height: 100%;
+  border: 1px solid var(--tp-slate-200);
+  border-radius: var(--tp-radius-xl);
+  background: var(--tp-surface);
+  box-shadow: var(--tp-shadow-sm);
+  transition-property: border-color, box-shadow;
+  transition-duration: var(--tp-motion-base);
+  transition-timing-function: var(--tp-motion-ease);
+}
+
+.tp-job-card:hover {
+  border-color: var(--tp-primary-200);
+  box-shadow: var(--tp-shadow-md);
+}
+
+.tp-job-card-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  padding: var(--tp-space-3);
+}
+
+.tp-job-card-head {
+  display: flex;
+  align-items: center;
+  gap: var(--tp-space-1-5);
+  min-width: 0;
+}
+
+.tp-job-card-company {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  color: var(--tp-slate-600);
+  font-weight: var(--tp-weight-medium);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tp-job-card-title,
+.tp-job-card-summary {
+  display: -webkit-box;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+
+.tp-job-card-title {
+  margin: var(--tp-space-2) 0 0;
+  color: var(--tp-slate-900);
+  font-size: var(--tp-font-title);
+  font-weight: var(--tp-weight-bold);
+  line-height: var(--tp-leading-snug);
+  transition: color var(--tp-motion-base) var(--tp-motion-ease);
+}
+
+.tp-job-card:hover .tp-job-card-title {
+  color: var(--tp-primary-700);
+}
+
+.tp-job-card-summary {
+  margin: var(--tp-space-1-5) 0 0;
+  color: var(--tp-slate-600);
+  line-height: var(--tp-leading-normal);
+}
+
+.tp-job-card-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--tp-space-1-5);
+  padding: var(--tp-space-2) var(--tp-space-3);
+  border-top: 1px solid var(--tp-slate-100);
+}
+
+/* --- Shared parts: logo, pills, meta line, tags -------------------------- */
+.tp-job-logo {
+  flex-shrink: 0;
+  padding: var(--tp-space-0-5);
+  border: 1px solid var(--tp-slate-200);
+  background: var(--tp-surface);
+  object-fit: contain;
+}
+
+.tp-job-badges,
+.tp-job-meta,
+.tp-job-tags,
+.tp-job-checklist {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tp-job-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tp-space-1);
+}
+
+.tp-job-badge {
+  max-width: 100%;
+  padding: 2px var(--tp-space-1-5);
+  overflow: hidden;
+  border-radius: var(--tp-radius-pill);
+  background: var(--tp-sunken);
+  /* slate-600, not 500: this sits on a tint (see tokens.ts). */
+  color: var(--tp-slate-600);
+  font-size: var(--tp-font-caption);
+  font-weight: var(--tp-weight-semibold);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tp-job-badge[data-tone='primary'] {
+  background: var(--tp-primary-50);
+  color: var(--tp-primary-700);
+}
+
+.tp-job-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tp-space-0-75) var(--tp-space-2-5);
+}
+
+.tp-job-meta-item {
+  display: flex;
+  align-items: center;
+  gap: var(--tp-space-0-75);
+  min-width: 0;
+  max-width: 100%;
+  margin: 0;
+  color: var(--tp-slate-600);
+}
+
+.tp-job-meta-item svg {
+  color: var(--tp-slate-400);
+}
+
+.tp-job-meta-item > span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tp-job-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tp-space-0-75);
+}
+
+.tp-job-tag {
+  max-width: 100%;
+  padding: var(--tp-space-0-5) var(--tp-space-1);
+  overflow: hidden;
+  border-radius: var(--tp-radius-sm);
+  background: var(--tp-sunken);
+  color: var(--tp-slate-700);
+  font-size: var(--tp-font-caption);
+  font-weight: var(--tp-weight-medium);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tp-job-tag[data-muted='true'] {
+  background: var(--tp-surface);
+  box-shadow: inset 0 0 0 1px var(--tp-slate-200);
+  color: var(--tp-slate-600);
+}
+
+.tp-job-tag-more {
+  padding: var(--tp-space-0-5);
+  color: var(--tp-slate-500);
+  font-size: var(--tp-font-caption);
+  font-weight: var(--tp-weight-medium);
+}
+
+.tp-job-posted {
+  flex-shrink: 0;
+  margin: 0;
+  color: var(--tp-slate-500);
+  font-size: var(--tp-font-caption);
+}
+
+/* --- Advert -------------------------------------------------------------- */
+.tp-job-advert {
+  overflow: hidden;
+  border: 1px solid var(--tp-slate-200);
+  border-radius: var(--tp-radius-xl);
+  background: var(--tp-surface);
+  box-shadow: var(--tp-shadow-sm);
+}
+
+.tp-job-advert-band {
+  height: var(--tp-space-1);
+  background: var(--tp-brand-gradient);
+}
+
+.tp-job-advert-body {
+  padding: var(--tp-space-3);
+  overflow-wrap: anywhere;
+}
+
+@media (min-width: 640px) {
+  .tp-job-advert-body {
+    padding: var(--tp-space-4);
+  }
+}
+
+.tp-job-advert-head {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--tp-space-2);
+  min-width: 0;
+}
+
+.tp-job-advert-head h1 {
+  margin: 0;
+  color: var(--tp-slate-900);
+  font-size: var(--tp-font-heading);
+  font-weight: var(--tp-weight-bold);
+  line-height: var(--tp-leading-tight);
+  letter-spacing: var(--tp-tracking-heading);
+}
+
+.tp-job-advert-company {
+  margin: var(--tp-space-0-5) 0;
+  color: var(--tp-slate-600);
+  font-weight: var(--tp-weight-medium);
+}
+
+.tp-job-advert-lede {
+  margin: var(--tp-space-3) 0 0;
+  color: var(--tp-slate-800);
+  font-size: var(--tp-font-title);
+  line-height: var(--tp-leading-normal);
+}
+
+.tp-job-advert-section {
+  margin-top: var(--tp-space-4);
+}
+
+.tp-job-advert-section h2 {
+  margin: 0;
+}
+
+.tp-job-advert-section h3 {
+  margin: 0;
+  color: var(--tp-slate-800);
+  font-size: var(--tp-font-body);
+  font-weight: var(--tp-weight-semibold);
+}
+
+.tp-job-advert-text {
+  margin: var(--tp-space-1) 0 0;
+  color: var(--tp-slate-700);
+  line-height: var(--tp-leading-normal);
+  white-space: pre-line;
+}
+
+.tp-job-requirements {
+  display: grid;
+  gap: var(--tp-space-2-5);
+  margin-top: var(--tp-space-2);
+}
+
+.tp-job-requirements .tp-job-tags {
+  margin-top: var(--tp-space-1);
+}
+
+.tp-job-overview {
+  margin-top: var(--tp-space-4);
+  padding: var(--tp-space-2-5);
+  border: 1px solid var(--tp-slate-200);
+  border-radius: var(--tp-radius-lg);
+  background: var(--tp-slate-50);
+}
+
+.tp-job-overview h2 {
+  margin: 0 0 var(--tp-space-2);
+}
+
+.tp-job-fact {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--tp-space-1-5);
+  min-width: 0;
+}
+
+.tp-job-fact-icon {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--tp-radius-sm);
+  background: var(--tp-surface);
+  box-shadow: inset 0 0 0 1px var(--tp-slate-200);
+  color: var(--tp-primary-600);
+}
+
+.tp-job-fact dt {
+  color: var(--tp-slate-500);
+  font-size: var(--tp-font-caption);
+  font-weight: var(--tp-weight-medium);
+}
+
+.tp-job-fact dd {
+  margin: 0;
+  color: var(--tp-slate-900);
+  font-weight: var(--tp-weight-semibold);
+}
+
+/* A tick per item. Perks go two-up by taking .tp-benefit-grid as well. */
+.tp-job-checklist {
+  display: grid;
+  gap: var(--tp-space-1) var(--tp-space-3);
+  margin-top: var(--tp-space-1-5);
+  color: var(--tp-slate-700);
+}
+
+.tp-job-checklist li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 0;
+}
+
+.tp-job-check {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  margin-top: 1px;
+  border-radius: 50%;
+  background: var(--tp-primary-50);
+  color: var(--tp-primary-600);
+}
+
+.tp-job-back {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--tp-space-0-75);
+  font-weight: var(--tp-weight-medium);
+  text-decoration: none;
+}
+
+.tp-job-back:hover {
+  color: var(--tp-primary-600);
+}

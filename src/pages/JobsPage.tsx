@@ -1,95 +1,57 @@
-import { Card, List, Typography } from 'antd';
-import { useCallback, useEffect, useState } from 'react';
-import { api, apiErrorMessage } from '../api/client';
-import type { JobSummary, PageResponse } from '../api/types';
-import { EmptyState } from '../components/dashboard/EmptyState';
-import { ErrorState, RowsSkeleton } from '../components/dashboard/ErrorState';
-import { fontSize, space } from '../theme/tokens';
+import { Flex } from 'antd';
+import { Icon } from '../components/dashboard/Icon';
+import { JobList } from '../components/jobs/JobList';
+import { Alert } from '../components/ui/Alert';
+import { Button } from '../components/ui/Button';
+import { usePublicJobs } from '../jobs/usePublicJobs';
+import { space } from '../theme/tokens';
 
-/**
- * Public job board (PB-005, partial). Calls GET /public/jobs — which returns
- * an empty page until the Job module lands — and renders the empty state
- * gracefully.
- */
+function countLabel(shown: number, total: number) {
+  const noun = total === 1 ? 'open position' : 'open positions';
+  return shown < total ? `Showing ${shown} of ${total} ${noun}` : `${total} ${noun}`;
+}
+
+/** Public job board (PB-017): published vacancies, open to everyone. */
 export function JobsPage() {
-  const [jobs, setJobs] = useState<JobSummary[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  // Bumped by the retry button to re-run the effect. A counter rather than a
-  // bare function call so the in-flight cleanup still cancels correctly.
-  const [attempt, setAttempt] = useState(0);
-
-  const retry = useCallback(() => {
-    setJobs(null);
-    setError(null);
-    setAttempt((n) => n + 1);
-  }, []);
-
-  useEffect(() => {
-    let cancelled = false;
-    api
-      .get<PageResponse<JobSummary>>('/public/jobs')
-      .then(({ data }) => {
-        if (!cancelled) setJobs(data.content);
-      })
-      .catch((err: unknown) => {
-        if (!cancelled) setError(apiErrorMessage(err, 'Could not load jobs. Is the backend running?'));
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [attempt]);
+  const { status, error, jobs, total, hasMore, loadingMore, loadMoreError, loadMore, retry } = usePublicJobs();
 
   return (
     <section>
-      <Typography.Title level={1} style={{ fontSize: fontSize.display, margin: 0 }}>
-        Open positions
-      </Typography.Title>
-      <Typography.Paragraph type="secondary" style={{ margin: `${space[1]}px 0 0` }}>
-        Roles published by companies hiring on TalentPipe.
-      </Typography.Paragraph>
+      <header className="tp-jobs-hero">
+        <div className="tp-jobs-hero-inner">
+          <p className="tp-jobs-eyebrow">
+            <Icon name="sparkles" size={14} />
+            Careers on TalentPipe
+          </p>
+          <h1>Explore Job Opportunities</h1>
+          <p className="tp-jobs-hero-lede">
+            Discover roles from companies hiring on TalentPipe. Open any job to see the full description, requirements
+            and skills.
+          </p>
+          {status === 'ready' && total !== null && total > 0 && (
+            <p className="tp-jobs-count">
+              <Icon name="briefcase" size={16} />
+              {countLabel(jobs.length, total)}
+            </p>
+          )}
+        </div>
+      </header>
 
-      <div style={{ marginTop: space[4] }}>
-        {/* The panel is the content here, so a failure replaces it rather than
-            stacking an alert above an empty box. */}
-        {error && (
-          <Card>
-            <ErrorState title="Could not load open positions" description={error} onRetry={retry} />
-          </Card>
-        )}
+      {/* Search & filter controls (PB-017 sub-task 4) go here; they pass their
+          results and a "No matching jobs found" message to JobList below. */}
 
-        {!error && jobs === null && (
-          <Card styles={{ body: { padding: `${space[1]}px ${space[3]}px` } }}>
-            <RowsSkeleton rows={4} label="Loading open positions…" />
-          </Card>
-        )}
-
-        {!error && jobs !== null && jobs.length === 0 && (
-          <Card>
-            <EmptyState
-              icon="briefcase"
-              title="No open positions yet"
-              description="Companies are just getting set up — check back soon."
-            />
-          </Card>
-        )}
-
-        {!error && jobs !== null && jobs.length > 0 && (
-          <Card styles={{ body: { padding: 0 } }}>
-            <List
-              dataSource={jobs}
-              renderItem={(job) => (
-                <List.Item key={job.id}>
-                  <List.Item.Meta
-                    title={job.title}
-                    description={<Typography.Text type="secondary">{job.companyName}</Typography.Text>}
-                  />
-                </List.Item>
-              )}
-              style={{ paddingInline: space[2] }}
-            />
-          </Card>
-        )}
+      <div style={{ marginTop: space[5] }}>
+        <JobList status={status} jobs={jobs} error={error} onRetry={retry} />
       </div>
+
+      {status === 'ready' && hasMore && (
+        <Flex vertical align="center" gap={space[1.5]} style={{ marginTop: space[5] }}>
+          {loadMoreError && <Alert tone="error">{loadMoreError}</Alert>}
+          <Button onClick={() => void loadMore()} disabled={loadingMore}>
+            {loadingMore ? 'Loading…' : 'Load more jobs'}
+          </Button>
+        </Flex>
+      )}
     </section>
   );
 }
