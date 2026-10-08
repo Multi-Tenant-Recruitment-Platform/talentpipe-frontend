@@ -9,7 +9,7 @@ import { DetailItem } from './DetailItem';
  */
 export function ContactInformation({ values }: Readonly<{ values: CompanyFormValues }>) {
   return (
-    <dl className="grid gap-x-6 gap-y-5 sm:grid-cols-2">
+    <dl className="tp-detail-grid">
       <DetailItem
         icon="envelope"
         label="Email"

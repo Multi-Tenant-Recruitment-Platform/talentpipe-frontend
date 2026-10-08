@@ -8,13 +8,15 @@ import { AcceptInvitePage } from './pages/AcceptInvitePage';
 import { CandidateRegisterPage } from './pages/CandidateRegisterPage';
 import { CompanyProfilePage } from './pages/dashboard/CompanyProfilePage';
 import { CompanySettingsPage } from './pages/dashboard/CompanySettingsPage';
+import { CreateJobVacancyPage } from './pages/dashboard/CreateJobVacancyPage';
+import { EditJobVacancyPage } from './pages/dashboard/EditJobVacancyPage';
+import { JobVacanciesPage } from './pages/dashboard/JobVacanciesPage';
 import { OverviewPage } from './pages/dashboard/OverviewPage';
 import { PipelinePage } from './pages/dashboard/PipelinePage';
 import { TeamPage } from './pages/dashboard/TeamPage';
-import { VacancyFeaturePreviewPage } from './pages/dashboard/VacancyFeaturePreviewPage';
+import { VacancyDetailPage } from './pages/dashboard/VacancyDetailPage';
 import { ForbiddenPage } from './pages/ForbiddenPage';
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
-import { JobDetailPage } from './pages/JobDetailPage';
 import { JobsPage } from './pages/JobsPage';
 import { LandingPage } from './pages/LandingPage';
 import { LoginPage } from './pages/LoginPage';
@@ -30,7 +32,6 @@ export default function App() {
         <Route element={<Layout />}>
           <Route path="/" element={<LandingPage />} />
           <Route path="/jobs" element={<JobsPage />} />
-          <Route path="/jobs/:jobId" element={<JobDetailPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/register-candidate" element={<CandidateRegisterPage />} />
           <Route path="/login" element={<LoginPage />} />
@@ -76,6 +77,43 @@ export default function App() {
               </RequirePermission>
             }
           />
+          {/* The form has its own URL for the same reasons the profile editor
+              does: it survives a reload, it can be linked to, and Back leaves
+              it rather than unwinding one field at a time. */}
+          <Route
+            path="jobs"
+            element={
+              <RequirePermission permission="jobs.manage">
+                <JobVacanciesPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="jobs/new"
+            element={
+              <RequirePermission permission="jobs.manage">
+                <CreateJobVacancyPage />
+              </RequirePermission>
+            }
+          />
+          {/* `jobs/new` is a static segment, so it outranks `:id` whatever the
+              order — a vacancy can never be fetched with the id "new". */}
+          <Route
+            path="jobs/:id"
+            element={
+              <RequirePermission permission="jobs.manage">
+                <VacancyDetailPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="jobs/:id/edit"
+            element={
+              <RequirePermission permission="jobs.manage">
+                <EditJobVacancyPage />
+              </RequirePermission>
+            }
+          />
           <Route
             path="profile"
             element={
@@ -103,7 +141,6 @@ export default function App() {
               </RequirePermission>
             }
           />
-          {import.meta.env.DEV && <Route path="vacancy-preview" element={<VacancyFeaturePreviewPage />} />}
           {/* Without this, /dashboard/typo renders an empty <main>. */}
           <Route path="*" element={<ForbiddenPage />} />
         </Route>
