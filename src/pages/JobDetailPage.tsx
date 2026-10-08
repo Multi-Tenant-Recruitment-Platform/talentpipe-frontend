@@ -4,8 +4,6 @@ import { BackLink, JobLoadError, JobLoading, JobUnavailable } from '../component
 import { jobApplyPath } from '../jobs/jobPaths';
 import { usePublicJob } from '../jobs/usePublicJob';
 
-const SECTION_HEADING = 'text-sm font-semibold uppercase tracking-wide text-slate-600';
-
 function JobDetailView({ jobKey }: Readonly<{ jobKey: string }>) {
   const { state, retry } = usePublicJob(jobKey);
 
@@ -17,55 +15,49 @@ function JobDetailView({ jobKey }: Readonly<{ jobKey: string }>) {
 
   const about = job.description ?? job.summary;
   return (
-    <article className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-      <div aria-hidden="true" className="h-2 bg-gradient-to-r from-indigo-600 to-violet-600" />
-      <div className="p-6 sm:p-8">
-        <header className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
-          <div className="flex min-w-0 items-start gap-4">
-            <CompanyMark name={job.companyName} logoUrl={job.companyLogoUrl} size="lg" />
-            <div className="min-w-0">
-              <h1 className="break-words text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">{job.title}</h1>
-              <p className="mt-1 break-words font-medium text-slate-600">{job.companyName}</p>
-            </div>
+    <article className="tp-job-panel tp-job-panel-body">
+      <header className="tp-job-detail-head">
+        <div className="tp-job-identity">
+          <CompanyMark name={job.companyName} logoUrl={job.companyLogoUrl} size="lg" />
+          <div className="tp-job-identity-text">
+            <h1 className="tp-job-title">{job.title}</h1>
+            <p className="tp-job-company">{job.companyName}</p>
           </div>
-          <Link
-            to={jobApplyPath(job)}
-            className="inline-flex shrink-0 items-center justify-center rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:from-indigo-500 hover:to-violet-500 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
-          >
-            Apply Now
-          </Link>
-        </header>
+        </div>
+        <Link to={jobApplyPath(job)} className="tp-cta-link">
+          Apply Now
+        </Link>
+      </header>
 
-        <JobBadges job={job} className="mt-5" />
-        <JobMeta job={job} className="mt-4" />
-
-        {about && (
-          <section className="mt-8">
-            <h2 className={SECTION_HEADING}>About the role</h2>
-            <p className="mt-3 whitespace-pre-line break-words text-slate-700">{about}</p>
-          </section>
-        )}
-
-        {job.requirements && job.requirements.length > 0 && (
-          <section className="mt-8">
-            <h2 className={SECTION_HEADING}>Requirements</h2>
-            <ul className="mt-3 list-disc space-y-1.5 pl-5 text-slate-700">
-              {job.requirements.map((requirement) => (
-                <li key={requirement} className="break-words">
-                  {requirement}
-                </li>
-              ))}
-            </ul>
-          </section>
-        )}
-
-        {job.skills && job.skills.length > 0 && (
-          <section className="mt-8">
-            <h2 className={SECTION_HEADING}>Skills</h2>
-            <SkillTags skills={job.skills} className="mt-3" />
-          </section>
-        )}
+      <div className="tp-job-detail-facts">
+        <JobBadges job={job} />
+        <JobMeta job={job} />
       </div>
+
+      {about && (
+        <section className="tp-job-section">
+          <h2 className="tp-job-section-title">About the role</h2>
+          <p className="tp-job-prose">{about}</p>
+        </section>
+      )}
+
+      {job.requirements && job.requirements.length > 0 && (
+        <section className="tp-job-section">
+          <h2 className="tp-job-section-title">Requirements</h2>
+          <ul className="tp-job-requirements">
+            {job.requirements.map((requirement) => (
+              <li key={requirement}>{requirement}</li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {job.skills && job.skills.length > 0 && (
+        <section className="tp-job-section">
+          <h2 className="tp-job-section-title">Skills</h2>
+          <SkillTags skills={job.skills} />
+        </section>
+      )}
     </article>
   );
 }
@@ -74,11 +66,9 @@ function JobDetailView({ jobKey }: Readonly<{ jobKey: string }>) {
 export function JobDetailPage() {
   const { jobKey = '' } = useParams();
   return (
-    <div className="mx-auto max-w-3xl">
+    <div className="tp-job-page">
       <BackLink to="/jobs">All jobs</BackLink>
-      <div className="mt-6">
-        <JobDetailView key={jobKey} jobKey={jobKey} />
-      </div>
+      <JobDetailView key={jobKey} jobKey={jobKey} />
     </div>
   );
 }

@@ -1,4 +1,6 @@
+import type { CSSProperties } from 'react';
 import { companyInitials } from '../../dashboard/companyProfile';
+import { slate } from '../../theme/tokens';
 
 /**
  * The company's logo, or a monogram when there isn't one.
@@ -10,9 +12,9 @@ import { companyInitials } from '../../dashboard/companyProfile';
  */
 
 const SIZES = {
-  sm: 'h-12 w-12 rounded-lg text-sm',
-  md: 'h-16 w-16 rounded-xl text-lg',
-  lg: 'h-24 w-24 rounded-2xl text-2xl',
+  sm: { box: 48, radius: 8, font: 14 },
+  md: { box: 64, radius: 12, font: 18 },
+  lg: { box: 96, radius: 16, font: 24 },
 } as const;
 
 export type CompanyLogoSize = keyof typeof SIZES;
@@ -21,14 +23,22 @@ export function CompanyLogo({
   src,
   name,
   size = 'md',
-  className = '',
+  style,
 }: Readonly<{
   src: string | null;
   name: string;
   size?: CompanyLogoSize;
-  className?: string;
+  style?: CSSProperties;
 }>) {
-  const shape = `${SIZES[size]} shrink-0 overflow-hidden ${className}`;
+  const { box, radius, font } = SIZES[size];
+  const shape: CSSProperties = {
+    width: box,
+    height: box,
+    borderRadius: radius,
+    flexShrink: 0,
+    overflow: 'hidden',
+    ...style,
+  };
 
   if (src) {
     return (
@@ -37,7 +47,12 @@ export function CompanyLogo({
         // The name, not "logo": a screen reader announcing "ABC Technologies
         // logo, image" says the word twice.
         alt={name || 'Company logo'}
-        className={`${shape} border border-slate-200 bg-white object-contain`}
+        style={{
+          ...shape,
+          border: `1px solid ${slate[200]}`,
+          background: '#fff',
+          objectFit: 'contain',
+        }}
       />
     );
   }
@@ -45,7 +60,17 @@ export function CompanyLogo({
   return (
     <span
       aria-hidden="true"
-      className={`${shape} flex items-center justify-center bg-gradient-to-br from-indigo-600 to-violet-600 font-semibold tracking-tight text-white`}
+      style={{
+        ...shape,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'var(--tp-brand-gradient)',
+        color: '#fff',
+        fontSize: font,
+        fontWeight: 600,
+        letterSpacing: '-0.02em',
+      }}
     >
       {companyInitials(name)}
     </span>

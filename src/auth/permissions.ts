@@ -25,6 +25,7 @@ export const PERMISSIONS = [
   'settings.edit', // future: PATCH /tenant
   'billing.view', // plan & seat usage
   'jobs.browse',
+  'jobs.manage', // open a role: create and publish vacancies (PB-011)
   'applications.viewOwn',
 ] as const;
 export type Permission = (typeof PERMISSIONS)[number];
@@ -49,6 +50,7 @@ const ROLE_PERMISSIONS: Record<Role, ReadonlySet<Permission>> = {
     'team.invite',
     'team.invite.manage',
     'pipeline.manage',
+    'jobs.manage',
     'settings.view',
     'settings.edit',
     'billing.view',
@@ -58,7 +60,11 @@ const ROLE_PERMISSIONS: Record<Role, ReadonlySet<Permission>> = {
   // NOTE: settings.view is safe only while CompanySettingsPage is mock-backed.
   // Revisit this cell when GET /tenant lands — if that endpoint is admin-only,
   // HR_MANAGER must lose it.
-  HR_MANAGER: new Set([...COMPANY_BASE, 'pipeline.manage', 'settings.view']),
+  // Opening a role is the HR manager's job, not a privilege of ownership, so
+  // jobs.manage sits alongside pipeline.manage rather than with the admin-only
+  // cells above. An INTERVIEWER stays out: they read the pipeline, they do not
+  // decide what the company hires for.
+  HR_MANAGER: new Set([...COMPANY_BASE, 'pipeline.manage', 'jobs.manage', 'settings.view']),
   INTERVIEWER: new Set(COMPANY_BASE),
   CANDIDATE: new Set(['jobs.browse', 'applications.viewOwn']),
 };

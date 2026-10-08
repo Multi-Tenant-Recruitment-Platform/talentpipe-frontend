@@ -26,11 +26,9 @@ function ApplyView({ jobKey }: Readonly<{ jobKey: string }>) {
 export function ApplyPage() {
   const { jobKey = '' } = useParams();
   return (
-    <div className="mx-auto max-w-3xl">
+    <div className="tp-job-page">
       <BackLink to={`/jobs/${encodeURIComponent(jobKey)}`}>Back to job</BackLink>
-      <div className="mt-6">
-        <ApplyView key={jobKey} jobKey={jobKey} />
-      </div>
+      <ApplyView key={jobKey} jobKey={jobKey} />
     </div>
   );
 }
