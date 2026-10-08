@@ -1,3 +1,4 @@
+import { Card, Skeleton } from 'antd';
 import { useEffect, useState, type ReactNode } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { apiErrorMessage } from '../api/client';
@@ -10,18 +11,14 @@ import { Alert } from '../components/ui/Alert';
 import { Button } from '../components/ui/Button';
 import { benefitLabel, sortBenefits } from '../dashboard/companyProfile';
 import { formatExperience, formatSalary, formatWorkingDays, shiftTypeLabel } from '../jobs/jobLabels';
+import { space } from '../theme/tokens';
 
 type State = { status: 'loading' } | { status: 'error'; message: string } | { status: 'ready'; job: JobDetail | null };
 
-const SECTION_HEADING = 'text-sm font-semibold uppercase tracking-wide text-slate-600';
-
 function BackLink() {
   return (
-    <Link
-      to="/jobs"
-      className="inline-flex items-center gap-1.5 rounded-md text-sm font-medium text-indigo-700 hover:text-indigo-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
-    >
-      <Icon name="arrow-left" className="h-4 w-4" />
+    <Link to="/jobs" className="tp-job-back">
+      <Icon name="arrow-left" size={16} />
       All jobs
     </Link>
   );
@@ -47,13 +44,13 @@ function JobDetailView({ jobId }: Readonly<{ jobId: string }>) {
 
   if (state.status === 'loading') {
     return (
-      <div aria-busy="true" className="animate-pulse space-y-4">
+      <div aria-busy="true">
         <span className="sr-only" role="status">
           Loading job…
         </span>
-        <div className="h-8 w-2/3 rounded bg-slate-200" />
-        <div className="h-4 w-1/3 rounded bg-slate-100" />
-        <div className="h-32 rounded-xl bg-slate-100" />
+        <Card>
+          <Skeleton active avatar={{ shape: 'square', size: 64 }} paragraph={{ rows: 6 }} />
+        </Card>
       </div>
     );
   }
@@ -61,10 +58,10 @@ function JobDetailView({ jobId }: Readonly<{ jobId: string }>) {
   if (state.status === 'error') {
     return (
       <Alert tone="error">
-        <p>{state.message}</p>
+        <p style={{ margin: 0 }}>{state.message}</p>
         <Button
           size="sm"
-          className="mt-3"
+          style={{ marginTop: space[1.5] }}
           onClick={() => {
             setState({ status: 'loading' });
             setAttempt((n) => n + 1);
@@ -79,14 +76,14 @@ function JobDetailView({ jobId }: Readonly<{ jobId: string }>) {
   const { job } = state;
   if (!job) {
     return (
-      <div className="rounded-xl border border-dashed border-slate-300 bg-white">
+      <Card>
         <EmptyState
           icon="briefcase"
           title="This job is not available."
           description="It may have been closed or removed. Browse the other open positions instead."
           action={<BackLink />}
         />
-      </div>
+      </Card>
     );
   }
 
@@ -95,27 +92,23 @@ function JobDetailView({ jobId }: Readonly<{ jobId: string }>) {
 
 function Section({ title, children }: Readonly<{ title: string; children: ReactNode }>) {
   return (
-    <section className="mt-8">
-      <h2 className={SECTION_HEADING}>{title}</h2>
+    <section className="tp-job-advert-section">
+      <h2 className="tp-legend">{title}</h2>
       {children}
     </section>
   );
 }
 
-function SubHeading({ children }: Readonly<{ children: string }>) {
-  return <h3 className="text-sm font-semibold text-slate-800">{children}</h3>;
-}
-
 /** A tick per item: responsibilities and perks read as things you do or get, not bullet points. */
 function CheckList({ items, label, columns = false }: Readonly<{ items: string[]; label: string; columns?: boolean }>) {
   return (
-    <ul aria-label={label} className={`mt-3 grid gap-2 text-slate-700 ${columns ? 'sm:grid-cols-2' : ''}`}>
+    <ul aria-label={label} className={columns ? 'tp-job-checklist tp-benefit-grid' : 'tp-job-checklist'}>
       {items.map((item) => (
-        <li key={item} className="flex min-w-0 items-start gap-2.5">
-          <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-indigo-600">
-            <Icon name="check" className="h-3.5 w-3.5" />
+        <li key={item}>
+          <span className="tp-job-check">
+            <Icon name="check" size={14} />
           </span>
-          <span className="min-w-0 break-words">{item}</span>
+          <span style={{ minWidth: 0 }}>{item}</span>
         </li>
       ))}
     </ul>
@@ -149,38 +142,41 @@ function JobAdvert({ job }: Readonly<{ job: JobDetail }>) {
   const benefits = hasItems(job.benefits) ? sortBenefits(job.benefits).map(benefitLabel) : [];
 
   return (
-    <article className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-      <div aria-hidden="true" className="h-2 bg-gradient-to-r from-indigo-600 to-violet-600" />
-      <div className="p-6 sm:p-8">
-        <header className="flex min-w-0 items-start gap-4">
+    <article className="tp-job-advert">
+      <div aria-hidden="true" className="tp-job-advert-band" />
+      <div className="tp-job-advert-body">
+        <header className="tp-job-advert-head">
           <CompanyMark name={job.companyName} logoUrl={job.companyLogoUrl} size="lg" />
-          <div className="min-w-0">
-            <h1 className="break-words text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">{job.title}</h1>
-            <p className="mt-1 break-words font-medium text-slate-600">{job.companyName}</p>
-            <PostedAt iso={job.publishedAt} className="mt-1" />
+          <div style={{ minWidth: 0 }}>
+            <h1>{job.title}</h1>
+            <p className="tp-job-advert-company">{job.companyName}</p>
+            <PostedAt iso={job.publishedAt} />
           </div>
         </header>
 
-        <JobBadges job={job} className="mt-5" />
+        <JobBadges job={job} style={{ marginTop: space[2.5] }} />
         {/* Department, salary and experience are in the overview below; the header line keeps to where and when. */}
-        <JobMeta job={{ ...job, department: null, salaryMin: null, salaryMax: null, minimumExperienceYears: null }} className="mt-4" />
+        <JobMeta
+          job={{ ...job, department: null, salaryMin: null, salaryMax: null, minimumExperienceYears: null }}
+          style={{ marginTop: space[2] }}
+        />
 
-        {job.jobSummary && <p className="mt-6 break-words text-lg leading-relaxed text-slate-800">{job.jobSummary}</p>}
+        {job.jobSummary && <p className="tp-job-advert-lede">{job.jobSummary}</p>}
 
         {facts.length > 0 && (
-          <section aria-labelledby="job-overview" className="mt-8 rounded-xl border border-slate-200 bg-slate-50 p-5">
-            <h2 id="job-overview" className={SECTION_HEADING}>
+          <section aria-labelledby="job-overview" className="tp-job-overview">
+            <h2 id="job-overview" className="tp-legend">
               Job overview
             </h2>
-            <dl className="mt-4 grid gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
+            <dl className="tp-detail-grid-3">
               {facts.map((fact) => (
-                <div key={fact.label} className="flex min-w-0 items-start gap-3">
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white text-indigo-600 ring-1 ring-inset ring-slate-200">
-                    <Icon name={fact.icon} className="h-5 w-5" />
+                <div key={fact.label} className="tp-job-fact">
+                  <span className="tp-job-fact-icon">
+                    <Icon name={fact.icon} />
                   </span>
-                  <div className="min-w-0">
-                    <dt className="text-xs font-medium text-slate-500">{fact.label}</dt>
-                    <dd className="break-words text-sm font-semibold text-slate-900">{fact.value}</dd>
+                  <div style={{ minWidth: 0 }}>
+                    <dt>{fact.label}</dt>
+                    <dd>{fact.value}</dd>
                   </div>
                 </div>
               ))}
@@ -190,7 +186,7 @@ function JobAdvert({ job }: Readonly<{ job: JobDetail }>) {
 
         {job.jobDescription && (
           <Section title="About the role">
-            <p className="mt-3 whitespace-pre-line break-words text-slate-700">{job.jobDescription}</p>
+            <p className="tp-job-advert-text">{job.jobDescription}</p>
           </Section>
         )}
 
@@ -202,35 +198,35 @@ function JobAdvert({ job }: Readonly<{ job: JobDetail }>) {
 
         {hasRequirements && (
           <Section title="Requirements">
-            <div className="mt-4 space-y-5">
+            <div className="tp-job-requirements">
               {hasItems(job.requiredSkills) && (
                 <div>
-                  <SubHeading>Required skills</SubHeading>
-                  <SkillTags skills={job.requiredSkills} className="mt-2" />
+                  <h3>Required skills</h3>
+                  <SkillTags skills={job.requiredSkills} />
                 </div>
               )}
               {hasItems(job.preferredSkills) && (
                 <div>
-                  <SubHeading>Nice to have</SubHeading>
-                  <SkillTags skills={job.preferredSkills} label="Preferred skills" muted className="mt-2" />
+                  <h3>Nice to have</h3>
+                  <SkillTags skills={job.preferredSkills} label="Preferred skills" muted />
                 </div>
               )}
               {hasItems(job.certifications) && (
                 <div>
-                  <SubHeading>Certifications</SubHeading>
-                  <SkillTags skills={job.certifications} label="Certifications" muted className="mt-2" />
+                  <h3>Certifications</h3>
+                  <SkillTags skills={job.certifications} label="Certifications" muted />
                 </div>
               )}
               {hasItems(job.languageRequirements) && (
                 <div>
-                  <SubHeading>Languages</SubHeading>
-                  <p className="mt-1 text-slate-700">{job.languageRequirements.join(', ')}</p>
+                  <h3>Languages</h3>
+                  <p className="tp-job-advert-text">{job.languageRequirements.join(', ')}</p>
                 </div>
               )}
               {job.otherRequirements && (
                 <div>
-                  <SubHeading>Other requirements</SubHeading>
-                  <p className="mt-1 whitespace-pre-line break-words text-slate-700">{job.otherRequirements}</p>
+                  <h3>Other requirements</h3>
+                  <p className="tp-job-advert-text">{job.otherRequirements}</p>
                 </div>
               )}
             </div>
@@ -251,9 +247,9 @@ function JobAdvert({ job }: Readonly<{ job: JobDetail }>) {
 export function JobDetailPage() {
   const { jobId = '' } = useParams();
   return (
-    <div className="mx-auto max-w-3xl">
+    <div style={{ maxWidth: 768, marginInline: 'auto' }}>
       <BackLink />
-      <div className="mt-6">
+      <div style={{ marginTop: space[3] }}>
         <JobDetailView key={jobId} jobId={jobId} />
       </div>
     </div>

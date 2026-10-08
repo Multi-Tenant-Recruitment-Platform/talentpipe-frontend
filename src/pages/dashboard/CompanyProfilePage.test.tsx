@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ReactNode } from 'react';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
@@ -229,7 +229,11 @@ describe('editing', () => {
     // slowest test here — measured between 2.2s and 4.6s on an idle machine,
     // which leaves nothing under the 5s default once the suite runs in
     // parallel. The extra headroom is for the typing, not for a hang.
-  }, 15_000);
+    //
+    // Raised again with the Ant Design migration: antd styles each control
+    // through CSS-in-JS on first render, which adds a few seconds across a file
+    // this size. Still headroom, not a hang.
+  }, 25_000);
 
   it('saves a bare domain as a working URL', async () => {
     const user = userEvent.setup();
@@ -328,7 +332,10 @@ describe('the logo and cover image', () => {
     // Matched on the error's own wording: both pickers also carry a hint
     // listing the same formats, so a looser pattern hits three elements.
     expect(await screen.findByText(/choose a png, jpg, svg or webp image/i)).toBeInTheDocument();
-    expect(screen.queryByRole('img')).toBeNull();
+    // Scoped by name: the point is that the rejected file never became the
+    // company's picture. Unscoped, this also catches the decorative icons Ant
+    // Design renders inside its own controls, which say nothing about the file.
+    expect(screen.queryByRole('img', { name: /ABC Technologies/i })).toBeNull();
     expect(uploadImage).not.toHaveBeenCalled();
   });
 
@@ -740,7 +747,11 @@ describe('the profile and the editor have separate URLs', () => {
     await user.click(screen.getByRole('button', { name: /save changes/i }));
 
     expect(await screen.findByText(/company profile updated successfully/i)).toBeInTheDocument();
-    expect(currentPath()).toBe('/dashboard/profile');
+    // The editor closes itself on save, and leaving its URL is what the effect
+    // in CompanyProfilePage does in response. Those are two separate renders,
+    // so the redirect is awaited rather than asserted on the same tick as the
+    // confirmation message.
+    await waitFor(() => expect(currentPath()).toBe('/dashboard/profile'));
     expect(screen.queryByLabelText(/^company name$/i)).toBeNull();
   });
 
@@ -818,7 +829,7 @@ describe('removed fields', () => {
 });
 
 describe('the editor section headings', () => {
-  it('are dark enough to read as headings', async () => {
+  it('group the form into real fieldsets, under one heading treatment', async () => {
     const user = userEvent.setup();
     await openEditor(user);
 
@@ -831,9 +842,12 @@ describe('the editor section headings', () => {
       'Operations',
       'Registration & tax',
     ]) {
+      // A real <legend> is the contract: it is what associates the heading
+      // with the fields under it, which a styled div would not. The shared
+      // class is what keeps all seven reading as headings rather than as
+      // field labels — see the .tp-legend rule in styles/overrides.css.
       const legend = screen.getByText(heading, { selector: 'legend' });
-      expect(legend).toHaveClass('text-slate-600');
-      expect(legend).not.toHaveClass('text-slate-400');
+      expect(legend).toHaveClass('tp-legend');
     }
   });
 });

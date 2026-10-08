@@ -1,56 +1,65 @@
+import { Button as AntButton } from 'antd';
 import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from 'react';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'dangerSolid';
 export type ButtonSize = 'sm' | 'md';
 
+type AntLook = { type: 'primary' | 'default' | 'text'; danger?: boolean };
+
 /**
- * The gradient primary button was copy-pasted across five dashboard surfaces
- * with drifting padding and hover states. Centralised here so the brand
- * gradient, focus ring and disabled treatment stay identical everywhere.
+ * The five variants this app speaks, expressed in antd's vocabulary.
+ *
+ * <p>`danger` stays de-emphasised (a text button — the inline Revoke in a table
+ * row) while `dangerSolid` is filled: the confirming action in a destructive
+ * dialog needs more weight than the Cancel sitting beside it.</p>
  */
-const VARIANTS: Record<ButtonVariant, string> = {
-  primary:
-    'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-sm shadow-indigo-600/20 ' +
-    'hover:from-indigo-500 hover:to-violet-500 hover:shadow-md hover:shadow-indigo-600/25 ' +
-    'focus-visible:ring-indigo-500/40',
-  secondary:
-    'border border-slate-300 bg-white text-slate-700 shadow-sm ' +
-    'hover:border-slate-400 hover:bg-slate-50 focus-visible:ring-indigo-500/25',
-  ghost:
-    'text-slate-600 hover:bg-slate-100 hover:text-slate-900 focus-visible:ring-indigo-500/25',
-  // De-emphasised inline destructive action, e.g. a Revoke link in a table row.
-  danger:
-    'text-red-600 hover:bg-red-50 hover:text-red-700 focus-visible:ring-red-500/25',
-  // The confirming action in a destructive dialog. `danger` is a ghost, which
-  // next to a ghost Cancel gives the two opposite outcomes identical weight.
-  dangerSolid:
-    'bg-red-600 text-white shadow-sm shadow-red-600/20 ' +
-    'hover:bg-red-500 hover:shadow-md hover:shadow-red-600/25 focus-visible:ring-red-500/40',
+const VARIANTS: Record<ButtonVariant, AntLook> = {
+  primary: { type: 'primary' },
+  secondary: { type: 'default' },
+  ghost: { type: 'text' },
+  danger: { type: 'text', danger: true },
+  dangerSolid: { type: 'primary', danger: true },
 };
 
-const SIZES: Record<ButtonSize, string> = {
-  sm: 'gap-1.5 rounded-lg px-3 py-1.5 text-xs',
-  md: 'gap-2 rounded-lg px-4 py-2.5 text-sm',
+const SIZES: Record<ButtonSize, 'small' | 'middle'> = {
+  sm: 'small',
+  md: 'middle',
 };
 
-/** Ref-forwarding so dialogs can place initial focus on a specific button. */
+/**
+ * A thin adapter over antd's Button.
+ *
+ * <p>It exists so the ~30 call sites keep their `variant`/`size` vocabulary and
+ * their ref forwarding (dialogs place initial focus on a specific button)
+ * instead of each one learning antd's `type`/`danger`/`htmlType` triple.</p>
+ */
 export const Button = forwardRef<
   HTMLButtonElement,
-  { variant?: ButtonVariant; size?: ButtonSize; children: ReactNode } & ButtonHTMLAttributes<HTMLButtonElement>
->(function Button(
-  { variant = 'secondary', size = 'md', type = 'button', className = '', children, ...rest },
-  ref,
-) {
+  {
+    variant?: ButtonVariant;
+    size?: ButtonSize;
+    /** Shows a spinner and blocks further presses. */
+    loading?: boolean;
+    children: ReactNode;
+  } & Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'type' | 'color'> & {
+      type?: 'button' | 'submit' | 'reset';
+    }
+>(function Button({ variant = 'secondary', size = 'md', type = 'button', children, ...rest }, ref) {
+  const look = VARIANTS[variant];
   return (
-    // Defaulting to 'button': a <button> in a form submits it unless told
-    // otherwise, and every caller that wants that passes type="submit".
-    <button
+    // `htmlType`, not `type`: antd spends `type` on the visual variant, so the
+    // DOM attribute every caller means by `type="submit"` moves here. Defaulting
+    // to 'button' matches the old behaviour — a bare <button> in a form submits
+    // it, and only callers that want that pass type="submit".
+    <AntButton
       ref={ref}
-      type={type}
-      className={`inline-flex items-center justify-center font-semibold transition-all focus:outline-none focus-visible:ring-4 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:shadow-sm ${SIZES[size]} ${VARIANTS[variant]} ${className}`}
+      htmlType={type}
+      type={look.type}
+      danger={look.danger}
+      size={SIZES[size]}
       {...rest}
     >
       {children}
-    </button>
+    </AntButton>
   );
 });

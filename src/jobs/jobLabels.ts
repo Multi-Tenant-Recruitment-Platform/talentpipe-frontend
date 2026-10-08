@@ -1,48 +1,33 @@
 import type { EmploymentType, JobSummary, PayPeriod, ShiftType, WeekDay, WorkplaceType } from '../api/types';
+import {
+  EMPLOYMENT_TYPES,
+  SHIFT_TYPES,
+  WORKPLACE_TYPES,
+  currencyCode as storedCurrencyCode,
+  formatWorkingDays as formatStoredWorkingDays,
+} from '../dashboard/jobVacancy';
 
 /**
  * Candidate-facing wording for the identifiers a vacancy is stored with. The
- * labels match the vacancy creation form's catalogues (src/dashboard/jobVacancy.ts
- * on the vacancy form branch), so a company sees the same words on the board
- * that it picked in the form. Once both live on one branch, import from there.
+ * labels are the vacancy form's own catalogues (src/dashboard/jobVacancy.ts),
+ * so a company sees the same words on the board that it picked in the form.
+ * What differs is tolerance: the board reads rows it did not write, so every
+ * helper here accepts a missing value and keeps an unknown one readable.
  */
 
-const EMPLOYMENT_TYPES: Record<EmploymentType, string> = {
-  FULL_TIME: 'Full time',
-  PART_TIME: 'Part time',
-  CONTRACT: 'Contract',
-  INTERNSHIP: 'Internship',
-  TEMPORARY: 'Temporary',
-};
+const byId = (catalogue: { id: string; label: string }[]): Record<string, string> =>
+  Object.fromEntries(catalogue.map((entry) => [entry.id, entry.label]));
 
-const WORKPLACE_TYPES: Record<WorkplaceType, string> = {
-  ON_SITE: 'On-site',
-  REMOTE: 'Remote',
-  HYBRID: 'Hybrid',
-};
+const EMPLOYMENT_LABELS = byId(EMPLOYMENT_TYPES);
+const WORKPLACE_LABELS = byId(WORKPLACE_TYPES);
+const SHIFT_LABELS = byId(SHIFT_TYPES);
 
+/** The unit after the slash — 'LKR 150,000 / month' — which the form's 'Per month' does not fit. */
 const PAY_PERIODS: Record<PayPeriod, string> = {
   HOURLY: 'hour',
   MONTHLY: 'month',
   ANNUAL: 'year',
 };
-
-const SHIFT_TYPES: Record<ShiftType, string> = {
-  DAY: 'Day shift',
-  NIGHT: 'Night shift',
-  ROTATING: 'Rotating shift',
-  FLEXIBLE: 'Flexible',
-};
-
-const WEEK_DAYS: { id: WeekDay; short: string }[] = [
-  { id: 'MON', short: 'Mon' },
-  { id: 'TUE', short: 'Tue' },
-  { id: 'WED', short: 'Wed' },
-  { id: 'THU', short: 'Thu' },
-  { id: 'FRI', short: 'Fri' },
-  { id: 'SAT', short: 'Sat' },
-  { id: 'SUN', short: 'Sun' },
-];
 
 /** 'SOME_NEW_VALUE' → 'Some new value', so a value the board does not know yet is still readable. */
 function humanize(id: string): string {
@@ -52,14 +37,12 @@ function humanize(id: string): string {
 
 const labelOf = (labels: Record<string, string>, id: string) => labels[id] ?? humanize(id);
 
-export const employmentTypeLabel = (id: EmploymentType) => labelOf(EMPLOYMENT_TYPES, id);
-export const workplaceTypeLabel = (id: WorkplaceType) => labelOf(WORKPLACE_TYPES, id);
-export const shiftTypeLabel = (id: ShiftType) => labelOf(SHIFT_TYPES, id);
+export const employmentTypeLabel = (id: EmploymentType) => labelOf(EMPLOYMENT_LABELS, id);
+export const workplaceTypeLabel = (id: WorkplaceType) => labelOf(WORKPLACE_LABELS, id);
+export const shiftTypeLabel = (id: ShiftType) => labelOf(SHIFT_LABELS, id);
 
 /** 'LKR — Sri Lankan rupee' → 'LKR'. The code is what belongs next to a number. */
-export function currencyCode(currency: string | null | undefined): string {
-  return currency ? currency.split('—')[0].trim() : '';
-}
+export const currencyCode = (currency: string | null | undefined) => storedCurrencyCode(currency ?? null);
 
 const amount = (value: number) => value.toLocaleString('en-US');
 
@@ -93,12 +76,4 @@ export function formatExperience(years: number | null | undefined): string {
 }
 
 /** 'Mon–Fri' where the days are a run, 'Mon, Wed, Fri' where they are not. */
-export function formatWorkingDays(days: WeekDay[] | null | undefined): string {
-  if (!days || days.length === 0) return '';
-  const order = WEEK_DAYS.map((day) => day.id);
-  const chosen = order.filter((id) => days.includes(id));
-  const indexes = chosen.map((id) => order.indexOf(id));
-  const isRun = chosen.length > 2 && indexes.every((value, i) => i === 0 || value === indexes[i - 1] + 1);
-  const short = (id: WeekDay) => WEEK_DAYS.find((day) => day.id === id)?.short ?? id;
-  return isRun ? `${short(chosen[0])}–${short(chosen[chosen.length - 1])}` : chosen.map(short).join(', ');
-}
+export const formatWorkingDays = (days: WeekDay[] | null | undefined) => formatStoredWorkingDays(days ?? []);
