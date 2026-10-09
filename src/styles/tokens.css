@@ -111,7 +111,7 @@
   /* --- Layout ----------------------------------------------------------- */
   --tp-header-height: 64px;
   --tp-sidebar-width: 256px;
-  --tp-content-max-width: 1280px;
+  --tp-content-max-width: 1440px;
 
   /* --- Motion ----------------------------------------------------------- */
   --tp-motion-fast: 120ms;

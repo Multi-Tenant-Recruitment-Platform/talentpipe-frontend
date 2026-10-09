@@ -14,7 +14,7 @@ export function AuthShell({ children }: Readonly<{ children: ReactNode }>) {
       <section className="tp-auth-card">
         <AuthBrandPanel />
         <div className="tp-auth-form">
-          <div style={{ width: '100%', maxWidth: 384, marginInline: 'auto' }}>{children}</div>
+          <div style={{ width: '100%', maxWidth: 440, marginInline: 'auto' }}>{children}</div>
         </div>
       </section>
     </div>

@@ -42,13 +42,16 @@ export function Layout() {
           borderBottom: `1px solid ${slate[200]}`,
           background: 'rgb(255 255 255 / 85%)',
           backdropFilter: 'blur(6px)',
+          // The container below owns the gutters, so the header lines up with
+          // the page content edge for edge.
+          paddingInline: 0,
         }}
       >
         <Flex
           align="center"
           justify="space-between"
           gap={16}
-          style={{ width: '100%', maxWidth: 1152, marginInline: 'auto' }}
+          className="tp-page-container"
         >
           <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <span className="tp-brand-mark" style={{ width: 32, height: 32, fontWeight: fontWeight.bold }}>
@@ -109,7 +112,7 @@ export function Layout() {
         </Flex>
       </AntLayout.Header>
 
-      <AntLayout.Content style={{ maxWidth: 1152, width: '100%', marginInline: 'auto', padding: '40px 16px' }}>
+      <AntLayout.Content className="tp-page-container" style={{ paddingBlock: 40 }}>
         <Outlet />
       </AntLayout.Content>
     </AntLayout>

@@ -9,13 +9,13 @@ export function LandingPage() {
       <Typography.Title level={1} style={{ fontSize: fontSize.hero, maxWidth: 672, margin: 0 }}>
         TalentPipe
       </Typography.Title>
-      <Typography.Paragraph type="secondary" style={{ maxWidth: 576, fontSize: fontSize.title, marginTop: 24 }}>
+      <Typography.Paragraph type="secondary" style={{ maxWidth: 720, fontSize: fontSize.title, marginTop: 24 }}>
         The multi-tenant recruitment intelligence platform — one place for your jobs, candidates and
         hiring pipeline.
       </Typography.Paragraph>
 
       {/* Two audiences, two doors — employers and job seekers each get their own. */}
-      <Row gutter={[24, 24]} style={{ width: '100%', maxWidth: 768, marginTop: 48 }}>
+      <Row gutter={[24, 24]} style={{ width: '100%', maxWidth: 1120, marginTop: 48 }}>
         <Col xs={24} sm={12}>
           <Card style={{ height: '100%', textAlign: 'left' }} styles={{ body: { padding: 32 } }}>
             <Flex vertical style={{ height: '100%' }}>
