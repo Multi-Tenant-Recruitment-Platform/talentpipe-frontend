@@ -5,6 +5,7 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import { RequirePermission } from './components/RequirePermission';
 import { DashboardLayout } from './layouts/DashboardLayout';
 import { AcceptInvitePage } from './pages/AcceptInvitePage';
+import { ApplyPage } from './pages/ApplyPage';
 import { CandidateProfilePage } from './pages/CandidateProfilePage';
 import { CandidateRegisterPage } from './pages/CandidateRegisterPage';
 import { CompanyProfilePage } from './pages/dashboard/CompanyProfilePage';
@@ -34,7 +35,8 @@ export default function App() {
         <Route element={<Layout />}>
           <Route path="/" element={<LandingPage />} />
           <Route path="/jobs" element={<JobsPage />} />
-          <Route path="/jobs/:jobId" element={<JobDetailPage />} />
+          <Route path="/jobs/:jobKey" element={<JobDetailPage />} />
+          <Route path="/jobs/:jobKey/apply" element={<ApplyPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/register-candidate" element={<CandidateRegisterPage />} />
           <Route path="/login" element={<LoginPage />} />

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { apiErrorMessage } from '../api/client';
-import { listPublicJobs } from '../api/publicJobs';
+import { listPublicJobs, type PublicJobSearch } from '../api/publicJobs';
 import type { JobSummary, PageResponse } from '../api/types';
 
 export type JobsStatus = 'loading' | 'error' | 'ready';
@@ -9,68 +9,87 @@ const LOAD_ERROR = 'We could not load job vacancies. Please check your connectio
 
 const nextPageOf = (page: PageResponse<JobSummary>) => (page.page + 1 < page.totalPages ? page.page + 1 : null);
 
-/** Published vacancies for the public board, loaded a page at a time. */
-export function usePublicJobs() {
-  const [status, setStatus] = useState<JobsStatus>('loading');
-  const [error, setError] = useState<string | null>(null);
-  const [jobs, setJobs] = useState<JobSummary[]>([]);
-  const [total, setTotal] = useState<number | null>(null);
-  const [nextPage, setNextPage] = useState<number | null>(null);
+/** What came back for one request, tagged with the request it answers. */
+type Settled = {
+  key: string;
+  error: string | null;
+  jobs: JobSummary[];
+  total: number | null;
+  nextPage: number | null;
+};
+
+/**
+ * Published vacancies for the public board, loaded a page at a time.
+ *
+ * <p>`keyword` and `location` are searched by the backend, across every
+ * published vacancy rather than only the ones on screen; changing either
+ * starts again from the first page.</p>
+ */
+export function usePublicJobs({ keyword = '', location = '' }: PublicJobSearch = {}) {
+  const [settled, setSettled] = useState<Settled | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
   const [loadMoreError, setLoadMoreError] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
 
+  // Names the request on screen. A result is shown only while its key matches,
+  // so a new search reads as loading at once and a slow answer to an old one
+  // is never mistaken for the current list.
+  const key = JSON.stringify([keyword, location, attempt]);
+
   useEffect(() => {
     let cancelled = false;
-    listPublicJobs(0)
+    listPublicJobs(0, { keyword, location })
       .then((page) => {
         if (cancelled) return;
-        setJobs(page.content);
-        setTotal(page.totalElements);
-        setNextPage(nextPageOf(page));
-        setStatus('ready');
+        setSettled({ key, error: null, jobs: page.content, total: page.totalElements, nextPage: nextPageOf(page) });
       })
       .catch((err: unknown) => {
         if (cancelled) return;
-        setError(apiErrorMessage(err, LOAD_ERROR));
-        setStatus('error');
+        setSettled({ key, error: apiErrorMessage(err, LOAD_ERROR), jobs: [], total: null, nextPage: null });
       });
     return () => {
       cancelled = true;
     };
-  }, [attempt]);
+  }, [key, keyword, location]);
 
-  const retry = useCallback(() => {
-    setStatus('loading');
-    setError(null);
-    setAttempt((n) => n + 1);
-  }, []);
+  const current = settled?.key === key ? settled : null;
+  const nextPage = current?.nextPage ?? null;
+
+  const retry = useCallback(() => setAttempt((n) => n + 1), []);
 
   const loadMore = useCallback(async () => {
     if (nextPage === null || loadingMore) return;
     setLoadingMore(true);
     setLoadMoreError(null);
     try {
-      const page = await listPublicJobs(nextPage);
-      // Rows can shift between pages when jobs are published meanwhile.
-      setJobs((current) => {
-        const seen = new Set(current.map((job) => job.id));
-        return [...current, ...page.content.filter((job) => !seen.has(job.id))];
+      const page = await listPublicJobs(nextPage, { keyword, location });
+      setSettled((prev) => {
+        // The search changed while this page was on its way; it belongs to a list no longer shown.
+        if (!prev || prev.key !== key) return prev;
+        // Rows can shift between pages when jobs are published meanwhile.
+        const seen = new Set(prev.jobs.map((job) => job.id));
+        return {
+          ...prev,
+          jobs: [...prev.jobs, ...page.content.filter((job) => !seen.has(job.id))],
+          total: page.totalElements,
+          nextPage: nextPageOf(page),
+        };
       });
-      setTotal(page.totalElements);
-      setNextPage(nextPageOf(page));
     } catch (err) {
       setLoadMoreError(apiErrorMessage(err, 'We could not load more jobs. Please try again.'));
     } finally {
       setLoadingMore(false);
     }
-  }, [nextPage, loadingMore]);
+  }, [nextPage, loadingMore, keyword, location, key]);
+
+  let status: JobsStatus = 'loading';
+  if (current) status = current.error ? 'error' : 'ready';
 
   return {
     status,
-    error,
-    jobs,
-    total,
+    error: current?.error ?? null,
+    jobs: current?.jobs ?? [],
+    total: current?.total ?? null,
     hasMore: nextPage !== null,
     loadingMore,
     loadMoreError,
