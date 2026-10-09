@@ -29,6 +29,10 @@ COPY . .
 ARG VITE_API_BASE_URL=/api/v1
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 
+# Empty (live API) unless a build sets it to "mock" to serve the sample jobs.
+ARG VITE_PUBLIC_JOBS_SOURCE=
+ENV VITE_PUBLIC_JOBS_SOURCE=$VITE_PUBLIC_JOBS_SOURCE
+
 RUN npm run build
 
 FROM nginx:1.27-alpine

@@ -6,12 +6,13 @@ import { formatCalendarDate, formatRelativeTime } from '../../utils/format';
 import { Icon, type IconName } from '../dashboard/Icon';
 
 const MARK_SIZES = {
+  sm: { width: 40, height: 40, borderRadius: radius.md, fontSize: fontSize.lead },
   md: { width: 48, height: 48, borderRadius: radius.lg, fontSize: fontSize.title },
   lg: { width: 64, height: 64, borderRadius: radius.xl, fontSize: fontSize.heading },
 } as const;
 
 /** Company logo, or its initial when there is no logo or it fails to load. Decorative: the name is always shown beside it. */
-export function CompanyMark({ name, logoUrl, size = 'md' }: Readonly<{ name: string; logoUrl?: string | null; size?: 'md' | 'lg' }>) {
+export function CompanyMark({ name, logoUrl, size = 'md' }: Readonly<{ name: string; logoUrl?: string | null; size?: 'sm' | 'md' | 'lg' }>) {
   const [broken, setBroken] = useState(false);
   const box = MARK_SIZES[size];
 

@@ -9,13 +9,11 @@ import { JobCard } from './JobCard';
 
 const SKELETON_COUNT = 6;
 
-/** Shaped like the card it stands in for — a mark, a title, a few lines — so the grid does not jump when the jobs land. */
+/** Shaped like the card it stands in for — a mark, a title, a few lines — so the list does not jump when the jobs land. */
 function JobCardSkeleton() {
   return (
     <div className="tp-job-card">
-      <div className="tp-job-card-body">
-        <Skeleton active avatar={{ shape: 'square', size: 48 }} paragraph={{ rows: 3 }} />
-      </div>
+      <Skeleton active avatar={{ shape: 'square', size: 40 }} paragraph={{ rows: 3 }} />
     </div>
   );
 }
