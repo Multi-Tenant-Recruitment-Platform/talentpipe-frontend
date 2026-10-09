@@ -23,7 +23,7 @@ function JobDetailView({ jobKey }: Readonly<{ jobKey: string }>) {
 export function JobDetailPage() {
   const { jobKey = '' } = useParams();
   return (
-    <div style={{ maxWidth: 1080, marginInline: 'auto' }}>
+    <div>
       <BackLink to="/jobs">All jobs</BackLink>
       <div style={{ marginTop: space[3] }}>
         <JobDetailView key={jobKey} jobKey={jobKey} />

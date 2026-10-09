@@ -48,7 +48,7 @@ export function CompanySettingsPage() {
         subtitle="Manage your workspace identity and plan."
       />
 
-      <div style={{ maxWidth: 896, marginInline: 'auto' }}>
+      <div>
         <Row gutter={[24, 24]} align="top">
           <Col xs={24} lg={12}>
             <Card title="Workspace" subtitle="Your tenant identity on TalentPipe">

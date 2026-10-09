@@ -264,7 +264,7 @@ export const breakpoint = {
 export const layout = {
   headerHeight: 64,
   sidebarWidth: 256,
-  contentMaxWidth: 1280,
+  contentMaxWidth: 1440,
   controlHeight: 40,
 } as const;
 

@@ -32,7 +32,7 @@ function ApplyView({ jobKey }: Readonly<{ jobKey: string }>) {
 export function ApplyPage() {
   const { jobKey = '' } = useParams();
   return (
-    <div style={{ maxWidth: 768, marginInline: 'auto' }}>
+    <div style={{ maxWidth: 1040, marginInline: 'auto' }}>
       <BackLink to={`/jobs/${encodeURIComponent(jobKey)}`}>Back to job</BackLink>
       <div style={{ marginTop: space[3] }}>
         <ApplyView key={jobKey} jobKey={jobKey} />

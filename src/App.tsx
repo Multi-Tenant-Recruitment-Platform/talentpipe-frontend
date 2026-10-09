@@ -23,6 +23,7 @@ import { JobDetailPage } from './pages/JobDetailPage';
 import { JobsPage } from './pages/JobsPage';
 import { LandingPage } from './pages/LandingPage';
 import { LoginPage } from './pages/LoginPage';
+import { NotFoundPage } from './pages/NotFoundPage';
 import { RegisterPage } from './pages/RegisterPage';
 import { ResetPasswordPage } from './pages/ResetPasswordPage';
 import { VerifyEmailPage } from './pages/VerifyEmailPage';
@@ -55,6 +56,8 @@ export default function App() {
               </ProtectedRoute>
             }
           />
+          {/* Any other public URL: a 404 inside the site chrome, not a blank page. */}
+          <Route path="*" element={<NotFoundPage />} />
         </Route>
 
         {/* The company workspace gets its own full-screen chrome. Each child

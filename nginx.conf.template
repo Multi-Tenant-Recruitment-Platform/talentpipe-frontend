@@ -60,6 +60,13 @@ server {
     add_header Cache-Control "public, immutable";
   }
 
+  # index.html names the current hashed bundles, so it must be revalidated on
+  # every load. Without an explicit header browsers cache it heuristically off
+  # Last-Modified and keep running the previous deploy's JS.
+  location = /index.html {
+    add_header Cache-Control "no-cache";
+  }
+
   # SPA fallback. Required for deep links that arrive from email —
   # /accept-invite?token=…, /verify-email?token=…, /reset-password?token=… —
   # and for a hard refresh on any /dashboard/* route.
