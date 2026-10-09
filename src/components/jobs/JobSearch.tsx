@@ -1,7 +1,8 @@
 import { Checkbox, Input } from 'antd';
 import { useState, type FormEvent, type ReactNode } from 'react';
+import type { JobSummary } from '../../api/types';
 import { EMPLOYMENT_TYPES, WORKPLACE_TYPES } from '../../dashboard/jobVacancy';
-import type { JobFilters } from '../../jobs/jobFilters';
+import { hasSalary, type JobFilters } from '../../jobs/jobFilters';
 import { Icon } from '../dashboard/Icon';
 import { Button } from '../ui/Button';
 
@@ -64,51 +65,78 @@ export function JobSearchBar({
   );
 }
 
-/** One filter: its name on the left, every choice laid out beside it. */
+/** One filter: its name, then every choice in the open underneath. */
 function FilterGroup({ label, children }: Readonly<{ label: string; children: ReactNode }>) {
   return (
     <fieldset className="tp-jobs-filter-group">
       <legend>{label}</legend>
-      <div className="tp-jobs-chips">{children}</div>
+      <div className="tp-jobs-filter-options">{children}</div>
     </fieldset>
   );
 }
 
-/** A choice that can be switched on and off. A real checkbox, drawn as a chip. */
-function Chip({ checked, onChange, children }: Readonly<{ checked: boolean; onChange: (checked: boolean) => void; children: string }>) {
+/** One choice: a tick box, its name, and how many jobs it would leave. */
+function FilterOption({
+  label,
+  count,
+  checked,
+  onChange,
+}: Readonly<{ label: string; count?: number; checked: boolean; onChange: (checked: boolean) => void }>) {
+  const empty = count === 0 && !checked;
   return (
-    <Checkbox checked={checked} onChange={(event) => onChange(event.target.checked)} className="tp-jobs-chip">
-      {children}
+    <Checkbox
+      className={empty ? 'tp-jobs-filter-option tp-jobs-filter-option-empty' : 'tp-jobs-filter-option'}
+      checked={checked}
+      onChange={(event) => onChange(event.target.checked)}
+    >
+      <span>{label}</span>
+      {count !== undefined && (
+        <span aria-hidden="true" className="tp-jobs-filter-option-count">
+          {count}
+        </span>
+      )}
     </Checkbox>
   );
 }
 
-const toggled = <T,>(list: T[], value: T, on: boolean) => (on ? [...list, value] : list.filter((item) => item !== value));
+const toggle = <T,>(list: T[], id: T, on: boolean) => (on ? [...list, id] : list.filter((item) => item !== id));
+
+const countBy = <T,>(jobs: JobSummary[], pick: (job: JobSummary) => T | null | undefined, id: T) =>
+  jobs.filter((job) => pick(job) === id).length;
 
 /**
- * The filters under the hero. Every choice is on the page rather than behind
- * a dropdown, one filter to a row, so what can be narrowed — and what already
- * is — reads at a glance. Unlike the search text, these apply as soon as they
- * change.
+ * The filters beside the results. Every choice is visible and ticked in
+ * place — no dropdown to open — so what is narrowing the list can be read at
+ * a glance, and each choice says how many jobs it holds.
  */
 export function JobFilterBar({
   filters,
   onChange,
+  jobs,
   canClear,
   onClear,
 }: Readonly<{
   filters: JobFilters;
   onChange: (next: JobFilters) => void;
+  /** The jobs to count each choice against. Leave out while the counts would be partial. */
+  jobs?: JobSummary[];
   /** Whether anything — a filter here, or the search above — is narrowing the list. */
   canClear: boolean;
   onClear: () => void;
 }>) {
+  const activeCount = filters.employmentTypes.length + filters.workplaceTypes.length + (filters.salaryOnly ? 1 : 0);
+
   return (
     <section aria-label="Filter jobs" className="tp-jobs-filters">
       <div className="tp-jobs-filters-head">
         <h2>
           <Icon name="funnel" size={18} />
           Filters
+          {activeCount > 0 && (
+            <span className="tp-jobs-filter-count" aria-label={`${activeCount} active`}>
+              {activeCount}
+            </span>
+          )}
         </h2>
         {canClear && (
           <Button variant="ghost" size="sm" onClick={onClear}>
@@ -119,32 +147,35 @@ export function JobFilterBar({
 
       <FilterGroup label="Job type">
         {EMPLOYMENT_TYPES.map(({ id, label }) => (
-          <Chip
+          <FilterOption
             key={id}
+            label={label}
+            count={jobs && countBy(jobs, (job) => job.employmentType, id)}
             checked={filters.employmentTypes.includes(id)}
-            onChange={(on) => onChange({ ...filters, employmentTypes: toggled(filters.employmentTypes, id, on) })}
-          >
-            {label}
-          </Chip>
+            onChange={(on) => onChange({ ...filters, employmentTypes: toggle(filters.employmentTypes, id, on) })}
+          />
         ))}
       </FilterGroup>
 
       <FilterGroup label="Workplace">
         {WORKPLACE_TYPES.map(({ id, label }) => (
-          <Chip
+          <FilterOption
             key={id}
+            label={label}
+            count={jobs && countBy(jobs, (job) => job.workplaceType, id)}
             checked={filters.workplaceTypes.includes(id)}
-            onChange={(on) => onChange({ ...filters, workplaceTypes: toggled(filters.workplaceTypes, id, on) })}
-          >
-            {label}
-          </Chip>
+            onChange={(on) => onChange({ ...filters, workplaceTypes: toggle(filters.workplaceTypes, id, on) })}
+          />
         ))}
       </FilterGroup>
 
       <FilterGroup label="Salary">
-        <Chip checked={filters.salaryOnly} onChange={(salaryOnly) => onChange({ ...filters, salaryOnly })}>
-          Salary shown
-        </Chip>
+        <FilterOption
+          label="Salary shown"
+          count={jobs && jobs.filter(hasSalary).length}
+          checked={filters.salaryOnly}
+          onChange={(salaryOnly) => onChange({ ...filters, salaryOnly })}
+        />
       </FilterGroup>
     </section>
   );

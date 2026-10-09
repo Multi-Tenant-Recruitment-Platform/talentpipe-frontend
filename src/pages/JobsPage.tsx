@@ -34,7 +34,7 @@ function resultLabel(matching: number, loaded: number, total: number, searching:
  *
  * <p>Two kinds of narrowing, kept apart because they run in different places.
  * The search — what and where — goes to the backend and covers every
- * published vacancy. The filter chips and the sort have no backend parameter
+ * published vacancy. The filter tick boxes and the sort have no backend parameter
  * yet, so they work over the vacancies loaded so far, and the page says so
  * when there are more to load.</p>
  */
@@ -61,66 +61,91 @@ export function JobsPage() {
   return (
     <section>
       <header className="tp-jobs-hero">
-        <h1>Find your next opportunity</h1>
-        <p className="tp-jobs-hero-lede">Search open roles from companies hiring on TalentPipe.</p>
+        <div className="tp-jobs-hero-content">
+          <span className="tp-jobs-hero-eyebrow">Your next chapter starts here</span>
+          <h1>Find your next opportunity</h1>
+          <p className="tp-jobs-hero-lede">Discover roles from companies building the future.</p>
+        </div>
+        <span aria-hidden="true" className="tp-jobs-hero-orb tp-jobs-hero-orb-one" />
+        <span aria-hidden="true" className="tp-jobs-hero-orb tp-jobs-hero-orb-two" />
+      </header>
+
+      <div className="tp-jobs-search-panel">
+        <div className="tp-jobs-search-intro">
+          <span className="tp-jobs-section-eyebrow">Find your fit</span>
+          <h2>Search open roles</h2>
+          <p>Start with a keyword or location, then refine your results below.</p>
+        </div>
         <JobSearchBar
           key={searchKey}
           keyword={search.keyword}
           location={search.location}
           onSearch={(keyword, location) => setSearch({ keyword, location })}
         />
-      </header>
-
-      {showFilters && (
-        <JobFilterBar filters={filters} onChange={setFilters} canClear={searching || refining} onClear={clearAll} />
-      )}
-
-      {ready && (jobs.length > 0 || searching) && (
-        <div className="tp-jobs-toolbar">
-          <div>
-            <p role="status" className="tp-jobs-count">
-              {resultLabel(visible.length, jobs.length, total ?? jobs.length, searching, refining)}
-            </p>
-            {/* The chips work over what is loaded; say so rather than imply the rest was checked. */}
-            {refining && hasMore && (
-              <p className="tp-jobs-count-note">Filters cover the {jobs.length} jobs loaded so far. Load more to check the rest.</p>
-            )}
-          </div>
-          <div className="tp-jobs-sort">
-            <span aria-hidden="true" className="tp-jobs-sort-label">
-              Sort by
-            </span>
-            <Segmented<JobSort>
-              aria-label="Sort jobs"
-              options={SORT_OPTIONS}
-              value={filters.sort}
-              onChange={(sort) => setFilters({ ...filters, sort })}
-            />
-          </div>
-        </div>
-      )}
-
-      <div className="tp-jobs-layout">
-        <JobList
-          status={status}
-          jobs={visible}
-          error={error}
-          onRetry={retry}
-          {...((searching || refining) && {
-            emptyTitle: 'No matching jobs found',
-            emptyDescription: 'Try different keywords, or remove a filter.',
-          })}
-        />
       </div>
 
-      {ready && hasMore && (
-        <Flex vertical align="center" gap={space[1.5]} style={{ marginTop: space[4] }}>
-          {loadMoreError && <Alert tone="error">{loadMoreError}</Alert>}
-          <Button onClick={() => void loadMore()} disabled={loadingMore}>
-            {loadingMore ? 'Loading…' : 'Load more jobs'}
-          </Button>
-        </Flex>
-      )}
+      <div className="tp-jobs-results-shell">
+        {showFilters && (
+          <aside className="tp-jobs-sidebar">
+            <JobFilterBar
+              filters={filters}
+              onChange={setFilters}
+              // Counts over a partly loaded list would understate every choice.
+              jobs={ready && !hasMore ? jobs : undefined}
+              canClear={searching || refining}
+              onClear={clearAll}
+            />
+          </aside>
+        )}
+
+        <main className="tp-jobs-results">
+          {ready && (jobs.length > 0 || searching) && (
+            <div className="tp-jobs-toolbar">
+              <div>
+                <p role="status" className="tp-jobs-count">
+                  {resultLabel(visible.length, jobs.length, total ?? jobs.length, searching, refining)}
+                </p>
+                {refining && hasMore && (
+                  <p className="tp-jobs-count-note">Filters cover the {jobs.length} jobs loaded so far. Load more to check the rest.</p>
+                )}
+              </div>
+              <div className="tp-jobs-sort">
+                <span aria-hidden="true" className="tp-jobs-sort-label">
+                  Sort by
+                </span>
+                <Segmented<JobSort>
+                  aria-label="Sort jobs"
+                  options={SORT_OPTIONS}
+                  value={filters.sort}
+                  onChange={(sort) => setFilters({ ...filters, sort })}
+                />
+              </div>
+            </div>
+          )}
+
+          <div className="tp-jobs-layout">
+            <JobList
+              status={status}
+              jobs={visible}
+              error={error}
+              onRetry={retry}
+              {...((searching || refining) && {
+                emptyTitle: 'No matching jobs found',
+                emptyDescription: 'Try different keywords, or remove a filter.',
+              })}
+            />
+          </div>
+
+          {ready && hasMore && (
+            <Flex vertical align="center" gap={space[1.5]} style={{ marginTop: space[4] }}>
+              {loadMoreError && <Alert tone="error">{loadMoreError}</Alert>}
+              <Button onClick={() => void loadMore()} disabled={loadingMore}>
+                {loadingMore ? 'Loading…' : 'Load more jobs'}
+              </Button>
+            </Flex>
+          )}
+        </main>
+      </div>
     </section>
   );
 }

@@ -4,9 +4,7 @@ import type { JobSummary } from '../../api/types';
 import { formatSalary } from '../../jobs/jobLabels';
 import { jobPath } from '../../jobs/jobPaths';
 import { Icon } from '../dashboard/Icon';
-import { CompanyMark, Deadline, JobBadges, PostedAt, SkillTags } from './JobParts';
-
-const MAX_SKILLS = 3;
+import { CompanyMark, Deadline, JobBadges, PostedAt } from './JobParts';
 
 /**
  * One vacancy on the public board: enough to decide whether to open it, and
@@ -42,8 +40,6 @@ export function JobCard({ job }: Readonly<{ job: JobSummary }>) {
         </p>
       )}
 
-      <JobBadges job={job} />
-
       {salary && (
         <p className="tp-job-card-salary">
           <span className="sr-only">Salary: </span>
@@ -51,7 +47,7 @@ export function JobCard({ job }: Readonly<{ job: JobSummary }>) {
         </p>
       )}
 
-      {job.requiredSkills && job.requiredSkills.length > 0 && <SkillTags skills={job.requiredSkills} max={MAX_SKILLS} />}
+      <JobBadges job={job} />
 
       <div className="tp-job-card-foot">
         {job.applicationDeadline ? <Deadline date={job.applicationDeadline} /> : <span />}

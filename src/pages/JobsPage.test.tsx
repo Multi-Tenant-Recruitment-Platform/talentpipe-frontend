@@ -98,9 +98,8 @@ describe('JobsPage', () => {
     // The card is a preview: the summary, department, experience and the rest wait on the details page.
     expect(c.queryByText(FULL_JOB.jobSummary!)).toBeNull();
     expect(c.queryByText(/engineering|years experience|day shift|bachelor|health insurance/i)).toBeNull();
-    const skills = c.getByRole('list', { name: 'Required skills' });
-    expect(within(skills).getByText('React')).toBeInTheDocument();
-    expect(within(skills).getByText('+5 more')).toBeInTheDocument();
+    // Skills are intentionally kept on the details page so the card remains easy to scan.
+    expect(c.queryByRole('list', { name: 'Required skills' })).toBeNull();
   });
 
   it('omits optional details a job does not have', async () => {
@@ -204,45 +203,44 @@ describe('JobsPage', () => {
 
     await user.click(screen.getByRole('checkbox', { name: 'Salary shown' }));
     expect(titles()).toEqual([FULL_JOB.title]);
+    expect(screen.getByText('1 matching job')).toBeInTheDocument();
   });
 
-  it('lays every filter choice out in the open, and narrows as they are ticked', async () => {
+  it('filters by job type and workplace with tick boxes that count their jobs', async () => {
     const user = userEvent.setup();
     const contract: JobSummary = { ...MINIMAL_JOB, employmentType: 'CONTRACT', workplaceType: 'REMOTE' };
     listPublicJobs.mockResolvedValue(page([FULL_JOB, contract]));
     renderAt('/jobs');
     await screen.findByRole('article', { name: FULL_JOB.title });
 
-    const jobType = within(screen.getByRole('group', { name: 'Job type' }));
-    for (const name of ['Full time', 'Part time', 'Contract', 'Internship', 'Temporary']) {
-      expect(jobType.getByRole('checkbox', { name })).toBeInTheDocument();
-    }
-    const workplace = within(screen.getByRole('group', { name: 'Workplace' }));
-    expect(workplace.getAllByRole('checkbox')).toHaveLength(3);
+    const group = (name: string) => within(screen.getByRole('group', { name }));
+    // Every choice is in the open, each with how many loaded jobs it holds.
+    expect(group('Job type').getAllByRole('checkbox')).toHaveLength(5);
+    expect(group('Job type').getByText('Contract').parentElement).toHaveTextContent('Contract1');
+    expect(group('Job type').getByText('Internship').parentElement).toHaveTextContent('Internship0');
 
-    await user.click(jobType.getByRole('checkbox', { name: 'Contract' }));
+    await user.click(group('Job type').getByRole('checkbox', { name: 'Contract' }));
     expect(screen.getAllByRole('article')).toHaveLength(1);
     expect(screen.getByRole('article', { name: MINIMAL_JOB.title })).toBeInTheDocument();
 
-    // Choices in one filter widen it; a second filter narrows again.
-    await user.click(jobType.getByRole('checkbox', { name: 'Full time' }));
+    // Within a group the choices widen; across groups they narrow.
+    await user.click(group('Job type').getByRole('checkbox', { name: 'Full time' }));
     expect(screen.getAllByRole('article')).toHaveLength(2);
-    await user.click(workplace.getByRole('checkbox', { name: 'Hybrid' }));
+    await user.click(group('Workplace').getByRole('checkbox', { name: 'Hybrid' }));
     expect(screen.getAllByRole('article')).toHaveLength(1);
     expect(screen.getByRole('article', { name: FULL_JOB.title })).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Clear all' }));
     expect(screen.getAllByRole('article')).toHaveLength(2);
-    expect(jobType.getByRole('checkbox', { name: 'Contract' })).not.toBeChecked();
+    expect(group('Job type').getByRole('checkbox', { name: 'Contract' })).not.toBeChecked();
   });
 
-  it('says when the filters only covered the jobs loaded so far', async () => {
-    const user = userEvent.setup();
+  it('leaves the counts off while there are more jobs to load', async () => {
     listPublicJobs.mockResolvedValue(page([FULL_JOB], { total: 40, totalPages: 2 }));
     renderAt('/jobs');
     await screen.findByRole('article', { name: FULL_JOB.title });
-    await user.click(screen.getByRole('checkbox', { name: 'Full time' }));
-    expect(screen.getByText(/filters cover the 1 jobs loaded so far/i)).toBeInTheDocument();
+    const fullTime = within(screen.getByRole('group', { name: 'Job type' })).getByText('Full time');
+    expect(fullTime.parentElement).toHaveTextContent(/^Full time$/);
   });
 
   it('opens the matching vacancy from View Job', async () => {

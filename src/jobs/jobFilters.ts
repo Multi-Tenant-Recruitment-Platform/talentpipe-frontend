@@ -49,7 +49,7 @@ const fold = (text: string) =>
 
 const words = (text: string) => fold(text).split(/\s+/).filter(Boolean);
 
-const hasSalary = (job: JobSummary) => (job.salaryMin ?? null) !== null || (job.salaryMax ?? null) !== null;
+export const hasSalary =(job: JobSummary) => (job.salaryMin ?? null) !== null || (job.salaryMax ?? null) !== null;
 
 /** 2 when every word is in the title, 1 when the job matches elsewhere, 0 when it does not match. */
 function keywordRank(job: JobSummary, keywords: string[]): number {
