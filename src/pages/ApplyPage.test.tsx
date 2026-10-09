@@ -18,8 +18,8 @@ const JOB: JobDetail = {
   id: 'job-1',
   title: 'Senior Frontend Engineer',
   companyName: 'Demo Company',
-  employmentType: 'Full-time',
-  workplaceType: 'Hybrid',
+  employmentType: 'FULL_TIME',
+  workplaceType: 'HYBRID',
 };
 const RESPONSE: JobApplicationResponse = { id: 'app-123', jobId: 'job-1', status: 'SUBMITTED', submittedAt: '2026-09-30T10:00:00Z' };
 const JOB_PATH = '/jobs/senior-frontend-engineer-demo-company';

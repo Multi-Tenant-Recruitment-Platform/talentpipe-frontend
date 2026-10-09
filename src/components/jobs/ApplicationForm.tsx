@@ -251,20 +251,19 @@ export function ApplicationForm({
   }
 
   return (
-    <article className="tp-job-panel">
-      <header className="tp-job-identity tp-job-panel-body tp-apply-head">
+    <article className="tp-job-advert">
+      <div aria-hidden="true" className="tp-job-advert-band" />
+      <header className="tp-job-advert-head tp-job-advert-body tp-apply-head">
         <CompanyMark name={job.companyName} logoUrl={job.companyLogoUrl} size="lg" />
-        <div className="tp-job-identity-text">
-          <p className="tp-job-eyebrow">Apply for</p>
-          <h1 className="tp-job-title">{job.title}</h1>
-          <p className="tp-job-company" style={{ marginBottom: space[1.5] }}>
-            {job.companyName}
-          </p>
-          <JobBadges job={job} />
+        <div style={{ minWidth: 0 }}>
+          <p className="tp-apply-eyebrow">Apply for</p>
+          <h1 className="tp-job-advert-title">{job.title}</h1>
+          <p className="tp-job-advert-company">{job.companyName}</p>
+          <JobBadges job={job} style={{ marginTop: space[1.5] }} />
         </div>
       </header>
 
-      <form noValidate onSubmit={(e) => void handleSubmit(e)} className="tp-job-panel-body" aria-busy={submitting}>
+      <form noValidate onSubmit={(e) => void handleSubmit(e)} className="tp-job-advert-body" aria-busy={submitting}>
         {submitError && (
           <Alert tone="error" style={{ marginBottom: space[3] }}>
             {submitError}

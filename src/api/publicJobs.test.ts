@@ -20,6 +20,14 @@ describe('publicJobs (live API)', () => {
     expect(get).toHaveBeenCalledWith('/public/jobs', { params: { page: 2, size: 20 } });
   });
 
+  it('sends the search to the backend, leaving out what is blank', async () => {
+    get.mockResolvedValue({ data: { content: [], page: 0, size: 20, totalElements: 0, totalPages: 0 } });
+    await listPublicJobs(0, { keyword: 'react', location: 'Colombo' });
+    expect(get).toHaveBeenLastCalledWith('/public/jobs', { params: { page: 0, size: 20, q: 'react', location: 'Colombo' } });
+    await listPublicJobs(1, { keyword: '', location: 'Kandy' });
+    expect(get).toHaveBeenLastCalledWith('/public/jobs', { params: { page: 1, size: 20, location: 'Kandy' } });
+  });
+
   it('treats a 404 as "not available"', async () => {
     get.mockRejectedValue(httpError(404));
     await expect(getPublicJob('abc')).resolves.toBeNull();

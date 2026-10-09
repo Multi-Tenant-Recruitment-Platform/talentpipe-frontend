@@ -16,11 +16,11 @@ export function ApplicationConfirmation({
   }, []);
 
   return (
-    <section className="tp-job-panel tp-apply-done">
+    <section className="tp-job-advert tp-apply-done">
       <span className="tp-apply-done-mark">
         <Icon name="check" size={32} />
       </span>
-      <h1 ref={headingRef} tabIndex={-1} className="tp-job-title">
+      <h1 ref={headingRef} tabIndex={-1} className="tp-apply-done-title">
         Application submitted successfully!
       </h1>
       <p className="tp-apply-done-text">

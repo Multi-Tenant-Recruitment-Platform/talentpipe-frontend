@@ -257,10 +257,16 @@ export interface PageResponse<T> {
 }
 
 /**
- * Public job-board item. The backend currently guarantees only id, title and
- * companyName; the optional fields are ASSUMED names for what the Job module
- * will add — align them with the real DTO when it lands. Text fields are plain
- * text, never HTML.
+ * Public job-board card: the candidate-facing part of a PUBLISHED vacancy.
+ *
+ * <p>Field names and vocabularies are the vacancy form's own
+ * ({@link JobVacancyRequest}, below), so the backend can serve both from one
+ * entity and a published vacancy reaches the board with the identifiers it was
+ * saved with. Internal fields — recruiter, hiring manager, pipeline, status,
+ * applicant count — are never public and are absent here. Everything past id,
+ * title and companyName is optional: the board shows what it is given rather
+ * than failing on a partial row. ASSUMED until GET /public/jobs returns real
+ * rows. Text fields are plain text, never HTML.</p>
  */
 export interface JobSummary {
   id: string;
@@ -269,14 +275,25 @@ export interface JobSummary {
   title: string;
   companyName: string;
   companyLogoUrl?: string | null;
-  summary?: string | null;
+  department?: string | null;
+  openings?: number | null;
+  employmentType?: EmploymentType | null;
+  workplaceType?: WorkplaceType | null;
   location?: string | null;
-  category?: string | null;
-  skills?: string[] | null;
-  employmentType?: string | null;
-  workplaceType?: string | null;
   /** ISO date. */
   applicationDeadline?: string | null;
+  jobSummary?: string | null;
+  requiredSkills?: string[] | null;
+  minimumExperienceYears?: number | null;
+  salaryMin?: number | null;
+  salaryMax?: number | null;
+  /** As the form stores it: 'LKR — Sri Lankan rupee'. */
+  currency?: string | null;
+  payPeriod?: PayPeriod | null;
+  /** ISO timestamp of the move to PUBLISHED. */
+  publishedAt?: string | null;
+  /** False once the deadline has passed: the advert still shows, but an application would be refused. */
+  acceptingApplications?: boolean | null;
 }
 
 /**
@@ -304,10 +321,21 @@ export interface JobApplicationResponse {
   submittedAt: string;
 }
 
-/** Public vacancy details. ASSUMED shape; there is no details endpoint yet. */
+/** Public vacancy details: the card plus the rest of the advert. ASSUMED shape; there is no details endpoint yet. */
 export interface JobDetail extends JobSummary {
-  description?: string | null;
-  requirements?: string[] | null;
+  jobDescription?: string | null;
+  keyResponsibilities?: string[] | null;
+  preferredSkills?: string[] | null;
+  education?: string | null;
+  certifications?: string[] | null;
+  languageRequirements?: string[] | null;
+  otherRequirements?: string | null;
+  /** Benefit catalogue ids, e.g. 'HEALTH_INSURANCE' (see BENEFIT_CATALOGUE). */
+  benefits?: string[] | null;
+  workingDays?: WeekDay[] | null;
+  workingHours?: string | null;
+  shiftType?: ShiftType | null;
+  expectedHoursPerWeek?: number | null;
 }
 
 /* --- Job vacancies (PB-011) ---------------------------------------------- */

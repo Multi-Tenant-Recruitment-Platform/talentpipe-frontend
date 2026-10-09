@@ -1713,7 +1713,7 @@
 
 @media (min-width: 1024px) {
   .tp-vacancy-detail-layout {
-    grid-template-columns: minmax(0, 1fr) 300px;
+    grid-template-columns: minmax(0, 1fr) 320px;
   }
 
   .tp-vacancy-detail-layout > aside {
@@ -1862,154 +1862,416 @@
 }
 
 /* ==========================================================================
- * Public job board and application flow (PB-017, PB-019)
- * ==========================================================================
- * The candidate-facing pages keep their own semantic structure — <article>
- * per vacancy, real lists for badges and skills, <fieldset>/<legend> in the
- * application form — which antd's Card, Tag and Form.Item would flatten into
- * divs. So the structure stays hand-written and takes its values from tokens.
- */
+   Public job board — the candidate-facing listing and advert
+   ==========================================================================
+   The board is cards and a long-form advert, neither of which antd has a
+   component for: Card cannot clamp a title or stretch to its grid row, and
+   List.Grid renders divs where the board needs a real <ul> of <article>s.
+   These rules cover the responsive grid, the card's hover and clamping, and
+   the pills and tags the cards and the advert share.
+   -------------------------------------------------------------------------- */
 
-/* --- Shared ---------------------------------------------------------------- */
-.tp-truncate {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+/* --- Hero and search ----------------------------------------------------- */
+.tp-jobs-hero {
+  padding: var(--tp-space-4) var(--tp-space-2-5);
+  border-radius: var(--tp-radius-2xl);
+  /* The scrim blues, not the brand gradient: this is a panel, and it has to
+     hold white text at body size. */
+  background:
+    radial-gradient(circle at 92% 0%, rgb(255 255 255 / 14%), transparent 42%),
+    linear-gradient(135deg, var(--tp-primary-700), var(--tp-primary-900));
+  color: var(--tp-surface);
+  box-shadow: var(--tp-shadow-lg);
 }
 
-.tp-clamp-2 {
-  display: -webkit-box;
-  overflow: hidden;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
+@media (min-width: 640px) {
+  .tp-jobs-hero {
+    padding: var(--tp-space-5);
+  }
 }
 
-/* The reading column for one vacancy: its details, and the form to apply. */
-.tp-job-page {
+.tp-jobs-hero h1 {
+  margin: 0;
+  font-size: var(--tp-font-display);
+  font-weight: var(--tp-weight-bold);
+  line-height: var(--tp-leading-tight);
+  letter-spacing: var(--tp-tracking-display);
+}
+
+.tp-jobs-hero-lede {
+  margin: var(--tp-space-1) 0 0;
+  color: var(--tp-primary-100);
+  font-size: var(--tp-font-lead);
+  line-height: var(--tp-leading-normal);
+}
+
+/* One white bar holding what, where and the button: it reads as a single
+   control, which is what makes a search box look like the page's first move. */
+.tp-jobs-search {
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: var(--tp-space-3);
-  max-width: 768px;
-  margin-inline: auto;
+  gap: var(--tp-space-0-5);
+  margin-top: var(--tp-space-3);
+  padding: var(--tp-space-1);
+  border-radius: var(--tp-radius-xl);
+  background: var(--tp-surface);
+  box-shadow: var(--tp-shadow-xl);
 }
 
-.tp-back-link {
-  display: inline-flex;
-  align-items: center;
-  justify-self: start;
-  gap: var(--tp-space-0-75);
-  border-radius: var(--tp-radius-sm);
-  font-weight: var(--tp-weight-medium);
+/* Each half is a label over its input, and the whole half is the click target. */
+.tp-jobs-search-field {
+  display: grid;
+  min-width: 0;
+  padding: var(--tp-space-0-75) var(--tp-space-1-5) var(--tp-space-0-5);
+  border-radius: var(--tp-radius-lg);
+  cursor: text;
+  transition: background-color var(--tp-motion-fast) var(--tp-motion-ease);
+}
+
+.tp-jobs-search-field:hover,
+.tp-jobs-search-field:focus-within {
+  background: var(--tp-slate-50);
+}
+
+.tp-jobs-search-label {
   color: var(--tp-primary-700);
-  text-decoration: none;
+  font-size: var(--tp-font-caption);
+  font-weight: var(--tp-weight-bold);
+  letter-spacing: var(--tp-tracking-caps);
+  text-transform: uppercase;
 }
 
-.tp-back-link:hover {
-  color: var(--tp-primary-600);
+.tp-jobs-search-field .ant-input-affix-wrapper {
+  padding: 2px 0;
+  font-size: var(--tp-font-lead);
 }
 
-.tp-job-panel {
-  overflow: hidden;
+.tp-jobs-search-field .ant-input-prefix {
+  margin-inline-end: var(--tp-space-1);
+  color: var(--tp-slate-400);
+}
+
+.tp-jobs-search-divider {
+  height: 1px;
+  background: var(--tp-slate-200);
+}
+
+.tp-jobs-search-submit.ant-btn {
+  height: 52px;
+  padding-inline: var(--tp-space-3);
+  border-radius: var(--tp-radius-lg);
+  font-size: var(--tp-font-lead);
+  font-weight: var(--tp-weight-semibold);
+}
+
+@media (min-width: 768px) {
+  .tp-jobs-search {
+    grid-template-columns: minmax(0, 1.4fr) auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--tp-space-1);
+  }
+
+  .tp-jobs-search-divider {
+    width: 1px;
+    height: var(--tp-space-5);
+  }
+
+  .tp-jobs-search-submit.ant-btn {
+    height: 56px;
+    padding-inline: var(--tp-space-4);
+  }
+}
+
+/* --- Filters and results header ------------------------------------------ *
+ * Three steps, each on its own with air between them: search in the hero
+ * above, then a panel of filters, then what was found and how it is ordered.
+ * Inside the panel every filter has its own row — its name, then all of its
+ * choices in the open — and a choice that is switched on takes the accent
+ * tint, so what is narrowing the list can be read at a glance.
+ */
+.tp-jobs-filters {
+  margin-top: var(--tp-space-3);
+  padding: var(--tp-space-2-5);
   border: 1px solid var(--tp-slate-200);
   border-radius: var(--tp-radius-xl);
   background: var(--tp-surface);
   box-shadow: var(--tp-shadow-xs);
 }
 
-.tp-job-panel-body {
-  padding: var(--tp-space-3);
-}
-
 @media (min-width: 640px) {
-  .tp-job-panel-body {
-    padding: var(--tp-space-4);
+  .tp-jobs-filters {
+    padding: var(--tp-space-2-5) var(--tp-space-3);
   }
 }
 
-/* An empty or unavailable state: dashed, because nothing is there yet. */
-.tp-job-panel-empty {
-  border: 1px dashed var(--tp-slate-300);
-  border-radius: var(--tp-radius-lg);
-  background: var(--tp-surface);
+.tp-jobs-filters-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--tp-space-2);
+  min-height: var(--tp-space-4);
+  padding-bottom: var(--tp-space-1-5);
+  border-bottom: 1px solid var(--tp-slate-100);
 }
 
-/* --- Vacancy identity ------------------------------------------------------ */
-.tp-company-mark {
-  display: flex;
-  flex-shrink: 0;
+.tp-jobs-filters-head h2 {
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  width: 48px;
-  height: 48px;
-  border-radius: var(--tp-radius-lg);
-  background: var(--tp-primary-50);
-  color: var(--tp-primary-700);
-  font-size: var(--tp-font-title);
+  gap: var(--tp-space-1);
+  margin: 0;
+  color: var(--tp-slate-900);
+  font-size: var(--tp-font-lead);
   font-weight: var(--tp-weight-bold);
 }
 
-.tp-company-mark-lg {
-  width: 64px;
-  height: 64px;
-  border-radius: var(--tp-radius-xl);
-  font-size: var(--tp-font-heading);
+.tp-jobs-filters-head h2 svg {
+  color: var(--tp-primary-600);
 }
 
-img.tp-company-mark {
+/* A fieldset carries a browser border, padding and minimum width; a legend
+   cannot be a grid item, so it is floated into the label column instead. */
+.tp-jobs-filter-group {
+  min-width: 0;
+  margin: 0;
+  padding: var(--tp-space-2) 0 0;
+  border: 0;
+}
+
+.tp-jobs-filter-group legend {
+  float: left;
+  width: 100%;
+  margin: 0 0 var(--tp-space-1);
+  padding: 0;
+  color: var(--tp-slate-600);
+  font-size: var(--tp-font-small);
+  font-weight: var(--tp-weight-semibold);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.tp-jobs-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tp-space-1);
+  clear: both;
+}
+
+@media (min-width: 640px) {
+  .tp-jobs-filter-group legend {
+    width: 128px;
+    margin: 0;
+    line-height: 40px;
+  }
+
+  .tp-jobs-chips {
+    clear: none;
+    margin-left: 128px;
+  }
+}
+
+/* antd's Checkbox, kept for its keyboard and screen-reader behaviour and
+   drawn as a chip. */
+.tp-jobs-chip.ant-checkbox-wrapper {
+  align-items: center;
+  height: 40px;
+  margin: 0;
+  padding: 0 var(--tp-space-2);
+  border: 1px solid var(--tp-slate-300);
+  border-radius: var(--tp-radius-pill);
+  background: var(--tp-surface);
+  color: var(--tp-slate-700);
+  font-weight: var(--tp-weight-medium);
+  transition-property: border-color, background-color, color;
+  transition-duration: var(--tp-motion-fast);
+  transition-timing-function: var(--tp-motion-ease);
+}
+
+.tp-jobs-chip.ant-checkbox-wrapper:hover {
+  border-color: var(--tp-primary-500);
+  background: var(--tp-slate-50);
+}
+
+.tp-jobs-chip.ant-checkbox-wrapper-checked,
+.tp-jobs-chip.ant-checkbox-wrapper-checked:hover {
+  border-color: var(--tp-primary-600);
+  background: var(--tp-primary-50);
+  color: var(--tp-primary-700);
+  font-weight: var(--tp-weight-semibold);
+}
+
+.tp-jobs-sort-label {
+  color: var(--tp-slate-600);
+  font-weight: var(--tp-weight-semibold);
+}
+
+/* The results header: the count and the sort belong to the list below. */
+.tp-jobs-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--tp-space-1-5) var(--tp-space-2);
+  margin-top: var(--tp-space-4);
+}
+
+.tp-jobs-count {
+  margin: 0;
+  color: var(--tp-slate-900);
+  font-size: var(--tp-font-section);
+  font-weight: var(--tp-weight-bold);
+  letter-spacing: var(--tp-tracking-heading);
+}
+
+.tp-jobs-count-note {
+  margin: var(--tp-space-0-5) 0 0;
+  color: var(--tp-slate-500);
+  font-size: var(--tp-font-small);
+}
+
+.tp-jobs-sort {
+  display: flex;
+  align-items: center;
+  gap: var(--tp-space-1-5);
+}
+
+/* --- Results grid -------------------------------------------------------- */
+.tp-jobs-layout {
+  margin-top: var(--tp-space-2-5);
+}
+
+.tp-job-grid {
+  display: grid;
+  gap: var(--tp-space-2-5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Grid items default to min-width: auto, so one long unbroken title would
+   widen its column past the viewport. */
+.tp-job-grid > * {
+  min-width: 0;
+}
+
+@media (min-width: 700px) {
+  .tp-job-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1080px) {
+  .tp-job-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* --- Card ---------------------------------------------------------------- */
+.tp-job-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tp-space-1-5);
+  min-width: 0;
+  height: 100%;
+  padding: var(--tp-space-2-5);
+  border: 1px solid var(--tp-slate-200);
+  border-radius: var(--tp-radius-xl);
+  background: var(--tp-surface);
+  box-shadow: var(--tp-shadow-xs);
+  transition-property: border-color, box-shadow, transform;
+  transition-duration: var(--tp-motion-base);
+  transition-timing-function: var(--tp-motion-ease);
+}
+
+.tp-job-card:hover {
+  border-color: var(--tp-primary-200);
+  box-shadow: var(--tp-shadow-md);
+  transform: translateY(-2px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tp-job-card:hover {
+    transform: none;
+  }
+}
+
+.tp-job-card-head {
+  display: flex;
+  align-items: center;
+  gap: var(--tp-space-1-5);
+  min-width: 0;
+}
+
+.tp-job-card-who {
+  min-width: 0;
+}
+
+.tp-job-card-company {
+  margin: 0;
+  overflow: hidden;
+  color: var(--tp-slate-700);
+  font-size: var(--tp-font-lead);
+  font-weight: var(--tp-weight-medium);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tp-job-card-title {
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  color: var(--tp-slate-900);
+  font-size: var(--tp-font-section);
+  font-weight: var(--tp-weight-bold);
+  line-height: var(--tp-leading-snug);
+  letter-spacing: var(--tp-tracking-heading);
+  transition: color var(--tp-motion-base) var(--tp-motion-ease);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+
+.tp-job-card:hover .tp-job-card-title {
+  color: var(--tp-primary-700);
+}
+
+/* Pay is a fact to compare, not a tag: plain, dark and a step heavier. */
+.tp-job-card-salary {
+  margin: 0;
+  color: var(--tp-slate-900);
+  font-size: var(--tp-font-title);
+  font-weight: var(--tp-weight-semibold);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Pushed to the bottom, so the buttons line up across a row of cards. */
+.tp-job-card-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--tp-space-1-5);
+  margin-top: auto;
+  padding-top: var(--tp-space-1-5);
+  border-top: 1px solid var(--tp-slate-100);
+}
+
+.tp-job-card-cta {
+  padding: var(--tp-space-1) var(--tp-space-1-5);
+}
+
+/* --- Shared parts: logo, pills, meta line, tags -------------------------- */
+.tp-job-logo {
+  flex-shrink: 0;
   padding: var(--tp-space-0-5);
   border: 1px solid var(--tp-slate-200);
   background: var(--tp-surface);
   object-fit: contain;
 }
 
-.tp-job-identity {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--tp-space-2);
-  min-width: 0;
-}
-
-.tp-job-identity-text {
-  min-width: 0;
-}
-
-.tp-job-eyebrow {
-  margin: 0 0 var(--tp-space-0-5);
-  font-size: var(--tp-font-caption);
-  font-weight: var(--tp-weight-semibold);
-  letter-spacing: var(--tp-tracking-caps);
-  text-transform: uppercase;
-  color: var(--tp-primary-700);
-}
-
-.tp-job-title {
-  margin: 0;
-  font-size: var(--tp-font-heading);
-  font-weight: var(--tp-weight-bold);
-  line-height: var(--tp-leading-tight);
-  letter-spacing: var(--tp-tracking-heading);
-  color: var(--tp-slate-900);
-  overflow-wrap: anywhere;
-}
-
-@media (min-width: 640px) {
-  .tp-job-title {
-    font-size: var(--tp-font-display);
-  }
-}
-
-.tp-job-company {
-  margin: var(--tp-space-0-5) 0 0;
-  font-weight: var(--tp-weight-medium);
-  color: var(--tp-slate-600);
-  overflow-wrap: anywhere;
-}
-
 .tp-job-badges,
 .tp-job-meta,
-.tp-job-skills,
-.tp-job-grid {
+.tp-job-tags,
+.tp-job-checklist {
   margin: 0;
   padding: 0;
   list-style: none;
@@ -2021,21 +2283,23 @@ img.tp-company-mark {
   gap: var(--tp-space-1);
 }
 
-/* Employment type takes the accent tint; workplace stays neutral. Two tints,
-   not five: these are attributes of a vacancy, not statuses. */
 .tp-job-badge {
   max-width: 100%;
-  padding: 2px 10px;
+  padding: 2px var(--tp-space-1-5);
+  overflow: hidden;
   border-radius: var(--tp-radius-pill);
-  background: var(--tp-primary-50);
-  color: var(--tp-primary-700);
-  font-size: var(--tp-font-caption);
+  background: var(--tp-sunken);
+  /* slate-600, not 500: this sits on a tint (see tokens.ts). */
+  color: var(--tp-slate-600);
+  font-size: var(--tp-font-small);
   font-weight: var(--tp-weight-semibold);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.tp-job-badge-neutral {
-  background: var(--tp-slate-100);
-  color: var(--tp-slate-600);
+.tp-job-badge[data-tone='primary'] {
+  background: var(--tp-primary-50);
+  color: var(--tp-primary-700);
 }
 
 .tp-job-meta {
@@ -2058,193 +2322,398 @@ img.tp-company-mark {
   color: var(--tp-slate-400);
 }
 
-.tp-job-skills {
+.tp-job-meta-item > span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tp-job-tags {
   display: flex;
   flex-wrap: wrap;
   gap: var(--tp-space-0-75);
 }
 
-.tp-job-skill {
+.tp-job-tag {
   max-width: 100%;
   padding: var(--tp-space-0-5) var(--tp-space-1);
+  overflow: hidden;
   border-radius: var(--tp-radius-sm);
-  background: var(--tp-slate-100);
+  background: var(--tp-sunken);
   color: var(--tp-slate-700);
-  font-size: var(--tp-font-caption);
+  font-size: var(--tp-font-small);
   font-weight: var(--tp-weight-medium);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.tp-job-skill-more {
+.tp-job-tag[data-muted='true'] {
+  background: var(--tp-surface);
+  box-shadow: inset 0 0 0 1px var(--tp-slate-200);
+  color: var(--tp-slate-600);
+}
+
+.tp-job-tag-more {
   padding: var(--tp-space-0-5);
   color: var(--tp-slate-500);
-  font-size: var(--tp-font-caption);
+  font-size: var(--tp-font-small);
   font-weight: var(--tp-weight-medium);
 }
 
-/* --- Job board ------------------------------------------------------------- */
-.tp-jobs-count {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--tp-space-1);
-  margin: var(--tp-space-2) 0 0;
-  padding: var(--tp-space-0-75) var(--tp-space-2);
-  border-radius: var(--tp-radius-pill);
-  background: var(--tp-primary-50);
-  color: var(--tp-primary-700);
-  font-weight: var(--tp-weight-semibold);
+.tp-job-posted {
+  flex-shrink: 0;
+  margin: 0;
+  color: var(--tp-slate-500);
+  font-size: var(--tp-font-small);
 }
 
-.tp-jobs-more {
+/* --- Advert -------------------------------------------------------------- */
+.tp-job-advert {
+  overflow: hidden;
+  border: 1px solid var(--tp-slate-200);
+  border-radius: var(--tp-radius-xl);
+  background: var(--tp-surface);
+  box-shadow: var(--tp-shadow-sm);
+}
+
+.tp-job-advert-band {
+  height: var(--tp-space-1);
+  background: var(--tp-brand-gradient);
+}
+
+.tp-job-advert-body {
+  padding: var(--tp-space-3);
+  overflow-wrap: anywhere;
+}
+
+@media (min-width: 640px) {
+  .tp-job-advert-body {
+    padding: var(--tp-space-4);
+  }
+}
+
+.tp-job-advert-head {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--tp-space-1-5);
+  align-items: flex-start;
+  gap: var(--tp-space-2);
+  min-width: 0;
+}
+
+.tp-job-advert-title {
+  margin: 0;
+  color: var(--tp-slate-900);
+  font-size: var(--tp-font-display);
+  font-weight: var(--tp-weight-bold);
+  line-height: var(--tp-leading-tight);
+  letter-spacing: var(--tp-tracking-heading);
+}
+
+/* The job's own page gives its title the room a page heading gets — a step
+   past the display size, which only this one heading takes. */
+@media (min-width: 640px) {
+  .tp-job-advert[data-variant='page'] .tp-job-advert-title {
+    font-size: calc(var(--tp-font-display) + var(--tp-space-0-75));
+    letter-spacing: var(--tp-tracking-display);
+  }
+}
+
+/* An advert is read, not scanned: its copy sits a step above the app's body size. */
+.tp-job-advert[data-variant='page'] .tp-legend {
+  font-size: var(--tp-font-body);
+}
+
+.tp-job-advert[data-variant='page'] .tp-job-meta-item,
+.tp-job-advert[data-variant='page'] .tp-job-checklist {
+  font-size: var(--tp-font-lead);
+}
+
+.tp-job-advert-company {
+  margin: var(--tp-space-0-5) 0;
+  color: var(--tp-slate-600);
+  font-size: var(--tp-font-title);
+  font-weight: var(--tp-weight-medium);
+}
+
+.tp-job-advert-lede {
+  margin: var(--tp-space-3) 0 0;
+  color: var(--tp-slate-800);
+  font-size: var(--tp-font-title);
+  line-height: var(--tp-leading-normal);
+}
+
+.tp-job-advert-section {
   margin-top: var(--tp-space-5);
 }
 
-.tp-job-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: var(--tp-space-3);
-}
-
-@media (min-width: 640px) {
-  .tp-job-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (min-width: 1024px) {
-  .tp-job-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
-.tp-job-grid > * {
-  min-width: 0;
-}
-
-.tp-job-card {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  min-width: 0;
-  transition-property: border-color, box-shadow;
-  transition-duration: var(--tp-motion-base);
-  transition-timing-function: var(--tp-motion-ease);
-}
-
-.tp-job-card:hover {
-  border-color: var(--tp-primary-200);
-  box-shadow: var(--tp-shadow-md);
-}
-
-.tp-job-card-body {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  gap: var(--tp-space-1-5);
-  padding: var(--tp-space-3);
-}
-
-.tp-job-card-company {
-  display: flex;
-  align-items: center;
-  gap: var(--tp-space-1-5);
-  min-width: 0;
-}
-
-.tp-job-card-company p {
-  min-width: 0;
+.tp-job-advert-section > .tp-legend {
   margin: 0;
-  font-weight: var(--tp-weight-medium);
-  color: var(--tp-slate-600);
 }
 
-.tp-job-card-title {
-  margin: var(--tp-space-0-5) 0 0;
-  font-size: var(--tp-font-title);
-  font-weight: var(--tp-weight-bold);
-  line-height: var(--tp-leading-snug);
-  color: var(--tp-slate-900);
-  overflow-wrap: anywhere;
-}
-
-.tp-job-card-summary {
+.tp-job-advert-subhead {
   margin: 0;
+  color: var(--tp-slate-800);
+  font-size: var(--tp-font-lead);
+  font-weight: var(--tp-weight-semibold);
+}
+
+.tp-job-advert-text {
+  margin: var(--tp-space-1) 0 0;
+  color: var(--tp-slate-700);
+  font-size: var(--tp-font-lead);
   line-height: var(--tp-leading-normal);
-  color: var(--tp-slate-600);
-  overflow-wrap: anywhere;
+  white-space: pre-line;
 }
 
-.tp-job-card-foot {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--tp-space-1-5);
-  padding: var(--tp-space-2) var(--tp-space-3);
-  border-top: 1px solid var(--tp-slate-100);
-}
-
-/* --- Vacancy details ------------------------------------------------------- */
-.tp-job-detail-head {
-  display: flex;
-  flex-direction: column;
+.tp-job-requirements {
+  display: grid;
   gap: var(--tp-space-2-5);
-  margin-bottom: var(--tp-space-2-5);
+  margin-top: var(--tp-space-2);
 }
 
-@media (min-width: 640px) {
-  .tp-job-detail-head {
-    flex-direction: row;
-    align-items: flex-start;
-    justify-content: space-between;
-  }
+.tp-job-requirements .tp-job-tags {
+  margin-top: var(--tp-space-1);
 }
 
-.tp-job-detail-facts {
+.tp-job-overview {
+  margin-top: var(--tp-space-4);
+  padding: var(--tp-space-2-5);
+  border: 1px solid var(--tp-slate-200);
+  border-radius: var(--tp-radius-lg);
+  background: var(--tp-slate-50);
+}
+
+.tp-job-overview > .tp-legend {
+  margin: 0 0 var(--tp-space-2);
+}
+
+.tp-job-fact {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--tp-space-1-5);
+  min-width: 0;
+}
+
+.tp-job-fact-icon {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--tp-radius-sm);
+  background: var(--tp-surface);
+  box-shadow: inset 0 0 0 1px var(--tp-slate-200);
+  color: var(--tp-primary-600);
+}
+
+.tp-job-fact dt {
+  color: var(--tp-slate-500);
+  font-size: var(--tp-font-small);
+  font-weight: var(--tp-weight-medium);
+}
+
+.tp-job-fact dd {
+  margin: 0;
+  color: var(--tp-slate-900);
+  font-size: var(--tp-font-body);
+  font-weight: var(--tp-weight-semibold);
+}
+
+/* A tick per item. Perks go two-up by taking .tp-benefit-grid as well. */
+.tp-job-checklist {
+  display: grid;
+  gap: var(--tp-space-1) var(--tp-space-3);
+  margin-top: var(--tp-space-1-5);
+  color: var(--tp-slate-700);
+}
+
+.tp-job-checklist li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 0;
+}
+
+.tp-job-check {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  margin-top: 1px;
+  border-radius: 50%;
+  background: var(--tp-primary-50);
+  color: var(--tp-primary-600);
+}
+
+.tp-job-back {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--tp-space-0-75);
+  font-weight: var(--tp-weight-medium);
+  text-decoration: none;
+}
+
+.tp-job-back:hover {
+  color: var(--tp-primary-600);
+}
+
+/* --- Advert header lines -------------------------------------------------- */
+.tp-job-advert-keyline {
+  display: grid;
+  gap: var(--tp-space-1-5);
+  margin-top: var(--tp-space-2-5);
+}
+
+/* The overview's facts: as many columns as fit, from one on a phone to three
+   beside the apply card. */
+.tp-job-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: var(--tp-space-2-5) var(--tp-space-3);
+  margin: 0;
+}
+
+/* --- Job page: the advert with the way to apply beside it ---------------- */
+.tp-job-view {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: var(--tp-space-2);
 }
 
-.tp-job-section {
-  margin-top: var(--tp-space-4);
+/* On a narrow screen: a bar that stays at the bottom of the window for as
+   long as the advert is on screen, so applying is never a scroll away. */
+.tp-job-apply {
+  position: sticky;
+  bottom: var(--tp-space-1-5);
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--tp-space-2);
+  padding: var(--tp-space-1-5) var(--tp-space-2);
+  border: 1px solid var(--tp-slate-200);
+  border-radius: var(--tp-radius-xl);
+  background: var(--tp-surface);
+  box-shadow: var(--tp-shadow-lg);
 }
 
-.tp-job-section-title {
-  margin: 0 0 var(--tp-space-1-5);
+.tp-job-apply-facts {
+  display: grid;
+  gap: var(--tp-space-2);
+  min-width: 0;
+  margin: 0;
+}
+
+.tp-job-apply-facts dt {
+  color: var(--tp-slate-500);
   font-size: var(--tp-font-small);
+  font-weight: var(--tp-weight-medium);
+}
+
+.tp-job-apply-facts dd {
+  margin: 0;
+  color: var(--tp-slate-900);
   font-weight: var(--tp-weight-semibold);
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+}
+
+.tp-job-apply-cta {
+  margin-left: auto;
+}
+
+.tp-job-apply-closed {
+  margin: 0 0 0 auto;
   color: var(--tp-slate-600);
+  font-weight: var(--tp-weight-semibold);
 }
 
-.tp-job-prose {
-  margin: 0;
-  line-height: var(--tp-leading-normal);
-  color: var(--tp-slate-700);
-  white-space: pre-line;
-  overflow-wrap: anywhere;
+/* The bar has room for one fact and the button. */
+.tp-job-apply-salary + .tp-job-apply-deadline,
+.tp-job-apply-note {
+  display: none;
 }
 
-.tp-job-requirements {
-  margin: 0;
-  padding-left: var(--tp-space-2-5);
-  line-height: var(--tp-leading-normal);
-  color: var(--tp-slate-700);
-  overflow-wrap: anywhere;
+@media (min-width: 1024px) {
+  .tp-job-view {
+    grid-template-columns: minmax(0, 1fr) 320px;
+    align-items: start;
+    gap: var(--tp-space-3);
+  }
+
+  .tp-job-apply {
+    top: calc(var(--tp-header-height) + var(--tp-space-2));
+    bottom: auto;
+    display: grid;
+    gap: var(--tp-space-2-5);
+    padding: var(--tp-space-3);
+    box-shadow: var(--tp-shadow-sm);
+  }
+
+  .tp-job-apply-facts dd {
+    font-size: var(--tp-font-lead);
+  }
+
+  .tp-job-apply-salary dd {
+    font-size: var(--tp-font-title);
+    font-weight: var(--tp-weight-bold);
+    line-height: var(--tp-leading-snug);
+  }
+
+  .tp-job-apply-cta {
+    margin-left: 0;
+    padding-block: var(--tp-space-1-5);
+    font-size: var(--tp-font-lead);
+  }
+
+  .tp-job-apply-salary + .tp-job-apply-deadline {
+    display: block;
+  }
+
+  .tp-job-apply-closed {
+    margin: 0;
+    padding: var(--tp-space-1-5);
+    border-radius: var(--tp-radius-sm);
+    background: var(--tp-sunken);
+    text-align: center;
+  }
+
+  .tp-job-apply-note {
+    display: block;
+    margin: 0;
+    color: var(--tp-slate-500);
+    font-size: var(--tp-font-small);
+    text-align: center;
+  }
 }
 
-.tp-job-requirements li + li {
-  margin-top: var(--tp-space-0-75);
+/* ==========================================================================
+   Apply for a vacancy (PB-019) — the form behind "Apply Now", and its outcome
+   ==========================================================================
+   Built on the advert's own shell (.tp-job-advert and friends, above) so the
+   form reads as the next page of the same job. The form keeps real
+   <fieldset>/<legend> grouping, which antd's Form.Item would flatten.
+   ========================================================================== */
+
+.tp-truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-/* --- Application form ------------------------------------------------------ */
+/* --- Form ---------------------------------------------------------------- */
 .tp-apply-head {
   border-bottom: 1px solid var(--tp-slate-100);
+}
+
+.tp-apply-eyebrow {
+  margin: 0 0 var(--tp-space-0-5);
+  color: var(--tp-primary-700);
+  font-size: var(--tp-font-caption);
+  font-weight: var(--tp-weight-semibold);
+  letter-spacing: var(--tp-tracking-caps);
+  text-transform: uppercase;
 }
 
 /* Fieldsets carry a browser border, padding and an intrinsic minimum width
@@ -2265,8 +2734,8 @@ img.tp-company-mark {
 
 .tp-apply-note {
   margin: var(--tp-space-0-5) 0 var(--tp-space-2);
-  font-size: var(--tp-font-caption);
   color: var(--tp-slate-500);
+  font-size: var(--tp-font-caption);
 }
 
 @media (min-width: 640px) {
@@ -2291,8 +2760,10 @@ img.tp-company-mark {
   }
 }
 
-/* The CV picker. The real file input sits before these, visually hidden but
-   focusable, so its focus ring is drawn on whichever surface follows it. */
+/* --- CV picker ----------------------------------------------------------- *
+ * The real file input sits before these, visually hidden but focusable, so
+ * its focus ring is drawn on whichever surface follows it.
+ */
 .tp-resume-file,
 .tp-resume-zone {
   border-radius: var(--tp-radius-sm);
@@ -2318,14 +2789,14 @@ img.tp-company-mark {
 
 .tp-resume-file-name {
   margin: 0;
-  font-weight: var(--tp-weight-medium);
   color: var(--tp-slate-900);
+  font-weight: var(--tp-weight-medium);
 }
 
 .tp-resume-file-size {
   margin: 0;
-  font-size: var(--tp-font-caption);
   color: var(--tp-slate-500);
+  font-size: var(--tp-font-caption);
 }
 
 .tp-resume-zone {
@@ -2347,8 +2818,8 @@ img.tp-company-mark {
 }
 
 .tp-resume-zone strong {
-  font-weight: var(--tp-weight-semibold);
   color: var(--tp-primary-600);
+  font-weight: var(--tp-weight-semibold);
 }
 
 .tp-resume-zone:hover {
@@ -2375,7 +2846,7 @@ img.tp-company-mark {
   box-shadow: var(--tp-focus-ring);
 }
 
-/* --- Application confirmation ---------------------------------------------- */
+/* --- Confirmation -------------------------------------------------------- */
 .tp-apply-done {
   padding: var(--tp-space-5) var(--tp-space-3);
   text-align: center;
@@ -2399,8 +2870,17 @@ img.tp-company-mark {
   color: var(--tp-success-text);
 }
 
+.tp-apply-done-title {
+  margin: 0;
+  color: var(--tp-slate-900);
+  font-size: var(--tp-font-heading);
+  font-weight: var(--tp-weight-bold);
+  line-height: var(--tp-leading-tight);
+  letter-spacing: var(--tp-tracking-heading);
+}
+
 /* Focused programmatically so the outcome is announced; it is not a control. */
-.tp-apply-done .tp-job-title:focus {
+.tp-apply-done-title:focus {
   outline: none;
 }
 
@@ -2412,19 +2892,19 @@ img.tp-company-mark {
 }
 
 .tp-apply-done-text strong {
-  font-weight: var(--tp-weight-semibold);
   color: var(--tp-slate-900);
+  font-weight: var(--tp-weight-semibold);
 }
 
 .tp-apply-done-ref {
   margin: var(--tp-space-2) 0 0;
-  font-size: var(--tp-font-caption);
   color: var(--tp-slate-500);
+  font-size: var(--tp-font-caption);
 }
 
 .tp-apply-done-ref code {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   color: var(--tp-slate-700);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   word-break: break-all;
 }
 

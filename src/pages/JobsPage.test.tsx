@@ -13,19 +13,39 @@ vi.mock('../api/publicJobs', () => ({
 }));
 const { listPublicJobs, getPublicJob } = vi.mocked(await import('../api/publicJobs'));
 
+const THREE_DAYS_AGO = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString();
+
+/** Every field the vacancy form collects that is public. */
 const FULL_JOB: JobDetail = {
   id: 'job-1',
   title: 'Senior Frontend Engineer',
   companyName: 'Demo Company',
-  summary: 'Build candidate experiences with React.',
-  description: 'The full description of the role.',
-  requirements: ['4+ years of React'],
+  department: 'Engineering',
+  openings: 2,
+  employmentType: 'FULL_TIME',
+  workplaceType: 'HYBRID',
   location: 'Colombo, Sri Lanka',
-  category: 'Engineering',
-  skills: ['React', 'TypeScript', 'Testing', 'CSS', 'HTML', 'Node', 'Vite', 'Git'],
-  employmentType: 'Full-time',
-  workplaceType: 'Hybrid',
   applicationDeadline: '2026-10-31',
+  publishedAt: THREE_DAYS_AGO,
+  jobSummary: 'Build candidate experiences with React.',
+  jobDescription: 'The full description of the role.',
+  keyResponsibilities: ['Own the job board'],
+  requiredSkills: ['React', 'TypeScript', 'Testing', 'CSS', 'HTML', 'Node', 'Vite', 'Git'],
+  preferredSkills: ['Kubernetes'],
+  minimumExperienceYears: 4,
+  education: 'Bachelor’s degree',
+  certifications: ['AWS Solutions Architect'],
+  languageRequirements: ['English', 'Sinhala'],
+  otherRequirements: 'A valid driving licence.',
+  salaryMin: 450000,
+  salaryMax: 650000,
+  currency: 'LKR — Sri Lankan rupee',
+  payPeriod: 'MONTHLY',
+  benefits: ['TRAINING', 'HEALTH_INSURANCE'],
+  workingDays: ['MON', 'TUE', 'WED', 'THU', 'FRI'],
+  workingHours: '9:00 AM – 6:00 PM',
+  shiftType: 'DAY',
+  expectedHoursPerWeek: 40,
 };
 const MINIMAL_JOB: JobSummary = { id: 'job-2', title: 'Data Analyst', companyName: 'Northwind' };
 
@@ -53,23 +73,34 @@ describe('JobsPage', () => {
   it('shows the heading and a loading state, then the vacancies', async () => {
     listPublicJobs.mockResolvedValue(page([FULL_JOB, MINIMAL_JOB]));
     renderAt('/jobs');
-    expect(screen.getByRole('heading', { level: 1, name: 'Explore Job Opportunities' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: 'Find your next opportunity' })).toBeInTheDocument();
     expect(screen.getByText(/loading job vacancies/i)).toBeInTheDocument();
     expect(await screen.findByRole('article', { name: FULL_JOB.title })).toBeInTheDocument();
-    expect(screen.getByText('2 open positions')).toBeInTheDocument();
+    expect(screen.getByText('2 jobs available')).toBeInTheDocument();
   });
 
   it('displays the vacancy information on the card', async () => {
     listPublicJobs.mockResolvedValue(page([FULL_JOB]));
     renderAt('/jobs');
     const c = within(await screen.findByRole('article', { name: FULL_JOB.title }));
-    for (const text of ['Demo Company', FULL_JOB.summary!, 'Colombo, Sri Lanka', 'Engineering', 'Full-time', 'Hybrid']) {
+    for (const text of [
+      'Demo Company',
+      'Colombo, Sri Lanka',
+      'Full time',
+      'Hybrid',
+      '2 openings',
+      'LKR 450,000 – 650,000 / month',
+      'Posted 3 days ago',
+    ]) {
       expect(c.getByText(text)).toBeInTheDocument();
     }
     expect(c.getByText(/^Apply by .*31.*2026$/)).toBeInTheDocument();
-    const skills = c.getByRole('list', { name: 'Skills' });
+    // The card is a preview: the summary, department, experience and the rest wait on the details page.
+    expect(c.queryByText(FULL_JOB.jobSummary!)).toBeNull();
+    expect(c.queryByText(/engineering|years experience|day shift|bachelor|health insurance/i)).toBeNull();
+    const skills = c.getByRole('list', { name: 'Required skills' });
     expect(within(skills).getByText('React')).toBeInTheDocument();
-    expect(within(skills).getByText('+4 more')).toBeInTheDocument();
+    expect(within(skills).getByText('+5 more')).toBeInTheDocument();
   });
 
   it('omits optional details a job does not have', async () => {
@@ -77,7 +108,8 @@ describe('JobsPage', () => {
     renderAt('/jobs');
     const c = within(await screen.findByRole('article', { name: MINIMAL_JOB.title }));
     expect(c.queryByText(/apply by/i)).toBeNull();
-    expect(c.queryByRole('list', { name: 'Skills' })).toBeNull();
+    expect(c.queryByRole('list', { name: 'Required skills' })).toBeNull();
+    expect(c.queryByText(/posted|openings|experience/i)).toBeNull();
     // The link names its job, so a list of "View Job" links is still distinguishable.
     expect(c.getByRole('link', { name: /^view job\W+data analyst$/i })).toBeInTheDocument();
   });
@@ -93,7 +125,7 @@ describe('JobsPage', () => {
     listPublicJobs.mockResolvedValue(page([]));
     renderAt('/jobs');
     expect(await screen.findByText('No job vacancies are currently available.')).toBeInTheDocument();
-    expect(screen.queryByText(/open position/)).toBeNull();
+    expect(screen.queryByText(/jobs? available/)).toBeNull();
   });
 
   it('shows an error with a working retry, and never substitutes other jobs', async () => {
@@ -112,25 +144,105 @@ describe('JobsPage', () => {
     const user = userEvent.setup();
     listPublicJobs.mockResolvedValueOnce(page([FULL_JOB], { total: 2, totalPages: 2 }));
     renderAt('/jobs');
-    expect(await screen.findByText('Showing 1 of 2 open positions')).toBeInTheDocument();
+    expect(await screen.findByText('Showing 1 of 2 jobs')).toBeInTheDocument();
 
     // The second page repeats a job that shifted pages; it must not appear twice.
     listPublicJobs.mockResolvedValueOnce(page([FULL_JOB, MINIMAL_JOB], { pageNo: 1, total: 2, totalPages: 2 }));
     await user.click(screen.getByRole('button', { name: 'Load more jobs' }));
     expect(await screen.findByRole('article', { name: MINIMAL_JOB.title })).toBeInTheDocument();
-    expect(listPublicJobs).toHaveBeenLastCalledWith(1);
+    expect(listPublicJobs).toHaveBeenLastCalledWith(1, { keyword: '', location: '' });
     expect(screen.getAllByRole('article')).toHaveLength(2);
-    expect(screen.getByText('2 open positions')).toBeInTheDocument();
+    expect(screen.getByText('2 jobs available')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Load more jobs' })).toBeNull();
   });
 
-  it('has no search or filter controls yet', async () => {
-    listPublicJobs.mockResolvedValue(page([FULL_JOB]));
+  it('sends the search to the backend and shows what comes back', async () => {
+    const user = userEvent.setup();
+    // Stands in for the database: the backend, not the page, decides what matches.
+    listPublicJobs.mockImplementation(async (_page, search) => {
+      if (search?.location === 'Kandy') return page([]);
+      if (search?.keyword === 'typescript') return page([FULL_JOB]);
+      return page([FULL_JOB, MINIMAL_JOB]);
+    });
     renderAt('/jobs');
     await screen.findByRole('article', { name: FULL_JOB.title });
-    expect(screen.queryByRole('searchbox')).toBeNull();
-    expect(screen.queryByRole('textbox')).toBeNull();
-    expect(screen.queryByRole('combobox')).toBeNull();
+    // The board only lists jobs; a job is read on its own page, so none is fetched here.
+    expect(getPublicJob).not.toHaveBeenCalled();
+
+    const search = within(screen.getByRole('search', { name: 'Search jobs' }));
+    await user.type(search.getByRole('textbox', { name: 'Job title, skill or company' }), 'typescript');
+    // Nothing is requested until the search is submitted.
+    expect(listPublicJobs).toHaveBeenCalledTimes(1);
+    await user.click(search.getByRole('button', { name: 'Search' }));
+    expect(await screen.findByText('1 job found')).toBeInTheDocument();
+    expect(listPublicJobs).toHaveBeenLastCalledWith(0, { keyword: 'typescript', location: '' });
+    expect(screen.getAllByRole('article')).toHaveLength(1);
+
+    await user.type(search.getByRole('textbox', { name: 'Location' }), 'Kandy{Enter}');
+    expect(await screen.findByText('No matching jobs found')).toBeInTheDocument();
+    expect(listPublicJobs).toHaveBeenLastCalledWith(0, { keyword: 'typescript', location: 'Kandy' });
+    expect(screen.queryByRole('article')).toBeNull();
+    expect(screen.getByText('0 jobs found')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Clear all' }));
+    expect(await screen.findByText('2 jobs available')).toBeInTheDocument();
+    expect(listPublicJobs).toHaveBeenLastCalledWith(0, { keyword: '', location: '' });
+    expect(screen.getByRole('textbox', { name: 'Location' })).toHaveValue('');
+  });
+
+  it('filters to jobs that state a salary, and sorts newest first', async () => {
+    const user = userEvent.setup();
+    const older = { ...MINIMAL_JOB, publishedAt: '2020-01-01T00:00:00Z' };
+    listPublicJobs.mockResolvedValue(page([older, FULL_JOB]));
+    renderAt('/jobs');
+    await screen.findByRole('article', { name: FULL_JOB.title });
+    const titles = () => screen.getAllByRole('article').map((card) => within(card).getByRole('heading').textContent);
+    expect(titles()).toEqual([MINIMAL_JOB.title, FULL_JOB.title]);
+
+    await user.click(screen.getByText('Newest'));
+    expect(titles()).toEqual([FULL_JOB.title, MINIMAL_JOB.title]);
+
+    await user.click(screen.getByRole('checkbox', { name: 'Salary shown' }));
+    expect(titles()).toEqual([FULL_JOB.title]);
+  });
+
+  it('lays every filter choice out in the open, and narrows as they are ticked', async () => {
+    const user = userEvent.setup();
+    const contract: JobSummary = { ...MINIMAL_JOB, employmentType: 'CONTRACT', workplaceType: 'REMOTE' };
+    listPublicJobs.mockResolvedValue(page([FULL_JOB, contract]));
+    renderAt('/jobs');
+    await screen.findByRole('article', { name: FULL_JOB.title });
+
+    const jobType = within(screen.getByRole('group', { name: 'Job type' }));
+    for (const name of ['Full time', 'Part time', 'Contract', 'Internship', 'Temporary']) {
+      expect(jobType.getByRole('checkbox', { name })).toBeInTheDocument();
+    }
+    const workplace = within(screen.getByRole('group', { name: 'Workplace' }));
+    expect(workplace.getAllByRole('checkbox')).toHaveLength(3);
+
+    await user.click(jobType.getByRole('checkbox', { name: 'Contract' }));
+    expect(screen.getAllByRole('article')).toHaveLength(1);
+    expect(screen.getByRole('article', { name: MINIMAL_JOB.title })).toBeInTheDocument();
+
+    // Choices in one filter widen it; a second filter narrows again.
+    await user.click(jobType.getByRole('checkbox', { name: 'Full time' }));
+    expect(screen.getAllByRole('article')).toHaveLength(2);
+    await user.click(workplace.getByRole('checkbox', { name: 'Hybrid' }));
+    expect(screen.getAllByRole('article')).toHaveLength(1);
+    expect(screen.getByRole('article', { name: FULL_JOB.title })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Clear all' }));
+    expect(screen.getAllByRole('article')).toHaveLength(2);
+    expect(jobType.getByRole('checkbox', { name: 'Contract' })).not.toBeChecked();
+  });
+
+  it('says when the filters only covered the jobs loaded so far', async () => {
+    const user = userEvent.setup();
+    listPublicJobs.mockResolvedValue(page([FULL_JOB], { total: 40, totalPages: 2 }));
+    renderAt('/jobs');
+    await screen.findByRole('article', { name: FULL_JOB.title });
+    await user.click(screen.getByRole('checkbox', { name: 'Full time' }));
+    expect(screen.getByText(/filters cover the 1 jobs loaded so far/i)).toBeInTheDocument();
   });
 
   it('opens the matching vacancy from View Job', async () => {
@@ -142,14 +254,63 @@ describe('JobsPage', () => {
     expect(getPublicJob).toHaveBeenCalledWith('senior-frontend-engineer-demo-company');
     expect(await screen.findByRole('heading', { level: 1, name: FULL_JOB.title })).toBeInTheDocument();
     expect(screen.getByText('The full description of the role.')).toBeInTheDocument();
-    expect(screen.getByText('4+ years of React')).toBeInTheDocument();
     // Details show every skill, not the card's shortened list.
-    expect(within(screen.getByRole('list', { name: 'Skills' })).getByText('Git')).toBeInTheDocument();
+    expect(within(screen.getByRole('list', { name: 'Required skills' })).getByText('Git')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Apply Now' })).toHaveAttribute('href', '/jobs/senior-frontend-engineer-demo-company/apply');
   });
 });
 
 describe('JobDetailPage', () => {
+  it('shows every public part of the vacancy form, grouped like the form', async () => {
+    getPublicJob.mockResolvedValue(FULL_JOB);
+    renderAt('/jobs/job-1');
+    await screen.findByRole('heading', { level: 1, name: FULL_JOB.title });
+
+    const overview = within(screen.getByRole('region', { name: 'Job overview' }));
+    const facts: [string, string][] = [
+      ['Department', 'Engineering'],
+      ['Openings', '2'],
+      ['Experience', '4+ years experience'],
+      ['Education', 'Bachelor’s degree'],
+      ['Salary', 'LKR 450,000 – 650,000 / month'],
+      ['Working days', 'Mon–Fri'],
+      ['Working hours', '9:00 AM – 6:00 PM'],
+      ['Shift', 'Day shift'],
+      ['Hours per week', '40 hours'],
+    ];
+    for (const [label, value] of facts) {
+      expect(overview.getByText(label).nextElementSibling).toHaveTextContent(value);
+    }
+
+    expect(screen.getByText(FULL_JOB.jobSummary!)).toBeInTheDocument();
+    expect(within(screen.getByRole('list', { name: 'Key responsibilities' })).getByText('Own the job board')).toBeInTheDocument();
+    expect(within(screen.getByRole('list', { name: 'Preferred skills' })).getByText('Kubernetes')).toBeInTheDocument();
+    expect(within(screen.getByRole('list', { name: 'Certifications' })).getByText('AWS Solutions Architect')).toBeInTheDocument();
+    expect(screen.getByText('English, Sinhala')).toBeInTheDocument();
+    expect(screen.getByText('A valid driving licence.')).toBeInTheDocument();
+    // Benefit ids become their labels, in catalogue order.
+    const perks = within(screen.getByRole('list', { name: 'Benefits and perks' })).getAllByRole('listitem');
+    expect(perks.map((li) => li.textContent)).toEqual(['Health insurance', 'Training & development']);
+  });
+
+  it('leaves out sections the company did not fill in', async () => {
+    getPublicJob.mockResolvedValue(MINIMAL_JOB);
+    renderAt('/jobs/job-2');
+    await screen.findByRole('heading', { level: 1, name: MINIMAL_JOB.title });
+    expect(screen.queryByRole('region', { name: 'Job overview' })).toBeNull();
+    for (const heading of ['About the role', 'Key responsibilities', 'Requirements', 'Benefits & perks']) {
+      expect(screen.queryByRole('heading', { name: heading })).toBeNull();
+    }
+  });
+
+  it('offers no way to apply once the vacancy has stopped taking applications', async () => {
+    getPublicJob.mockResolvedValue({ ...FULL_JOB, acceptingApplications: false });
+    renderAt('/jobs/job-1');
+    await screen.findByRole('heading', { level: 1, name: FULL_JOB.title });
+    expect(screen.getByText('Applications are closed')).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Apply Now' })).toBeNull();
+  });
+
   it('explains when the vacancy does not exist or is not public', async () => {
     getPublicJob.mockResolvedValue(null);
     renderAt('/jobs/unknown');
