@@ -2138,7 +2138,9 @@
 }
 
 @media (min-width: 900px) {
-  .tp-jobs-results-shell {
+  /* Two columns only while the filters are shown; without them (an empty
+     board, a failed load) the results take the full width. */
+  .tp-jobs-results-shell:has(> .tp-jobs-sidebar) {
     grid-template-columns: 260px minmax(0, 1fr);
     align-items: start;
   }
