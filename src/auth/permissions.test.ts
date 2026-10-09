@@ -57,6 +57,14 @@ const EXPECTED: Record<Permission, Record<Role, boolean>> = {
     INTERVIEWER: false,
     CANDIDATE: true,
   },
+  // A candidate's own profile. Company users have no candidate profile, so a
+  // company role that could open it would only meet a 404.
+  'profile.manageOwn': {
+    COMPANY_ADMIN: false,
+    HR_MANAGER: false,
+    INTERVIEWER: false,
+    CANDIDATE: true,
+  },
 };
 
 describe('permission matrix', () => {

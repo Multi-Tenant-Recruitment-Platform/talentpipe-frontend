@@ -3190,3 +3190,803 @@
     flex-direction: row;
   }
 }
+
+/*
+ * ==========================================================================
+ * Candidate — My profile
+ * ==========================================================================
+ */
+
+/*
+ * A selectable option row. The whole row is the <label>, so it is one target;
+ * the native checkbox inside carries the state, and the row draws its focus
+ * ring so the ring sits around everything the click would hit.
+ */
+.tp-option-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--tp-space-1-5);
+  padding: var(--tp-space-2);
+  border: 1px solid var(--tp-slate-200);
+  border-radius: var(--tp-radius-lg);
+  background: var(--tp-surface);
+  cursor: pointer;
+  transition:
+    background-color var(--tp-motion-fast) var(--tp-motion-ease),
+    border-color var(--tp-motion-fast) var(--tp-motion-ease),
+    box-shadow var(--tp-motion-fast) var(--tp-motion-ease);
+}
+
+.tp-option-row:hover {
+  border-color: var(--tp-slate-300);
+  background: var(--tp-slate-50);
+}
+
+.tp-option-row:active {
+  background: var(--tp-slate-100);
+}
+
+.tp-option-row:has(:checked) {
+  border-color: var(--tp-primary-200);
+  background: var(--tp-primary-50);
+}
+
+.tp-option-row:has(:focus-visible) {
+  border-color: var(--tp-primary-600);
+  box-shadow: var(--tp-focus-ring);
+}
+
+.tp-option-row:has(:disabled) {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.tp-option-row input[type='checkbox'] {
+  width: 16px;
+  height: 16px;
+  margin: 2px 0 0;
+  flex-shrink: 0;
+  cursor: inherit;
+}
+
+.tp-option-row input[type='checkbox']:focus-visible {
+  outline: none;
+}
+
+/*
+ * The CV block opens by growing its grid row from 0fr to 1fr — the one way to
+ * transition to an unknown height. The global reduced-motion rule makes it
+ * instant for anyone who asked for less.
+ */
+.tp-reveal {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition:
+    grid-template-rows var(--tp-motion-base) var(--tp-motion-ease),
+    opacity var(--tp-motion-base) var(--tp-motion-ease);
+}
+
+.tp-reveal[data-open] {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+
+/* min-height: 0 lets the row collapse; the padding keeps focus rings inside
+   the clip while it is still opening. */
+.tp-reveal-inner {
+  min-height: 0;
+  overflow: hidden;
+  margin-inline: -4px;
+  padding: 0 4px 4px;
+}
+
+/* The rule drops from under the checkbox, tying the CV to that choice. */
+.tp-cv-branch {
+  margin: var(--tp-space-2) 0 0 var(--tp-space-1-5);
+  padding-left: var(--tp-space-2);
+  border-left: 2px solid var(--tp-slate-200);
+}
+
+@media (min-width: 640px) {
+  .tp-cv-branch {
+    margin-left: var(--tp-space-3);
+    padding-left: var(--tp-space-2-5);
+  }
+}
+
+/* The empty CV state: a dashed zone that is also a real button. */
+.tp-dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--tp-space-1);
+  width: 100%;
+  padding: var(--tp-space-4) var(--tp-space-3);
+  border: 2px dashed var(--tp-slate-300);
+  border-radius: var(--tp-radius-lg);
+  background: var(--tp-slate-50);
+  color: var(--tp-slate-700);
+  font-size: var(--tp-font-body);
+  text-align: center;
+  cursor: pointer;
+  transition:
+    background-color var(--tp-motion-fast) var(--tp-motion-ease),
+    border-color var(--tp-motion-fast) var(--tp-motion-ease);
+}
+
+.tp-dropzone:hover {
+  border-color: var(--tp-slate-400);
+  background: var(--tp-slate-100);
+}
+
+.tp-dropzone:active {
+  background: var(--tp-slate-200);
+}
+
+.tp-dropzone[data-dragging] {
+  border-color: var(--tp-primary-500);
+  background: var(--tp-primary-50);
+}
+
+.tp-dropzone:focus-visible {
+  outline: none;
+  border-color: var(--tp-primary-600);
+  box-shadow: var(--tp-focus-ring);
+}
+
+.tp-dropzone:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.tp-dropzone-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--tp-surface);
+  box-shadow: inset 0 0 0 1px var(--tp-slate-200);
+  color: var(--tp-slate-500);
+}
+
+.tp-dropzone[data-dragging] .tp-dropzone-icon {
+  color: var(--tp-primary-600);
+}
+
+.tp-dropzone-browse {
+  color: var(--tp-primary-700);
+  font-weight: var(--tp-weight-semibold);
+}
+
+.tp-dropzone-hint {
+  color: var(--tp-slate-500);
+  font-size: var(--tp-font-caption);
+}
+
+/* A staged or stored CV. The actions wrap under the name on a narrow screen. */
+.tp-file-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--tp-space-1-5);
+  padding: var(--tp-space-1-5);
+  border: 1px solid var(--tp-slate-200);
+  border-radius: var(--tp-radius-lg);
+  background: var(--tp-surface);
+}
+
+.tp-file-row-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: var(--tp-radius-md);
+  background: var(--tp-sunken);
+  color: var(--tp-slate-600);
+}
+
+.tp-file-row-body {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--tp-space-1) var(--tp-space-1-5);
+  min-width: 0;
+}
+
+.tp-file-row-name {
+  flex: 1 1 160px;
+  min-width: 0;
+}
+
+.tp-file-row-name > p {
+  margin: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.tp-file-row-filename {
+  color: var(--tp-slate-900);
+  font-weight: var(--tp-weight-medium);
+}
+
+.tp-file-row-name > .tp-file-row-meta {
+  margin-top: 2px;
+  color: var(--tp-slate-500);
+  font-size: var(--tp-font-caption);
+}
+
+/* --- My profile: page frame --------------------------------------------- */
+.tp-profile-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tp-space-3);
+  max-width: 1040px;
+  margin-inline: auto;
+}
+
+.tp-profile-grid {
+  display: grid;
+  gap: var(--tp-space-3);
+  align-items: start;
+}
+
+/* Grid items default to min-width: auto; one long unbroken value would push
+   the column past the viewport. */
+.tp-profile-grid > * {
+  min-width: 0;
+}
+
+.tp-profile-main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tp-space-3);
+}
+
+@media (min-width: 1024px) {
+  .tp-profile-grid {
+    grid-template-columns: minmax(0, 1fr) 300px;
+  }
+
+  .tp-profile-aside {
+    position: sticky;
+    top: calc(var(--tp-header-height) + var(--tp-space-3));
+  }
+}
+
+/* --- My profile: hero ---------------------------------------------------- */
+/* The jobs hero's panel, so the candidate's two pages read as one product. */
+.tp-profile-hero {
+  display: grid;
+  gap: var(--tp-space-3);
+  padding: var(--tp-space-3);
+  border-radius: var(--tp-radius-2xl);
+  background:
+    radial-gradient(circle at 92% 0%, rgb(255 255 255 / 14%), transparent 42%),
+    linear-gradient(135deg, var(--tp-primary-700), var(--tp-primary-900));
+  color: var(--tp-surface);
+  box-shadow: var(--tp-shadow-lg);
+}
+
+@media (min-width: 768px) {
+  .tp-profile-hero {
+    grid-template-columns: minmax(0, 1fr) 260px;
+    align-items: end;
+    padding: var(--tp-space-5);
+  }
+}
+
+.tp-profile-hero-main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--tp-space-2-5);
+  min-width: 0;
+}
+
+.tp-profile-avatar {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 96px;
+  height: 96px;
+  overflow: hidden;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 15%);
+  /* A white ring lifts the photo off the blue without a hard border. */
+  box-shadow:
+    0 0 0 4px rgb(255 255 255 / 22%),
+    var(--tp-shadow-md);
+  color: var(--tp-surface);
+  font-size: var(--tp-font-display);
+  font-weight: var(--tp-weight-semibold);
+  letter-spacing: var(--tp-tracking-heading);
+}
+
+.tp-profile-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.tp-profile-hero-identity {
+  flex: 1 1 260px;
+  min-width: 0;
+}
+
+.tp-profile-hero h1 {
+  margin: var(--tp-space-1-5) 0 0;
+  color: var(--tp-surface);
+  font-size: var(--tp-font-display);
+  font-weight: var(--tp-weight-bold);
+  line-height: var(--tp-leading-tight);
+  letter-spacing: var(--tp-tracking-display);
+  overflow-wrap: anywhere;
+}
+
+.tp-profile-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tp-space-1);
+  margin: var(--tp-space-1-5) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tp-profile-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--tp-space-0-75);
+  max-width: 100%;
+  padding: var(--tp-space-0-5) var(--tp-space-1-5);
+  border-radius: var(--tp-radius-pill);
+  background: rgb(255 255 255 / 12%);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 20%);
+  color: var(--tp-surface);
+  font-size: var(--tp-font-small);
+  font-weight: var(--tp-weight-medium);
+}
+
+.tp-profile-chip-text {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* Status, not decoration: the one green on the page means "you are in". */
+.tp-profile-chip-pool {
+  background: var(--tp-surface);
+  box-shadow: none;
+  color: var(--tp-success-text);
+}
+
+.tp-profile-photo-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--tp-space-1);
+  margin-top: var(--tp-space-2);
+}
+
+/* A text button that stays legible on the blue panel. */
+.tp-profile-hero .ant-btn.tp-btn-on-dark {
+  color: var(--tp-surface);
+}
+
+.tp-profile-hero .ant-btn.tp-btn-on-dark:not(:disabled):hover {
+  background: rgb(255 255 255 / 14%);
+  color: var(--tp-surface);
+}
+
+.tp-profile-photo-hint {
+  margin: var(--tp-space-1) 0 0;
+  color: var(--tp-primary-100);
+  font-size: var(--tp-font-caption);
+}
+
+/* Red text fails on blue, so an error gets its own light ground. */
+.tp-profile-photo-error {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: var(--tp-space-0-5);
+  margin: var(--tp-space-1) 0 0;
+  padding: var(--tp-space-0-5) var(--tp-space-1-5);
+  border-radius: var(--tp-radius-sm);
+  background: var(--tp-surface);
+  color: var(--tp-error-text);
+  font-size: var(--tp-font-caption);
+}
+
+.tp-profile-meter {
+  padding: var(--tp-space-2) var(--tp-space-2-5);
+  border-radius: var(--tp-radius-xl);
+  background: rgb(255 255 255 / 10%);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 18%);
+}
+
+.tp-profile-meter-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--tp-space-1);
+  color: var(--tp-primary-100);
+  font-size: var(--tp-font-small);
+  font-weight: var(--tp-weight-medium);
+}
+
+.tp-profile-meter-value {
+  color: var(--tp-surface);
+  font-size: var(--tp-font-title);
+  font-weight: var(--tp-weight-bold);
+}
+
+.tp-profile-meter-track {
+  height: 8px;
+  margin-top: var(--tp-space-1);
+  overflow: hidden;
+  border-radius: var(--tp-radius-pill);
+  background: rgb(255 255 255 / 20%);
+}
+
+.tp-profile-meter-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: var(--tp-surface);
+  transition: width var(--tp-motion-slow) var(--tp-motion-ease);
+}
+
+.tp-profile-meter-note {
+  margin: var(--tp-space-1) 0 0;
+  color: var(--tp-primary-100);
+  font-size: var(--tp-font-caption);
+  line-height: var(--tp-leading-snug);
+}
+
+/* --- My profile: section cards ------------------------------------------- */
+.tp-profile-section {
+  overflow: hidden;
+  border: 1px solid var(--tp-slate-200);
+  border-radius: var(--tp-radius-xl);
+  background: var(--tp-surface);
+  box-shadow: var(--tp-shadow-sm);
+}
+
+.tp-profile-section-head {
+  display: flex;
+  align-items: center;
+  gap: var(--tp-space-1-5);
+  padding: var(--tp-space-2) var(--tp-space-2-5);
+  border-bottom: 1px solid var(--tp-slate-100);
+}
+
+.tp-profile-section-head h2 {
+  margin: 0;
+  color: var(--tp-slate-900);
+  font-size: var(--tp-font-lead);
+  font-weight: var(--tp-weight-semibold);
+  line-height: var(--tp-leading-snug);
+}
+
+.tp-profile-section-head p {
+  margin: 2px 0 0;
+  color: var(--tp-slate-500);
+  font-size: var(--tp-font-small);
+}
+
+.tp-profile-section-icon {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--tp-radius-md);
+  background: var(--tp-primary-50);
+  color: var(--tp-primary-600);
+}
+
+.tp-profile-section-body {
+  padding: var(--tp-space-2-5);
+}
+
+@media (min-width: 640px) {
+  .tp-profile-section-head {
+    padding-inline: var(--tp-space-3);
+  }
+
+  .tp-profile-section-body {
+    padding: var(--tp-space-3);
+  }
+}
+
+.tp-profile-label {
+  display: block;
+  margin-bottom: var(--tp-space-0-75);
+  color: var(--tp-slate-800);
+  font-weight: var(--tp-weight-medium);
+}
+
+.tp-profile-label-optional {
+  color: var(--tp-slate-500);
+  font-weight: var(--tp-weight-normal);
+}
+
+.tp-profile-field-hint,
+.tp-profile-field-error {
+  margin: var(--tp-space-0-75) 0 0;
+  font-size: var(--tp-font-caption);
+  line-height: var(--tp-leading-snug);
+}
+
+.tp-profile-field-hint {
+  color: var(--tp-slate-500);
+}
+
+.tp-profile-field-error {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--tp-space-0-5);
+  color: var(--tp-error-text);
+}
+
+/* --- My profile: checklist ----------------------------------------------- */
+.tp-checklist-summary {
+  display: flex;
+  align-items: center;
+  gap: var(--tp-space-2);
+}
+
+.tp-checklist-percent {
+  color: var(--tp-slate-900);
+  font-size: var(--tp-font-body);
+  font-weight: var(--tp-weight-bold);
+  font-variant-numeric: tabular-nums;
+}
+
+.tp-checklist-blurb {
+  margin: 0;
+  color: var(--tp-slate-600);
+  font-size: var(--tp-font-small);
+  line-height: var(--tp-leading-snug);
+}
+
+.tp-checklist {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: var(--tp-space-2) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tp-checklist-item {
+  display: flex;
+  align-items: center;
+  gap: var(--tp-space-1-5);
+  width: 100%;
+  min-height: 40px;
+  padding: var(--tp-space-1);
+  border: 0;
+  border-radius: var(--tp-radius-md);
+  background: transparent;
+  color: var(--tp-slate-800);
+  font: inherit;
+  text-align: left;
+}
+
+button.tp-checklist-item {
+  cursor: pointer;
+  transition: background-color var(--tp-motion-fast) var(--tp-motion-ease);
+}
+
+button.tp-checklist-item:hover {
+  background: var(--tp-primary-50);
+  color: var(--tp-primary-700);
+}
+
+button.tp-checklist-item:active {
+  background: var(--tp-primary-100);
+}
+
+button.tp-checklist-item > svg {
+  color: var(--tp-slate-400);
+}
+
+button.tp-checklist-item:hover > svg {
+  color: var(--tp-primary-600);
+}
+
+.tp-checklist-item[data-done] {
+  color: var(--tp-slate-500);
+}
+
+.tp-checklist-mark {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: 1.5px solid var(--tp-slate-300);
+  border-radius: 50%;
+}
+
+.tp-checklist-item[data-done] .tp-checklist-mark {
+  border: 0;
+  background: var(--tp-success-bg);
+  color: var(--tp-success-text);
+}
+
+/* --- My profile: save bar ------------------------------------------------ */
+/* Sticks to the viewport's bottom while the form scrolls past it. */
+.tp-profile-savebar {
+  position: sticky;
+  bottom: var(--tp-space-2);
+  z-index: 5;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--tp-space-1-5);
+  padding: var(--tp-space-1-5) var(--tp-space-2);
+  border: 1px solid var(--tp-slate-200);
+  border-radius: var(--tp-radius-xl);
+  background: var(--tp-surface);
+  box-shadow: var(--tp-shadow-lg);
+}
+
+.tp-profile-savebar-status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--tp-space-1);
+  margin: 0;
+  color: var(--tp-slate-600);
+  font-size: var(--tp-font-small);
+}
+
+.tp-profile-savebar-dot {
+  width: 8px;
+  height: 8px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--tp-success);
+}
+
+.tp-profile-savebar-status[data-state='dirty'] .tp-profile-savebar-dot,
+.tp-profile-savebar-status[data-state='new'] .tp-profile-savebar-dot {
+  background: var(--tp-warning);
+}
+
+.tp-profile-savebar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tp-space-1);
+  margin-left: auto;
+}
+
+/* --- Public header: account menu ----------------------------------------- */
+/* The dashboard's popover shell (.tp-popover), holding links rather than
+   antd Menu items: each entry navigates, so each is announced as a link. */
+.tp-account-panel {
+  width: 280px;
+}
+
+.tp-account-head {
+  display: flex;
+  align-items: center;
+  gap: var(--tp-space-1-5);
+  padding: 14px var(--tp-space-2);
+  border-bottom: 1px solid var(--tp-slate-100);
+}
+
+.tp-account-name,
+.tp-account-email {
+  margin: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.tp-account-name {
+  color: var(--tp-slate-900);
+  font-weight: var(--tp-weight-semibold);
+}
+
+.tp-account-email {
+  color: var(--tp-slate-500);
+  font-size: var(--tp-font-caption);
+}
+
+.tp-account-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+}
+
+.tp-account-item {
+  display: flex;
+  align-items: center;
+  gap: var(--tp-space-1-5);
+  min-height: 40px;
+  padding: var(--tp-space-1) 10px;
+  border-radius: var(--tp-radius-md);
+  color: var(--tp-slate-700);
+  font-weight: var(--tp-weight-medium);
+  text-decoration: none;
+  transition: background-color var(--tp-motion-fast) var(--tp-motion-ease);
+}
+
+.tp-account-item-icon {
+  display: flex;
+  flex-shrink: 0;
+  color: var(--tp-slate-400);
+  transition: color var(--tp-motion-fast) var(--tp-motion-ease);
+}
+
+.tp-account-item-label {
+  flex: 1;
+  min-width: 0;
+}
+
+a.tp-account-item:hover,
+a.tp-account-item:focus-visible {
+  background: var(--tp-canvas);
+  color: var(--tp-slate-900);
+}
+
+a.tp-account-item:focus-visible {
+  outline: 2px solid var(--tp-primary-600);
+  outline-offset: -2px;
+}
+
+a.tp-account-item:hover .tp-account-item-icon,
+a.tp-account-item:focus-visible .tp-account-item-icon {
+  color: var(--tp-slate-600);
+}
+
+a.tp-account-item:active {
+  background: var(--tp-slate-100);
+}
+
+/* "You are here": the nav's blue, so it reads the same as the active link. */
+a.tp-account-item[aria-current='page'] {
+  background: var(--tp-primary-50);
+  color: var(--tp-primary-700);
+}
+
+a.tp-account-item[aria-current='page'] .tp-account-item-icon {
+  color: var(--tp-primary-600);
+}
+
+.tp-account-item[aria-disabled='true'] {
+  color: var(--tp-slate-500);
+  cursor: default;
+}
+
+.tp-soon-tag {
+  flex-shrink: 0;
+  padding: 1px var(--tp-space-1);
+  border-radius: var(--tp-radius-pill);
+  background: var(--tp-sunken);
+  color: var(--tp-slate-600);
+  font-size: 11px;
+  font-weight: var(--tp-weight-semibold);
+  letter-spacing: 0.02em;
+}
+
+/* Ending the session is the one destructive control in the header. */
+.tp-logout-button.ant-btn:not(:disabled):hover {
+  background: var(--tp-error-bg);
+  color: var(--tp-error-text);
+}
