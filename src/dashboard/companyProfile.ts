@@ -401,13 +401,13 @@ export function normalizeFormValues(values: CompanyFormValues): CompanyFormValue
 // The domain labels exclude '.' so each part of the pattern matches a
 // distinct span: overlapping '[^\s@]+' around the dot backtracks quadratically
 // on a long malformed address.
-const EMAIL = /^[^\s@]+@[^\s@.]+(\.[^\s@.]+)*\.[^\s@.]{2,}$/;
+export const EMAIL = /^[^\s@]+@[^\s@.]+(\.[^\s@.]+)*\.[^\s@.]{2,}$/;
 // Digits with the separators people actually type: + ( ) - and spaces. The
 // leading '(' matters — '(011) 234 5678' is how an area code is usually
 // written, and rejecting it would look like the field is simply broken.
 const PHONE_SHAPE = /^[+(\d][\d\s()-]*$/;
 
-function invalidPhone(value: string): boolean {
+export function invalidPhone(value: string): boolean {
   const digits = value.replace(/\D/g, '');
   return !PHONE_SHAPE.test(value) || digits.length < 7 || digits.length > 15;
 }
