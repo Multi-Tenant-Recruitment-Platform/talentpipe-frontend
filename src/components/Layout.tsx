@@ -53,16 +53,28 @@ export function Layout() {
           gap={16}
           className="tp-page-container"
         >
-          <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span className="tp-brand-mark" style={{ width: 32, height: 32, fontWeight: fontWeight.bold }}>
+          <Link
+            to="/"
+            aria-label="TalentPipe home"
+            style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 'none' }}
+          >
+            <span
+              aria-hidden="true"
+              className="tp-brand-mark"
+              style={{ width: 32, height: 32, fontWeight: fontWeight.bold }}
+            >
               T
             </span>
-            <Typography.Text strong style={{ fontSize: fontSize.title }}>
-              TalentPipe
-            </Typography.Text>
+            {/* On a phone the mark alone carries the brand, so the actions
+                beside it keep their full labels instead of overflowing. */}
+            {screens.sm && (
+              <Typography.Text strong style={{ fontSize: fontSize.title, whiteSpace: 'nowrap' }}>
+                TalentPipe
+              </Typography.Text>
+            )}
           </Link>
 
-          <Flex align="center" gap={8}>
+          <Flex align="center" gap={screens.sm ? 8 : 4} style={{ minWidth: 0 }}>
             <Menu
               mode="horizontal"
               selectedKeys={items.filter((i) => pathname.startsWith(i.key)).map((i) => i.key)}
@@ -73,7 +85,7 @@ export function Layout() {
               style={{
                 // Sized to its links once they may not fold; the fixed 180px
                 // only exists to give the phone fold something to measure.
-                ...(screens.sm ? { flex: 'none' } : { flex: 1, minWidth: 180 }),
+                ...(screens.sm ? { flex: 'none' } : { flex: 1, minWidth: 48 }),
                 borderBottom: 0,
                 background: 'transparent',
               }}
@@ -100,10 +112,10 @@ export function Layout() {
               </>
             ) : (
               <>
-                <Button variant="ghost" onClick={() => navigate('/login')}>
+                <Button variant="ghost" size={screens.sm ? 'md' : 'sm'} onClick={() => navigate('/login')}>
                   Log in
                 </Button>
-                <Button variant="primary" onClick={() => navigate('/register')}>
+                <Button variant="primary" size={screens.sm ? 'md' : 'sm'} onClick={() => navigate('/register')}>
                   Get started
                 </Button>
               </>

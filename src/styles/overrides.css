@@ -310,7 +310,7 @@
 }
 
 .tp-auth-card {
-  max-width: 1200px;
+  max-width: 560px;
   margin-inline: auto;
   overflow: hidden;
   border: 1px solid var(--tp-slate-200);
@@ -320,6 +320,9 @@
 }
 
 .tp-auth-form {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   padding: 40px 24px;
 }
 
@@ -333,6 +336,7 @@
   .tp-auth-card {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    max-width: 1200px;
   }
 
   .tp-auth-form {
@@ -2089,14 +2093,16 @@
   position: absolute;
   inset: 0 0 auto;
   height: 4px;
-  background: linear-gradient(90deg, var(--tp-primary-500), var(--tp-primary-300));
+  background: linear-gradient(90deg, var(--tp-primary-600), var(--tp-primary-200));
   content: '';
 }
 
 .tp-jobs-search-intro {
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
-  gap: var(--tp-space-1-5);
+  column-gap: var(--tp-space-1-5);
+  row-gap: 2px;
   margin: 0 var(--tp-space-0-5) var(--tp-space-1-5);
 }
 
@@ -2207,42 +2213,41 @@
   line-height: 1;
 }
 
-@media (min-width: 900px) {
-  @media (max-width: 639px) {
-    .tp-jobs-hero {
-      min-height: 210px;
-      padding: var(--tp-space-3) var(--tp-space-2);
-    }
+/* Phone: the hero and the search panel stack instead of overlapping. */
+@media (max-width: 639px) {
+  .tp-jobs-hero {
+    min-height: 210px;
+    padding: var(--tp-space-3) var(--tp-space-2);
+  }
 
-    .tp-jobs-hero h1 {
-      font-size: 30px;
-    }
+  .tp-jobs-hero h1 {
+    font-size: 30px;
+  }
 
-    .tp-jobs-hero-lede {
-      max-width: 280px;
-      font-size: 15px;
-    }
+  .tp-jobs-hero-lede {
+    max-width: 280px;
+    font-size: 15px;
+  }
 
-    .tp-jobs-search-panel {
-      margin: var(--tp-space-2) 0 0;
-      padding: var(--tp-space-2);
-    }
+  .tp-jobs-search-panel {
+    margin: var(--tp-space-2) 0 0;
+    padding: var(--tp-space-2);
+  }
 
-    .tp-jobs-search-intro {
-      display: block;
-    }
+  .tp-jobs-search-intro {
+    display: block;
+  }
 
-    .tp-jobs-search-intro h2 {
-      white-space: normal;
-    }
+  .tp-jobs-search-intro h2 {
+    white-space: normal;
+  }
 
-    .tp-jobs-search-intro p {
-      max-width: 300px;
-    }
+  .tp-jobs-search-intro p {
+    max-width: 300px;
+  }
 
-    .tp-jobs-search {
-      margin-top: var(--tp-space-2);
-    }
+  .tp-jobs-search {
+    margin-top: var(--tp-space-2);
   }
 }
 
@@ -2388,15 +2393,12 @@
   min-width: 0;
 }
 
+/* A standard card width: as many columns as fit at 300px or more. auto-fill
+   keeps the empty tracks, so one result stays card-sized instead of
+   stretching across the row. */
 @media (min-width: 700px) {
   .tp-job-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (min-width: 1080px) {
-  .tp-job-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   }
 }
 
@@ -2406,9 +2408,10 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  gap: var(--tp-space-1-75);
+  gap: var(--tp-space-1-5);
+  height: 100%;
   min-width: 0;
-  padding: var(--tp-space-2-5);
+  padding: var(--tp-space-3);
   border: 1px solid var(--tp-slate-200);
   border-radius: var(--tp-radius-xl);
   background: var(--tp-surface);
@@ -2422,7 +2425,7 @@
   position: absolute;
   inset: 0 0 auto;
   height: 3px;
-  background: linear-gradient(90deg, var(--tp-primary-500), var(--tp-primary-300));
+  background: linear-gradient(90deg, var(--tp-primary-600), var(--tp-primary-200));
   opacity: 0;
   transition: opacity var(--tp-motion-base) var(--tp-motion-ease);
   content: '';
@@ -2480,7 +2483,6 @@
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
   line-clamp: 2;
-  min-height: calc(var(--tp-leading-snug) * 2em);
 }
 
 .tp-job-card:hover .tp-job-card-title {
@@ -2489,7 +2491,7 @@
 
 /* Pay is a fact to compare, not a tag: plain, dark and a step heavier. */
 .tp-job-card-salary {
-  margin: var(--tp-space-0-25) 0 0;
+  margin: 2px 0 0;
   color: var(--tp-slate-900);
   font-size: var(--tp-font-title);
   font-weight: var(--tp-weight-semibold);
@@ -2503,9 +2505,13 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--tp-space-1-5);
-  margin-top: var(--tp-space-0-5);
-  padding-top: var(--tp-space-1-5);
+  margin-top: auto;
+  padding-top: var(--tp-space-2);
   border-top: 1px solid var(--tp-slate-100);
+}
+
+.tp-job-card-foot .tp-job-meta-item {
+  font-size: var(--tp-font-small);
 }
 
 .tp-job-card-cta {
@@ -3999,4 +4005,432 @@ a.tp-account-item[aria-current='page'] .tp-account-item-icon {
 .tp-logout-button.ant-btn:not(:disabled):hover {
   background: var(--tp-error-bg);
   color: var(--tp-error-text);
+}
+
+/* ==========================================================================
+   Landing page
+   ==========================================================================
+   The hero borrows the job board's panel, so the two public front doors read
+   as one product. The board inside it illustrates the hiring stages with
+   abstract shapes only: no names and no numbers, because the product has
+   none to show yet.
+   -------------------------------------------------------------------------- */
+.tp-landing {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tp-space-8);
+}
+
+/* --- Hero ---------------------------------------------------------------- */
+.tp-landing-hero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  display: grid;
+  gap: var(--tp-space-5);
+  align-items: center;
+  padding: var(--tp-space-5) var(--tp-space-3);
+  border-radius: var(--tp-radius-2xl);
+  background:
+    radial-gradient(circle at 92% 0%, rgb(255 255 255 / 14%), transparent 42%),
+    linear-gradient(135deg, var(--tp-primary-700), var(--tp-primary-900));
+  color: var(--tp-surface);
+  box-shadow: var(--tp-shadow-lg);
+}
+
+.tp-landing-hero-copy {
+  position: relative;
+  z-index: 1;
+  max-width: 600px;
+}
+
+.tp-landing-hero h1 {
+  margin: var(--tp-space-1-5) 0 0;
+  color: var(--tp-surface);
+  font-size: 34px;
+  font-weight: var(--tp-weight-bold);
+  line-height: var(--tp-leading-tight);
+  letter-spacing: var(--tp-tracking-display);
+  text-wrap: balance;
+}
+
+.tp-landing-hero-lede {
+  margin: var(--tp-space-2) 0 0;
+  color: var(--tp-primary-100);
+  font-size: var(--tp-font-lead);
+  line-height: var(--tp-leading-normal);
+}
+
+.tp-landing-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tp-space-1-5);
+}
+
+.tp-landing-hero .tp-landing-actions {
+  margin-top: var(--tp-space-4);
+}
+
+.tp-landing-actions .tp-cta-link {
+  padding: 12px 20px;
+}
+
+.tp-landing-hero-note {
+  margin: var(--tp-space-2) 0 0;
+  color: var(--tp-primary-100);
+  font-size: var(--tp-font-small);
+}
+
+.tp-landing-hero-note a {
+  color: var(--tp-surface);
+  font-weight: var(--tp-weight-semibold);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* On the blue panel the primary action inverts to white, so it is the
+   brightest thing on the page, with the secondary as frosted glass. */
+.tp-cta-link-light {
+  background: var(--tp-surface);
+  color: var(--tp-primary-700);
+  box-shadow: 0 8px 20px rgb(15 23 42 / 25%);
+}
+
+.tp-cta-link-light:hover {
+  color: var(--tp-primary-700);
+  filter: none;
+  box-shadow: 0 10px 24px rgb(15 23 42 / 32%);
+}
+
+.tp-cta-link-glass {
+  border: 1px solid rgb(255 255 255 / 35%);
+  background: rgb(255 255 255 / 10%);
+  color: var(--tp-surface);
+  box-shadow: none;
+  backdrop-filter: blur(8px);
+}
+
+.tp-cta-link-glass:hover {
+  background: rgb(255 255 255 / 18%);
+  color: var(--tp-surface);
+  box-shadow: none;
+}
+
+.tp-cta-link-light:focus-visible,
+.tp-cta-link-glass:focus-visible,
+.tp-landing-hero-note a:focus-visible {
+  outline: 2px solid var(--tp-surface);
+  outline-offset: 2px;
+}
+
+/* --- Hero illustration: a pipeline board --------------------------------- */
+.tp-landing-board {
+  position: relative;
+  z-index: 1;
+  display: none;
+  padding: var(--tp-space-2);
+  border: 1px solid rgb(255 255 255 / 22%);
+  border-radius: var(--tp-radius-xl);
+  background: rgb(255 255 255 / 10%);
+  box-shadow: 0 24px 48px -12px rgb(2 6 23 / 45%);
+  backdrop-filter: blur(10px);
+}
+
+.tp-landing-board-bar {
+  display: flex;
+  gap: 6px;
+  margin-bottom: var(--tp-space-1-5);
+}
+
+.tp-landing-board-bar span {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 35%);
+}
+
+.tp-landing-board-columns {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.tp-landing-board-column {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 210px;
+  padding: 10px 8px;
+  border-radius: var(--tp-radius-lg);
+  background: rgb(255 255 255 / 8%);
+}
+
+.tp-landing-board-stage {
+  margin-bottom: 2px;
+  overflow: hidden;
+  color: var(--tp-primary-100);
+  font-size: 11px;
+  font-weight: var(--tp-weight-semibold);
+  letter-spacing: 0.04em;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.tp-landing-board-card {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 8px;
+  border-radius: var(--tp-radius-md);
+  background: var(--tp-surface);
+  color: var(--tp-success);
+  box-shadow: 0 4px 10px rgb(2 6 23 / 18%);
+}
+
+.tp-landing-board-avatar {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--tp-primary-100);
+}
+
+.tp-landing-board-card.is-hired .tp-landing-board-avatar {
+  background: var(--tp-success-bg);
+}
+
+.tp-landing-board-lines {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.tp-landing-board-lines span {
+  height: 5px;
+  border-radius: var(--tp-radius-pill);
+  background: var(--tp-slate-200);
+}
+
+.tp-landing-board-lines span + span {
+  width: 60%;
+  background: var(--tp-slate-100);
+}
+
+@media (min-width: 768px) {
+  .tp-landing-hero {
+    padding: var(--tp-space-6);
+  }
+
+  .tp-landing-hero h1 {
+    font-size: 44px;
+  }
+
+  .tp-landing-board {
+    display: block;
+  }
+}
+
+@media (min-width: 1100px) {
+  .tp-landing-hero {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+    gap: var(--tp-space-6);
+    min-height: 460px;
+    padding: var(--tp-space-8) var(--tp-space-6);
+  }
+
+  .tp-landing-hero h1 {
+    font-size: var(--tp-font-hero);
+  }
+}
+
+/* --- Sections ------------------------------------------------------------ */
+.tp-landing-section-head {
+  max-width: 640px;
+  margin: 0 auto var(--tp-space-4);
+  text-align: center;
+}
+
+.tp-landing-section-head h2,
+.tp-landing-cta h2 {
+  margin: var(--tp-space-1) 0 0;
+  color: var(--tp-slate-900);
+  font-size: var(--tp-font-display);
+  font-weight: var(--tp-weight-bold);
+  line-height: var(--tp-leading-tight);
+  letter-spacing: var(--tp-tracking-heading);
+  text-wrap: balance;
+}
+
+.tp-landing-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--tp-radius-lg);
+  background: var(--tp-primary-50);
+  color: var(--tp-primary-600);
+}
+
+/* --- Audiences ----------------------------------------------------------- */
+.tp-landing-audiences {
+  display: grid;
+  gap: var(--tp-space-3);
+}
+
+.tp-landing-audience {
+  display: flex;
+  flex-direction: column;
+  padding: var(--tp-space-4) var(--tp-space-3);
+  border: 1px solid var(--tp-slate-200);
+  border-radius: var(--tp-radius-2xl);
+  background: var(--tp-surface);
+  box-shadow: var(--tp-shadow-sm);
+  transition:
+    box-shadow var(--tp-motion-base) var(--tp-motion-ease),
+    transform var(--tp-motion-base) var(--tp-motion-ease);
+}
+
+.tp-landing-audience:hover {
+  box-shadow: var(--tp-shadow-md);
+  transform: translateY(-2px);
+}
+
+.tp-landing-audience h3,
+.tp-landing-step h3 {
+  margin: var(--tp-space-2) 0 0;
+  color: var(--tp-slate-900);
+  font-size: var(--tp-font-section);
+  font-weight: var(--tp-weight-bold);
+}
+
+.tp-landing-audience > p,
+.tp-landing-step p {
+  margin: var(--tp-space-1) 0 0;
+  color: var(--tp-slate-600);
+  line-height: var(--tp-leading-normal);
+}
+
+.tp-landing-points {
+  display: grid;
+  flex: 1;
+  align-content: start;
+  gap: 10px;
+  margin: var(--tp-space-3) 0 var(--tp-space-4);
+  padding: var(--tp-space-3) 0 0;
+  border-top: 1px solid var(--tp-slate-100);
+  list-style: none;
+}
+
+.tp-landing-points li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  color: var(--tp-slate-700);
+}
+
+.tp-landing-points svg {
+  flex: none;
+  margin-top: 3px;
+  color: var(--tp-success);
+}
+
+.tp-landing-audience .tp-cta-link {
+  align-self: stretch;
+  padding-block: 12px;
+}
+
+@media (min-width: 768px) {
+  .tp-landing-audiences {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .tp-landing-audience {
+    padding: var(--tp-space-5);
+  }
+
+  /* Two lines reserved, so the checklists in the two cards start level. */
+  .tp-landing-audience > p {
+    min-height: calc(2em * var(--tp-leading-normal));
+  }
+}
+
+/* --- Steps --------------------------------------------------------------- */
+.tp-landing-steps {
+  display: grid;
+  gap: var(--tp-space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tp-landing-step {
+  position: relative;
+  padding: var(--tp-space-4) var(--tp-space-3);
+  border: 1px solid var(--tp-slate-200);
+  border-radius: var(--tp-radius-2xl);
+  background: var(--tp-surface);
+}
+
+.tp-landing-step-number {
+  position: absolute;
+  top: var(--tp-space-3);
+  right: var(--tp-space-3);
+  color: var(--tp-slate-200);
+  font-size: 40px;
+  font-weight: var(--tp-weight-bold);
+  line-height: 1;
+}
+
+@media (min-width: 768px) {
+  .tp-landing-steps {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* --- Closing call to action ---------------------------------------------- */
+.tp-landing-cta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tp-space-3);
+  padding: var(--tp-space-5) var(--tp-space-3);
+  border: 1px solid var(--tp-primary-100);
+  border-radius: var(--tp-radius-2xl);
+  background: linear-gradient(135deg, var(--tp-primary-50), var(--tp-surface));
+  text-align: center;
+}
+
+.tp-landing-cta h2 {
+  margin: 0;
+  font-size: var(--tp-font-heading);
+}
+
+.tp-landing-cta p {
+  margin: var(--tp-space-1) 0 0;
+  color: var(--tp-slate-600);
+}
+
+.tp-landing-cta .tp-landing-actions {
+  justify-content: center;
+}
+
+@media (min-width: 900px) {
+  .tp-landing-cta {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--tp-space-5) var(--tp-space-6);
+    text-align: left;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tp-landing-audience,
+  .tp-landing-audience:hover {
+    transform: none;
+    transition: none;
+  }
 }
