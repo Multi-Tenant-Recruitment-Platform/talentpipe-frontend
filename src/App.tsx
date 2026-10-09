@@ -5,6 +5,7 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import { RequirePermission } from './components/RequirePermission';
 import { DashboardLayout } from './layouts/DashboardLayout';
 import { AcceptInvitePage } from './pages/AcceptInvitePage';
+import { CandidateProfilePage } from './pages/CandidateProfilePage';
 import { CandidateRegisterPage } from './pages/CandidateRegisterPage';
 import { CompanyProfilePage } from './pages/dashboard/CompanyProfilePage';
 import { CompanySettingsPage } from './pages/dashboard/CompanySettingsPage';
@@ -42,6 +43,16 @@ export default function App() {
           <Route path="/verify-email" element={<VerifyEmailPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/accept-invite" element={<AcceptInvitePage />} />
+          {/* The candidate's own profile. A company user who lands here is
+              sent to their dashboard instead. */}
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute requires="profile.manageOwn">
+                <CandidateProfilePage />
+              </ProtectedRoute>
+            }
+          />
         </Route>
 
         {/* The company workspace gets its own full-screen chrome. Each child

@@ -27,6 +27,7 @@ export const PERMISSIONS = [
   'jobs.browse',
   'jobs.manage', // open a role: create and publish vacancies (PB-011)
   'applications.viewOwn',
+  'profile.manageOwn', // a candidate's own My profile page
 ] as const;
 export type Permission = (typeof PERMISSIONS)[number];
 
@@ -66,7 +67,7 @@ const ROLE_PERMISSIONS: Record<Role, ReadonlySet<Permission>> = {
   // decide what the company hires for.
   HR_MANAGER: new Set([...COMPANY_BASE, 'pipeline.manage', 'jobs.manage', 'settings.view']),
   INTERVIEWER: new Set(COMPANY_BASE),
-  CANDIDATE: new Set(['jobs.browse', 'applications.viewOwn']),
+  CANDIDATE: new Set(['jobs.browse', 'applications.viewOwn', 'profile.manageOwn']),
 };
 
 const EMPTY: ReadonlySet<Permission> = new Set<Permission>();

@@ -233,6 +233,51 @@ export interface CandidateProfile {
   createdAt: string;
 }
 
+/** A CV already stored against a candidate. Size and URL may be withheld. */
+export interface CandidateCvResponse {
+  fileName: string;
+  sizeBytes: number | null;
+  url: string | null;
+}
+
+/**
+ * The signed-in candidate's own profile, behind the My profile page. Not the
+ * self-registration response {@link CandidateProfile}.
+ */
+export interface MyCandidateProfileResponse {
+  id: string;
+  fullName: string;
+  email: string;
+  phone: string | null;
+  /** National identity card (NIC) or passport number. */
+  identityCardNumber: string | null;
+  photoUrl: string | null;
+  inTalentPool: boolean;
+  cv: CandidateCvResponse | null;
+}
+
+/**
+ * The parts of the `multipart/form-data` body that saves the signed-in
+ * candidate's profile. Booleans travel as 'true' / 'false'; absent keys are
+ * not sent.
+ */
+export interface UpdateMyCandidateProfileRequest {
+  fullName: string;
+  email: string;
+  /** Empty when not given. */
+  phone: string;
+  /** Trimmed and upper-cased. Same name as on CandidateRegisterRequest. */
+  identityCardNumber: string;
+  addToTalentPool: boolean;
+  photo?: File;
+  /** Only ever present when `addToTalentPool` is true. */
+  cv?: File;
+  /** Drop the stored photo. */
+  removePhoto?: boolean;
+  /** Drop the stored CV while staying in the Talent Pool. */
+  removeCv?: boolean;
+}
+
 /** Roles a company admin may invite (PB-003 / PB-004). */
 export type InvitableRole = 'HR_MANAGER' | 'INTERVIEWER';
 
