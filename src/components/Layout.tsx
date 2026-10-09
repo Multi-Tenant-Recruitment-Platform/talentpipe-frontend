@@ -1,7 +1,9 @@
-import { Flex, Layout as AntLayout, Menu, Typography } from 'antd';
+import { Button as AntButton, Divider, Flex, Grid, Layout as AntLayout, Menu, Tooltip, Typography } from 'antd';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { can } from '../auth/permissions';
+import { AccountMenu } from './AccountMenu';
+import { Icon } from './dashboard/Icon';
 import { Button } from './ui/Button';
 import { fontSize, fontWeight, slate } from '../theme/tokens';
 
@@ -10,6 +12,7 @@ export function Layout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const { pathname } = useLocation();
+  const screens = Grid.useBreakpoint();
 
   async function handleLogout() {
     await logout();
@@ -61,12 +64,37 @@ export function Layout() {
               mode="horizontal"
               selectedKeys={items.filter((i) => pathname.startsWith(i.key)).map((i) => i.key)}
               items={items}
-              style={{ flex: 1, minWidth: 180, borderBottom: 0, background: 'transparent' }}
+              // From `sm` up every link fits, so none may fold into antd's
+              // unlabelled "···". Below it, the fold is the phone's "more" menu.
+              disabledOverflow={screens.sm}
+              style={{
+                // Sized to its links once they may not fold; the fixed 180px
+                // only exists to give the phone fold something to measure.
+                ...(screens.sm ? { flex: 'none' } : { flex: 1, minWidth: 180 }),
+                borderBottom: 0,
+                background: 'transparent',
+              }}
             />
             {user ? (
-              <Button variant="ghost" onClick={() => void handleLogout()}>
-                Log out
-              </Button>
+              <>
+                {/* The person's own pages live behind their name, not in the
+                    site navigation beside Browse jobs. */}
+                <AccountMenu user={user} />
+                <Divider type="vertical" className="tp-topbar-divider" />
+                {/* Icon-only by design, so the tooltip and the accessible name
+                    both carry the word; it turns red on hover because it ends
+                    the session. */}
+                <Tooltip title="Log out" placement="bottomRight">
+                  <AntButton
+                    type="text"
+                    shape="circle"
+                    aria-label="Log out"
+                    className="tp-icon-button tp-logout-button"
+                    icon={<Icon name="logout" size={20} />}
+                    onClick={() => void handleLogout()}
+                  />
+                </Tooltip>
+              </>
             ) : (
               <>
                 <Button variant="ghost" onClick={() => navigate('/login')}>
