@@ -1,8 +1,8 @@
+import { CloseOutlined, WarningOutlined } from '@ant-design/icons';
 import { Input, Space, Tag, Typography } from 'antd';
 import { useState, type KeyboardEvent } from 'react';
 import { cleanValues } from '../../dashboard/companyProfile';
 import { Button } from '../ui/Button';
-import { Icon } from './Icon';
 import { fontSize, slate } from '../../theme/tokens';
 
 /**
@@ -103,7 +103,7 @@ export function CompanyChipListEditor({
                 color="geekblue"
                 closable={!disabled}
                 onClose={() => onChange(values.filter((entry) => entry !== value))}
-                closeIcon={<Icon name="x-mark" size={12} />}
+                closeIcon={<CloseOutlined aria-hidden className="text-[12px]" />}
                 aria-label={`Remove ${value}`}
                 style={{ marginInlineEnd: 0, borderRadius: 999 }}
               >
@@ -151,7 +151,7 @@ export function CompanyChipListEditor({
             margin: '6px 0 0',
           }}
         >
-          <Icon name="warning" size={14} style={{ marginTop: 1 }} />
+          <WarningOutlined aria-hidden className="text-[14px]" style={{ marginTop: 1 }} />
           {error}
         </Typography.Paragraph>
       ) : (

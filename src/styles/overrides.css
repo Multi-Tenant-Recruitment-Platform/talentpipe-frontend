@@ -3812,11 +3812,11 @@ button.tp-checklist-item:active {
   background: var(--tp-primary-100);
 }
 
-button.tp-checklist-item > svg {
+button.tp-checklist-item > .anticon {
   color: var(--tp-slate-400);
 }
 
-button.tp-checklist-item:hover > svg {
+button.tp-checklist-item:hover > .anticon {
   color: var(--tp-primary-600);
 }
 
@@ -4332,7 +4332,7 @@ a.tp-account-item[aria-current='page'] .tp-account-item-icon {
   color: var(--tp-slate-700);
 }
 
-.tp-landing-points svg {
+.tp-landing-points .anticon {
   flex: none;
   margin-top: 3px;
   color: var(--tp-success);

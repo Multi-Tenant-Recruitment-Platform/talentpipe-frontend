@@ -1,6 +1,12 @@
+import {
+  CheckCircleOutlined,
+  CloseOutlined,
+  InfoCircleOutlined,
+  WarningOutlined,
+} from '@ant-design/icons';
+import type { IconComponent } from './icon';
 import { theme } from 'antd';
 import type { CSSProperties, ReactNode } from 'react';
-import { Icon, type IconName } from '../dashboard/Icon';
 
 export type AlertTone = 'info' | 'success' | 'warning' | 'error';
 
@@ -34,30 +40,30 @@ export function Alert({
 }>) {
   const { token } = theme.useToken();
 
-  const TONES: Record<AlertTone, { bg: string; border: string; text: string; icon: IconName }> = {
+  const TONES: Record<AlertTone, { bg: string; border: string; text: string; icon: IconComponent }> = {
     info: {
       bg: token.colorInfoBg,
       border: token.colorInfoBorder,
       text: token.colorInfoText,
-      icon: 'info',
+      icon: InfoCircleOutlined,
     },
     success: {
       bg: token.colorSuccessBg,
       border: token.colorSuccessBorder,
       text: token.colorSuccessText,
-      icon: 'check',
+      icon: CheckCircleOutlined,
     },
     warning: {
       bg: token.colorWarningBg,
       border: token.colorWarningBorder,
       text: token.colorWarningText,
-      icon: 'warning',
+      icon: WarningOutlined,
     },
     error: {
       bg: token.colorErrorBg,
       border: token.colorErrorBorder,
       text: token.colorErrorText,
-      icon: 'warning',
+      icon: WarningOutlined,
     },
   };
 
@@ -78,7 +84,7 @@ export function Alert({
 
   const content = (
     <>
-      <Icon name={t.icon} size={16} style={{ marginTop: 2 }} />
+      <t.icon aria-hidden className="text-[16px]" style={{ marginTop: 2 }} />
       <div style={{ minWidth: 0, flex: 1 }}>{children}</div>
       {onDismiss && (
         <button
@@ -99,7 +105,7 @@ export function Alert({
             lineHeight: 0,
           }}
         >
-          <Icon name="x-mark" size={16} />
+          <CloseOutlined aria-hidden className="text-[16px]" />
         </button>
       )}
     </>

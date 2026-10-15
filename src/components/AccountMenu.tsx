@@ -1,3 +1,10 @@
+import {
+  AppstoreOutlined,
+  DownOutlined,
+  SettingOutlined,
+  SolutionOutlined,
+  UserOutlined,
+} from '@ant-design/icons';
 import { Dropdown } from 'antd';
 import { useEffect, useRef, useState, type FocusEvent, type KeyboardEvent, type RefObject } from 'react';
 import { Link, useLocation } from 'react-router-dom';
@@ -5,7 +12,7 @@ import type { UserResponse } from '../api/types';
 import { can, type Permission } from '../auth/permissions';
 import { formatRole } from '../utils/format';
 import { Avatar } from './dashboard/Avatar';
-import { Icon, type IconName } from './dashboard/Icon';
+import type { IconComponent } from './ui/icon';
 
 /**
  * The signed-in person's menu in the public header: avatar, name and role as
@@ -25,18 +32,18 @@ import { Icon, type IconName } from './dashboard/Icon';
 interface AccountItem {
   key: string;
   label: string;
-  icon: IconName;
+  icon: IconComponent;
   permission: Permission;
   /** Absent while the page is not built yet: listed, but not a link. */
   to?: string;
 }
 
 const ITEMS: AccountItem[] = [
-  { key: 'profile', label: 'My profile', icon: 'user', permission: 'profile.manageOwn', to: '/profile' },
-  { key: 'applications', label: 'Applied jobs', icon: 'briefcase', permission: 'applications.viewOwn' },
-  { key: 'settings', label: 'Settings', icon: 'cog', permission: 'profile.manageOwn' },
+  { key: 'profile', label: 'My profile', icon: UserOutlined, permission: 'profile.manageOwn', to: '/profile' },
+  { key: 'applications', label: 'Applied jobs', icon: SolutionOutlined, permission: 'applications.viewOwn' },
+  { key: 'settings', label: 'Settings', icon: SettingOutlined, permission: 'profile.manageOwn' },
   // Company users reach their workspace from here too, so the menu is never empty.
-  { key: 'dashboard', label: 'Dashboard', icon: 'squares-2x2', permission: 'dashboard.view', to: '/dashboard' },
+  { key: 'dashboard', label: 'Dashboard', icon: AppstoreOutlined, permission: 'dashboard.view', to: '/dashboard' },
 ];
 
 const PANEL_ID = 'account-menu-panel';
@@ -115,7 +122,7 @@ function AccountPanel({
             const content = (
               <>
                 <span className="tp-account-item-icon">
-                  <Icon name={item.icon} size={18} />
+                  <item.icon aria-hidden className="text-[18px]" />
                 </span>
                 <span className="tp-account-item-label">{item.label}</span>
               </>
@@ -187,7 +194,7 @@ export function AccountMenu({ user }: Readonly<{ user: UserResponse }>) {
           <span className="tp-profile-name">{name}</span>
           <span className="tp-profile-role">{formatRole(user.role)}</span>
         </span>
-        <Icon name="chevron-down" size={16} className="tp-profile-chevron" />
+        <DownOutlined aria-hidden className="text-[16px] tp-profile-chevron" />
       </button>
     </Dropdown>
   );

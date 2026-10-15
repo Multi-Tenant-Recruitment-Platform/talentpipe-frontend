@@ -68,6 +68,8 @@
   --tp-space-8: 64px;
 
   /* --- Type ------------------------------------------------------------- */
+  --tp-font-sans: 'IBM Plex Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
   --tp-font-caption: 12px;
   --tp-font-small: 13px;
   --tp-font-body: 14px;

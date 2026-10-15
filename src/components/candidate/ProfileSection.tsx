@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Icon, type IconName } from '../dashboard/Icon';
+import type { IconComponent } from '../ui/icon';
 
 /**
  * One titled card on My profile: a tinted icon tile, a heading and a one-line
@@ -8,13 +8,13 @@ import { Icon, type IconName } from '../dashboard/Icon';
  */
 export function ProfileSection({
   id,
-  icon,
+  icon: Glyph,
   title,
   subtitle,
   children,
 }: Readonly<{
   id: string;
-  icon: IconName;
+  icon: IconComponent;
   title: string;
   subtitle?: string;
   children: ReactNode;
@@ -24,7 +24,7 @@ export function ProfileSection({
     <section className="tp-profile-section" aria-labelledby={headingId}>
       <header className="tp-profile-section-head">
         <span className="tp-profile-section-icon">
-          <Icon name={icon} />
+          <Glyph aria-hidden className="text-[20px]" />
         </span>
         <div style={{ minWidth: 0 }}>
           <h2 id={headingId}>{title}</h2>

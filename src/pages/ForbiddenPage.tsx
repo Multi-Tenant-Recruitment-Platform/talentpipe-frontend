@@ -1,8 +1,8 @@
+import { ArrowLeftOutlined, LockOutlined } from '@ant-design/icons';
 import { Flex, Result, Typography } from 'antd';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { homeRouteFor, type Permission } from '../auth/permissions';
-import { Icon } from '../components/dashboard/Icon';
 import { RoleBadge } from '../components/dashboard/RoleBadge';
 import { fontSize, slate, status } from '../theme/tokens';
 
@@ -44,7 +44,7 @@ export function ForbiddenPage({ requires }: Readonly<{ requires?: Permission }>)
             color: status.warningText,
           }}
         >
-          <Icon name="lock-closed" size={28} />
+          <LockOutlined aria-hidden className="text-[28px]" />
         </span>
       }
       title={
@@ -81,7 +81,7 @@ export function ForbiddenPage({ requires }: Readonly<{ requires?: Permission }>)
               other is invalid markup. The icon is aria-hidden, so the link's
               accessible name stays exactly its text. */}
           <Link to={home} className="tp-cta-link">
-            <Icon name="arrow-left" size={16} />
+            <ArrowLeftOutlined aria-hidden className="text-[16px]" />
             {home === '/dashboard' ? 'Back to overview' : 'Browse jobs'}
           </Link>
         </Flex>

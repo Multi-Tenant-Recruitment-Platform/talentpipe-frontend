@@ -1,9 +1,9 @@
+import { LogoutOutlined } from '@ant-design/icons';
 import { Button as AntButton, Divider, Flex, Grid, Layout as AntLayout, Menu, Tooltip, Typography } from 'antd';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { can } from '../auth/permissions';
 import { AccountMenu } from './AccountMenu';
-import { Icon } from './dashboard/Icon';
 import { Button } from './ui/Button';
 import { fontSize, fontWeight, slate } from '../theme/tokens';
 
@@ -105,7 +105,7 @@ export function Layout() {
                     shape="circle"
                     aria-label="Log out"
                     className="tp-icon-button tp-logout-button"
-                    icon={<Icon name="logout" size={20} />}
+                    icon={<LogoutOutlined aria-hidden className="text-[20px]" />}
                     onClick={() => void handleLogout()}
                   />
                 </Tooltip>

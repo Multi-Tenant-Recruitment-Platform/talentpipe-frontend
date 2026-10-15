@@ -1,10 +1,10 @@
+import { CheckOutlined } from '@ant-design/icons';
 import { Typography } from 'antd';
 import { Alert } from '../components/ui/Alert';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { api, apiErrorMessage } from '../api/client';
 import { AuthShell } from '../components/AuthShell';
-import { Icon } from '../components/dashboard/Icon';
 // Aliased: this page already has a `status` state variable.
 import { fontSize, status as statusColor } from '../theme/tokens';
 
@@ -74,7 +74,7 @@ export function VerifyEmailPage() {
               color: statusColor.successText,
             }}
           >
-            <Icon name="check" size={24} />
+            <CheckOutlined aria-hidden className="text-[24px]" />
           </span>
           <Typography.Title level={1} style={{ fontSize: fontSize.heading, marginTop: 16, marginBottom: 0 }}>
             Email verified

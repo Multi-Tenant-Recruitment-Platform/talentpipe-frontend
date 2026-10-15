@@ -1,3 +1,4 @@
+import { BankOutlined, EyeOutlined, WarningOutlined } from '@ant-design/icons';
 import { Flex, Typography } from 'antd';
 import { useRef, type ChangeEvent } from 'react';
 import type { CompanyImageKind } from '../../api/types';
@@ -10,7 +11,6 @@ import {
 } from '../../dashboard/companyImages';
 import { Button } from '../ui/Button';
 import { CompanyLogo } from './CompanyLogo';
-import { Icon } from './Icon';
 import { fontSize, slate } from '../../theme/tokens';
 
 /**
@@ -112,7 +112,11 @@ export function CompanyImagePicker({
             disabled={disabled}
             onClick={() => inputRef.current?.click()}
           >
-            <Icon name={kind === 'logo' ? 'building' : 'eye'} size={16} />
+            {kind === 'logo' ? (
+              <BankOutlined aria-hidden className="text-[16px]" />
+            ) : (
+              <EyeOutlined aria-hidden className="text-[16px]" />
+            )}
             {imageUrl ? `Change ${label.toLowerCase()}` : `Upload ${label.toLowerCase()}`}
           </Button>
           {imageUrl && (
@@ -129,7 +133,7 @@ export function CompanyImagePicker({
             type="danger"
             style={{ display: 'flex', alignItems: 'flex-start', gap: 4, fontSize: fontSize.caption, margin: '6px 0 0' }}
           >
-            <Icon name="warning" size={14} style={{ marginTop: 1 }} />
+            <WarningOutlined aria-hidden className="text-[14px]" style={{ marginTop: 1 }} />
             {error}
           </Typography.Paragraph>
         ) : (

@@ -1,3 +1,4 @@
+import { CloseOutlined, FileOutlined, UploadOutlined, WarningOutlined } from '@ant-design/icons';
 import { Checkbox, Input, Typography } from 'antd';
 import { useRef, useState, type ChangeEvent, type DragEvent, type FormEvent, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
@@ -28,7 +29,6 @@ import {
 } from '../../jobs/applicationForm';
 import { jobPath } from '../../jobs/jobPaths';
 import { fontSize, space, status } from '../../theme/tokens';
-import { Icon } from '../dashboard/Icon';
 import { Alert } from '../ui/Alert';
 import { Button } from '../ui/Button';
 import { CompanyMark, JobBadges } from './JobParts';
@@ -57,7 +57,7 @@ function FieldError({ id, children }: Readonly<{ id: string; children: ReactNode
         margin: `${space[0.75]}px 0 0`,
       }}
     >
-      <Icon name="warning" size={14} style={{ marginTop: 1 }} />
+      <WarningOutlined aria-hidden className="text-[14px]" style={{ marginTop: 1 }} />
       {children}
     </Typography.Paragraph>
   );
@@ -152,7 +152,7 @@ function ResumePicker({
       />
       {file ? (
         <div className={`tp-resume-file${tone}`}>
-          <Icon name="document" size={32} />
+          <FileOutlined aria-hidden className="text-[32px]" />
           <div className="tp-resume-file-text">
             <p className="tp-resume-file-name tp-truncate">{file.name}</p>
             <p className="tp-resume-file-size">{formatFileSize(file.size)}</p>
@@ -161,13 +161,13 @@ function ResumePicker({
             Replace
           </Button>
           <Button variant="ghost" size="sm" onClick={() => choose(null)} aria-label={`Remove ${file.name}`}>
-            <Icon name="x-mark" size={16} />
+            <CloseOutlined aria-hidden className="text-[16px]" />
           </Button>
         </div>
       ) : (
         // Pointer-only shortcut to the input above, which carries the accessible name.
         <div aria-hidden="true" onClick={openPicker} className={`tp-resume-zone${tone}`}>
-          <Icon name="upload" size={32} />
+          <UploadOutlined aria-hidden className="text-[32px]" />
           <p>
             <strong>Choose a file</strong> or drag it here
           </p>

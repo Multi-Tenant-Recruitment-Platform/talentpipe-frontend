@@ -1,3 +1,4 @@
+import { CopyOutlined } from '@ant-design/icons';
 import { Card } from 'antd';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { jobsApi } from '../../api/jobs';
@@ -84,7 +85,7 @@ export function CreateJobVacancyPage() {
       <Card>
         {source.notFound ? (
           <EmptyState
-            icon="document-duplicate"
+            icon={CopyOutlined}
             title="That vacancy can't be copied"
             description="It no longer exists, or it belongs to another workspace. You can still start a new vacancy from scratch."
             action={

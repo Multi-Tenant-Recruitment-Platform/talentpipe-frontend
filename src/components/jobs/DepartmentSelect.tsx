@@ -1,7 +1,7 @@
+import { PlusOutlined } from '@ant-design/icons';
 import { Divider, Select, Typography } from 'antd';
 import { useState } from 'react';
 import { fontSize, space } from '../../theme/tokens';
-import { Icon } from '../dashboard/Icon';
 import { Button } from '../ui/Button';
 
 /**
@@ -84,8 +84,8 @@ export function DepartmentSelect({
                     onChange(trimmed);
                     setQuery('');
                   }}
+                  icon={<PlusOutlined aria-hidden className="me-1.5 text-[14px]" />}
                 >
-                  <Icon name="plus" size={14} style={{ marginInlineEnd: space[0.75] }} />
                   Use “{trimmed}”
                 </Button>
               </div>

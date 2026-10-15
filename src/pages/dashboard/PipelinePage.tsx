@@ -1,9 +1,9 @@
+import { ClockCircleOutlined, GlobalOutlined, ThunderboltOutlined } from '@ant-design/icons';
 import { Card as AntCard, Col, Flex, Row, Table, Typography } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { Badge } from '../../components/dashboard/Badge';
 import { Card } from '../../components/dashboard/Card';
 import { HiringFunnel } from '../../components/dashboard/HiringFunnel';
-import { Icon, type IconName } from '../../components/dashboard/Icon';
 import { PageHeader } from '../../components/dashboard/PageHeader';
 import { Alert } from '../../components/ui/Alert';
 import { hiringFunnel, jobPipelines, pipelineInsights } from '../../data/mockDashboard';
@@ -16,6 +16,7 @@ import {
   slate,
   status,
 } from '../../theme/tokens';
+import type { IconComponent } from '../../components/ui/icon';
 
 const STAGE_LABELS = ['Applied', 'Screening', 'Interview', 'Offer', 'Hired'];
 /** Ordered stages read as one measure deepening, not five categories. */
@@ -41,28 +42,28 @@ export function PipelinePage() {
    * bottleneck. The third is a fact with no valence, so it stays neutral.
    */
   const insights: {
-    icon: IconName;
+    icon: IconComponent;
     label: string;
     value: string;
     hint: string;
     chip: { bg: string; fg: string };
   }[] = [
     {
-      icon: 'bolt',
+      icon: ThunderboltOutlined,
       label: 'Fastest stage',
       value: pipelineInsights.fastestStage.label,
       hint: `~${pipelineInsights.fastestStage.days} days on average`,
       chip: { bg: status.successBg, fg: status.successText },
     },
     {
-      icon: 'clock',
+      icon: ClockCircleOutlined,
       label: 'Slowest stage',
       value: pipelineInsights.slowestStage.label,
       hint: `~${pipelineInsights.slowestStage.days} days on average`,
       chip: { bg: status.warningBg, fg: status.warningText },
     },
     {
-      icon: 'globe',
+      icon: GlobalOutlined,
       label: 'Top candidate source',
       value: pipelineInsights.topSource.label,
       hint: `${pipelineInsights.topSource.share}% of all applicants`,
@@ -173,7 +174,7 @@ export function PipelinePage() {
                     color: insight.chip.fg,
                   }}
                 >
-                  <Icon name={insight.icon} size={20} />
+                  <insight.icon aria-hidden className="text-[20px]" />
                 </span>
                 <div style={{ minWidth: 0 }}>
                   <Typography.Text type="secondary" style={{ display: 'block', fontSize: fontSize.caption }}>

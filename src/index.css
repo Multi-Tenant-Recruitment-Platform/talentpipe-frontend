@@ -1,154 +1,263 @@
+/*
+ * Cascade order, lowest to highest. antd's runtime styles land in `antd` via
+ * <StyleProvider layer> (src/main.tsx), so:
+ *   - base      — our reset and element defaults; antd always beats them.
+ *   - antd      — every antd component rule.
+ *   - components — overrides.css; beats antd at any specificity.
+ *   - utilities — Tailwind classes; beat everything above.
+ * Nothing in this project may be unlayered: an unlayered rule outranks every
+ * layer, so a bare `a { color }` would silently restyle antd link buttons.
+ */
+@layer theme, base, antd, components, utilities;
+
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap');
-@import './styles/tokens.css';
+
+/* Theme + utilities only. Preflight is left out on purpose: antd needs no
+   reset, and Preflight would strip the margins every plain heading, paragraph
+   and list here relies on. The few resets we do want are in `base` below. */
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/utilities.css' layer(utilities);
+
+@import './styles/tokens.css' layer(theme);
+@import './styles/overrides.css' layer(components);
 
 /*
- * Ant Design ships no global reset — its styles are scoped to `.ant-*` — so
- * these few rules replace what Tailwind's Preflight used to provide. Component
- * styling belongs in the theme (src/theme/antdTheme.ts); anything that genuinely
- * cannot be expressed there lives in styles/overrides.css. Every value comes
- * from styles/tokens.css.
+ * Tailwind's theme, projected from the --tp-* tokens so a utility class and the
+ * antd theme can never disagree. `inline` makes utilities emit the var()
+ * itself. Spacing and breakpoints keep Tailwind's defaults: every --tp-space-*
+ * is a multiple of its 4px step (space-2 = 16px = p-4), and the default
+ * breakpoints already equal `breakpoint` in tokens.ts.
  */
+@theme inline {
+  /* Only TalentPipe colours exist — an off-palette `bg-red-500` is a build-time no-op. */
+  --color-*: initial;
+  --color-white: var(--tp-surface);
 
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
+  --color-slate-50: var(--tp-slate-50);
+  --color-slate-100: var(--tp-slate-100);
+  --color-slate-200: var(--tp-slate-200);
+  --color-slate-300: var(--tp-slate-300);
+  --color-slate-400: var(--tp-slate-400);
+  --color-slate-500: var(--tp-slate-500);
+  --color-slate-600: var(--tp-slate-600);
+  --color-slate-700: var(--tp-slate-700);
+  --color-slate-800: var(--tp-slate-800);
+  --color-slate-900: var(--tp-slate-900);
+
+  --color-primary-50: var(--tp-primary-50);
+  --color-primary-100: var(--tp-primary-100);
+  --color-primary-200: var(--tp-primary-200);
+  --color-primary-500: var(--tp-primary-500);
+  --color-primary-600: var(--tp-primary-600);
+  --color-primary-700: var(--tp-primary-700);
+  --color-primary-900: var(--tp-primary-900);
+  --color-primary-950: var(--tp-primary-950);
+
+  --color-success: var(--tp-success);
+  --color-success-bg: var(--tp-success-bg);
+  --color-success-text: var(--tp-success-text);
+  --color-warning: var(--tp-warning);
+  --color-warning-bg: var(--tp-warning-bg);
+  --color-warning-text: var(--tp-warning-text);
+  --color-error: var(--tp-error);
+  --color-error-bg: var(--tp-error-bg);
+  --color-error-text: var(--tp-error-text);
+
+  --color-surface: var(--tp-surface);
+  --color-canvas: var(--tp-canvas);
+  --color-sunken: var(--tp-sunken);
+
+  --color-data-1: var(--tp-data-1);
+  --color-data-2: var(--tp-data-2);
+  --color-data-3: var(--tp-data-3);
+  --color-data-4: var(--tp-data-4);
+  --color-data-5: var(--tp-data-5);
+
+  --font-sans: var(--tp-font-sans);
+
+  --text-caption: var(--tp-font-caption);
+  --text-small: var(--tp-font-small);
+  --text-body: var(--tp-font-body);
+  --text-lead: var(--tp-font-lead);
+  --text-title: var(--tp-font-title);
+  --text-section: var(--tp-font-section);
+  --text-heading: var(--tp-font-heading);
+  --text-display: var(--tp-font-display);
+  --text-hero: var(--tp-font-hero);
+
+  --leading-tight: var(--tp-leading-tight);
+  --leading-snug: var(--tp-leading-snug);
+  --leading-normal: var(--tp-leading-normal);
+
+  --tracking-display: var(--tp-tracking-display);
+  --tracking-heading: var(--tp-tracking-heading);
+  --tracking-caps: var(--tp-tracking-caps);
+
+  --radius-sm: var(--tp-radius-sm);
+  --radius-md: var(--tp-radius-md);
+  --radius-lg: var(--tp-radius-lg);
+  --radius-xl: var(--tp-radius-xl);
+  --radius-2xl: var(--tp-radius-2xl);
+  --radius-pill: var(--tp-radius-pill);
+
+  --shadow-xs: var(--tp-shadow-xs);
+  --shadow-sm: var(--tp-shadow-sm);
+  --shadow-md: var(--tp-shadow-md);
+  --shadow-lg: var(--tp-shadow-lg);
+  --shadow-xl: var(--tp-shadow-xl);
+  --shadow-primary: var(--tp-shadow-primary);
+  --shadow-focus: var(--tp-focus-ring);
+  --shadow-data-ring: var(--tp-data-ring);
+
+  --ease-standard: var(--tp-motion-ease);
 }
 
-html,
-body,
-#root {
-  height: 100%;
-}
+@layer base {
+  /*
+   * Ant Design ships no global reset — its styles are scoped to `.ant-*` — so
+   * these few rules stand in for one. Component styling belongs in the theme
+   * (src/theme/antdTheme.ts); anything that genuinely cannot be expressed there
+   * lives in styles/overrides.css. Every value comes from styles/tokens.css.
+   */
 
-body {
-  margin: 0;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  /* Contextual alternates only. IBM Plex Sans needs no stylistic-set
-     overrides — its default forms are the institutional ones. */
-  font-feature-settings: 'calt';
-}
-
-img,
-svg {
-  display: block;
-  max-width: 100%;
-}
-
-button,
-input,
-select,
-textarea {
-  font: inherit;
-}
-
-/*
- * ==========================================================================
- * Browser surfaces
- * ==========================================================================
- * The parts nobody draws. Selection, the caret, scrollbars and focus rings
- * ship with OS defaults that belong to no design system, and leaving them
- * default is the clearest signal that a page was assembled rather than built.
- */
-
-::selection {
-  background: var(--tp-primary-100);
-  color: var(--tp-primary-900);
-}
-
-:root {
-  /* The caret matches the accent, so the insertion point is unmistakably the
-     same "you are here" blue as the active nav item. */
-  caret-color: var(--tp-primary-600);
-  accent-color: var(--tp-primary-600);
-  color-scheme: light;
-  scrollbar-color: var(--tp-slate-300) transparent;
-  scrollbar-width: thin;
-}
-
-/* WebKit needs the long form; it ignores scrollbar-color. */
-::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  border: 2px solid transparent;
-  border-radius: var(--tp-radius-pill);
-  background: var(--tp-slate-300);
-  background-clip: content-box;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: var(--tp-slate-400);
-  background-clip: content-box;
-}
-
-/*
- * One focus ring for everything antd does not already ring. Keyboard-only —
- * `:focus-visible` keeps it off mouse clicks — and it never removes the
- * outline without putting an equivalent ring back.
- *
- * No `border-radius` here on purpose: the outline already follows whatever
- * radius the element has, and setting one would square off the pill-shaped
- * controls (.tp-social-chip, .tp-org-tag-inner) the moment they take focus.
- */
-:where(a, button, [role='button'], summary):focus-visible {
-  outline: 2px solid var(--tp-primary-600);
-  outline-offset: 2px;
-}
-
-/* Links carry the accent and a readable underline offset, not a 1px crowd. */
-a {
-  color: var(--tp-primary-700);
-  text-underline-offset: 3px;
-  text-decoration-thickness: 1px;
-}
-
-/*
- * Figures that must be comparable down a column. Applied to the elements that
- * genuinely tabulate — tables, statistics, KPI values — rather than globally,
- * because tabular digits in running prose read as slightly loose.
- */
-.ant-table-cell,
-.ant-statistic-content,
-[data-numeric] {
-  font-variant-numeric: tabular-nums;
-}
-
-/*
- * Motion is an acknowledgement here, never a performance. Anyone who has asked
- * the OS for less gets none of it.
- */
-@media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
+    box-sizing: border-box;
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    margin: 0;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    /* Contextual alternates only. IBM Plex Sans needs no stylistic-set
+       overrides — its default forms are the institutional ones. */
+    font-feature-settings: 'calt';
+  }
+
+  img,
+  svg {
+    display: block;
+    max-width: 100%;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+  }
+
+  /*
+   * ==========================================================================
+   * Browser surfaces
+   * ==========================================================================
+   * The parts nobody draws. Selection, the caret, scrollbars and focus rings
+   * ship with OS defaults that belong to no design system, and leaving them
+   * default is the clearest signal that a page was assembled rather than built.
+   */
+
+  ::selection {
+    background: var(--tp-primary-100);
+    color: var(--tp-primary-900);
+  }
+
+  :root {
+    /* The caret matches the accent, so the insertion point is unmistakably the
+       same "you are here" blue as the active nav item. */
+    caret-color: var(--tp-primary-600);
+    accent-color: var(--tp-primary-600);
+    color-scheme: light;
+    scrollbar-color: var(--tp-slate-300) transparent;
+    scrollbar-width: thin;
+  }
+
+  /* WebKit needs the long form; it ignores scrollbar-color. */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    border: 2px solid transparent;
+    border-radius: var(--tp-radius-pill);
+    background: var(--tp-slate-300);
+    background-clip: content-box;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--tp-slate-400);
+    background-clip: content-box;
+  }
+
+  /*
+   * One focus ring for everything antd does not already ring. Keyboard-only —
+   * `:focus-visible` keeps it off mouse clicks — and it never removes the
+   * outline without putting an equivalent ring back.
+   *
+   * No `border-radius` here on purpose: the outline already follows whatever
+   * radius the element has, and setting one would square off the pill-shaped
+   * controls (.tp-social-chip, .tp-org-tag-inner) the moment they take focus.
+   */
+  :where(a, button, [role='button'], summary):focus-visible {
+    outline: 2px solid var(--tp-primary-600);
+    outline-offset: 2px;
+  }
+
+  /*
+   * Motion is an acknowledgement here, never a performance. Anyone who has asked
+   * the OS for less gets none of it. `!important` inside a low layer still wins:
+   * important declarations reverse layer order, so this beats antd's motion too.
+   */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
   }
 }
 
 /*
- * Ant Design has no screen-reader-only utility, and six components depend on
- * one. It must clip rather than `display: none` — the file input inside the
- * company image picker has to stay focusable and clickable.
+ * Links carry the accent and a readable underline offset, not a 1px crowd.
+ *
+ * Written into antd's own layer on purpose. antd's reset ships a bare
+ * `:where(.css-…) a { color: colorLink }`, which would beat this from `base`.
+ * Here, `html a` outranks that reset by one type selector, yet still loses to
+ * every antd rule with a class — link buttons, Typography.Link, menu items —
+ * exactly as the unlayered rule did before antd moved into a layer.
  */
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
+@layer antd {
+  html a {
+    color: var(--tp-primary-700);
+    text-underline-offset: 3px;
+    text-decoration-thickness: 1px;
+  }
+}
+
+@layer components {
+  /*
+   * Figures that must be comparable down a column. Applied to the elements that
+   * genuinely tabulate — tables, statistics, KPI values — rather than globally,
+   * because tabular digits in running prose read as slightly loose. In
+   * `components` rather than `base` so it still lands on antd's own cells.
+   */
+  .ant-table-cell,
+  .ant-statistic-content,
+  [data-numeric] {
+    font-variant-numeric: tabular-nums;
+  }
 }

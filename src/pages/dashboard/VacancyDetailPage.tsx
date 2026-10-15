@@ -1,10 +1,10 @@
+import { ArrowLeftOutlined, SolutionOutlined } from '@ant-design/icons';
 import { Card, Typography } from 'antd';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useCan } from '../../auth/useCan';
 import { EmptyState } from '../../components/dashboard/EmptyState';
 import { ErrorState, RowsSkeleton } from '../../components/dashboard/ErrorState';
-import { Icon } from '../../components/dashboard/Icon';
 import { useVacancyLifecycle } from '../../components/jobs/useVacancyLifecycle';
 import { VacancyActions } from '../../components/jobs/VacancyActions';
 import { VacancyDetailsBody } from '../../components/jobs/VacancyDetailsBody';
@@ -75,7 +75,7 @@ export function VacancyDetailPage() {
   const backTo = `/dashboard/jobs${listSearch}`;
   const backLink = (
     <Link to={backTo} className="tp-back-link">
-      <Icon name="arrow-left" size={16} />
+      <ArrowLeftOutlined aria-hidden className="text-[16px]" />
       Back to vacancies
     </Link>
   );
@@ -98,7 +98,7 @@ export function VacancyDetailPage() {
         <Card style={{ marginTop: space[2] }}>
           {notFound ? (
             <EmptyState
-              icon="briefcase"
+              icon={SolutionOutlined}
               title="This vacancy doesn't exist or was removed"
               description="It may have been deleted, or it belongs to another workspace."
               action={

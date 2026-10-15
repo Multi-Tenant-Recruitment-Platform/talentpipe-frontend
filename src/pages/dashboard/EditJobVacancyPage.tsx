@@ -1,3 +1,4 @@
+import { SolutionOutlined } from '@ant-design/icons';
 import { Card } from 'antd';
 import { useEffect, useMemo, useRef } from 'react';
 import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-router-dom';
@@ -98,7 +99,7 @@ export function EditJobVacancyPage() {
       <Card>
         {notFound ? (
           <EmptyState
-            icon="briefcase"
+            icon={SolutionOutlined}
             title="This vacancy doesn't exist or was removed"
             description="It may have been deleted, or it belongs to another workspace."
             action={

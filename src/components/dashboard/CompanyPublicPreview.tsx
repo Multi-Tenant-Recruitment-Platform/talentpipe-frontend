@@ -1,3 +1,10 @@
+import {
+  CalendarOutlined,
+  CloseOutlined,
+  EnvironmentOutlined,
+  EyeOutlined,
+  SolutionOutlined,
+} from '@ant-design/icons';
 import { Flex, Modal, Typography } from 'antd';
 import { Link } from 'react-router-dom';
 import { formatLocation, websiteLabel, type CompanyFormValues } from '../../dashboard/companyProfile';
@@ -6,7 +13,6 @@ import { CompanyBenefits } from './CompanyBenefits';
 import { CompanyCoverImage } from './CompanyCoverImage';
 import { CompanySocialRow } from './CompanySocialLinks';
 import { CompanyStoryInformation } from './CompanyStoryInformation';
-import { Icon } from './Icon';
 import { fontSize, slate } from '../../theme/tokens';
 
 /**
@@ -86,11 +92,16 @@ export function CompanyPublicPreview({
         /* Says plainly that this is a rehearsal, not the live page. */
         <Flex align="center" justify="space-between" gap={12}>
           <Typography.Text type="secondary" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: fontSize.caption }}>
-            <Icon name="eye" size={16} />
+            <EyeOutlined aria-hidden className="text-[16px]" />
             Preview — this is how your profile reads to a candidate
           </Typography.Text>
-          <Button type="button" size="sm" variant="ghost" onClick={onClose}>
-            <Icon name="x-mark" size={16} />
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            onClick={onClose}
+            icon={<CloseOutlined aria-hidden className="text-[16px]" />}
+          >
             Close
           </Button>
         </Flex>
@@ -112,13 +123,13 @@ export function CompanyPublicPreview({
               <Flex wrap align="center" gap={16} style={{ marginTop: 6 }}>
                 {location && (
                   <Typography.Text type="secondary" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                    <Icon name="map-pin" size={16} />
+                    <EnvironmentOutlined aria-hidden className="text-[16px]" />
                     {location}
                   </Typography.Text>
                 )}
                 {values.foundedYear && (
                   <Typography.Text type="secondary" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                    <Icon name="calendar" size={16} />
+                    <CalendarOutlined aria-hidden className="text-[16px]" />
                     Founded {values.foundedYear}
                   </Typography.Text>
                 )}
@@ -184,7 +195,7 @@ export function CompanyPublicPreview({
               not a Button — it navigates, and nesting one in the other is
               invalid markup. */}
           <Link to="/jobs" onClick={onClose} className="tp-cta-link">
-            <Icon name="briefcase" size={16} />
+            <SolutionOutlined aria-hidden className="text-[16px]" />
             View open positions
           </Link>
         </Flex>

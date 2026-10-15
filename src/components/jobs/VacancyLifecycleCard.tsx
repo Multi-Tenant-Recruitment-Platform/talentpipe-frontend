@@ -1,9 +1,9 @@
+import { CheckOutlined } from '@ant-design/icons';
 import { Card, Typography } from 'antd';
 import type { JobVacancyResponse, VacancyStatus } from '../../api/types';
 import { VACANCY_STATUS_LABEL } from '../../dashboard/jobVacancy';
 import { fontSize, space } from '../../theme/tokens';
 import { formatDate, formatRelativeTime } from '../../utils/format';
-import { Icon } from '../dashboard/Icon';
 
 const ORDER: VacancyStatus[] = ['DRAFT', 'PUBLISHED', 'CLOSED', 'ARCHIVED'];
 
@@ -74,7 +74,7 @@ export function VacancyLifecycleCard({ vacancy }: Readonly<{ vacancy: JobVacancy
               aria-current={state === 'current' ? 'step' : undefined}
             >
               <span aria-hidden="true" className="tp-lifecycle-mark">
-                {state === 'done' ? <Icon name="check" size={12} /> : null}
+                {state === 'done' ? <CheckOutlined aria-hidden className="text-[12px]" /> : null}
               </span>
               <span className="tp-lifecycle-text">
                 <span className="tp-lifecycle-name">{VACANCY_STATUS_LABEL[status]}</span>

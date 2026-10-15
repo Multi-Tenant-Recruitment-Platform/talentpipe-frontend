@@ -1,4 +1,20 @@
 import {
+  AppstoreOutlined,
+  ArrowLeftOutlined,
+  BankOutlined,
+  BellOutlined,
+  CalendarOutlined,
+  DownOutlined,
+  FunnelPlotOutlined,
+  LogoutOutlined,
+  MenuOutlined,
+  SearchOutlined,
+  SettingOutlined,
+  SolutionOutlined,
+  TeamOutlined,
+  UserAddOutlined,
+} from '@ant-design/icons';
+import {
   Badge,
   Button,
   Divider,
@@ -21,7 +37,6 @@ import type { Permission } from '../auth/permissions';
 import { useCan } from '../auth/useCan';
 import { Avatar } from '../components/dashboard/Avatar';
 import { CompanyLogo } from '../components/dashboard/CompanyLogo';
-import { Icon, type IconName } from '../components/dashboard/Icon';
 import { RoleBadge } from '../components/dashboard/RoleBadge';
 import { CompanyProfileProvider, useCompanyIdentity } from '../dashboard/CompanyProfileContext';
 import { TeamSummaryProvider } from '../dashboard/TeamSummaryContext';
@@ -29,28 +44,29 @@ import { activeTenant } from '../tenant/activeTenant';
 import { formatRole } from '../utils/format';
 import { tenantStorage } from '../utils/tenantStorage';
 import { fontSize, slate } from '../theme/tokens';
+import type { IconComponent } from '../components/ui/icon';
 
 /** Each entry names the permission that earns it a place in the sidebar. */
 const NAV_ITEMS: {
   to: string;
   label: string;
-  icon: IconName;
+  icon: IconComponent;
   end?: boolean;
   permission: Permission;
 }[] = [
-  { to: '/dashboard', label: 'Overview', icon: 'squares-2x2', end: true, permission: 'overview.view' },
+  { to: '/dashboard', label: 'Overview', icon: AppstoreOutlined, end: true, permission: 'overview.view' },
   // Vacancies sit above Pipeline because that is the order the work happens
   // in: a role is opened, then its candidates move through it.
-  { to: '/dashboard/jobs', label: 'Job Vacancies', icon: 'briefcase', permission: 'jobs.manage' },
-  { to: '/dashboard/pipeline', label: 'Pipeline', icon: 'funnel', permission: 'pipeline.view' },
-  { to: '/dashboard/team', label: 'Team', icon: 'users', permission: 'team.view' },
+  { to: '/dashboard/jobs', label: 'Job Vacancies', icon: SolutionOutlined, permission: 'jobs.manage' },
+  { to: '/dashboard/pipeline', label: 'Pipeline', icon: FunnelPlotOutlined, permission: 'pipeline.view' },
+  { to: '/dashboard/team', label: 'Team', icon: TeamOutlined, permission: 'team.view' },
   {
     to: '/dashboard/profile',
     label: 'Profile Management',
-    icon: 'building',
+    icon: BankOutlined,
     permission: 'company.profile.view',
   },
-  { to: '/dashboard/settings', label: 'Company Settings', icon: 'cog', permission: 'settings.view' },
+  { to: '/dashboard/settings', label: 'Company Settings', icon: SettingOutlined, permission: 'settings.view' },
 ];
 
 /** Notification dismissals are per-workspace, like everything else cached. */
@@ -58,9 +74,9 @@ const NOTIFICATIONS_SEEN = 'notifications.seen';
 
 /** Mock notification list — TODO(sprint2): wire to the notification module. */
 const NOTIFICATIONS = [
-  { id: 'n-1', icon: 'calendar' as IconName, text: 'Interview with Malith Jayasuriya starts in 30 minutes', time: 'Just now' },
-  { id: 'n-2', icon: 'user-plus' as IconName, text: 'Kasun Silva accepted your invitation', time: '1 hour ago' },
-  { id: 'n-3', icon: 'briefcase' as IconName, text: '5 new applications for UX Designer', time: '3 hours ago' },
+  { id: 'n-1', icon: CalendarOutlined, text: 'Interview with Malith Jayasuriya starts in 30 minutes', time: 'Just now' },
+  { id: 'n-2', icon: UserAddOutlined, text: 'Kasun Silva accepted your invitation', time: '1 hour ago' },
+  { id: 'n-3', icon: SolutionOutlined, text: '5 new applications for UX Designer', time: '3 hours ago' },
 ];
 
 /**
@@ -95,7 +111,7 @@ function NotificationsPanel() {
         {NOTIFICATIONS.map((n) => (
           <li key={n.id} className="tp-notification">
             <span className="tp-notification-icon">
-              <Icon name={n.icon} size={16} />
+              <n.icon aria-hidden className="text-[16px]" />
             </span>
             <div>
               <Typography.Text style={{ display: 'block' }}>{n.text}</Typography.Text>
@@ -152,7 +168,7 @@ function AccountPanel() {
             // and to turn red under the cursor — never a faint
             // unlabelled icon sitting a click away from the avatar.
             danger: true,
-            icon: <Icon name="logout" size={16} />,
+            icon: <LogoutOutlined aria-hidden className="text-[16px]" />,
             label: 'Log out',
             onClick: () => void handleLogout(),
           },
@@ -181,7 +197,7 @@ function SidebarContent({ onNavigate }: Readonly<{ onNavigate?: () => void }>) {
           bottom border form one continuous line across the fold. */}
       <Flex align="center" gap={10} className="tp-sidebar-brand">
         <span className="tp-brand-mark tp-brand-mark-sm">
-          <Icon name="funnel" size={16} />
+          <FunnelPlotOutlined aria-hidden className="text-[16px]" />
         </span>
         <Typography.Text strong style={{ fontSize: fontSize.lead, letterSpacing: '-0.01em' }}>
           TalentPipe
@@ -198,7 +214,7 @@ function SidebarContent({ onNavigate }: Readonly<{ onNavigate?: () => void }>) {
           selectedKeys={selectedKeyFor(pathname)}
           items={navItems.map((item) => ({
             key: item.to,
-            icon: <Icon name={item.icon} size={20} />,
+            icon: <item.icon aria-hidden className="text-[20px]" />,
             label: (
               <Link to={item.to} onClick={onNavigate}>
                 {item.label}
@@ -219,7 +235,7 @@ function SidebarContent({ onNavigate }: Readonly<{ onNavigate?: () => void }>) {
           items={[
             {
               key: 'back-to-site',
-              icon: <Icon name="arrow-left" size={20} />,
+              icon: <ArrowLeftOutlined aria-hidden className="text-[20px]" />,
               label: (
                 <Link to="/" onClick={onNavigate}>
                   Back to site
@@ -329,7 +345,7 @@ function DashboardChrome() {
             onClick={() => setSidebarOpen(true)}
             aria-label="Open navigation"
             className="tp-mobile-only"
-            icon={<Icon name="menu" size={20} />}
+            icon={<MenuOutlined aria-hidden className="text-[20px]" />}
           />
 
           {/* Search leads: it is the highest-frequency action in a recruiter's
@@ -344,7 +360,7 @@ function DashboardChrome() {
               placeholder="Search jobs, candidates, people…"
               aria-label="Search"
               aria-keyshortcuts="Control+K Meta+K"
-              prefix={<Icon name="search" size={18} style={{ color: slate[400] }} />}
+              prefix={<SearchOutlined aria-hidden className="text-[18px]" style={{ color: slate[400] }} />}
               // Discoverability for the shortcut the effect above implements.
               suffix={
                 <Tag aria-hidden="true" className="tp-kbd">
@@ -373,7 +389,7 @@ function DashboardChrome() {
                   {company.logoUrl ? (
                     <CompanyLogo src={company.logoUrl} name={company.name} size="sm" style={{ width: 18, height: 18, borderRadius: 5 }} />
                   ) : (
-                    <Icon name="building" size={14} style={{ color: slate[500] }} />
+                    <BankOutlined aria-hidden className="text-[14px]" style={{ color: slate[500] }} />
                   )}
                   <span className="tp-org-tag-name">{company.name}</span>
                 </Flex>
@@ -394,7 +410,7 @@ function DashboardChrome() {
                 className="tp-icon-button"
                 icon={
                   <Badge dot={unread} offset={[-1, 2]}>
-                    <Icon name="bell" size={20} />
+                    <BellOutlined aria-hidden className="text-[20px]" />
                   </Badge>
                 }
               />
@@ -424,7 +440,7 @@ function DashboardChrome() {
                   <span className="tp-profile-name">{fullName}</span>
                   <span className="tp-profile-role">{user ? formatRole(user.role) : ''}</span>
                 </span>
-                <Icon name="chevron-down" size={16} className="tp-profile-chevron" />
+                <DownOutlined aria-hidden className="text-[16px] tp-profile-chevron" />
               </button>
             </Dropdown>
           </Space>

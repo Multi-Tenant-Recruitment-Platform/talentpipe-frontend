@@ -1,3 +1,4 @@
+import { EditOutlined, EyeOutlined } from '@ant-design/icons';
 import { Flex, Progress, Typography } from 'antd';
 import type { ReactNode } from 'react';
 import { profileCompleteness, type CompanyFormValues } from '../../dashboard/companyProfile';
@@ -10,7 +11,6 @@ import { CompanyRegistrationInformation } from './CompanyRegistrationInformation
 import { CompanySocialLinks } from './CompanySocialLinks';
 import { CompanyStoryInformation } from './CompanyStoryInformation';
 import { ContactInformation } from './ContactInformation';
-import { Icon } from './Icon';
 import { LocationInformation } from './LocationInformation';
 import { fontSize, primary, slate } from '../../theme/tokens';
 
@@ -180,14 +180,22 @@ export function CompanyProfileView({
         </Typography.Text>
         <Flex wrap align="center" gap={8}>
           {onPreview && (
-            <Button type="button" variant="ghost" onClick={onPreview}>
-              <Icon name="eye" size={16} />
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={onPreview}
+              icon={<EyeOutlined aria-hidden className="text-[16px]" />}
+            >
               Preview public profile
             </Button>
           )}
           {canEdit && (
-            <Button type="button" variant="secondary" onClick={onEdit}>
-              <Icon name="pencil" size={16} />
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={onEdit}
+              icon={<EditOutlined aria-hidden className="text-[16px]" />}
+            >
               Edit profile
             </Button>
           )}

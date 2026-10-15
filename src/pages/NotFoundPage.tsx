@@ -1,6 +1,6 @@
+import { ArrowLeftOutlined, SearchOutlined } from '@ant-design/icons';
 import { Flex, Result, Typography } from 'antd';
 import { Link } from 'react-router-dom';
-import { Icon } from '../components/dashboard/Icon';
 import { fontSize, primary } from '../theme/tokens';
 
 /**
@@ -24,7 +24,7 @@ export function NotFoundPage() {
             color: primary[600],
           }}
         >
-          <Icon name="search" size={28} />
+          <SearchOutlined aria-hidden className="text-[28px]" />
         </span>
       }
       title={
@@ -41,7 +41,7 @@ export function NotFoundPage() {
       extra={
         <Flex wrap justify="center" gap={12}>
           <Link to="/" className="tp-cta-link">
-            <Icon name="arrow-left" size={16} />
+            <ArrowLeftOutlined aria-hidden className="text-[16px]" />
             Back to home
           </Link>
           <Link to="/jobs" className="tp-cta-link tp-cta-link-ghost">

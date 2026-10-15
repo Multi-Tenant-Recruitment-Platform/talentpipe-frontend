@@ -9,6 +9,7 @@ const css = readFileSync('src/styles/tokens.css', 'utf8');
 import {
   dataMarkRing,
   dataSequence,
+  fontFamily,
   fontSize,
   fontWeight,
   layout,
@@ -100,6 +101,10 @@ describe('tokens.css mirrors tokens.ts', () => {
     expect(cssVar('--tp-tracking-display')).toBe(letterSpacing.display);
     expect(cssVar('--tp-tracking-heading')).toBe(letterSpacing.heading);
     expect(cssVar('--tp-tracking-caps')).toBe(letterSpacing.caps);
+  });
+
+  it('font family', () => {
+    expect(cssVar('--tp-font-sans')).toBe(fontFamily);
   });
 
   it.each(Object.entries(radius))('radius-%s', (name, px) => {

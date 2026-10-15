@@ -1,9 +1,9 @@
+import { ArrowRightOutlined, EnvironmentOutlined } from '@ant-design/icons';
 import { useId } from 'react';
 import { Link } from 'react-router-dom';
 import type { JobSummary } from '../../api/types';
 import { formatSalary } from '../../jobs/jobLabels';
 import { jobPath } from '../../jobs/jobPaths';
-import { Icon } from '../dashboard/Icon';
 import { CompanyMark, Deadline, JobBadges, PostedAt } from './JobParts';
 
 /**
@@ -34,7 +34,7 @@ export function JobCard({ job }: Readonly<{ job: JobSummary }>) {
 
       {job.location && (
         <p className="tp-job-meta-item">
-          <Icon name="map-pin" size={16} />
+          <EnvironmentOutlined aria-hidden className="text-[16px]" />
           <span className="sr-only">Location: </span>
           <span>{job.location}</span>
         </p>
@@ -53,7 +53,7 @@ export function JobCard({ job }: Readonly<{ job: JobSummary }>) {
         {job.applicationDeadline ? <Deadline date={job.applicationDeadline} /> : <span />}
         <Link to={jobPath(job)} className="tp-cta-link tp-job-card-cta">
           View Job<span className="sr-only">: {job.title}</span>
-          <Icon name="arrow-left" size={16} style={{ transform: 'rotate(180deg)' }} />
+          <ArrowRightOutlined aria-hidden className="text-[16px]" />
         </Link>
       </div>
     </article>

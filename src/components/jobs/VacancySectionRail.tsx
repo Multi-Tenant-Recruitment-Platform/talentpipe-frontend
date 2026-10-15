@@ -1,5 +1,5 @@
+import { CheckOutlined, WarningOutlined } from '@ant-design/icons';
 import { VACANCY_SECTIONS, type SectionProgress } from '../../dashboard/jobVacancy';
-import { Icon } from '../dashboard/Icon';
 
 /**
  * The form's table of contents, pinned beside it.
@@ -58,9 +58,9 @@ export function VacancySectionRail({
               >
                 <span aria-hidden="true" className="tp-vacancy-rail-mark">
                   {failing ? (
-                    <Icon name="warning" size={13} />
+                    <WarningOutlined aria-hidden className="text-[13px]" />
                   ) : done ? (
-                    <Icon name="check" size={13} />
+                    <CheckOutlined aria-hidden className="text-[13px]" />
                   ) : (
                     section.index
                   )}

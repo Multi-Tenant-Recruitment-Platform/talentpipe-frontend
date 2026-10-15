@@ -1,3 +1,4 @@
+import { SearchOutlined } from '@ant-design/icons';
 import { Flex, Input, Radio, Select, Typography } from 'antd';
 import {
   VACANCY_SEGMENTS,
@@ -7,7 +8,6 @@ import {
   type VacancySort,
 } from '../../dashboard/vacancyList';
 import { fontSize } from '../../theme/tokens';
-import { Icon } from '../dashboard/Icon';
 import { Button } from '../ui/Button';
 
 export const VACANCY_SEARCH_ID = 'vacancy-search';
@@ -87,7 +87,7 @@ export function VacancyToolbar({
             autoComplete="off"
             aria-describedby="vacancy-result-count"
             allowClear
-            prefix={<Icon name="search" size={16} style={{ opacity: 0.45 }} />}
+            prefix={<SearchOutlined aria-hidden className="text-[16px]" style={{ opacity: 0.45 }} />}
           />
         </div>
 

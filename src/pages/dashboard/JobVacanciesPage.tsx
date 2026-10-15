@@ -1,3 +1,4 @@
+import { InboxOutlined, PlusOutlined, SearchOutlined, SolutionOutlined } from '@ant-design/icons';
 import { Card } from 'antd';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
@@ -5,7 +6,6 @@ import type { JobVacancyResponse } from '../../api/types';
 import { useCan } from '../../auth/useCan';
 import { EmptyState } from '../../components/dashboard/EmptyState';
 import { ErrorState, RowsSkeleton } from '../../components/dashboard/ErrorState';
-import { Icon } from '../../components/dashboard/Icon';
 import { PageHeader } from '../../components/dashboard/PageHeader';
 import { useVacancyLifecycle } from '../../components/jobs/useVacancyLifecycle';
 import { moreButtonId } from '../../components/jobs/vacancyFieldIds';
@@ -130,7 +130,7 @@ export function JobVacanciesPage() {
 
   const createButton = canManage ? (
     <Link to="/dashboard/jobs/new" className="tp-cta-link">
-      <Icon name="plus" size={16} />
+      <PlusOutlined aria-hidden className="text-[16px]" />
       Create vacancy
     </Link>
   ) : null;
@@ -177,7 +177,7 @@ export function JobVacanciesPage() {
     body = (
       <Card>
         <EmptyState
-          icon="briefcase"
+          icon={SolutionOutlined}
           title="No vacancies yet"
           description="Create your first one to start collecting applications. It takes about five minutes, and you can save a draft at any point."
           action={createButton ?? undefined}
@@ -215,7 +215,7 @@ export function JobVacanciesPage() {
           </ul>
         ) : selection.filtersActive ? (
           <EmptyState
-            icon="search"
+            icon={SearchOutlined}
             title={
               query.query.trim()
                 ? `No vacancies match “${query.query.trim()}”`
@@ -234,13 +234,13 @@ export function JobVacanciesPage() {
           />
         ) : query.segment === 'ARCHIVED' ? (
           <EmptyState
-            icon="archive-box"
+            icon={InboxOutlined}
             title="Nothing archived"
             description="Closed vacancies you archive are kept here for reporting."
           />
         ) : (
           <EmptyState
-            icon="briefcase"
+            icon={SolutionOutlined}
             title="Nothing in this view"
             description="No vacancies are in this state right now."
             action={

@@ -1,10 +1,11 @@
+import { IdcardOutlined, SendOutlined, SolutionOutlined, UserAddOutlined } from '@ant-design/icons';
 import { Col, Flex, Input, Modal, Radio, Row, Typography, type InputRef } from 'antd';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import type { InvitableRole } from '../../api/types';
 import { Alert, type AlertTone } from '../ui/Alert';
 import { Button } from '../ui/Button';
-import { Icon, type IconName } from './Icon';
 import { fontSize } from '../../theme/tokens';
+import type { IconComponent } from '../ui/icon';
 
 export interface InviteFormValues {
   firstName: string;
@@ -13,18 +14,18 @@ export interface InviteFormValues {
   role: InvitableRole;
 }
 
-const ROLE_OPTIONS: { id: InvitableRole; label: string; description: string; icon: IconName }[] = [
+const ROLE_OPTIONS: { id: InvitableRole; label: string; description: string; icon: IconComponent }[] = [
   {
     id: 'HR_MANAGER',
     label: 'HR Manager',
     description: 'Posts jobs, manages candidates and drives the full pipeline.',
-    icon: 'briefcase',
+    icon: SolutionOutlined,
   },
   {
     id: 'INTERVIEWER',
     label: 'Interviewer',
     description: 'Joins interview panels, scores candidates and leaves feedback.',
-    icon: 'identification',
+    icon: IdcardOutlined,
   },
 ];
 
@@ -121,7 +122,7 @@ export function InviteMemberModal({
               color: '#fff',
             }}
           >
-            <Icon name="user-plus" size={20} />
+            <UserAddOutlined aria-hidden className="text-[20px]" />
           </span>
           <div>
             <Typography.Title level={2} style={{ fontSize: fontSize.lead, margin: 0 }}>
@@ -198,7 +199,7 @@ export function InviteMemberModal({
                   <Col xs={24} sm={12} key={option.id}>
                     <Radio value={option.id} style={{ display: 'block' }}>
                       <Flex align="center" gap={8}>
-                        <Icon name={option.icon} size={16} />
+                        <option.icon aria-hidden className="text-[16px]" />
                         <Typography.Text strong>{option.label}</Typography.Text>
                       </Flex>
                       <Typography.Text type="secondary" style={{ fontSize: fontSize.caption }}>
@@ -215,8 +216,12 @@ export function InviteMemberModal({
             <Button type="button" variant="ghost" onClick={onClose} disabled={submitting}>
               Cancel
             </Button>
-            <Button type="submit" variant="primary" disabled={submitting}>
-              <Icon name="send" size={16} />
+            <Button
+              type="submit"
+              variant="primary"
+              disabled={submitting}
+              icon={<SendOutlined aria-hidden className="text-[16px]" />}
+            >
               {submitting ? 'Sending…' : 'Send invitation'}
             </Button>
           </Flex>

@@ -1,3 +1,4 @@
+import { LinkOutlined } from '@ant-design/icons';
 import { Flex } from 'antd';
 import {
   SOCIAL_FIELDS,
@@ -6,7 +7,6 @@ import {
   type CompanyFormValues,
 } from '../../dashboard/companyProfile';
 import { DetailItem } from './DetailItem';
-import { Icon } from './Icon';
 
 /**
  * The company's presence elsewhere: LinkedIn, Facebook, X.
@@ -39,7 +39,7 @@ export function CompanySocialLinks({
       {shown.map((field) => (
         <DetailItem
           key={field}
-          icon="link"
+          icon={LinkOutlined}
           label={FIELD_LABELS[field]}
           value={values[field] ? websiteLabel(values[field]) : ''}
           href={values[field] || undefined}
@@ -72,7 +72,7 @@ export function CompanySocialRow({ values }: Readonly<{ values: CompanyFormValue
           data-testid={`preview-${field}`}
           className="tp-social-chip"
         >
-          <Icon name="link" size={14} style={{ opacity: 0.55 }} />
+          <LinkOutlined aria-hidden className="text-[14px]" style={{ opacity: 0.55 }} />
           {FIELD_LABELS[field]}
         </a>
       ))}

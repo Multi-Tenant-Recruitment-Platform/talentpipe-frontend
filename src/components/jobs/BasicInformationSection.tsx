@@ -1,10 +1,10 @@
+import { EnvironmentOutlined } from '@ant-design/icons';
 import { DatePicker, Input, InputNumber, Segmented, Select } from 'antd';
 import dayjs from 'dayjs';
 import type { EmploymentType, WorkplaceType } from '../../api/types';
 import { useCompanyProfileContext } from '../../dashboard/CompanyProfileContext';
 import { EMPLOYMENT_TYPES, WORKPLACE_TYPES } from '../../dashboard/jobVacancy';
 import { slate } from '../../theme/tokens';
-import { Icon } from '../dashboard/Icon';
 import { DepartmentSelect } from './DepartmentSelect';
 import type { VacancySectionProps } from './sectionProps';
 import { VacancyField } from './VacancyField';
@@ -101,7 +101,7 @@ export function BasicInformationSection({ values, errors, set }: Readonly<Vacanc
           {...fieldAria('location', errors.location)}
           value={values.location}
           status={errors.location ? 'error' : undefined}
-          prefix={<Icon name="map-pin" size={16} style={{ color: slate[400] }} />}
+          prefix={<EnvironmentOutlined aria-hidden className="text-[16px]" style={{ color: slate[400] }} />}
           placeholder="e.g. Colombo, Sri Lanka"
           onChange={(event) => set('location', event.target.value)}
         />

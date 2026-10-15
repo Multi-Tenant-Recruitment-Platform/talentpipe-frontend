@@ -1,3 +1,4 @@
+import { SolutionOutlined } from '@ant-design/icons';
 import { Card, Skeleton } from 'antd';
 import type { JobSummary } from '../../api/types';
 import type { JobsStatus } from '../../jobs/usePublicJobs';
@@ -69,7 +70,7 @@ export function JobList({
   if (jobs.length === 0) {
     return (
       <Card>
-        <EmptyState icon="briefcase" title={emptyTitle} description={emptyDescription} />
+        <EmptyState icon={SolutionOutlined} title={emptyTitle} description={emptyDescription} />
       </Card>
     );
   }

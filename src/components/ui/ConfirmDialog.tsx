@@ -1,6 +1,6 @@
+import { WarningOutlined } from '@ant-design/icons';
 import { Flex, Typography } from 'antd';
 import { useEffect, useRef, type ReactNode } from 'react';
-import { Icon } from '../dashboard/Icon';
 import { Button } from './Button';
 import { useFocusTrap } from './useFocusTrap';
 import { fontSize, primary, status } from '../../theme/tokens';
@@ -111,7 +111,7 @@ export function ConfirmDialog({
               ...chip,
             }}
           >
-            <Icon name="warning" size={20} />
+            <WarningOutlined aria-hidden className="text-[20px]" />
           </span>
           <div style={{ minWidth: 0 }}>
             <Typography.Title id="confirm-dialog-title" level={2} style={{ fontSize: fontSize.lead, margin: 0 }}>

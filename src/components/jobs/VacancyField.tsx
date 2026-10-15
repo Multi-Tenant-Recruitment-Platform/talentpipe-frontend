@@ -1,8 +1,8 @@
+import { WarningOutlined } from '@ant-design/icons';
 import { Col, Typography } from 'antd';
 import type { ReactNode } from 'react';
 import { FIELD_LABELS, isRequired, type JobVacancyField } from '../../dashboard/jobVacancy';
 import { fontSize, slate, space } from '../../theme/tokens';
-import { Icon } from '../dashboard/Icon';
 import {
   vacancyErrorId,
   vacancyFieldId,
@@ -75,7 +75,7 @@ export function VacancyField({
             margin: `${space[0.75]}px 0 0`,
           }}
         >
-          <Icon name="warning" size={14} style={{ marginTop: 1 }} />
+          <WarningOutlined aria-hidden className="text-[14px]" style={{ marginTop: 1 }} />
           {error}
         </Typography.Paragraph>
       ) : (

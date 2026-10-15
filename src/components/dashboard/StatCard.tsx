@@ -1,3 +1,4 @@
+import { FallOutlined, RiseOutlined } from '@ant-design/icons';
 import { Card, Flex, Statistic, Typography } from 'antd';
 import {
   fontSize,
@@ -7,7 +8,7 @@ import {
   space,
   status as statusColor,
 } from '../../theme/tokens';
-import { Icon, type IconName } from './Icon';
+import type { IconComponent } from '../ui/icon';
 
 /**
  * KPI tile: a neutral icon chip, the value, its label, and an optional trend
@@ -23,12 +24,12 @@ import { Icon, type IconName } from './Icon';
 export function StatCard({
   label,
   value,
-  icon,
+  icon: Glyph,
   delta,
 }: Readonly<{
   label: string;
   value: string;
-  icon: IconName;
+  icon: IconComponent;
   delta?: { value: string; direction: 'up' | 'down'; hint?: string };
 }>) {
   // The only colour on the tile, and it is genuinely semantic: which way the
@@ -53,7 +54,7 @@ export function StatCard({
             color: slate[600],
           }}
         >
-          <Icon name={icon} size={20} />
+          <Glyph aria-hidden className="text-[20px]" />
         </span>
         {delta && (
           <span
@@ -69,7 +70,11 @@ export function StatCard({
               color: deltaStyle.fg,
             }}
           >
-            <Icon name={delta.direction === 'up' ? 'trending-up' : 'trending-down'} size={14} />
+            {delta.direction === 'up' ? (
+              <RiseOutlined aria-hidden className="text-[14px]" />
+            ) : (
+              <FallOutlined aria-hidden className="text-[14px]" />
+            )}
             {delta.value}
           </span>
         )}

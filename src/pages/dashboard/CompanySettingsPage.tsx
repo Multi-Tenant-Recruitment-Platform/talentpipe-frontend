@@ -1,9 +1,9 @@
+import { BankOutlined, StarOutlined } from '@ant-design/icons';
 import { Col, Flex, Progress, Row, Typography } from 'antd';
 import { Link } from 'react-router-dom';
 import { useCan } from '../../auth/useCan';
 import { Badge, type BadgeTone } from '../../components/dashboard/Badge';
 import { Card } from '../../components/dashboard/Card';
-import { Icon } from '../../components/dashboard/Icon';
 import { PageHeader } from '../../components/dashboard/PageHeader';
 import { Button } from '../../components/ui/Button';
 import { useTeamSummary } from '../../dashboard/TeamSummaryContext';
@@ -85,7 +85,7 @@ export function CompanySettingsPage() {
               <Card title="Plan & usage" subtitle="Current subscription">
                 <Flex align="center" justify="space-between">
                   <Typography.Text strong style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                    <Icon name="sparkles" size={16} style={{ color: primary[600] }} />
+                    <StarOutlined aria-hidden className="text-[16px]" style={{ color: primary[600] }} />
                     {planUsage.tier} plan
                   </Typography.Text>
                   <Badge>Monthly</Badge>
@@ -126,7 +126,7 @@ export function CompanySettingsPage() {
           type="secondary"
           style={{ marginTop: 16, marginBottom: 0, fontSize: fontSize.caption }}
         >
-          <Icon name="building" size={14} style={{ display: 'inline', verticalAlign: '-2px' }} />{' '}
+          <BankOutlined aria-hidden className="text-[14px]" />{' '}
           Company details are managed on <Link to="/dashboard/profile">Profile Management</Link>.
         </Typography.Paragraph>
       </div>

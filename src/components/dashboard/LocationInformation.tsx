@@ -1,3 +1,4 @@
+import { BankOutlined, EnvironmentOutlined } from '@ant-design/icons';
 import { Tag, Typography } from 'antd';
 import {
   formatLocation,
@@ -5,7 +6,6 @@ import {
   type CompanyFormValues,
 } from '../../dashboard/companyProfile';
 import { DetailItem } from './DetailItem';
-import { Icon } from './Icon';
 import { fontSize, slate } from '../../theme/tokens';
 
 /**
@@ -20,13 +20,13 @@ export function LocationInformation({ values }: Readonly<{ values: CompanyFormVa
   return (
     <dl className="tp-detail-grid">
       <DetailItem
-        icon="building"
+        icon={BankOutlined}
         label="Street address"
         value={formatStreet(values)}
         testId="company-address"
       />
       <DetailItem
-        icon="map-pin"
+        icon={EnvironmentOutlined}
         label="City, state & country"
         value={formatLocation(values)}
         testId="company-location"
@@ -50,7 +50,7 @@ export function LocationInformation({ values }: Readonly<{ values: CompanyFormVa
             color: slate[400],
           }}
         >
-          <Icon name="building" size={16} />
+          <BankOutlined aria-hidden className="text-[16px]" />
         </span>
         <div style={{ minWidth: 0 }}>
           <dt

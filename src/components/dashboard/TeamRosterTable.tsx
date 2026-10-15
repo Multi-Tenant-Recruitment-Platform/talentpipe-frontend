@@ -1,3 +1,9 @@
+import {
+  ArrowDownOutlined,
+  ArrowUpOutlined,
+  DeleteOutlined,
+  SendOutlined,
+} from '@ant-design/icons';
 import { Flex, Skeleton, Table, Typography, theme } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import type { HTMLAttributes, ReactNode, TdHTMLAttributes } from 'react';
@@ -5,7 +11,6 @@ import type { RosterRow, SortKey, SortState } from '../../dashboard/teamRoster';
 import { formatDate, formatRelativeTime } from '../../utils/format';
 import { Button } from '../ui/Button';
 import { Avatar } from './Avatar';
-import { Icon } from './Icon';
 import { MemberStatusBadge } from './MemberStatusBadge';
 import { RoleBadge } from './RoleBadge';
 import { fontSize, primary } from '../../theme/tokens';
@@ -94,39 +99,39 @@ export function TeamRosterTable({
 }>) {
   const { token } = theme.useToken();
 
-  const sortableTitle = (key: SortKey, label: string) => (
-    <button
-      type="button"
-      onClick={() => onSortChange(key)}
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: 4,
-        border: 0,
-        padding: 0,
-        background: 'transparent',
-        font: 'inherit',
-        color: 'inherit',
-        textTransform: 'uppercase',
-        letterSpacing: '0.03em',
-        cursor: 'pointer',
-      }}
-    >
-      {label}
-      {/* No chevron exists in the icon set; a rotated arrow-left is the
-          established stand-in elsewhere in the dashboard. */}
-      <Icon
-        name="arrow-left"
-        size={12}
+  const sortableTitle = (key: SortKey, label: string) => {
+    const SortGlyph = sort.key === key && sort.dir === 'desc' ? ArrowDownOutlined : ArrowUpOutlined;
+    return (
+      <button
+        type="button"
+        onClick={() => onSortChange(key)}
         style={{
-          transform: sort.key === key && sort.dir === 'desc' ? 'rotate(-90deg)' : 'rotate(90deg)',
-          opacity: sort.key === key ? 1 : 0.25,
-          color: sort.key === key ? token.colorPrimary : undefined,
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 4,
+          border: 0,
+          padding: 0,
+          background: 'transparent',
+          font: 'inherit',
+          color: 'inherit',
+          textTransform: 'uppercase',
+          letterSpacing: '0.03em',
+          cursor: 'pointer',
         }}
-      />
-      <span className="sr-only">Sort by {label.toLowerCase()}</span>
-    </button>
-  );
+      >
+        {label}
+        <SortGlyph
+          aria-hidden
+          className="text-[12px]"
+          style={{
+            opacity: sort.key === key ? 1 : 0.25,
+            color: sort.key === key ? token.colorPrimary : undefined,
+          }}
+        />
+        <span className="sr-only">Sort by {label.toLowerCase()}</span>
+      </button>
+    );
+  };
 
   const headerSort = (key: SortKey) => () => ({
     'aria-sort': (sort.key === key ? ARIA_SORT[sort.dir] : 'none') as
@@ -252,14 +257,24 @@ export function TeamRosterTable({
         return (
           <Flex align="center" justify="flex-end" gap={8}>
             {row.canResend && (
-              <Button size="sm" variant="secondary" disabled={busy} onClick={() => onResend(row)}>
-                <Icon name="send" size={14} />
+              <Button
+                size="sm"
+                variant="secondary"
+                disabled={busy}
+                onClick={() => onResend(row)}
+                icon={<SendOutlined aria-hidden className="text-[14px]" />}
+              >
                 {busy && busyAction === 'resend' ? 'Resending…' : resendLabel}
               </Button>
             )}
             {row.canRevoke && (
-              <Button size="sm" variant="danger" disabled={busy} onClick={() => onRevoke(row)}>
-                <Icon name="trash" size={14} />
+              <Button
+                size="sm"
+                variant="danger"
+                disabled={busy}
+                onClick={() => onRevoke(row)}
+                icon={<DeleteOutlined aria-hidden className="text-[14px]" />}
+              >
                 {busy && busyAction === 'revoke' ? 'Revoking…' : 'Revoke'}
               </Button>
             )}

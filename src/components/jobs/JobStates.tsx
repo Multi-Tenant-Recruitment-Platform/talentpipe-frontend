@@ -1,8 +1,8 @@
+import { ArrowLeftOutlined, SolutionOutlined } from '@ant-design/icons';
 import { Card, Skeleton } from 'antd';
 import { Link } from 'react-router-dom';
 import { space } from '../../theme/tokens';
 import { EmptyState } from '../dashboard/EmptyState';
-import { Icon } from '../dashboard/Icon';
 import { Alert } from '../ui/Alert';
 import { Button } from '../ui/Button';
 
@@ -11,7 +11,7 @@ import { Button } from '../ui/Button';
 export function BackLink({ to, children }: Readonly<{ to: string; children: string }>) {
   return (
     <Link to={to} className="tp-job-back">
-      <Icon name="arrow-left" size={16} />
+      <ArrowLeftOutlined aria-hidden className="text-[16px]" />
       {children}
     </Link>
   );
@@ -45,7 +45,7 @@ export function JobUnavailable() {
   return (
     <Card>
       <EmptyState
-        icon="briefcase"
+        icon={SolutionOutlined}
         title="This job is not available."
         description="It may have been closed or removed. Browse the other open positions instead."
         action={<BackLink to="/jobs">All jobs</BackLink>}

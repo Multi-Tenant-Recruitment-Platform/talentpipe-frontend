@@ -1,7 +1,7 @@
 import { Typography, theme } from 'antd';
 import type { ReactNode } from 'react';
-import { Icon, type IconName } from './Icon';
 import { fontSize } from '../../theme/tokens';
+import type { IconComponent } from '../ui/icon';
 
 /**
  * One labelled fact in a profile section: icon, label, value.
@@ -15,14 +15,14 @@ import { fontSize } from '../../theme/tokens';
  * hook for the per-field test ids the profile suite reads.</p>
  */
 export function DetailItem({
-  icon,
+  icon: Glyph,
   label,
   value,
   href,
   external = false,
   testId,
 }: Readonly<{
-  icon: IconName;
+  icon: IconComponent;
   label: string;
   /** Display text. Empty string means "not set". */
   value: string;
@@ -66,7 +66,7 @@ export function DetailItem({
           color: token.colorTextTertiary,
         }}
       >
-        <Icon name={icon} size={16} />
+        <Glyph aria-hidden className="text-[16px]" />
       </span>
       <div style={{ minWidth: 0 }}>
         <dt

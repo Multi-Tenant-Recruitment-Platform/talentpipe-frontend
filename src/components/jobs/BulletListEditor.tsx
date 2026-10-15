@@ -1,7 +1,7 @@
+import { CloseOutlined, PlusOutlined } from '@ant-design/icons';
 import { Flex, Input, Typography } from 'antd';
 import { cleanValues } from '../../dashboard/companyProfile';
 import { fontSize, slate, space } from '../../theme/tokens';
-import { Icon } from '../dashboard/Icon';
 import { Button } from '../ui/Button';
 
 /**
@@ -86,7 +86,7 @@ export function BulletListEditor({
               disabled={rows.length === 1 && row.trim() === ''}
               onClick={() => removeRow(index)}
             >
-              <Icon name="x-mark" size={16} />
+              <CloseOutlined aria-hidden className="text-[16px]" />
             </Button>
           </li>
         ))}
@@ -100,7 +100,7 @@ export function BulletListEditor({
           onClick={() => onChange([...rows, ''])}
         >
           <Flex align="center" gap={6}>
-            <Icon name="plus" size={14} />
+            <PlusOutlined aria-hidden className="text-[14px]" />
             {addLabel}
           </Flex>
         </Button>

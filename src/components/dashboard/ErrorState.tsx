@@ -1,7 +1,7 @@
+import { ReloadOutlined, WarningOutlined } from '@ant-design/icons';
 import { Flex, Typography } from 'antd';
 import { fontSize, radius, slate, space, status } from '../../theme/tokens';
 import { Button } from '../ui/Button';
-import { Icon } from './Icon';
 
 /**
  * A panel-level failure: the thing this area exists to show could not be
@@ -56,7 +56,7 @@ export function ErrorState({
           color: status.errorText,
         }}
       >
-        <Icon name="warning" size={24} />
+        <WarningOutlined aria-hidden className="text-[24px]" />
       </span>
 
       <div>
@@ -77,8 +77,11 @@ export function ErrorState({
       {(onRetry || action) && (
         <Flex gap={space[1]} wrap style={{ marginTop: space[0.5] }}>
           {onRetry && (
-            <Button variant="secondary" onClick={onRetry}>
-              <Icon name="refresh" size={16} />
+            <Button
+              variant="secondary"
+              onClick={onRetry}
+              icon={<ReloadOutlined aria-hidden className="text-[16px]" />}
+            >
               {retryLabel}
             </Button>
           )}

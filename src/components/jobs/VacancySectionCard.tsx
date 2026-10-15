@@ -1,8 +1,8 @@
+import { CheckOutlined } from '@ant-design/icons';
 import { Card, Row, Typography } from 'antd';
 import type { ReactNode } from 'react';
 import type { SectionProgress, VacancySection } from '../../dashboard/jobVacancy';
 import { fontSize, space } from '../../theme/tokens';
-import { Icon } from '../dashboard/Icon';
 
 /**
  * One numbered section of the vacancy form.
@@ -43,7 +43,7 @@ export function VacancySectionCard({
           <span className="tp-vacancy-legend-text">{section.title}</span>
           {progress.total > 0 && (
             <span className="tp-vacancy-count" data-state={hasError ? 'error' : done ? 'done' : 'todo'}>
-              {done && !hasError && <Icon name="check" size={14} />}
+              {done && !hasError && <CheckOutlined aria-hidden className="text-[14px]" />}
               {hasError
                 ? 'Needs attention'
                 : done

@@ -1,3 +1,12 @@
+import {
+  CopyOutlined,
+  EditOutlined,
+  EyeOutlined,
+  GlobalOutlined,
+  InboxOutlined,
+  MoreOutlined,
+  StopOutlined,
+} from '@ant-design/icons';
 import { Dropdown, type MenuProps } from 'antd';
 import type { JobVacancyResponse } from '../../api/types';
 import {
@@ -5,9 +14,9 @@ import {
   vacancyActions,
   type VacancyAction,
 } from '../../dashboard/jobVacancy';
-import { Icon, type IconName } from '../dashboard/Icon';
 import { Button, type ButtonVariant } from '../ui/Button';
 import { moreButtonId } from './vacancyFieldIds';
+import type { IconComponent } from '../ui/icon';
 
 const LABEL: Record<VacancyAction, string> = {
   view: 'View',
@@ -18,13 +27,13 @@ const LABEL: Record<VacancyAction, string> = {
   archive: 'Archive',
 };
 
-const ICON: Record<VacancyAction, IconName> = {
-  view: 'eye',
-  edit: 'pencil',
-  publish: 'globe',
-  duplicate: 'document-duplicate',
-  close: 'no-symbol',
-  archive: 'archive-box',
+const ICON: Record<VacancyAction, IconComponent> = {
+  view: EyeOutlined,
+  edit: EditOutlined,
+  publish: GlobalOutlined,
+  duplicate: CopyOutlined,
+  close: StopOutlined,
+  archive: InboxOutlined,
 };
 
 /**
@@ -81,10 +90,15 @@ export function VacancyActions({
     return index === 0 ? 'tp-menu-until-md' : 'tp-menu-until-lg';
   };
 
+  const glyph = (action: VacancyAction) => {
+    const Glyph = ICON[action];
+    return <Glyph aria-hidden className="text-[16px]" />;
+  };
+
   const item = (action: VacancyAction, className?: string) => ({
     key: action,
     label: action === 'edit' && vacancy.status === 'PUBLISHED' && !onList ? 'Edit vacancy' : LABEL[action],
-    icon: <Icon name={ICON[action]} size={16} />,
+    icon: glyph(action),
     danger: DESTRUCTIVE_ACTIONS.has(action),
     className,
   });
@@ -113,7 +127,7 @@ export function VacancyActions({
           aria-label={onList ? `${LABEL[action]} ${name}` : undefined}
           onClick={() => onAction(action)}
         >
-          {!onList && <Icon name={ICON[action]} size={16} />}
+          {!onList && glyph(action)}
           {item(action).label}
         </Button>
       ))}
@@ -132,7 +146,7 @@ export function VacancyActions({
             aria-label={`More actions for ${name}`}
             className="tp-vacancy-more"
           >
-            <Icon name="ellipsis-vertical" size={18} />
+            <MoreOutlined aria-hidden className="text-[18px]" />
           </Button>
         </Dropdown>
       )}

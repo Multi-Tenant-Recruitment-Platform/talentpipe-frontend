@@ -1,3 +1,14 @@
+import {
+  BankOutlined,
+  CalendarOutlined,
+  CheckOutlined,
+  ClockCircleOutlined,
+  ReadOutlined,
+  SolutionOutlined,
+  TeamOutlined,
+  ThunderboltOutlined,
+  WalletOutlined,
+} from '@ant-design/icons';
 import { useId, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import type { JobDetail } from '../../api/types';
@@ -5,8 +16,8 @@ import { benefitLabel, sortBenefits } from '../../dashboard/companyProfile';
 import { formatExperience, formatSalary, formatWorkingDays, shiftTypeLabel } from '../../jobs/jobLabels';
 import { jobApplyPath } from '../../jobs/jobPaths';
 import { formatCalendarDate } from '../../utils/format';
-import { Icon, type IconName } from '../dashboard/Icon';
 import { CompanyMark, JobBadges, JobMeta, PostedAt, SkillTags } from './JobParts';
+import type { IconComponent } from '../ui/icon';
 
 const hasItems = (list: string[] | null | undefined): list is string[] => Boolean(list && list.length > 0);
 
@@ -17,7 +28,7 @@ function CheckList({ items, label, columns = false }: Readonly<{ items: string[]
       {items.map((item) => (
         <li key={item}>
           <span className="tp-job-check">
-            <Icon name="check" size={14} />
+            <CheckOutlined aria-hidden className="text-[14px]" />
           </span>
           <span style={{ minWidth: 0 }}>{item}</span>
         </li>
@@ -43,19 +54,19 @@ function Section({ title, children }: Readonly<{ title: string; children: ReactN
 export function JobAdvert({ job }: Readonly<{ job: JobDetail }>) {
   const overviewId = useId();
 
-  const facts: { icon: IconName; label: string; value: string }[] = [];
-  const addFact = (icon: IconName, label: string, value: string | null | undefined) => {
+  const facts: { icon: IconComponent; label: string; value: string }[] = [];
+  const addFact = (icon: IconComponent, label: string, value: string | null | undefined) => {
     if (value) facts.push({ icon, label, value });
   };
-  addFact('building', 'Department', job.department);
-  addFact('users', 'Openings', job.openings ? String(job.openings) : null);
-  addFact('briefcase', 'Experience', formatExperience(job.minimumExperienceYears));
-  addFact('academic-cap', 'Education', job.education);
-  addFact('banknotes', 'Salary', formatSalary(job));
-  addFact('calendar', 'Working days', formatWorkingDays(job.workingDays));
-  addFact('clock', 'Working hours', job.workingHours);
-  addFact('bolt', 'Shift', job.shiftType ? shiftTypeLabel(job.shiftType) : null);
-  addFact('clock', 'Hours per week', job.expectedHoursPerWeek ? `${job.expectedHoursPerWeek} hours` : null);
+  addFact(BankOutlined, 'Department', job.department);
+  addFact(TeamOutlined, 'Openings', job.openings ? String(job.openings) : null);
+  addFact(SolutionOutlined, 'Experience', formatExperience(job.minimumExperienceYears));
+  addFact(ReadOutlined, 'Education', job.education);
+  addFact(WalletOutlined, 'Salary', formatSalary(job));
+  addFact(CalendarOutlined, 'Working days', formatWorkingDays(job.workingDays));
+  addFact(ClockCircleOutlined, 'Working hours', job.workingHours);
+  addFact(ThunderboltOutlined, 'Shift', job.shiftType ? shiftTypeLabel(job.shiftType) : null);
+  addFact(ClockCircleOutlined, 'Hours per week', job.expectedHoursPerWeek ? `${job.expectedHoursPerWeek} hours` : null);
 
   const hasRequirements =
     hasItems(job.requiredSkills) ||
@@ -95,7 +106,7 @@ export function JobAdvert({ job }: Readonly<{ job: JobDetail }>) {
               {facts.map((fact) => (
                 <div key={fact.label} className="tp-job-fact">
                   <span className="tp-job-fact-icon">
-                    <Icon name={fact.icon} />
+                    <fact.icon aria-hidden className="text-[20px]" />
                   </span>
                   <div style={{ minWidth: 0 }}>
                     <dt>{fact.label}</dt>

@@ -1,9 +1,9 @@
+import { EnvironmentOutlined, FilterOutlined, SearchOutlined } from '@ant-design/icons';
 import { Checkbox, Input } from 'antd';
 import { useState, type FormEvent, type ReactNode } from 'react';
 import type { JobSummary } from '../../api/types';
 import { EMPLOYMENT_TYPES, WORKPLACE_TYPES } from '../../dashboard/jobVacancy';
 import { hasSalary, type JobFilters } from '../../jobs/jobFilters';
-import { Icon } from '../dashboard/Icon';
 import { Button } from '../ui/Button';
 
 /**
@@ -36,7 +36,7 @@ export function JobSearchBar({
           allowClear
           value={keyword}
           onChange={(event) => setKeyword(event.target.value)}
-          prefix={<Icon name="search" size={18} />}
+          prefix={<SearchOutlined aria-hidden className="text-[18px]" />}
           placeholder="Job title, skill or company"
           aria-label="Job title, skill or company"
           enterKeyHint="search"
@@ -52,7 +52,7 @@ export function JobSearchBar({
           allowClear
           value={location}
           onChange={(event) => setLocation(event.target.value)}
-          prefix={<Icon name="map-pin" size={18} />}
+          prefix={<EnvironmentOutlined aria-hidden className="text-[18px]" />}
           placeholder="City or country"
           aria-label="Location"
           enterKeyHint="search"
@@ -130,7 +130,7 @@ export function JobFilterBar({
     <section aria-label="Filter jobs" className="tp-jobs-filters">
       <div className="tp-jobs-filters-head">
         <h2>
-          <Icon name="funnel" size={18} />
+          <FilterOutlined aria-hidden className="text-[18px]" />
           Filters
           {activeCount > 0 && (
             <span className="tp-jobs-filter-count" aria-label={`${activeCount} active`}>

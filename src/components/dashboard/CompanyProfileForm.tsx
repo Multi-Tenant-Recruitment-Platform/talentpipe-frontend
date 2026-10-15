@@ -1,3 +1,4 @@
+import { CheckOutlined, WarningOutlined } from '@ant-design/icons';
 import { Checkbox, Col, Flex, Input, Row, Select, Typography } from 'antd';
 import { useRef, type FormEvent, type ReactNode } from 'react';
 import type { CompanyImageKind } from '../../api/types';
@@ -22,7 +23,6 @@ import {
 import { Button } from '../ui/Button';
 import { CompanyImagePicker } from './CompanyImagePicker';
 import { CompanyChipListEditor } from './CompanyChipListEditor';
-import { Icon } from './Icon';
 import { fontSize, slate } from '../../theme/tokens';
 
 /**
@@ -84,7 +84,7 @@ function Field({
           type="danger"
           style={{ display: 'flex', alignItems: 'flex-start', gap: 4, fontSize: fontSize.caption, margin: '6px 0 0' }}
         >
-          <Icon name="warning" size={14} style={{ marginTop: 1 }} />
+          <WarningOutlined aria-hidden className="text-[14px]" style={{ marginTop: 1 }} />
           {error}
         </Typography.Paragraph>
       ) : (
@@ -639,7 +639,7 @@ export function CompanyProfileForm({
               'Saving…'
             ) : (
               <>
-                <Icon name="check" size={16} />
+                <CheckOutlined aria-hidden className="text-[16px]" />
                 Save changes
               </>
             )}

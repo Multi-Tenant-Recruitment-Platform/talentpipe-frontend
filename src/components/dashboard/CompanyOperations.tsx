@@ -1,3 +1,4 @@
+import { BarChartOutlined, ClockCircleOutlined, GlobalOutlined } from '@ant-design/icons';
 import { currencyCode, type CompanyFormValues } from '../../dashboard/companyProfile';
 import { DetailItem } from './DetailItem';
 
@@ -9,9 +10,9 @@ import { DetailItem } from './DetailItem';
 export function CompanyOperations({ values }: Readonly<{ values: CompanyFormValues }>) {
   return (
     <dl className="tp-detail-grid-3">
-      <DetailItem icon="clock" label="Time zone" value={values.timezone} testId="company-timezone" />
+      <DetailItem icon={ClockCircleOutlined} label="Time zone" value={values.timezone} testId="company-timezone" />
       <DetailItem
-        icon="chart-bar"
+        icon={BarChartOutlined}
         label="Currency"
         // The code, not the full 'USD — US dollar': the label belongs in the
         // picker, the code belongs next to a number.
@@ -19,7 +20,7 @@ export function CompanyOperations({ values }: Readonly<{ values: CompanyFormValu
         testId="company-currency"
       />
       <DetailItem
-        icon="globe"
+        icon={GlobalOutlined}
         label="Primary language"
         value={values.language}
         testId="company-language"

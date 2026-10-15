@@ -1,7 +1,7 @@
 import { Empty, Typography } from 'antd';
 import type { ReactNode } from 'react';
 import { fontSize, slate, space } from '../../theme/tokens';
-import { Icon, type IconName } from './Icon';
+import type { IconComponent } from '../ui/icon';
 
 /**
  * Centred icon + headline + explanation, with an optional call to action.
@@ -15,12 +15,12 @@ import { Icon, type IconName } from './Icon';
  * does not carry, and the eye should land on the sentence and the button.</p>
  */
 export function EmptyState({
-  icon,
+  icon: Glyph,
   title,
   description,
   action,
 }: Readonly<{
-  icon: IconName;
+  icon: IconComponent;
   title: string;
   description: string;
   action?: ReactNode;
@@ -41,7 +41,7 @@ export function EmptyState({
             color: slate[500],
           }}
         >
-          <Icon name={icon} size={24} />
+          <Glyph aria-hidden className="text-[24px]" />
         </span>
       }
       imageStyle={{ height: 48, display: 'flex', justifyContent: 'center' }}

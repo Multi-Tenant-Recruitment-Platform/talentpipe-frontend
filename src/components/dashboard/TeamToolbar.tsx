@@ -1,8 +1,8 @@
+import { SearchOutlined } from '@ant-design/icons';
 import { Flex, Input, Radio, Select, Typography } from 'antd';
 import type { Segment } from '../../dashboard/teamRoster';
 import { formatRole } from '../../utils/format';
 import { Button } from '../ui/Button';
-import { Icon } from './Icon';
 import { fontSize } from '../../theme/tokens';
 
 const SEGMENTS: { id: Segment; label: string }[] = [
@@ -114,7 +114,7 @@ export function TeamToolbar({
               autoComplete="off"
               aria-describedby="team-result-count"
               allowClear
-              prefix={<Icon name="search" size={16} style={{ opacity: 0.45 }} />}
+              prefix={<SearchOutlined aria-hidden className="text-[16px]" style={{ opacity: 0.45 }} />}
             />
           </div>
         </Flex>

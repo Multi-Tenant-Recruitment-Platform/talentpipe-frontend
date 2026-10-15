@@ -1,3 +1,4 @@
+import { GlobalOutlined, MailOutlined, PhoneOutlined } from '@ant-design/icons';
 import { websiteLabel, type CompanyFormValues } from '../../dashboard/companyProfile';
 import { DetailItem } from './DetailItem';
 
@@ -11,21 +12,21 @@ export function ContactInformation({ values }: Readonly<{ values: CompanyFormVal
   return (
     <dl className="tp-detail-grid">
       <DetailItem
-        icon="envelope"
+        icon={MailOutlined}
         label="Email"
         value={values.email}
         href={values.email ? `mailto:${values.email}` : undefined}
         testId="company-email"
       />
       <DetailItem
-        icon="envelope"
+        icon={MailOutlined}
         label="HR / recruitment"
         value={values.hrEmail}
         href={values.hrEmail ? `mailto:${values.hrEmail}` : undefined}
         testId="company-hrEmail"
       />
       <DetailItem
-        icon="phone"
+        icon={PhoneOutlined}
         label="Phone"
         value={values.phone}
         // 'tel:' wants dialable characters only, but the separators stay in
@@ -34,7 +35,7 @@ export function ContactInformation({ values }: Readonly<{ values: CompanyFormVal
         testId="company-phone"
       />
       <DetailItem
-        icon="phone"
+        icon={PhoneOutlined}
         label="Alternative phone"
         value={values.alternativePhone}
         href={
@@ -45,7 +46,7 @@ export function ContactInformation({ values }: Readonly<{ values: CompanyFormVal
         testId="company-alternativePhone"
       />
       <DetailItem
-        icon="globe"
+        icon={GlobalOutlined}
         label="Website"
         // The scheme is what the browser needs, not what a person wants to read.
         value={values.website ? websiteLabel(values.website) : ''}

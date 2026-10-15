@@ -1,3 +1,16 @@
+import {
+  ArrowRightOutlined,
+  BankOutlined,
+  CalendarOutlined,
+  CheckOutlined,
+  ClockCircleOutlined,
+  MailOutlined,
+  SolutionOutlined,
+  StarOutlined,
+  TeamOutlined,
+  UserAddOutlined,
+  VideoCameraOutlined,
+} from '@ant-design/icons';
 import { Col, Flex, List, Row, Timeline, Typography } from 'antd';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -8,7 +21,6 @@ import { Avatar } from '../../components/dashboard/Avatar';
 import { Badge } from '../../components/dashboard/Badge';
 import { Card } from '../../components/dashboard/Card';
 import { HiringFunnel } from '../../components/dashboard/HiringFunnel';
-import { Icon, type IconName } from '../../components/dashboard/Icon';
 import { InviteMemberModal, type InviteFormValues } from '../../components/dashboard/InviteMemberModal';
 import { PageHeader } from '../../components/dashboard/PageHeader';
 import { StatCard } from '../../components/dashboard/StatCard';
@@ -22,8 +34,24 @@ import {
   overviewStats,
   recruitmentHealth,
   upcomingInterviews,
+  type ActivityItem,
 } from '../../data/mockDashboard';
 import { fontSize, radius, slate } from '../../theme/tokens';
+import type { IconComponent } from '../../components/ui/icon';
+
+/** The feed's event kinds arrive as data; which glyph draws each is a UI call. */
+const ACTIVITY_ICON: Record<ActivityItem['icon'], IconComponent> = {
+  'user-plus': UserAddOutlined,
+  briefcase: SolutionOutlined,
+  calendar: CalendarOutlined,
+  check: CheckOutlined,
+  envelope: MailOutlined,
+};
+
+function ActivityGlyph({ kind }: Readonly<{ kind: ActivityItem['icon'] }>) {
+  const Glyph = ACTIVITY_ICON[kind];
+  return <Glyph aria-hidden className="text-[16px]" />;
+}
 
 /** Each type already carries its own icon and word; colour would be a third
     encoding of the same fact, in three hues the palette does not have. */
@@ -87,21 +115,21 @@ export function OverviewPage() {
     }
   }
 
-  const healthMetrics: { icon: IconName; label: string; value: string; hint: string }[] = [
+  const healthMetrics: { icon: IconComponent; label: string; value: string; hint: string }[] = [
     {
-      icon: 'clock',
+      icon: ClockCircleOutlined,
       label: 'Avg. time-to-hire',
       value: `${recruitmentHealth.avgTimeToHireDays} days`,
       hint: '2 days faster than last quarter',
     },
     {
-      icon: 'check',
+      icon: CheckOutlined,
       label: 'Offer acceptance',
       value: `${recruitmentHealth.offerAcceptanceRate}%`,
       hint: '11 of 13 offers accepted',
     },
     {
-      icon: 'sparkles',
+      icon: StarOutlined,
       label: 'Hired this month',
       value: String(recruitmentHealth.hiredThisMonth),
       hint: 'Across 3 departments',
@@ -117,15 +145,18 @@ export function OverviewPage() {
         <Button
           variant="secondary"
           onClick={() => setNotice('Job posting arrives with the Job module — for now, invite your hiring team and shape your pipeline.')}
+          icon={<SolutionOutlined aria-hidden className="text-[16px]" />}
         >
-          <Icon name="briefcase" size={16} />
           Post a job
         </Button>
         {/* Inviting is a COMPANY_ADMIN action; anyone else would only get a
             403 from the API, so they never see the button. */}
         {allow('team.invite') && (
-          <Button variant="primary" onClick={() => setInviteOpen(true)}>
-            <Icon name="user-plus" size={16} />
+          <Button
+            variant="primary"
+            onClick={() => setInviteOpen(true)}
+            icon={<UserAddOutlined aria-hidden className="text-[16px]" />}
+          >
             Invite member
           </Button>
         )}
@@ -149,7 +180,7 @@ export function OverviewPage() {
           <StatCard
             label="Active jobs"
             value={String(overviewStats.activeJobs)}
-            icon="briefcase"
+            icon={SolutionOutlined}
             delta={{ value: '+2', direction: 'up', hint: 'this month' }}
           />
         </Col>
@@ -157,7 +188,7 @@ export function OverviewPage() {
           <StatCard
             label="Candidates in pipeline"
             value={overviewStats.candidatesInPipeline.toLocaleString()}
-            icon="users"
+            icon={TeamOutlined}
             delta={{ value: '+18%', direction: 'up', hint: 'vs last week' }}
           />
         </Col>
@@ -165,7 +196,7 @@ export function OverviewPage() {
           <StatCard
             label="Interviews this week"
             value={String(overviewStats.interviewsThisWeek)}
-            icon="calendar"
+            icon={CalendarOutlined}
             delta={{ value: '+4', direction: 'up', hint: 'vs last week' }}
           />
         </Col>
@@ -175,7 +206,7 @@ export function OverviewPage() {
           <StatCard
             label="Pending invites"
             value={teamLoading ? '—' : String(pendingInvites.length)}
-            icon="envelope"
+            icon={MailOutlined}
           />
         </Col>
       </Row>
@@ -189,7 +220,7 @@ export function OverviewPage() {
             action={
               <Link to="/dashboard/pipeline" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontWeight: 600 }}>
                 View pipeline
-                <Icon name="arrow-left" size={16} style={{ transform: 'rotate(180deg)' }} />
+                <ArrowRightOutlined aria-hidden className="text-[16px]" />
               </Link>
             }
           >
@@ -215,7 +246,7 @@ export function OverviewPage() {
                       color: slate[600],
                     }}
                   >
-                    <Icon name={metric.icon} size={20} />
+                    <metric.icon aria-hidden className="text-[20px]" />
                   </span>
                   <div style={{ minWidth: 0 }}>
                     <Typography.Text type="secondary" style={{ display: 'block', fontSize: fontSize.caption }}>
@@ -264,9 +295,9 @@ export function OverviewPage() {
                         </Typography.Text>
                       </div>
                       <Badge>
-                        {interview.type === 'VIDEO' && <Icon name="video-camera" size={14} />}
-                        {interview.type === 'ONSITE' && <Icon name="building" size={14} />}
-                        {interview.type === 'PHONE' && <Icon name="clock" size={14} />}
+                        {interview.type === 'VIDEO' && <VideoCameraOutlined aria-hidden className="text-[14px]" />}
+                        {interview.type === 'ONSITE' && <BankOutlined aria-hidden className="text-[14px]" />}
+                        {interview.type === 'PHONE' && <ClockCircleOutlined aria-hidden className="text-[14px]" />}
                         {type.label}
                       </Badge>
                     </Flex>
@@ -300,7 +331,7 @@ export function OverviewPage() {
                       color: slate[600],
                     }}
                   >
-                    <Icon name={item.icon as IconName} size={16} />
+                    <ActivityGlyph kind={item.icon} />
                   </span>
                 ),
                 children: (

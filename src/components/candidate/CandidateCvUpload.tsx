@@ -1,9 +1,9 @@
+import { FileAddOutlined, FileTextOutlined, WarningOutlined } from '@ant-design/icons';
 import { Flex, Typography } from 'antd';
 import { useRef, useState, type ChangeEvent, type DragEvent } from 'react';
 import { CV_ACCEPT_ATTRIBUTE, MAX_CV_BYTES, PROFILE_FOCUS_IDS, type DisplayedCv } from '../../candidate/candidateProfile';
 import { formatBytes } from '../../dashboard/companyImages';
 import { fontSize } from '../../theme/tokens';
-import { Icon } from '../dashboard/Icon';
 import { Button } from '../ui/Button';
 
 const PROMPT_ID = 'candidate-cv-prompt';
@@ -96,7 +96,7 @@ export function CandidateCvUpload({
       {cv ? (
         <div className="tp-file-row">
           <span className="tp-file-row-icon">
-            <Icon name="document-text" />
+            <FileTextOutlined aria-hidden className="text-[20px]" />
           </span>
           <div className="tp-file-row-body">
             <div className="tp-file-row-name">
@@ -133,7 +133,7 @@ export function CandidateCvUpload({
           aria-describedby={error ? `${HINT_ID} ${ERROR_ID}` : HINT_ID}
         >
           <span className="tp-dropzone-icon">
-            <Icon name="document-arrow-up" />
+            <FileAddOutlined aria-hidden className="text-[20px]" />
           </span>
           <span id={PROMPT_ID}>
             Drag &amp; drop or <span className="tp-dropzone-browse">browse</span>
@@ -151,7 +151,7 @@ export function CandidateCvUpload({
           type="danger"
           style={{ display: 'flex', alignItems: 'flex-start', gap: 4, fontSize: fontSize.caption, margin: '6px 0 0' }}
         >
-          <Icon name="warning" size={14} style={{ marginTop: 1 }} />
+          <WarningOutlined aria-hidden className="text-[14px]" style={{ marginTop: 1 }} />
           {error}
         </Typography.Paragraph>
       )}
