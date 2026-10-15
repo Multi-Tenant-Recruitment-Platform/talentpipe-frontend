@@ -2,7 +2,6 @@ import { AppstoreOutlined, BarChartOutlined, StarFilled, StarOutlined, TeamOutli
 import { Flex, Typography } from 'antd';
 import type { ReactNode } from 'react';
 import interviewImage from '../assets/interview.jpg';
-import { fontSize } from '../theme/tokens';
 
 interface Feature {
   title: string;
@@ -40,13 +39,17 @@ const FEATURES: Feature[] = [
  */
 export function AuthBrandPanel() {
   return (
-    <div className="tp-brand-panel">
+    // --- Auth brand panel ---
+    // The photographic half of the auth split screen. Bespoke by nature — antd has
+    // no component for a full-bleed image with layered scrims — and hidden below
+    // the large breakpoint, where the form stands alone.
+    <div className="tp-brand-panel relative hidden overflow-hidden bg-primary-900 lg:flex lg:flex-col">
       {/* Full-bleed photograph: the panel *is* the image, everything else
           layers on top of it. */}
       <img
         src={interviewImage}
         alt="A recruiter reviewing a CV during a video interview"
-        className="tp-brand-photo"
+        className="absolute inset-0 size-full object-cover object-center"
       />
 
       {/* Three stacked treatments, each doing one job:
@@ -56,7 +59,7 @@ export function AuthBrandPanel() {
           3. a top scrim does the same, lighter, for the wordmark.
           Without these the white text lands on mid-tone photo and fails
           contrast in patches as the image changes. */}
-      <div aria-hidden="true" className="tp-brand-tint" />
+      <div aria-hidden="true" className="absolute inset-0 bg-primary-600/32 mix-blend-multiply" />
       <div aria-hidden="true" className="tp-brand-scrim" />
       <div aria-hidden="true" className="tp-brand-scrim-top" />
 
@@ -65,16 +68,18 @@ export function AuthBrandPanel() {
 
       {/* space-between pins the wordmark to the top and the copy to the
           bottom, the way the reference layout reads. */}
-      <Flex vertical justify="space-between" className="tp-brand-body">
+      <Flex vertical justify="space-between" className="relative flex-1 p-10 xl:p-12">
         <Flex align="center" gap={10}>
-          <span className="tp-brand-chip">T</span>
-          <Typography.Text strong style={{ fontSize: fontSize.title, color: '#fff' }}>
+          <span className="flex size-9 items-center justify-center rounded-lg border border-white/25 bg-white/15 font-bold text-white backdrop-blur-xs">
+            T
+          </span>
+          <Typography.Text strong className="text-title text-white">
             TalentPipe
           </Typography.Text>
         </Flex>
 
-        <div style={{ marginTop: 40 }}>
-          <span className="tp-brand-pill">
+        <div className="mt-10">
+          <span className="inline-flex items-center gap-1.5 rounded-pill border border-white/25 bg-white/10 px-3 py-1 text-caption font-semibold uppercase tracking-caps text-primary-50 backdrop-blur-xs">
             <StarFilled aria-hidden className="text-[14px]" />
             AI-powered hiring
           </span>
@@ -86,12 +91,17 @@ export function AuthBrandPanel() {
             without leaving your pipeline.
           </Typography.Paragraph>
 
-          <dl className="tp-brand-features">
+          <dl className="m-0 mt-7 grid grid-cols-2 gap-2.5">
             {FEATURES.map((feature) => (
-              <div key={feature.title} className="tp-brand-feature">
-                <span className="tp-brand-feature-icon">{feature.icon}</span>
-                <dt className="tp-brand-feature-title">{feature.title}</dt>
-                <dd className="tp-brand-feature-text">{feature.description}</dd>
+              <div
+                key={feature.title}
+                className="rounded-xl border border-white/15 bg-white/10 p-3.5 backdrop-blur-md transition-[background,border-color] duration-(--tp-motion-base) ease-standard hover:border-white/30 hover:bg-white/18"
+              >
+                <span className="inline-flex rounded-sm bg-white/20 p-1.5 text-white shadow-[inset_0_0_0_1px_rgb(255_255_255/15%)]">
+                  {feature.icon}
+                </span>
+                <dt className="mt-2.5 font-semibold text-white">{feature.title}</dt>
+                <dd className="m-0 mt-1 text-caption leading-[1.5] text-[rgb(219_232_255/88%)]">{feature.description}</dd>
               </div>
             ))}
           </dl>

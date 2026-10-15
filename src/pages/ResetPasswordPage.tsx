@@ -1,11 +1,12 @@
-import { Flex, Input, Typography } from 'antd';
+import { Flex, Input } from 'antd';
 import { Button } from '../components/ui/Button';
 import { Alert } from '../components/ui/Alert';
 import { useState, type FormEvent } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { api, apiErrorMessage } from '../api/client';
 import { AuthShell } from '../components/AuthShell';
-import { fontSize } from '../theme/tokens';
+import { AuthField } from '../components/auth/AuthField';
+import { AuthHeading } from '../components/auth/AuthHeading';
 
 /**
  * Landing page for the link in a password-reset email (PB-008). Sets a new
@@ -53,14 +54,10 @@ export function ResetPasswordPage() {
   if (!token) {
     return (
       <AuthShell>
-        <Typography.Title level={1} style={{ fontSize: fontSize.heading, margin: 0 }}>This link is incomplete</Typography.Title>
-        <Typography.Paragraph type="secondary" style={{ margin: '8px 0 0' }}>
+        <AuthHeading title="This link is incomplete">
           The reset token is missing. Please open the link directly from your email.
-        </Typography.Paragraph>
-        <Link
-          to="/forgot-password"
-          style={{ display: 'inline-block', marginTop: 24, fontWeight: 600 }}
-        >
+        </AuthHeading>
+        <Link to="/forgot-password" className="mt-6 inline-block font-semibold">
           Request a new reset link
         </Link>
       </AuthShell>
@@ -69,55 +66,44 @@ export function ResetPasswordPage() {
 
   return (
     <AuthShell>
-      <Typography.Title level={1} style={{ fontSize: fontSize.heading, margin: 0 }}>Choose a new password</Typography.Title>
-      <Typography.Paragraph type="secondary" style={{ margin: '8px 0 0' }}>
+      <AuthHeading title="Choose a new password">
         Signing you out everywhere else — any other active session ends when you save this.
-      </Typography.Paragraph>
+      </AuthHeading>
 
-      <form onSubmit={(e) => void handleSubmit(e)} style={{ marginTop: 24 }}>
+      <form onSubmit={(e) => void handleSubmit(e)} className="mt-6">
         <Flex vertical gap={20}>
-        {error && (
-          <Alert tone="error">{error}</Alert>
-        )}
+          {error && <Alert tone="error">{error}</Alert>}
 
-        <div>
-          <label htmlFor="password" style={{ display: 'block', fontWeight: 500, marginBottom: 6 }}>
-            New password
-          </label>
-          <Input
-            id="password"
-            type="password"
-            required
-            minLength={8}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            autoComplete="new-password"
-          />
-          <Typography.Text type="secondary" style={{ display: 'block', fontSize: fontSize.caption, marginTop: 4 }}>At least 8 characters.</Typography.Text>
-        </div>
+          <AuthField id="password" label="New password" hint="At least 8 characters.">
+            <Input
+              id="password"
+              type="password"
+              required
+              minLength={8}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoComplete="new-password"
+            />
+          </AuthField>
 
-        <div>
-          <label htmlFor="confirmPassword" style={{ display: 'block', fontWeight: 500, marginBottom: 6 }}>
-            Confirm new password
-          </label>
-          <Input
-            id="confirmPassword"
-            type="password"
-            required
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            autoComplete="new-password"
-          />
-        </div>
+          <AuthField id="confirmPassword" label="Confirm new password">
+            <Input
+              id="confirmPassword"
+              type="password"
+              required
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              autoComplete="new-password"
+            />
+          </AuthField>
 
-        <Button type="submit" variant="primary" loading={submitting} style={{ width: '100%' }}>
-          {submitting ? 'Saving…' : 'Save new password'}
-        </Button>
+          <Button type="submit" variant="primary" loading={submitting} className="w-full">
+            {submitting ? 'Saving…' : 'Save new password'}
+          </Button>
 
-        <Link to="/login"
-          style={{ display: 'block', textAlign: 'center', fontWeight: 500 }}>
-          Back to sign in
-        </Link>
+          <Link to="/login" className="block text-center font-medium">
+            Back to sign in
+          </Link>
         </Flex>
       </form>
     </AuthShell>

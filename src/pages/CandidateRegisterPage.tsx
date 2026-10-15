@@ -4,10 +4,11 @@ import { Link, useNavigate } from 'react-router-dom';
 import { api, apiErrorMessage } from '../api/client';
 import type { CandidateRegisterRequest } from '../api/types';
 import { AuthShell } from '../components/AuthShell';
+import { AuthField } from '../components/auth/AuthField';
+import { AuthHeading } from '../components/auth/AuthHeading';
 import { RegisterTabs } from '../components/RegisterTabs';
 import { Alert } from '../components/ui/Alert';
 import { Button } from '../components/ui/Button';
-import { fontSize } from '../theme/tokens';
 
 /**
  * Small divider that labels a group of fields inside the form. `aria-hidden`
@@ -16,33 +17,11 @@ import { fontSize } from '../theme/tokens';
  */
 function SectionLabel({ children }: Readonly<{ children: ReactNode }>) {
   return (
-    <Divider titlePlacement="start" style={{ marginBlock: 0 }} aria-hidden="true">
-      <Typography.Text className="tp-divider-label" type="secondary">
+    <Divider titlePlacement="start" className="my-0" aria-hidden="true">
+      <Typography.Text className="text-caption font-semibold uppercase tracking-caps" type="secondary">
         {children}
       </Typography.Text>
     </Divider>
-  );
-}
-
-/** A labelled field, with optional helper text beneath. */
-function Field({
-  id,
-  label,
-  hint,
-  children,
-}: Readonly<{ id: string; label: string; hint?: string; children: ReactNode }>) {
-  return (
-    <div>
-      <label htmlFor={id} style={{ display: 'block', fontWeight: 500, marginBottom: 6 }}>
-        {label}
-      </label>
-      {children}
-      {hint && (
-        <Typography.Text type="secondary" style={{ display: 'block', fontSize: fontSize.caption, marginTop: 4 }}>
-          {hint}
-        </Typography.Text>
-      )}
-    </div>
   );
 }
 
@@ -92,25 +71,20 @@ export function CandidateRegisterPage() {
 
   return (
     <AuthShell>
-      <Typography.Title level={1} style={{ fontSize: fontSize.heading, margin: 0 }}>
-        Create your account
-      </Typography.Title>
-      <Typography.Paragraph type="secondary" style={{ margin: '8px 0 0' }}>
-        Choose how you want to use TalentPipe.
-      </Typography.Paragraph>
+      <AuthHeading title="Create your account">Choose how you want to use TalentPipe.</AuthHeading>
 
-      <div style={{ marginTop: 24 }}>
+      <div className="mt-6">
         <RegisterTabs active="candidate" />
       </div>
 
-      <Typography.Title level={2} style={{ fontSize: fontSize.title, marginTop: 24, marginBottom: 0 }}>
+      <Typography.Title level={2} className="mt-6 mb-0 text-title">
         Create your candidate account
       </Typography.Title>
-      <Typography.Paragraph type="secondary" style={{ margin: '4px 0 0' }}>
+      <Typography.Paragraph type="secondary" className="m-0 mt-1">
         One account for every company hiring on TalentPipe — apply once, get discovered again.
       </Typography.Paragraph>
 
-      <form onSubmit={(e) => void handleSubmit(e)} style={{ marginTop: 24 }}>
+      <form onSubmit={(e) => void handleSubmit(e)} className="mt-6">
         <Flex vertical gap={20}>
           {error && <Alert tone="error">{error}</Alert>}
 
@@ -118,7 +92,7 @@ export function CandidateRegisterPage() {
 
           <Row gutter={[16, 16]}>
             <Col xs={24} sm={12}>
-              <Field id="fullName" label="Full name">
+              <AuthField id="fullName" label="Full name">
                 <Input
                   id="fullName"
                   required
@@ -127,10 +101,10 @@ export function CandidateRegisterPage() {
                   onChange={(e) => setFullName(e.target.value)}
                   autoComplete="name"
                 />
-              </Field>
+              </AuthField>
             </Col>
             <Col xs={24} sm={12}>
-              <Field id="identityCardNumber" label="ID card number">
+              <AuthField id="identityCardNumber" label="ID card number">
                 <Input
                   id="identityCardNumber"
                   required
@@ -139,11 +113,11 @@ export function CandidateRegisterPage() {
                   onChange={(e) => setIdentityCardNumber(e.target.value)}
                   autoComplete="off"
                 />
-              </Field>
+              </AuthField>
             </Col>
           </Row>
 
-          <Field id="address" label="Address">
+          <AuthField id="address" label="Address">
             <Input
               id="address"
               required
@@ -152,13 +126,13 @@ export function CandidateRegisterPage() {
               onChange={(e) => setAddress(e.target.value)}
               autoComplete="street-address"
             />
-          </Field>
+          </AuthField>
 
           <SectionLabel>Contact details</SectionLabel>
 
           <Row gutter={[16, 16]}>
             <Col xs={24} sm={12}>
-              <Field id="contactNumber" label="Contact number">
+              <AuthField id="contactNumber" label="Contact number">
                 <Input
                   id="contactNumber"
                   type="tel"
@@ -169,10 +143,10 @@ export function CandidateRegisterPage() {
                   autoComplete="tel"
                   placeholder="+94 77 123 4567"
                 />
-              </Field>
+              </AuthField>
             </Col>
             <Col xs={24} sm={12}>
-              <Field id="email" label="Email">
+              <AuthField id="email" label="Email">
                 <Input
                   id="email"
                   type="email"
@@ -182,7 +156,7 @@ export function CandidateRegisterPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   autoComplete="email"
                 />
-              </Field>
+              </AuthField>
             </Col>
           </Row>
 
@@ -190,7 +164,7 @@ export function CandidateRegisterPage() {
 
           <Row gutter={[16, 16]}>
             <Col xs={24} sm={12}>
-              <Field id="password" label="Password" hint="At least 8 characters.">
+              <AuthField id="password" label="Password" hint="At least 8 characters.">
                 <Input
                   id="password"
                   type="password"
@@ -201,10 +175,10 @@ export function CandidateRegisterPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   autoComplete="new-password"
                 />
-              </Field>
+              </AuthField>
             </Col>
             <Col xs={24} sm={12}>
-              <Field id="confirmPassword" label="Confirm password">
+              <AuthField id="confirmPassword" label="Confirm password">
                 <Input
                   id="confirmPassword"
                   type="password"
@@ -215,17 +189,17 @@ export function CandidateRegisterPage() {
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   autoComplete="new-password"
                 />
-              </Field>
+              </AuthField>
             </Col>
           </Row>
 
-          <Button type="submit" variant="primary" loading={submitting} style={{ width: '100%' }}>
+          <Button type="submit" variant="primary" loading={submitting} className="w-full">
             {submitting ? 'Creating account…' : 'Create candidate account'}
           </Button>
         </Flex>
       </form>
 
-      <Typography.Paragraph type="secondary" style={{ marginTop: 24, textAlign: 'center' }}>
+      <Typography.Paragraph type="secondary" className="mt-6 text-center">
         Already have an account? <Link to="/login">Log in</Link>
       </Typography.Paragraph>
     </AuthShell>

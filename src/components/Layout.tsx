@@ -1,9 +1,11 @@
 import { LogoutOutlined } from '@ant-design/icons';
 import { Button as AntButton, Divider, Flex, Grid, Layout as AntLayout, Menu, Tooltip, Typography } from 'antd';
+import { Suspense } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { can } from '../auth/permissions';
 import { AccountMenu } from './AccountMenu';
+import { PageLoader } from './PageLoader';
 import { Button } from './ui/Button';
 import { fontSize, fontWeight, slate } from '../theme/tokens';
 
@@ -125,7 +127,9 @@ export function Layout() {
       </AntLayout.Header>
 
       <AntLayout.Content className="tp-page-container" style={{ paddingBlock: 40 }}>
-        <Outlet />
+        <Suspense fallback={<PageLoader />}>
+          <Outlet />
+        </Suspense>
       </AntLayout.Content>
     </AntLayout>
   );

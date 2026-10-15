@@ -29,9 +29,10 @@ import {
   Typography,
   type InputRef,
 } from 'antd';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
+import { PageLoader } from '../components/PageLoader';
 import type { UserResponse } from '../api/types';
 import type { Permission } from '../auth/permissions';
 import { useCan } from '../auth/useCan';
@@ -448,7 +449,9 @@ function DashboardChrome() {
 
         {/* Routed dashboard content */}
         <Layout.Content className="tp-dashboard-content">
-          <Outlet />
+          <Suspense fallback={<PageLoader />}>
+            <Outlet />
+          </Suspense>
         </Layout.Content>
       </Layout>
     </Layout>

@@ -293,10 +293,6 @@
   box-shadow: 0 4px 12px rgb(47 94 255 / 28%);
 }
 
-/* --- Auth shell ---------------------------------------------------------- *
- * The split-screen card behind every sign-in / sign-up page. antd has no
- * layout for this; Row/Col would need the brand panel to know its own width.
- */
 .tp-auth-glow {
   pointer-events: none;
   position: absolute;
@@ -307,93 +303,6 @@
   background: radial-gradient(60% 100% at 50% 0%, var(--tp-primary-200) 0%, var(--tp-primary-100) 45%, transparent 100%);
   opacity: 0.6;
   filter: blur(48px);
-}
-
-.tp-auth-card {
-  max-width: 560px;
-  margin-inline: auto;
-  overflow: hidden;
-  border: 1px solid var(--tp-slate-200);
-  border-radius: 24px;
-  background: var(--tp-surface);
-  box-shadow: 0 20px 40px -20px rgb(15 23 42 / 15%);
-}
-
-.tp-auth-form {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  padding: 40px 24px;
-}
-
-@media (min-width: 640px) {
-  .tp-auth-form {
-    padding: 48px 40px;
-  }
-}
-
-@media (min-width: 1024px) {
-  .tp-auth-card {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    max-width: 1200px;
-  }
-
-  .tp-auth-form {
-    padding-block: 56px;
-  }
-}
-
-/* --- Segmented links ------------------------------------------------------ *
- * A segmented control whose items are real links (they navigate). antd's
- * Segmented and Tabs both render non-navigating controls.
- */
-.tp-segment-group {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 4px;
-  padding: 4px;
-  border-radius: 10px;
-  background: var(--tp-slate-100);
-}
-
-.tp-segment {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 8px 12px;
-  border-radius: 8px;
-  font-weight: 600;
-  color: var(--tp-slate-500);
-  text-decoration: none;
-  transition-property: background, color;
-  transition-duration: var(--tp-motion-base);
-  transition-timing-function: var(--tp-motion-ease);
-}
-
-.tp-segment:hover {
-  color: var(--tp-slate-700);
-}
-
-.tp-segment-on {
-  background: var(--tp-surface);
-  color: var(--tp-primary-700);
-  box-shadow: 0 1px 2px rgb(15 23 42 / 8%);
-}
-
-.tp-segment-on:hover {
-  color: var(--tp-primary-700);
-}
-
-/* The small uppercase label inside a Divider — "or continue with". Not a
-   kicker above a heading: those were removed, because the heading carries its
-   own weight and the sidebar already names the section. */
-.tp-divider-label {
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
 }
 
 /* The outline counterpart to .tp-cta-link, for a secondary door. */
@@ -440,41 +349,6 @@
   padding-left: 12px;
 }
 
-/* --- Auth brand panel ---------------------------------------------------- *
- * The photographic half of the auth split screen. Bespoke by nature — antd has
- * no component for a full-bleed image with layered scrims — and hidden below
- * the large breakpoint, where the form stands alone.
- */
-.tp-brand-panel {
-  position: relative;
-  display: none;
-  overflow: hidden;
-  background: var(--tp-primary-900);
-}
-
-@media (min-width: 1024px) {
-  .tp-brand-panel {
-    display: flex;
-    flex-direction: column;
-  }
-}
-
-.tp-brand-photo {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center;
-}
-
-.tp-brand-tint {
-  position: absolute;
-  inset: 0;
-  background: rgb(47 94 255 / 32%);
-  mix-blend-mode: multiply;
-}
-
 .tp-brand-scrim {
   position: absolute;
   inset: 0;
@@ -498,48 +372,6 @@
   background-size: 18px 18px;
 }
 
-.tp-brand-body {
-  position: relative;
-  flex: 1;
-  padding: 40px;
-}
-
-@media (min-width: 1280px) {
-  .tp-brand-body {
-    padding: 48px;
-  }
-}
-
-.tp-brand-chip {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  border: 1px solid rgb(255 255 255 / 25%);
-  border-radius: 12px;
-  background: rgb(255 255 255 / 15%);
-  color: var(--tp-surface);
-  font-weight: var(--tp-weight-bold);
-  backdrop-filter: blur(4px);
-}
-
-.tp-brand-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 12px;
-  border: 1px solid rgb(255 255 255 / 25%);
-  border-radius: 999px;
-  background: rgb(255 255 255 / 10%);
-  color: var(--tp-primary-50);
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  backdrop-filter: blur(4px);
-}
-
 /* The antd Typography defaults are overridden here rather than inline: these
    sit on a photograph and need the whole light-on-dark treatment together. */
 .tp-brand-panel .tp-brand-heading.ant-typography {
@@ -553,51 +385,6 @@
   max-width: 384px;
   margin: 12px 0 0;
   color: rgb(219 232 255 / 92%);
-}
-
-.tp-brand-features {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-  margin: 28px 0 0;
-}
-
-.tp-brand-feature {
-  padding: 14px;
-  border: 1px solid rgb(255 255 255 / 15%);
-  border-radius: 16px;
-  background: rgb(255 255 255 / 10%);
-  backdrop-filter: blur(12px);
-  transition-property: background, border-color;
-  transition-duration: var(--tp-motion-base);
-  transition-timing-function: var(--tp-motion-ease);
-}
-
-.tp-brand-feature:hover {
-  border-color: rgb(255 255 255 / 30%);
-  background: rgb(255 255 255 / 18%);
-}
-
-.tp-brand-feature-icon {
-  display: inline-flex;
-  padding: 6px;
-  border-radius: 8px;
-  background: rgb(255 255 255 / 20%);
-  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 15%);
-  color: var(--tp-surface);
-}
-
-.tp-brand-feature-title {
-  margin-top: 10px;
-  color: var(--tp-surface);
-  font-weight: 600;
-}
-
-.tp-brand-feature-text {
-  margin: 4px 0 0;
-  color: rgb(219 232 255 / 88%);
-  font-size: 12px;
-  line-height: 1.5;
 }
 
 /* ==========================================================================

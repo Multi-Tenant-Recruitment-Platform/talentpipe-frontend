@@ -1,11 +1,12 @@
-import { Flex, Input, Typography } from 'antd';
+import { Flex, Input } from 'antd';
 import { useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api/client';
 import { AuthShell } from '../components/AuthShell';
+import { AuthField } from '../components/auth/AuthField';
+import { AuthHeading } from '../components/auth/AuthHeading';
 import { Alert } from '../components/ui/Alert';
 import { Button } from '../components/ui/Button';
-import { fontSize } from '../theme/tokens';
 
 /**
  * Password-reset request. The confirmation is intentionally identical whether
@@ -36,29 +37,23 @@ export function ForgotPasswordPage() {
 
   return (
     <AuthShell>
-      <Typography.Title level={1} style={{ fontSize: fontSize.heading, margin: 0 }}>
-        Reset your password
-      </Typography.Title>
-      <Typography.Paragraph type="secondary" style={{ margin: '8px 0 0' }}>
+      <AuthHeading title="Reset your password">
         Enter your account email and we&apos;ll send you a reset link.
-      </Typography.Paragraph>
+      </AuthHeading>
 
       {sent ? (
-        <Flex vertical gap={20} style={{ marginTop: 24 }}>
+        <Flex vertical gap={20} className="mt-6">
           <Alert tone="success">
             If an account exists for {email}, a password reset link is on its way.
           </Alert>
-          <Link to="/login" style={{ textAlign: 'center', fontWeight: 600 }}>
+          <Link to="/login" className="text-center font-semibold">
             Back to log in
           </Link>
         </Flex>
       ) : (
-        <form onSubmit={(e) => void handleSubmit(e)} style={{ marginTop: 24 }}>
+        <form onSubmit={(e) => void handleSubmit(e)} className="mt-6">
           <Flex vertical gap={20}>
-            <div>
-              <label htmlFor="email" style={{ display: 'block', fontWeight: 500, marginBottom: 6 }}>
-                Email
-              </label>
+            <AuthField id="email" label="Email">
               <Input
                 id="email"
                 type="email"
@@ -67,13 +62,13 @@ export function ForgotPasswordPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 autoComplete="email"
               />
-            </div>
+            </AuthField>
 
-            <Button type="submit" variant="primary" loading={submitting} style={{ width: '100%' }}>
+            <Button type="submit" variant="primary" loading={submitting} className="w-full">
               {submitting ? 'Sending…' : 'Send reset link'}
             </Button>
 
-            <Link to="/login" style={{ textAlign: 'center', fontWeight: 500 }}>
+            <Link to="/login" className="text-center font-medium">
               Back to log in
             </Link>
           </Flex>

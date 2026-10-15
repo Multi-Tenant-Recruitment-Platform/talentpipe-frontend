@@ -38,11 +38,11 @@ export function LoginModeTabs({
       onChange={(key) => onSelect(key as LoginMode)}
       centered
       aria-label="Login type"
-      style={{ marginTop: 24 }}
+      className="mt-6"
       items={MODES.map(({ id, label, icon }) => ({
         key: id,
         label: (
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+          <span className="inline-flex items-center gap-2">
             {icon}
             {label}
           </span>
