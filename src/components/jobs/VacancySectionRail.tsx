@@ -26,8 +26,16 @@ export function VacancySectionRail({
   onJump: (sectionId: string) => void;
 }>) {
   return (
-    <nav aria-label="Vacancy form sections" className="tp-vacancy-rail">
-      <ol className="tp-vacancy-rail-list">
+    // --- The rail ---
+    // Below the large breakpoint it is a scrollable strip pinned under the top
+    // bar; at large it becomes the left column and sticks beside the form.
+    // Bleeds to the content edges so the strip reads as chrome, not as a card.
+    // Clear of the sticky top bar, aligned with the content's own top gutter.
+    <nav
+      aria-label="Vacancy form sections"
+      className="sticky top-(--tp-header-height) z-10 -mx-4 overflow-x-auto border-b border-slate-200 bg-canvas px-4 py-2 lg:top-[calc(var(--tp-header-height)+var(--tp-space-3))] lg:mx-0 lg:overflow-visible lg:border-0 lg:bg-transparent lg:p-0"
+    >
+      <ol className="m-0 flex list-none gap-2 p-0 lg:flex-col lg:gap-0.5">
         {VACANCY_SECTIONS.map((section) => {
           const progress = progressFor(section.id);
           const done = progress.total > 0 && progress.complete;
@@ -50,13 +58,16 @@ export function VacancySectionRail({
             <li key={section.id}>
               <button
                 type="button"
-                className="tp-vacancy-rail-item"
+                className="group flex w-full cursor-pointer items-center gap-2.5 rounded-sm border border-transparent bg-transparent px-2.5 py-2 text-left text-slate-600 transition-[background,color,border-color] duration-(--tp-motion-base) ease-standard hover:bg-slate-100 hover:text-slate-900 focus-visible:border-primary-600 focus-visible:shadow-focus focus-visible:outline-none data-[current=true]:bg-primary-50 data-[current=true]:text-primary-700"
                 data-current={current}
                 data-state={state}
                 aria-current={current ? 'step' : undefined}
                 onClick={() => onJump(section.id)}
               >
-                <span aria-hidden="true" className="tp-vacancy-rail-mark">
+                <span
+                  aria-hidden="true"
+                  className="inline-flex size-6 shrink-0 items-center justify-center rounded-pill bg-slate-100 text-caption font-semibold tabular-nums text-slate-500 group-data-[state=done]:bg-success-bg group-data-[state=done]:text-success-text group-data-[state=error]:bg-error-bg group-data-[state=error]:text-error-text group-data-[state=started]:bg-primary-100 group-data-[state=started]:text-primary-700"
+                >
                   {failing ? (
                     <WarningOutlined aria-hidden className="text-[13px]" />
                   ) : done ? (
@@ -65,9 +76,10 @@ export function VacancySectionRail({
                     section.index
                   )}
                 </span>
-                <span className="tp-vacancy-rail-text">
-                  <span className="tp-vacancy-rail-title">{section.title}</span>
-                  <span className="tp-vacancy-rail-state">
+                <span className="flex min-w-0 flex-col">
+                  <span className="whitespace-nowrap text-small font-semibold">{section.title}</span>
+                  {/* The second line is wayfinding detail; the strip has room for names only. */}
+                  <span className="hidden whitespace-nowrap text-[11.5px] text-slate-500 group-data-[state=error]:text-error-text lg:inline">
                     {failing
                       ? 'Needs attention'
                       : progress.total > 0

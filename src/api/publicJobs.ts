@@ -5,7 +5,7 @@ import { jobUrlKey } from '../jobs/jobPaths';
 import { api } from './client';
 import type { JobDetail, JobSummary, PageResponse } from './types';
 
-export const PUBLIC_JOBS_PAGE_SIZE = 20;
+const PUBLIC_JOBS_PAGE_SIZE = 20;
 
 /**
  * Opt-in only: the fixture is used when VITE_PUBLIC_JOBS_SOURCE=mock, never as

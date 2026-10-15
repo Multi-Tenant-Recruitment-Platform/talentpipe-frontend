@@ -1,4 +1,4 @@
-import { CloseOutlined, FileOutlined, UploadOutlined, WarningOutlined } from '@ant-design/icons';
+import { CloseOutlined, FileOutlined, UploadOutlined } from '@ant-design/icons';
 import { Checkbox, Input, Typography } from 'antd';
 import { useRef, useState, type ChangeEvent, type DragEvent, type FormEvent, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
@@ -28,38 +28,19 @@ import {
   type ApplicationTextField,
 } from '../../jobs/applicationForm';
 import { jobPath } from '../../jobs/jobPaths';
-import { fontSize, space, status } from '../../theme/tokens';
 import { Alert } from '../ui/Alert';
 import { Button } from '../ui/Button';
+import { FieldError } from '../ui/FieldError';
 import { CompanyMark, JobBadges } from './JobParts';
+import { detailGrid, detailGrid3 } from '../ui/classes';
 
 const fieldId = (name: ApplicationField) => `application-${name}`;
 
 function RequiredMark() {
   return (
-    <span aria-hidden="true" style={{ marginLeft: 2, color: status.errorText }}>
+    <span aria-hidden="true" className="ml-0.5 text-error-text">
       *
     </span>
-  );
-}
-
-function FieldError({ id, children }: Readonly<{ id: string; children: ReactNode }>) {
-  return (
-    <Typography.Paragraph
-      id={id}
-      role="alert"
-      type="danger"
-      style={{
-        display: 'flex',
-        alignItems: 'flex-start',
-        gap: space[0.5],
-        fontSize: fontSize.caption,
-        margin: `${space[0.75]}px 0 0`,
-      }}
-    >
-      <WarningOutlined aria-hidden className="text-[14px]" style={{ marginTop: 1 }} />
-      {children}
-    </Typography.Paragraph>
   );
 }
 
@@ -74,7 +55,7 @@ function Field({
 }: Readonly<{ id: string; label: string; required?: boolean; error?: string; hint?: ReactNode; className?: string; children: ReactNode }>) {
   return (
     <div className={className}>
-      <label htmlFor={id} className="tp-vacancy-label">
+      <label htmlFor={id} className="mb-1.5 block font-medium">
         {label}
         {required && <RequiredMark />}
       </label>
@@ -86,7 +67,7 @@ function Field({
           <Typography.Text
             id={`${id}-hint`}
             type="secondary"
-            style={{ display: 'block', fontSize: fontSize.caption, marginTop: space[0.75] }}
+            className="mt-1.5 block text-caption"
           >
             {hint}
           </Typography.Text>
@@ -255,17 +236,17 @@ export function ApplicationForm({
       <div aria-hidden="true" className="tp-job-advert-band" />
       <header className="tp-job-advert-head tp-job-advert-body tp-apply-head">
         <CompanyMark name={job.companyName} logoUrl={job.companyLogoUrl} size="lg" />
-        <div style={{ minWidth: 0 }}>
+        <div className="min-w-0">
           <p className="tp-apply-eyebrow">Apply for</p>
           <h1 className="tp-job-advert-title">{job.title}</h1>
           <p className="tp-job-advert-company">{job.companyName}</p>
-          <JobBadges job={job} style={{ marginTop: space[1.5] }} />
+          <JobBadges job={job} className="mt-3" />
         </div>
       </header>
 
       <form noValidate onSubmit={(e) => void handleSubmit(e)} className="tp-job-advert-body" aria-busy={submitting}>
         {submitError && (
-          <Alert tone="error" style={{ marginBottom: space[3] }}>
+          <Alert tone="error" className="mb-6">
             {submitError}
           </Alert>
         )}
@@ -276,8 +257,8 @@ export function ApplicationForm({
             <p className="tp-apply-note">
               Fields marked <RequiredMark /> are required.
             </p>
-            <div className="tp-detail-grid">
-              <Field id="application-fullName" label="Full name" required error={errors.fullName} className="tp-detail-grid-full">
+            <div className={detailGrid}>
+              <Field id="application-fullName" label="Full name" required error={errors.fullName} className="col-span-full">
                 <Input {...field('fullName')} required maxLength={MAX_NAME} autoComplete="name" />
               </Field>
               <Field id="application-email" label="Email" required error={errors.email}>
@@ -286,7 +267,7 @@ export function ApplicationForm({
               <Field id="application-phone" label="Phone number" required error={errors.phone}>
                 <Input {...field('phone')} type="tel" required maxLength={25} autoComplete="tel" placeholder="+94 77 123 4567" />
               </Field>
-              <Field id="application-location" label="Current location" error={errors.location} className="tp-detail-grid-full">
+              <Field id="application-location" label="Current location" error={errors.location} className="col-span-full">
                 <Input {...field('location')} maxLength={MAX_LOCATION} autoComplete="address-level2" placeholder="City, country" />
               </Field>
             </div>
@@ -295,14 +276,14 @@ export function ApplicationForm({
           <fieldset className="tp-apply-group">
             <legend className="tp-legend">Experience</legend>
             <p className="tp-apply-note">Your CV and where you are in your career today.</p>
-            <div className="tp-detail-grid-3">
+            <div className={detailGrid3}>
               <Field
                 id="application-resume"
                 label="Resume / CV"
                 required
                 error={errors.resume}
                 hint={`PDF, DOC or DOCX, up to ${formatFileSize(MAX_RESUME_BYTES)}.`}
-                className="tp-detail-grid-full"
+                className="col-span-full"
               >
                 <ResumePicker
                   id={fieldId('resume')}
@@ -337,13 +318,13 @@ export function ApplicationForm({
           <fieldset className="tp-apply-group">
             <legend className="tp-legend">Additional information</legend>
             <p className="tp-apply-note">Optional, but it helps the hiring team get to know you.</p>
-            <div className="tp-detail-grid-3">
+            <div className={detailGrid3}>
               <Field
                 id="application-portfolioUrl"
                 label="LinkedIn or portfolio link"
                 error={errors.portfolioUrl}
                 hint="A full link, e.g. https://linkedin.com/in/your-name"
-                className="tp-detail-grid-full"
+                className="col-span-full"
               >
                 <Input {...field('portfolioUrl', true)} type="url" maxLength={MAX_URL} autoComplete="url" placeholder="https://" />
               </Field>
@@ -352,7 +333,7 @@ export function ApplicationForm({
                 label="Cover letter"
                 error={errors.coverLetter}
                 hint={`${values.coverLetter.length} / ${MAX_COVER_LETTER} characters`}
-                className="tp-detail-grid-full"
+                className="col-span-full"
               >
                 <Input.TextArea
                   {...field('coverLetter', true)}

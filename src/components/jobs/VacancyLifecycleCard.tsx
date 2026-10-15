@@ -2,7 +2,7 @@ import { CheckOutlined } from '@ant-design/icons';
 import { Card, Typography } from 'antd';
 import type { JobVacancyResponse, VacancyStatus } from '../../api/types';
 import { VACANCY_STATUS_LABEL } from '../../dashboard/jobVacancy';
-import { fontSize, space } from '../../theme/tokens';
+import { space } from '../../theme/tokens';
 import { formatDate, formatRelativeTime } from '../../utils/format';
 
 const ORDER: VacancyStatus[] = ['DRAFT', 'PUBLISHED', 'CLOSED', 'ARCHIVED'];
@@ -56,8 +56,8 @@ export function VacancyLifecycleCard({ vacancy }: Readonly<{ vacancy: JobVacancy
   const current = ORDER.indexOf(vacancy.status);
 
   return (
-    <Card className="tp-vacancy-side" styles={{ body: { padding: space[3] } }}>
-      <h2 className="tp-legend" style={{ margin: 0 }}>
+    <Card styles={{ body: { padding: space[3] } }}>
+      <h2 className="tp-legend m-0">
         Lifecycle
       </h2>
 
@@ -93,11 +93,11 @@ export function VacancyLifecycleCard({ vacancy }: Readonly<{ vacancy: JobVacancy
         })}
       </ol>
 
-      <Typography.Paragraph style={{ marginTop: space[2], marginBottom: 0 }}>
+      <Typography.Paragraph className="mt-4 mb-0">
         {VISIBILITY[vacancy.status]}
       </Typography.Paragraph>
 
-      <dl className="tp-vacancy-side-facts">
+      <dl className="tp-vacancy-side-facts m-0 mt-4 grid gap-3 border-t border-slate-100 pt-4">
         <div>
           <dt>Created</dt>
           <dd>
@@ -114,11 +114,11 @@ export function VacancyLifecycleCard({ vacancy }: Readonly<{ vacancy: JobVacancy
           <dt>Applications</dt>
           <dd>
             {vacancy.applicantCount === null ? (
-              <Typography.Text type="secondary" style={{ fontSize: fontSize.small }}>
+              <Typography.Text type="secondary" className="text-small">
                 Not connected yet — they&apos;ll appear here once candidates can apply.
               </Typography.Text>
             ) : (
-              <span style={{ fontVariantNumeric: 'tabular-nums' }}>{vacancy.applicantCount}</span>
+              <span className="tabular-nums">{vacancy.applicantCount}</span>
             )}
           </dd>
         </div>

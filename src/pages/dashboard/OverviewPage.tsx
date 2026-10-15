@@ -12,8 +12,9 @@ import {
   VideoCameraOutlined,
 } from '@ant-design/icons';
 import { Col, Flex, List, Row, Timeline, Typography } from 'antd';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { jobsApi } from '../../api/jobs';
 import { teamApi } from '../../api/team';
 import { useAuth } from '../../auth/AuthContext';
 import { useCan } from '../../auth/useCan';
@@ -36,7 +37,6 @@ import {
   upcomingInterviews,
   type ActivityItem,
 } from '../../data/mockDashboard';
-import { fontSize, radius, slate } from '../../theme/tokens';
 import type { IconComponent } from '../../components/ui/icon';
 
 /** The feed's event kinds arrive as data; which glyph draws each is a UI call. */
@@ -82,6 +82,25 @@ export function OverviewPage() {
   const [error, setError] = useState<string | null>(null);
   const [inviteSubmitting, setInviteSubmitting] = useState(false);
   const [inviteError, setInviteError] = useState<TeamErrorPlan | null>(null);
+  const [activeJobs, setActiveJobs] = useState<number | null>(null);
+  // GET /jobs/counts is limited to the roles that manage vacancies; for anyone
+  // else the tile stays at "—" rather than showing a number they cannot reach.
+  const canSeeJobs = allow('jobs.manage');
+
+  useEffect(() => {
+    if (!canSeeJobs) {
+      return;
+    }
+    let live = true;
+    jobsApi
+      .counts()
+      .then((counts) => live && setActiveJobs(counts.PUBLISHED ?? 0))
+      // A failed count leaves the tile at "—"; the rest of the overview still works.
+      .catch(() => undefined);
+    return () => {
+      live = false;
+    };
+  }, [canSeeJobs]);
 
   const today = new Date().toLocaleDateString('en-US', {
     weekday: 'long',
@@ -163,25 +182,26 @@ export function OverviewPage() {
       </PageHeader>
 
       {notice && (
-        <Alert tone="info" onDismiss={() => setNotice(null)} style={{ marginBottom: 24 }}>
+        <Alert tone="info" onDismiss={() => setNotice(null)} className="mb-6">
           {notice}
         </Alert>
       )}
 
       {error && (
-        <Alert tone="error" style={{ marginBottom: 24 }}>
+        <Alert tone="error" className="mb-6">
           {error}
         </Alert>
       )}
 
       {/* KPI row */}
       <Row gutter={[20, 20]}>
+        {/* Published vacancies, from GET /jobs/counts. No trend delta: the API
+            keeps no history to compare against. */}
         <Col xs={24} sm={12} xl={6}>
           <StatCard
             label="Active jobs"
-            value={String(overviewStats.activeJobs)}
+            value={activeJobs === null ? '—' : String(activeJobs)}
             icon={SolutionOutlined}
-            delta={{ value: '+2', direction: 'up', hint: 'this month' }}
           />
         </Col>
         <Col xs={24} sm={12} xl={6}>
@@ -212,13 +232,13 @@ export function OverviewPage() {
       </Row>
 
       {/* Funnel + health */}
-      <Row gutter={[24, 24]} style={{ marginTop: 24 }}>
+      <Row gutter={[24, 24]} className="mt-6">
         <Col xs={24} lg={16}>
           <Card
             title="Hiring funnel"
             subtitle="All open jobs · last 90 days"
             action={
-              <Link to="/dashboard/pipeline" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontWeight: 600 }}>
+              <Link to="/dashboard/pipeline" className="inline-flex items-center gap-1 font-semibold">
                 View pipeline
                 <ArrowRightOutlined aria-hidden className="text-[16px]" />
               </Link>
@@ -233,29 +253,17 @@ export function OverviewPage() {
             <Flex vertical gap={20}>
               {healthMetrics.map((metric) => (
                 <Flex align="center" gap={16} key={metric.label}>
-                  <span
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      width: 44,
-                      height: 44,
-                      flexShrink: 0,
-                      borderRadius: radius.lg,
-                      background: slate[100],
-                      color: slate[600],
-                    }}
-                  >
+                  <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-600">
                     <metric.icon aria-hidden className="text-[20px]" />
                   </span>
-                  <div style={{ minWidth: 0 }}>
-                    <Typography.Text type="secondary" style={{ display: 'block', fontSize: fontSize.caption }}>
+                  <div className="min-w-0">
+                    <Typography.Text type="secondary" className="block text-caption">
                       {metric.label}
                     </Typography.Text>
-                    <Typography.Text strong style={{ display: 'block', fontSize: fontSize.title }}>
+                    <Typography.Text strong className="block text-title">
                       {metric.value}
                     </Typography.Text>
-                    <Typography.Text type="secondary" style={{ fontSize: fontSize.caption }}>
+                    <Typography.Text type="secondary" className="text-caption">
                       {metric.hint}
                     </Typography.Text>
                   </div>
@@ -267,30 +275,32 @@ export function OverviewPage() {
       </Row>
 
       {/* Interviews + activity */}
-      <Row gutter={[24, 24]} style={{ marginTop: 24 }}>
+      <Row gutter={[24, 24]} className="mt-6">
         <Col xs={24} lg={16}>
-          <Card title="Upcoming interviews" subtitle="Next on the schedule" bodyClassName="tp-flush-list">
+          {/* A List that sits flush inside a Card, with its own inner padding. */}
+          <Card title="Upcoming interviews" subtitle="Next on the schedule" bodyClassName="tp-flush-list p-0">
             <List
               dataSource={upcomingInterviews}
               renderItem={(interview) => {
                 const type = INTERVIEW_TYPE_BADGE[interview.type];
                 return (
                   <List.Item key={interview.id}>
-                    <Flex wrap align="center" gap={16} style={{ width: '100%' }}>
-                      <div className="tp-interview-when">
-                        <Typography.Text strong style={{ display: 'block' }}>
+                    <Flex wrap align="center" gap={16} className="w-full">
+                      {/* The date/time column on an upcoming-interview row. */}
+                      <div className="w-24 shrink-0 border-l-2 border-primary-500 pl-3">
+                        <Typography.Text strong className="block">
                           {interview.dayLabel}
                         </Typography.Text>
-                        <Typography.Text type="secondary" style={{ fontSize: fontSize.caption }}>
+                        <Typography.Text type="secondary" className="text-caption">
                           {interview.time}
                         </Typography.Text>
                       </div>
                       <Avatar firstName={interview.candidateName} size="sm" />
-                      <div style={{ minWidth: 0, flex: 1 }}>
-                        <Typography.Text strong ellipsis style={{ display: 'block' }}>
+                      <div className="min-w-0 flex-1">
+                        <Typography.Text strong ellipsis className="block">
                           {interview.candidateName}
                         </Typography.Text>
-                        <Typography.Text type="secondary" ellipsis style={{ fontSize: fontSize.caption }}>
+                        <Typography.Text type="secondary" ellipsis className="text-caption">
                           {interview.jobTitle} · with {interview.interviewerName}
                         </Typography.Text>
                       </div>
@@ -316,28 +326,17 @@ export function OverviewPage() {
               items={activityFeed.map((item) => ({
                 key: item.id,
                 dot: (
-                  <span
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      width: 28,
-                      height: 28,
-                      borderRadius: '50%',
-                      // Neutral by design: a feed of five hues turns a
-                      // chronology into a colour key nobody is given. The icon
-                      // already says what kind of event this was.
-                      background: slate[100],
-                      color: slate[600],
-                    }}
-                  >
+                  // Neutral by design: a feed of five hues turns a
+                  // chronology into a colour key nobody is given. The icon
+                  // already says what kind of event this was.
+                  <span className="flex size-7 items-center justify-center rounded-full bg-slate-100 text-slate-600">
                     <ActivityGlyph kind={item.icon} />
                   </span>
                 ),
                 children: (
                   <>
-                    <Typography.Text style={{ display: 'block' }}>{item.text}</Typography.Text>
-                    <Typography.Text type="secondary" style={{ fontSize: fontSize.caption }}>
+                    <Typography.Text className="block">{item.text}</Typography.Text>
+                    <Typography.Text type="secondary" className="text-caption">
                       {item.time}
                     </Typography.Text>
                   </>

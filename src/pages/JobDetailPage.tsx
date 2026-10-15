@@ -2,7 +2,6 @@ import { useParams } from 'react-router-dom';
 import { JobAdvert, JobApplyCard } from '../components/jobs/JobAdvert';
 import { BackLink, JobLoadError, JobLoading, JobUnavailable } from '../components/jobs/JobStates';
 import { usePublicJob } from '../jobs/usePublicJob';
-import { space } from '../theme/tokens';
 
 function JobDetailView({ jobKey }: Readonly<{ jobKey: string }>) {
   const { state, retry } = usePublicJob(jobKey);
@@ -25,7 +24,7 @@ export function JobDetailPage() {
   return (
     <div>
       <BackLink to="/jobs">All jobs</BackLink>
-      <div style={{ marginTop: space[3] }}>
+      <div className="mt-6">
         <JobDetailView key={jobKey} jobKey={jobKey} />
       </div>
     </div>

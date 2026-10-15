@@ -1,6 +1,5 @@
 import { Card as AntCard, Typography } from 'antd';
 import type { ReactNode } from 'react';
-import { fontSize } from '../../theme/tokens';
 
 /**
  * Section card shell shared by every dashboard surface: optional header row
@@ -30,14 +29,14 @@ export function Card({
 }>) {
   const header =
     title || subtitle ? (
-      <div style={{ minWidth: 0, paddingBlock: 4 }}>
+      <div className="min-w-0 py-1">
         {title && (
-          <Typography.Title level={2} style={{ fontSize: fontSize.lead, margin: 0 }}>
+          <Typography.Title level={2} className="m-0 text-lead">
             {title}
           </Typography.Title>
         )}
         {subtitle && (
-          <Typography.Text type="secondary" style={{ display: 'block', fontSize: fontSize.caption, marginTop: 2 }}>
+          <Typography.Text type="secondary" className="mt-0.5 block text-caption">
             {subtitle}
           </Typography.Text>
         )}

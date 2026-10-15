@@ -19,7 +19,7 @@ import { EMAIL, invalidPhone } from '../dashboard/companyProfile';
 // CV files
 // ---------------------------------------------------------------------------
 
-export type CvFormat = 'PDF' | 'DOCX';
+type CvFormat = 'PDF' | 'DOCX';
 
 const CV_FORMATS: { format: CvFormat; extension: string; mime: string }[] = [
   { format: 'PDF', extension: '.pdf', mime: 'application/pdf' },
@@ -39,7 +39,7 @@ export const CV_ACCEPT_ATTRIBUTE = [
 export const MAX_CV_BYTES = 5 * 1024 * 1024;
 
 /** The format a file name claims, from its extension alone. */
-export function cvFormatFromName(name: string): CvFormat | null {
+function cvFormatFromName(name: string): CvFormat | null {
   const lower = name.toLowerCase();
   return CV_FORMATS.find((entry) => lower.endsWith(entry.extension))?.format ?? null;
 }
@@ -97,7 +97,7 @@ export function validatePhotoFile(file: File): string | null {
 // Form state
 // ---------------------------------------------------------------------------
 
-export interface CandidateFormValues {
+interface CandidateFormValues {
   fullName: string;
   identityCardNumber: string;
   email: string;
@@ -105,7 +105,7 @@ export interface CandidateFormValues {
 }
 
 export type CandidateTextField = keyof CandidateFormValues;
-export type CandidateFieldErrors = Partial<Record<CandidateTextField, string>>;
+type CandidateFieldErrors = Partial<Record<CandidateTextField, string>>;
 
 /** Document order — where the caret lands first when a submit is refused. */
 export const CANDIDATE_TEXT_FIELDS: CandidateTextField[] = ['fullName', 'identityCardNumber', 'email', 'phone'];
@@ -113,7 +113,7 @@ export const CANDIDATE_TEXT_FIELDS: CandidateTextField[] = ['fullName', 'identit
 /** The ID field's input limit — the same one registration uses. */
 export const MAX_ID_NUMBER_LENGTH = 30;
 
-export interface ExistingCv {
+interface ExistingCv {
   name: string;
   size?: number;
   url?: string;
@@ -314,7 +314,7 @@ export interface ChecklistItem {
 }
 
 /** The photo the candidate would end up with if they saved now. */
-export function hasPhoto(state: CandidateFormState): boolean {
+function hasPhoto(state: CandidateFormState): boolean {
   return state.photoFile !== null || (state.existingPhotoUrl !== null && !state.removePhoto);
 }
 

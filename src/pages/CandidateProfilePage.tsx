@@ -85,7 +85,7 @@ function Field({ field, error, children }: Readonly<{ field: CandidateTextField;
       {children}
       {error ? (
         <p id={errorId(field)} role="alert" className="tp-profile-field-error">
-          <WarningOutlined aria-hidden className="text-[14px]" style={{ marginTop: 1 }} />
+          <WarningOutlined aria-hidden className="mt-px text-[14px]" />
           {error}
         </p>
       ) : (

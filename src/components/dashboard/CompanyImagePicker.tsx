@@ -1,4 +1,4 @@
-import { BankOutlined, EyeOutlined, WarningOutlined } from '@ant-design/icons';
+import { BankOutlined, EyeOutlined } from '@ant-design/icons';
 import { Flex, Typography } from 'antd';
 import { useRef, type ChangeEvent } from 'react';
 import type { CompanyImageKind } from '../../api/types';
@@ -10,8 +10,8 @@ import {
   MAX_IMAGE_BYTES,
 } from '../../dashboard/companyImages';
 import { Button } from '../ui/Button';
+import { FieldError } from '../ui/FieldError';
 import { CompanyLogo } from './CompanyLogo';
-import { fontSize, slate } from '../../theme/tokens';
 
 /**
  * Choosing one of the company's images: the current picture, a button to
@@ -70,29 +70,17 @@ export function CompanyImagePicker({
       ) : (
         <div
           data-testid="cover-preview"
-          style={{
-            width: 128,
-            height: 64,
-            flexShrink: 0,
-            overflow: 'hidden',
-            borderRadius: 8,
-            border: `1px solid ${slate[200]}`,
-            background: 'var(--tp-brand-gradient)',
-          }}
+          className="h-16 w-32 shrink-0 overflow-hidden rounded-sm border border-slate-200 bg-(image:--tp-brand-gradient)"
         >
           {imageUrl && (
-            <img
-              src={imageUrl}
-              alt={`${companyName || 'Company'} cover`}
-              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-            />
+            <img src={imageUrl} alt={`${companyName || 'Company'} cover`} className="size-full object-cover" />
           )}
         </div>
       )}
 
-      <div style={{ minWidth: 0 }}>
+      <div className="min-w-0">
         <Typography.Text strong>{label}</Typography.Text>
-        <Flex wrap align="center" gap={8} style={{ marginTop: 6 }}>
+        <Flex wrap align="center" gap={8} className="mt-1.5">
           <input
             ref={inputRef}
             type="file"
@@ -128,16 +116,9 @@ export function CompanyImagePicker({
         </Flex>
 
         {error ? (
-          <Typography.Paragraph
-            role="alert"
-            type="danger"
-            style={{ display: 'flex', alignItems: 'flex-start', gap: 4, fontSize: fontSize.caption, margin: '6px 0 0' }}
-          >
-            <WarningOutlined aria-hidden className="text-[14px]" style={{ marginTop: 1 }} />
-            {error}
-          </Typography.Paragraph>
+          <FieldError>{error}</FieldError>
         ) : (
-          <Typography.Text type="secondary" style={{ display: 'block', fontSize: fontSize.caption, marginTop: 6 }}>
+          <Typography.Text type="secondary" className="mt-1.5 block text-caption">
             PNG, JPG, SVG or WebP, up to {formatBytes(MAX_IMAGE_BYTES[kind])}. {IMAGE_HINTS[kind]}
           </Typography.Text>
         )}

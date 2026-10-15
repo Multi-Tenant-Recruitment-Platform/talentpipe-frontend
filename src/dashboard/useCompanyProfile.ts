@@ -28,7 +28,7 @@ import {
  * layout, which is the only thing that actually differs between them.</p>
  */
 
-export interface ProfileMessage {
+interface ProfileMessage {
   tone: AlertTone;
   text: string;
 }

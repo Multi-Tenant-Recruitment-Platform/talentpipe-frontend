@@ -1,6 +1,5 @@
 import { Flex, Space, Typography } from 'antd';
 import type { ReactNode } from 'react';
-import { fontSize } from '../../theme/tokens';
 
 /**
  * Consistent page heading row: title + subtitle on the left, actions right.
@@ -20,13 +19,13 @@ export function PageHeader({
 }>) {
 
   return (
-    <Flex wrap align="flex-end" justify="space-between" gap={16} style={{ marginBottom: 32 }}>
-      <div style={{ minWidth: 0 }}>
-        <Typography.Title level={1} style={{ fontSize: fontSize.heading, margin: 0 }}>
+    <Flex wrap align="flex-end" justify="space-between" gap={16} className="mb-8">
+      <div className="min-w-0">
+        <Typography.Title level={1} className="m-0 text-heading">
           {title}
         </Typography.Title>
         {subtitle && (
-          <Typography.Text type="secondary" style={{ display: 'block', marginTop: 6 }}>
+          <Typography.Text type="secondary" className="mt-1.5 block">
             {subtitle}
           </Typography.Text>
         )}

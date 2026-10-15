@@ -4,7 +4,6 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { homeRouteFor, type Permission } from '../auth/permissions';
 import { RoleBadge } from '../components/dashboard/RoleBadge';
-import { fontSize, slate, status } from '../theme/tokens';
 
 /**
  * Why this particular door is closed. Generic copy is a dead end — naming the
@@ -30,25 +29,14 @@ export function ForbiddenPage({ requires }: Readonly<{ requires?: Permission }>)
 
   return (
     <Result
-      style={{ maxWidth: 512, marginInline: 'auto' }}
+      className="mx-auto max-w-128"
       icon={
-        <span
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: 56,
-            height: 56,
-            borderRadius: 16,
-            background: status.warningBg,
-            color: status.warningText,
-          }}
-        >
+        <span className="inline-flex size-14 items-center justify-center rounded-xl bg-warning-bg text-warning-text">
           <LockOutlined aria-hidden className="text-[28px]" />
         </span>
       }
       title={
-        <Typography.Title level={1} style={{ fontSize: fontSize.heading, margin: 0 }}>
+        <Typography.Title level={1} className="m-0 text-heading">
           You don&rsquo;t have access to this page
         </Typography.Title>
       }
@@ -66,12 +54,8 @@ export function ForbiddenPage({ requires }: Readonly<{ requires?: Permission }>)
       extra={
         <Flex vertical align="center" gap={20}>
           {user && (
-            <Flex
-              align="center"
-              gap={8}
-              style={{ borderRadius: 999, background: slate[50], padding: '6px 12px' }}
-            >
-              <Typography.Text type="secondary" style={{ fontSize: fontSize.caption }}>
+            <Flex align="center" gap={8} className="rounded-pill bg-slate-50 px-3 py-1.5">
+              <Typography.Text type="secondary" className="text-caption">
                 Signed in as
               </Typography.Text>
               <RoleBadge role={user.role} />

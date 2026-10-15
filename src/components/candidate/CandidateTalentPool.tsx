@@ -1,7 +1,6 @@
 import { Typography } from 'antd';
 import { useEffect, useState, type ReactNode } from 'react';
 import { PROFILE_FOCUS_IDS } from '../../candidate/candidateProfile';
-import { fontSize } from '../../theme/tokens';
 import { Alert } from '../ui/Alert';
 
 const CHECKBOX_ID = PROFILE_FOCUS_IDS.talentPool;
@@ -75,18 +74,18 @@ export function CandidateTalentPool({
           aria-expanded={checked}
           aria-controls={CV_REGION_ID}
         />
-        <span style={{ minWidth: 0 }}>
-          <Typography.Text strong id={LABEL_ID} style={{ display: 'block' }}>
+        <span className="min-w-0">
+          <Typography.Text strong id={LABEL_ID} className="block">
             Add me to the Talent Pool
           </Typography.Text>
-          <Typography.Text type="secondary" id={HINT_ID} style={{ display: 'block', marginTop: 2 }}>
+          <Typography.Text type="secondary" id={HINT_ID} className="mt-0.5 block">
             Let companies on TalentPipe consider you for future job opportunities.
           </Typography.Text>
         </span>
       </label>
 
       {leavingPool && (
-        <Alert tone="warning" role="status" style={{ marginTop: 12 }}>
+        <Alert tone="warning" role="status" className="mt-3">
           You'll be removed from the Talent Pool when you save.
         </Alert>
       )}
@@ -94,13 +93,13 @@ export function CandidateTalentPool({
       {checked && (
         <Reveal>
           <div className="tp-cv-branch">
-            <Typography.Title level={3} id={CV_HEADING_ID} style={{ fontSize: fontSize.body, margin: 0 }}>
+            <Typography.Title level={3} id={CV_HEADING_ID} className="m-0 text-body">
               CV / Resume (Optional)
             </Typography.Title>
-            <Typography.Text type="secondary" style={{ display: 'block', marginTop: 2 }}>
+            <Typography.Text type="secondary" className="mt-0.5 block">
               Upload a CV to help match you with future vacancies.
             </Typography.Text>
-            <div style={{ marginTop: 12 }}>{children}</div>
+            <div className="mt-3">{children}</div>
           </div>
         </Reveal>
       )}

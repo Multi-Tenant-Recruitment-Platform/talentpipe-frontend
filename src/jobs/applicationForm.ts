@@ -43,7 +43,7 @@ export const MAX_COVER_LETTER = 2000;
 
 export const MAX_RESUME_BYTES = 5 * 1024 * 1024;
 /** Checked by extension: browsers report an empty or generic MIME type for .doc on some systems. */
-export const RESUME_EXTENSIONS = ['.pdf', '.doc', '.docx'];
+const RESUME_EXTENSIONS = ['.pdf', '.doc', '.docx'];
 export const RESUME_ACCEPT = [
   ...RESUME_EXTENSIONS,
   'application/pdf',

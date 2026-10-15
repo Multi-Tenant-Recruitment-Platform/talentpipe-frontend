@@ -9,7 +9,7 @@ import { Button } from '../../components/ui/Button';
 import { useTeamSummary } from '../../dashboard/TeamSummaryContext';
 import { useCompanyProfileContext } from '../../dashboard/CompanyProfileContext';
 import { planUsage } from '../../data/mockDashboard';
-import { fontSize, primary } from '../../theme/tokens';
+import { primary } from '../../theme/tokens';
 
 /**
  * Company settings — the workspace identity and the plan.
@@ -35,8 +35,9 @@ export function CompanySettingsPage() {
   const controller = useCompanyProfileContext();
   const allow = useCan();
 
-  // Real seat consumption from GET /team — only the tier and the ceiling are
-  // still mock, since no billing endpoint exposes them yet.
+  // Real seat consumption from GET /team, and the tier from the company
+  // profile — only the ceiling is still mock, since no billing endpoint
+  // exposes it yet.
   const { seatsUsed, loading: seatsLoading } = useTeamSummary();
   const seatsPercent = Math.min(100, Math.round((seatsUsed / planUsage.seatsTotal) * 100));
   const seatsLeft = Math.max(0, planUsage.seatsTotal - seatsUsed);
@@ -84,16 +85,16 @@ export function CompanySettingsPage() {
             <Col xs={24} lg={12}>
               <Card title="Plan & usage" subtitle="Current subscription">
                 <Flex align="center" justify="space-between">
-                  <Typography.Text strong style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                    <StarOutlined aria-hidden className="text-[16px]" style={{ color: primary[600] }} />
-                    {planUsage.tier} plan
+                  <Typography.Text strong className="inline-flex items-center gap-2">
+                    <StarOutlined aria-hidden className="text-[16px] text-primary-600" />
+                    {controller.profile ? `${statusLabel(controller.profile.planTier)} plan` : '—'}
                   </Typography.Text>
                   <Badge>Monthly</Badge>
                 </Flex>
-                <div style={{ marginTop: 16 }}>
+                <div className="mt-4">
                   <Flex align="baseline" justify="space-between">
                     <Typography.Text type="secondary">Team seats</Typography.Text>
-                    <Typography.Text strong style={{ fontVariantNumeric: 'tabular-nums' }}>
+                    <Typography.Text strong className="tabular-nums">
                       {seatsLoading ? '—' : `${seatsUsed} / ${planUsage.seatsTotal}`}
                     </Typography.Text>
                   </Flex>
@@ -101,16 +102,16 @@ export function CompanySettingsPage() {
                     percent={seatsPercent}
                     showInfo={false}
                     strokeColor={primary[600]}
-                    style={{ marginBottom: 0 }}
+                    className="mb-0"
                   />
-                  <Typography.Text type="secondary" style={{ fontSize: fontSize.caption }}>
+                  <Typography.Text type="secondary" className="text-caption">
                     {seatsLeft} {seatsLeft === 1 ? 'seat' : 'seats'} left — invite HR managers and
                     interviewers anytime.
                   </Typography.Text>
                 </div>
                 <Button
                   variant="secondary"
-                  style={{ marginTop: 16, width: '100%' }}
+                  className="mt-4 w-full"
                   title="Billing arrives in a later sprint"
                 >
                   Manage plan
@@ -122,10 +123,7 @@ export function CompanySettingsPage() {
 
         {/* The profile moved out of this page; say where it went, so nobody
             concludes it was removed. */}
-        <Typography.Paragraph
-          type="secondary"
-          style={{ marginTop: 16, marginBottom: 0, fontSize: fontSize.caption }}
-        >
+        <Typography.Paragraph type="secondary" className="mt-4 mb-0 text-caption">
           <BankOutlined aria-hidden className="text-[14px]" />{' '}
           Company details are managed on <Link to="/dashboard/profile">Profile Management</Link>.
         </Typography.Paragraph>

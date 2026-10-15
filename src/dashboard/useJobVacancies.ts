@@ -39,7 +39,7 @@ function useLatest() {
   }, []);
 }
 
-export interface JobVacancyListController {
+interface JobVacancyListController {
   vacancies: JobVacancyResponse[];
   /** True until the first answer arrives. A refresh keeps the old rows on screen. */
   loading: boolean;
@@ -87,7 +87,7 @@ export function useJobVacancyList(): JobVacancyListController {
   return { vacancies, loading, error, refresh, replace };
 }
 
-export interface JobVacancyController {
+interface JobVacancyController {
   vacancy: JobVacancyResponse | null;
   loading: boolean;
   error: string | null;

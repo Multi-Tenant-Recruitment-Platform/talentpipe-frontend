@@ -32,7 +32,7 @@ export function ProtectedRoute({
 
   if (initializing) {
     return (
-      <Flex align="center" justify="center" gap={12} style={{ minHeight: '50vh' }}>
+      <Flex align="center" justify="center" gap={12} className="min-h-[50vh]">
         <Spin />
         <Typography.Text type="secondary">Loading session…</Typography.Text>
       </Flex>

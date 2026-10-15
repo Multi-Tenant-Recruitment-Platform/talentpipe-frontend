@@ -25,7 +25,6 @@ import {
   toVacancySearchParams,
   type VacancyQuery,
 } from '../../dashboard/vacancyList';
-import { space } from '../../theme/tokens';
 
 const NOTICE_ID = 'vacancy-list-notice';
 
@@ -187,7 +186,7 @@ export function JobVacanciesPage() {
   } else {
     body = (
       <Card styles={{ body: { padding: 0 } }}>
-        <div className="tp-vacancy-toolbar-wrap">
+        <div className="border-b border-slate-200 px-6 pt-5 pb-3">
           <VacancyToolbar
             query={query}
             onChange={update}
@@ -201,7 +200,7 @@ export function JobVacanciesPage() {
         </div>
 
         {selection.visible.length > 0 ? (
-          <ul className="tp-vacancy-list" aria-label="Vacancies">
+          <ul className="m-0 list-none p-0" aria-label="Vacancies">
             {selection.visible.map((vacancy) => (
               <VacancyRow
                 key={vacancy.id}
@@ -264,7 +263,7 @@ export function JobVacanciesPage() {
       </PageHeader>
 
       {summaryParts.length > 0 && (
-        <p className="tp-vacancy-summary">
+        <p className="tp-vacancy-summary m-0 -mt-4 mb-6 text-small text-slate-600">
           {summaryParts.map((part, i) => (
             <span key={part.key}>
               {i > 0 && <span aria-hidden="true"> · </span>}
@@ -278,7 +277,7 @@ export function JobVacanciesPage() {
 
       {/* A failed refresh keeps the rows that loaded; it does not blank them. */}
       {error && vacancies.length > 0 && (
-        <Alert tone="error" style={{ marginBottom: space[3] }}>
+        <Alert tone="error" className="mb-6">
           {error}
         </Alert>
       )}

@@ -30,7 +30,7 @@ function CheckList({ items, label, columns = false }: Readonly<{ items: string[]
           <span className="tp-job-check">
             <CheckOutlined aria-hidden className="text-[14px]" />
           </span>
-          <span style={{ minWidth: 0 }}>{item}</span>
+          <span className="min-w-0">{item}</span>
         </li>
       ))}
     </ul>
@@ -82,7 +82,7 @@ export function JobAdvert({ job }: Readonly<{ job: JobDetail }>) {
       <div className="tp-job-advert-body">
         <header className="tp-job-advert-head">
           <CompanyMark name={job.companyName} logoUrl={job.companyLogoUrl} size="lg" />
-          <div style={{ minWidth: 0 }}>
+          <div className="min-w-0">
             <h1 className="tp-job-advert-title">{job.title}</h1>
             <p className="tp-job-advert-company">{job.companyName}</p>
             <PostedAt iso={job.publishedAt} />
@@ -108,7 +108,7 @@ export function JobAdvert({ job }: Readonly<{ job: JobDetail }>) {
                   <span className="tp-job-fact-icon">
                     <fact.icon aria-hidden className="text-[20px]" />
                   </span>
-                  <div style={{ minWidth: 0 }}>
+                  <div className="min-w-0">
                     <dt>{fact.label}</dt>
                     <dd>{fact.value}</dd>
                   </div>

@@ -7,7 +7,7 @@ import { Badge, type BadgeTone } from './Badge';
  * hue would spend four colours restating four words — while implying a
  * ranking between HR and Interviewer that the product does not have.
  */
-export const ROLE_BADGE_TONE: Record<string, BadgeTone> = {
+const ROLE_BADGE_TONE: Record<string, BadgeTone> = {
   COMPANY_ADMIN: 'accent',
   HR_MANAGER: 'neutral',
   INTERVIEWER: 'neutral',

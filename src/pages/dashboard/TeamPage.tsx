@@ -204,7 +204,7 @@ export function TeamPage() {
       {/* Load and action failures keep separate slots: a rejected invite must
           not blank a roster that loaded perfectly well. */}
       {loadError && (
-        <Alert tone="error" style={{ marginBottom: 24 }}>
+        <Alert tone="error" className="mb-6">
           <Flex wrap align="center" justify="space-between" gap={12}>
             <span>{loadError}</span>
             <Button size="sm" variant="secondary" onClick={() => void refresh()}>
@@ -215,7 +215,7 @@ export function TeamPage() {
       )}
 
       {message && (
-        <Alert tone={message.tone} onDismiss={() => setMessage(null)} style={{ marginBottom: 24 }}>
+        <Alert tone={message.tone} onDismiss={() => setMessage(null)} className="mb-6">
           {message.text}
         </Alert>
       )}
@@ -242,7 +242,7 @@ export function TeamPage() {
       {/* Disabled and unverified accounts live outside Active and Pending, so
           say where they went rather than letting them look deleted. */}
       {roster.otherCount > 0 && roster.segment !== 'all' && (
-        <Alert tone="info" style={{ marginTop: 24 }}>
+        <Alert tone="info" className="mt-6">
           {roster.otherCount === 1
             ? '1 account is disabled or awaiting email verification.'
             : `${roster.otherCount} accounts are disabled or awaiting email verification.`}{' '}
@@ -253,8 +253,8 @@ export function TeamPage() {
         </Alert>
       )}
 
-      <div style={{ marginTop: 24 }}>
-        <Card bodyClassName="tp-roster-body">
+      <div className="mt-6">
+        <Card bodyClassName="tp-roster-body px-0 pt-5 pb-2">
           <TeamToolbar
           segment={roster.segment}
           onSegmentChange={roster.setSegment}
@@ -288,7 +288,7 @@ export function TeamPage() {
 
           {soloAdmin && (
             <>
-              <Divider style={{ marginBlock: 0 }} />
+              <Divider className="my-0" />
               <EmptyState
                 icon={TeamOutlined}
                 title="You're the only person here"

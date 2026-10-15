@@ -25,7 +25,8 @@ export function WorkScheduleSection({ values, errors, set }: Readonly<VacancySec
       >
         <Flex align="center" gap={space[2]} wrap>
           <Checkbox.Group
-            className="tp-day-checks"
+            // Seven columns do not fit a phone; let them wrap instead of scroll.
+            className="tp-day-checks grid auto-cols-max grid-flow-col gap-3 max-sm:grid-flow-row max-sm:grid-cols-4"
             value={values.workingDays}
             onChange={(next) => set('workingDays', next as WeekDay[])}
           >
@@ -70,7 +71,7 @@ export function WorkScheduleSection({ values, errors, set }: Readonly<VacancySec
           options={SHIFT_TYPES.map((shift) => ({ value: shift.id, label: shift.label }))}
           placeholder="Choose a shift"
           allowClear
-          style={{ width: '100%' }}
+          className="w-full"
           onChange={(next: ShiftType | undefined) => set('shiftType', next ?? '')}
         />
       </VacancyField>
@@ -83,7 +84,7 @@ export function WorkScheduleSection({ values, errors, set }: Readonly<VacancySec
           min={1}
           max={168}
           addonAfter="hours"
-          style={{ width: '100%' }}
+          className="w-full"
           onChange={(next) => set('expectedHoursPerWeek', next)}
         />
       </VacancyField>

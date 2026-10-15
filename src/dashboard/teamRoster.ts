@@ -19,7 +19,7 @@ export interface SortState {
   dir: 'asc' | 'desc';
 }
 
-export interface StatusMeta {
+interface StatusMeta {
   label: string;
   tone: BadgeTone;
   /** Which segment tab this status belongs to. */
@@ -35,7 +35,7 @@ export interface StatusMeta {
  * so a disabled or unverified colleague silently vanished from the admin's
  * view. Anything not listed here still renders — see {@link statusMeta}.</p>
  */
-export const MEMBER_STATUS_META: Record<string, StatusMeta> = {
+const MEMBER_STATUS_META: Record<string, StatusMeta> = {
   ACTIVE: { label: 'Active', tone: 'success', segment: 'active' },
   INVITED: {
     label: 'Invited',
@@ -124,14 +124,14 @@ export function toRosterRows(members: UserResponse[], selfId: string | undefined
   });
 }
 
-export interface RosterQuery {
+interface RosterQuery {
   segment: Segment;
   roleFilter: string;
   query: string;
   sort: SortState;
 }
 
-export interface RosterSelection {
+interface RosterSelection {
   visible: RosterRow[];
   /** Counts after search + role filter, before the segment filter. */
   segmentCounts: Record<Segment, number>;

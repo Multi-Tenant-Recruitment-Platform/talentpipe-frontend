@@ -11,6 +11,9 @@ import { formatDate, formatRelativeTime } from '../../utils/format';
 import { VacancyActions } from './VacancyActions';
 import { VacancyStatusTag } from './VacancyStatusTag';
 
+const TERM = 'text-caption font-medium text-slate-500';
+const FIGURE = 'block text-body tabular-nums';
+
 /**
  * One vacancy in the list: who it is, where it stands, what can be done.
  *
@@ -57,10 +60,10 @@ export function VacancyRow({
               {vacancy.title || 'Untitled vacancy'}
             </Link>
           </h2>
-          <p className="tp-vacancy-row-meta">
+          <p className="m-0 mt-0.5 truncate text-small text-slate-500">
             {meta.length > 0 ? meta.join(' · ') : 'No details yet'}
           </p>
-          <p className="tp-vacancy-row-updated">
+          <p className="m-0 mt-0.5 text-caption text-slate-500">
             Updated <time dateTime={vacancy.updatedAt}>{formatRelativeTime(vacancy.updatedAt)}</time>
           </p>
         </div>
@@ -73,14 +76,14 @@ export function VacancyRow({
             </dd>
           </div>
           <div>
-            <dt className="tp-vacancy-row-term">Deadline</dt>
+            <dt className={TERM}>Deadline</dt>
             <dd>
               {vacancy.applicationDeadline ? (
-                <time dateTime={vacancy.applicationDeadline} className="tp-vacancy-row-figure">
+                <time dateTime={vacancy.applicationDeadline} className={`${FIGURE} text-slate-900`}>
                   {formatDate(vacancy.applicationDeadline)}
                 </time>
               ) : (
-                <span className="tp-vacancy-row-figure tp-vacancy-row-muted">—</span>
+                <span className={`${FIGURE} text-slate-400`}>—</span>
               )}
               {signal && (
                 <span className="tp-deadline-signal" data-tone={signal.tone}>
@@ -92,27 +95,27 @@ export function VacancyRow({
           <div>
             {completeness ? (
               <>
-                <dt className="tp-vacancy-row-term">Completeness</dt>
+                <dt className={TERM}>Completeness</dt>
                 <dd>
-                  <span className="tp-vacancy-row-figure">
+                  <span className={`${FIGURE} text-slate-900`}>
                     {completeness.filled} of {completeness.total}
                   </span>
-                  <span className="tp-vacancy-row-sub">required fields</span>
+                  <span className="block text-caption text-slate-500">required fields</span>
                 </dd>
               </>
             ) : (
               <>
-                <dt className="tp-vacancy-row-term">Applicants</dt>
+                <dt className={TERM}>Applicants</dt>
                 <dd>
                   {vacancy.applicantCount === null ? (
                     <>
-                      <span aria-hidden="true" className="tp-vacancy-row-figure tp-vacancy-row-muted">
+                      <span aria-hidden="true" className={`${FIGURE} text-slate-400`}>
                         —
                       </span>
                       <span className="sr-only">Not connected yet</span>
                     </>
                   ) : (
-                    <span className="tp-vacancy-row-figure">{vacancy.applicantCount}</span>
+                    <span className={`${FIGURE} text-slate-900`}>{vacancy.applicantCount}</span>
                   )}
                 </dd>
               </>

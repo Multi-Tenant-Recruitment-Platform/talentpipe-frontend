@@ -54,14 +54,14 @@ export const COMPANY_TEXT_FIELDS = [
 export type CompanyTextField = (typeof COMPANY_TEXT_FIELDS)[number];
 
 /** The list-valued fields, which need set comparison rather than equality. */
-export const COMPANY_LIST_FIELDS = [
+const COMPANY_LIST_FIELDS = [
   'benefits',
   'officeLocations',
   'departments',
 ] as const;
 export type CompanyListField = (typeof COMPANY_LIST_FIELDS)[number];
 
-export type CompanyField = CompanyTextField | CompanyListField;
+type CompanyField = CompanyTextField | CompanyListField;
 
 /**
  * Form state. Text fields are strings — a `<select>` with nothing chosen and a
@@ -82,7 +82,7 @@ const MAX_PLACE = 120;
 const MAX_SHORT = 60;
 const MAX_TAGLINE = 140;
 export const MAX_DESCRIPTION = 1000;
-export const MAX_STATEMENT = 400;
+const MAX_STATEMENT = 400;
 
 /** Founded before this and it is not a company, it is a typo. */
 const EARLIEST_FOUNDED_YEAR = 1800;
@@ -127,8 +127,6 @@ export const COMPANY_SIZE_GROUPS: { label: string; options: string[] }[] = [
     ],
   },
 ];
-
-export const COMPANY_SIZES = COMPANY_SIZE_GROUPS.flatMap((group) => group.options);
 
 export const COMPANY_TYPES = [
   'Private limited company',
@@ -297,7 +295,7 @@ export const SOCIAL_FIELDS = [
   'twitterUrl',
   'instagramUrl',
 ] as const;
-export type SocialField = (typeof SOCIAL_FIELDS)[number];
+type SocialField = (typeof SOCIAL_FIELDS)[number];
 
 /** Placeholder shown in each social input — the shape people recognise. */
 export const SOCIAL_PLACEHOLDERS: Record<SocialField, string> = {
@@ -684,9 +682,7 @@ export function formatStreet(values: CompanyFormValues): string {
 }
 
 /** 'ISO — Name' → 'ISO'. The code is what belongs next to a salary. */
-export function currencyCode(currency: string): string {
-  return currency.split('—')[0].trim();
-}
+export { currencyCode } from '../utils/format';
 
 /** Two letters for the logo fallback: 'ABC Technologies' → 'AT'. */
 export function companyInitials(name: string): string {

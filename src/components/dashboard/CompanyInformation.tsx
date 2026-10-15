@@ -1,8 +1,9 @@
-import { Flex, Tag, Typography } from 'antd';
+import { Flex, Typography } from 'antd';
 import type { CompanyFormValues } from '../../dashboard/companyProfile';
 import { Badge } from './Badge';
 import { CompanyCoverImage } from './CompanyCoverImage';
 import { CompanyLogo } from './CompanyLogo';
+import { PillList } from './PillList';
 
 /**
  * Who the company is: cover, logo, name, industry, size, the description, and
@@ -30,10 +31,10 @@ export function CompanyInformation({
 
   const identity = (
     <>
-      <Typography.Title level={level} style={{ fontSize: withCover ? 20 : 18, margin: 0 }}>
+      <Typography.Title level={level} className={`m-0 ${withCover ? 'text-section' : 'text-title'}`}>
         {values.name || 'Unnamed company'}
       </Typography.Title>
-      <Flex wrap align="center" gap={8} style={{ marginTop: withCover ? 8 : 6 }}>
+      <Flex wrap align="center" gap={8} className={withCover ? 'mt-2' : 'mt-1.5'}>
         {values.industry ? (
           <Badge>{values.industry}</Badge>
         ) : (
@@ -49,33 +50,26 @@ export function CompanyInformation({
       {withCover ? (
         <div>
           <CompanyCoverImage coverUrl={coverUrl} logoUrl={logoUrl} name={values.name} />
-          <div style={{ marginTop: 16 }}>{identity}</div>
+          <div className="mt-4">{identity}</div>
         </div>
       ) : (
         <Flex align="flex-start" gap={16}>
           <CompanyLogo src={logoUrl} name={values.name} size="md" />
-          <div style={{ minWidth: 0, flex: 1 }}>{identity}</div>
+          <div className="min-w-0 flex-1">{identity}</div>
         </Flex>
       )}
 
       <div>
-        <Typography.Title level={4} className="tp-legend" style={{ margin: 0 }}>
+        <Typography.Title level={4} className="tp-legend m-0">
           About the company
         </Typography.Title>
         {values.description ? (
           // pre-line so paragraph breaks the admin typed survive.
-          <Typography.Paragraph
-            data-testid="company-description"
-            style={{ marginTop: 8, marginBottom: 0, whiteSpace: 'pre-line' }}
-          >
+          <Typography.Paragraph data-testid="company-description" className="mt-2 mb-0 whitespace-pre-line">
             {values.description}
           </Typography.Paragraph>
         ) : (
-          <Typography.Paragraph
-            data-testid="company-description"
-            type="secondary"
-            style={{ marginTop: 8, marginBottom: 0 }}
-          >
+          <Typography.Paragraph data-testid="company-description" type="secondary" className="mt-2 mb-0">
             No description yet. This is what candidates read to understand what the company does.
           </Typography.Paragraph>
         )}
@@ -85,26 +79,10 @@ export function CompanyInformation({
           absent otherwise — an empty "Departments" label says nothing. */}
       {values.departments.length > 0 && (
         <div>
-          <Typography.Title level={4} className="tp-legend" style={{ margin: 0 }}>
+          <Typography.Title level={4} className="tp-legend m-0">
             Departments
           </Typography.Title>
-          <ul
-            data-testid="company-departments"
-            style={{
-              display: 'flex',
-              flexWrap: 'wrap',
-              gap: 8,
-              listStyle: 'none',
-              margin: '8px 0 0',
-              padding: 0,
-            }}
-          >
-            {values.departments.map((department) => (
-              <li key={department}>
-                <Tag style={{ marginInlineEnd: 0, borderRadius: 999 }}>{department}</Tag>
-              </li>
-            ))}
-          </ul>
+          <PillList data-testid="company-departments" items={values.departments} className="mt-2" />
         </div>
       )}
     </Flex>

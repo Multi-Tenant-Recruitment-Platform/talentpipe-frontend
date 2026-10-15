@@ -2,7 +2,7 @@ import { Button as AntButton } from 'antd';
 import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from 'react';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'dangerSolid';
-export type ButtonSize = 'sm' | 'md';
+type ButtonSize = 'sm' | 'md';
 
 type AntLook = { type: 'primary' | 'default' | 'text'; danger?: boolean };
 

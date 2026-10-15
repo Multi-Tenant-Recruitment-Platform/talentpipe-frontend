@@ -8,7 +8,7 @@ const REGISTERED_MESSAGE = {
     'Company registered. Check your email for the verification link — you can sign in once it is confirmed.',
 } as const;
 
-export interface LoginNoticesProps {
+interface LoginNoticesProps {
   /** Why the previous session ended, so the redirect here isn't a mystery. */
   sessionEndReason: SessionEndReason | null;
   /** Set by the registration pages after a successful sign-up. */

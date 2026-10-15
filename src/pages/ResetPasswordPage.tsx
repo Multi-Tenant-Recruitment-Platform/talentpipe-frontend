@@ -7,6 +7,7 @@ import { api, apiErrorMessage } from '../api/client';
 import { AuthShell } from '../components/AuthShell';
 import { AuthField } from '../components/auth/AuthField';
 import { AuthHeading } from '../components/auth/AuthHeading';
+import { useFormFields } from '../components/auth/useFormFields';
 
 /**
  * Landing page for the link in a password-reset email (PB-008). Sets a new
@@ -20,8 +21,8 @@ export function ResetPasswordPage() {
   const navigate = useNavigate();
   const token = searchParams.get('token');
 
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const { values, field } = useFormFields({ password: '', confirmPassword: '' });
+  const { password, confirmPassword } = values;
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -80,8 +81,7 @@ export function ResetPasswordPage() {
               type="password"
               required
               minLength={8}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              {...field('password')}
               autoComplete="new-password"
             />
           </AuthField>
@@ -91,8 +91,7 @@ export function ResetPasswordPage() {
               id="confirmPassword"
               type="password"
               required
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
+              {...field('confirmPassword')}
               autoComplete="new-password"
             />
           </AuthField>

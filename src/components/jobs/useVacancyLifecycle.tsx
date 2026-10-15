@@ -10,7 +10,7 @@ import { ConfirmDialog } from '../ui/ConfirmDialog';
 import type { VacancyNoticeValue } from './VacancyNotice';
 
 /** The three moves that change a vacancy's status. */
-export type LifecycleMove = 'publish' | 'close' | 'archive';
+type LifecycleMove = 'publish' | 'close' | 'archive';
 
 const vacancyName = (vacancy: JobVacancyResponse) => vacancy.title || 'Untitled vacancy';
 

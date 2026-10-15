@@ -11,8 +11,9 @@ import {
   shiftTypeLabel,
   workplaceTypeLabel,
 } from '../../dashboard/jobVacancy';
-import { fontSize, slate, space } from '../../theme/tokens';
+import { space } from '../../theme/tokens';
 import { formatDate } from '../../utils/format';
+import { detailGrid } from '../ui/classes';
 
 /**
  * Everything captured about one vacancy, read back — the body of its page.
@@ -30,19 +31,11 @@ function Fact({ label, value }: Readonly<{ label: string; value: string }>) {
     return null;
   }
   return (
-    <div style={{ minWidth: 0 }}>
-      <dt
-        style={{
-          fontSize: fontSize.caption,
-          fontWeight: 500,
-          textTransform: 'uppercase',
-          letterSpacing: '0.03em',
-          color: slate[500],
-        }}
-      >
+    <div className="min-w-0">
+      <dt className="text-caption font-medium uppercase tracking-[0.03em] text-slate-500">
         {label}
       </dt>
-      <dd style={{ margin: `2px 0 0`, minWidth: 0 }}>
+      <dd className="m-0 mt-0.5 min-w-0">
         <Typography.Text>{value}</Typography.Text>
       </dd>
     </div>
@@ -54,10 +47,10 @@ function Block({ title, children }: Readonly<{ title: string; children: ReactNod
     <section className="tp-vacancy-block">
       {/* A plain heading rather than Typography.Title: antd's own selector
           outranks `.tp-legend` and would restore its heading size. */}
-      <h2 className="tp-legend" style={{ margin: 0 }}>
+      <h2 className="tp-legend m-0">
         {title}
       </h2>
-      <div style={{ marginTop: space[1.5] }}>{children}</div>
+      <div className="mt-3">{children}</div>
     </section>
   );
 }
@@ -66,7 +59,7 @@ function Chips({ values }: Readonly<{ values: string[] }>) {
   return (
     <Flex gap={space[0.5]} wrap>
       {values.map((value) => (
-        <Tag key={value} style={{ margin: 0 }}>
+        <Tag key={value} className="m-0">
           {value}
         </Tag>
       ))}
@@ -76,9 +69,9 @@ function Chips({ values }: Readonly<{ values: string[] }>) {
 
 function Lines({ values }: Readonly<{ values: string[] }>) {
   return (
-    <ol style={{ margin: 0, paddingInlineStart: space[2.5] }}>
+    <ol className="m-0 ps-5">
       {values.map((value) => (
-        <li key={value} style={{ marginBottom: space[0.5] }}>
+        <li key={value} className="mb-1">
           <Typography.Text>{value}</Typography.Text>
         </li>
       ))}
@@ -90,7 +83,7 @@ export function VacancyDetailsBody({ vacancy }: Readonly<{ vacancy: JobVacancyRe
   return (
     <>
       <Block title="Basic information">
-        <dl className="tp-detail-grid">
+        <dl className={detailGrid}>
           <Fact label="Department" value={vacancy.department} />
           <Fact label="Openings" value={String(vacancy.openings)} />
           <Fact
@@ -109,18 +102,18 @@ export function VacancyDetailsBody({ vacancy }: Readonly<{ vacancy: JobVacancyRe
       {(vacancy.jobSummary || vacancy.jobDescription) && (
         <Block title="Job description">
           {vacancy.jobSummary && (
-            <Typography.Paragraph style={{ marginBottom: space[1.5] }}>
+            <Typography.Paragraph className="mb-3">
               {vacancy.jobSummary}
             </Typography.Paragraph>
           )}
           {vacancy.jobDescription && (
-            <Typography.Paragraph type="secondary" style={{ whiteSpace: 'pre-wrap' }}>
+            <Typography.Paragraph type="secondary" className="whitespace-pre-wrap">
               {vacancy.jobDescription}
             </Typography.Paragraph>
           )}
           {vacancy.keyResponsibilities.length > 0 && (
             <>
-              <Typography.Text strong style={{ display: 'block', marginBottom: space[1] }}>
+              <Typography.Text strong className="mb-2 block">
                 Key responsibilities
               </Typography.Text>
               <Lines values={vacancy.keyResponsibilities} />
@@ -133,7 +126,7 @@ export function VacancyDetailsBody({ vacancy }: Readonly<{ vacancy: JobVacancyRe
         <Flex vertical gap={space[2]}>
           {vacancy.requiredSkills.length > 0 && (
             <div>
-              <Typography.Text strong style={{ display: 'block', marginBottom: space[1] }}>
+              <Typography.Text strong className="mb-2 block">
                 Required skills
               </Typography.Text>
               <Chips values={vacancy.requiredSkills} />
@@ -141,13 +134,13 @@ export function VacancyDetailsBody({ vacancy }: Readonly<{ vacancy: JobVacancyRe
           )}
           {vacancy.preferredSkills.length > 0 && (
             <div>
-              <Typography.Text strong style={{ display: 'block', marginBottom: space[1] }}>
+              <Typography.Text strong className="mb-2 block">
                 Preferred skills
               </Typography.Text>
               <Chips values={vacancy.preferredSkills} />
             </div>
           )}
-          <dl className="tp-detail-grid">
+          <dl className={detailGrid}>
             <Fact
               label="Minimum experience"
               value={
@@ -167,7 +160,7 @@ export function VacancyDetailsBody({ vacancy }: Readonly<{ vacancy: JobVacancyRe
       {(formatSalary(vacancy) || vacancy.benefits.length > 0) && (
         <Block title="Salary & benefits">
           <Flex vertical gap={space[2]}>
-            <dl className="tp-detail-grid">
+            <dl className={detailGrid}>
               <Fact label="Salary" value={formatSalary(vacancy)} />
               <Fact label="Pay period" value={payPeriodLabel(vacancy.payPeriod) ?? ''} />
             </dl>
@@ -179,7 +172,7 @@ export function VacancyDetailsBody({ vacancy }: Readonly<{ vacancy: JobVacancyRe
       )}
 
       <Block title="Work schedule">
-        <dl className="tp-detail-grid">
+        <dl className={detailGrid}>
           <Fact label="Working days" value={formatWorkingDays(vacancy.workingDays)} />
           <Fact label="Working hours" value={vacancy.workingHours ?? ''} />
           <Fact label="Shift" value={shiftTypeLabel(vacancy.shiftType) ?? ''} />
@@ -197,12 +190,12 @@ export function VacancyDetailsBody({ vacancy }: Readonly<{ vacancy: JobVacancyRe
           nothing can fill these fields in. */}
       {/* <Block title="Recruitment settings">
         <Flex vertical gap={space[2]}>
-          <dl className="tp-detail-grid">
+          <dl className={detailGrid}>
             <Fact label="Pipeline" value={pipelineLabel(vacancy.recruitmentPipelineId) ?? ''} />
           </dl>
           {vacancy.screeningQuestions.length > 0 && (
             <div>
-              <Typography.Text strong style={{ display: 'block', marginBottom: space[1] }}>
+              <Typography.Text strong className="mb-2 block">
                 Screening questions
               </Typography.Text>
               <Lines values={vacancy.screeningQuestions} />

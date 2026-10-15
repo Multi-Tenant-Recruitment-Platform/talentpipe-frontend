@@ -1,7 +1,7 @@
 import { CloseOutlined, PlusOutlined } from '@ant-design/icons';
 import { Flex, Input, Typography } from 'antd';
 import { cleanValues } from '../../dashboard/companyProfile';
-import { fontSize, slate, space } from '../../theme/tokens';
+import { space } from '../../theme/tokens';
 import { Button } from '../ui/Button';
 
 /**
@@ -61,12 +61,12 @@ export function BulletListEditor({
 
   return (
     <div>
-      <ol className="tp-bullet-rows">
+      <ol className="m-0 flex list-none flex-col gap-2 p-0">
         {rows.map((row, index) => (
           // Positional key — safe here because every input below is controlled;
             // see the note in this component's doc comment.
-          <li key={index} className="tp-bullet-row">
-            <span aria-hidden="true" className="tp-bullet-marker">
+          <li key={index} className="flex items-center gap-2">
+            <span aria-hidden="true" className="w-4.5 shrink-0 text-right text-caption tabular-nums text-slate-400">
               {index + 1}
             </span>
             <Input
@@ -92,7 +92,7 @@ export function BulletListEditor({
         ))}
       </ol>
 
-      <Flex align="center" gap={space[1.5]} wrap style={{ marginTop: space[1] }}>
+      <Flex align="center" gap={space[1.5]} wrap className="mt-2">
         <Button
           variant="secondary"
           size="sm"
@@ -105,10 +105,7 @@ export function BulletListEditor({
           </Flex>
         </Button>
         {max !== undefined && (
-          <Typography.Text
-            type="secondary"
-            style={{ fontSize: fontSize.caption, color: atLimit ? slate[600] : undefined }}
-          >
+          <Typography.Text type="secondary" className={`text-caption ${atLimit ? 'text-slate-600' : ''}`}>
             {cleanValues(rows).length} of {max}
           </Typography.Text>
         )}

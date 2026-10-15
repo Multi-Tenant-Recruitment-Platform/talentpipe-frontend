@@ -23,7 +23,7 @@ import {
   type JobVacancyFormValues,
 } from '../../dashboard/jobVacancy';
 import { describeVacancyError, type VacancyRequestKind } from '../../dashboard/vacancyErrors';
-import { fontSize, space } from '../../theme/tokens';
+import { space } from '../../theme/tokens';
 import { formatDate } from '../../utils/format';
 import { PageHeader } from '../dashboard/PageHeader';
 import { Alert } from '../ui/Alert';
@@ -62,7 +62,7 @@ import type { VacancyNoticeValue } from './VacancyNotice';
  * which is the moment the feedback helps.</p>
  */
 
-export type VacancyFormMode = 'create' | 'duplicate' | 'edit-draft' | 'edit-published';
+type VacancyFormMode = 'create' | 'duplicate' | 'edit-draft' | 'edit-published';
 
 const SECTION_BODIES: Record<string, ComponentType<VacancySectionProps>> = {
   basics: BasicInformationSection,
@@ -328,7 +328,17 @@ export function VacancyForm({
         </Button>
       </PageHeader>
 
-      <div className="tp-vacancy-layout">
+      {/* Job vacancy form — the long form and its rail.
+          The form is one scrollable page rather than a wizard, so the reader needs a
+          permanent answer to "where am I and how much is left". That is the rail's
+          whole job, and these rules cover the three things antd has no component for:
+          the two-column shell, the sticky rail and action bar, and the numbered
+          section headings that keep a real <fieldset>/<legend> underneath. */}
+      {/* A grid item's automatic minimum size is its content, not the track — so a
+          wide control inside the form column (the segmented workplace picker, a
+          textarea's counter row) would push the whole page past the viewport and
+          scroll the body sideways. This is what keeps the column inside the screen. */}
+      <div className="grid items-start gap-6 *:min-w-0 lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-8">
         <VacancySectionRail
           activeId={activeSection}
           progressFor={progressFor}
@@ -337,7 +347,6 @@ export function VacancyForm({
         />
 
         <form
-          className="tp-vacancy-form"
           noValidate
           onSubmit={(event) => {
             event.preventDefault();
@@ -351,7 +360,7 @@ export function VacancyForm({
           {banner}
 
           {notice && (
-            <Alert tone={notice.tone} onDismiss={() => setNotice(null)} style={{ marginBottom: space[2.5] }}>
+            <Alert tone={notice.tone} onDismiss={() => setNotice(null)} className="mb-5">
               {notice.text}
             </Alert>
           )}
@@ -375,14 +384,20 @@ export function VacancyForm({
           {/* Sticky rather than fixed: it rides the bottom of the viewport
               while the form is long, then settles at the end of the column
               instead of hovering over the page's last inch forever. */}
-          <div className="tp-vacancy-actions">
-            <Typography.Text type="secondary" style={{ fontSize: fontSize.small }}>
+          {/* Sticky, not fixed: it rides the bottom of the viewport while the form is
+              taller than the screen, then settles at the end of the column instead of
+              hovering over the last inch of the page forever. The translucency is the
+              same treatment the top bar uses, for the same reason — content passes
+              underneath it. */}
+          <div className="sticky bottom-0 z-15 mt-5 flex flex-wrap items-center gap-2 rounded-lg border border-slate-200 bg-white/92 px-4 py-3 shadow-md backdrop-blur-[10px]">
+            {/* The progress line takes its own row so the three controls stay together. */}
+            <Typography.Text type="secondary" className="text-small max-sm:basis-full">
               {filled} of {REQUIRED_TOTAL} required fields complete
             </Typography.Text>
             {/* One group pushed right by an auto margin, not a flex spacer — a
                 spacer is itself a flex item, and at phone width it claimed the
                 row and pushed the buttons onto a third one. */}
-            <div className="tp-vacancy-action-group">
+            <div className="ms-auto flex flex-wrap gap-2">
               <Button variant="ghost" onClick={cancel} disabled={busy}>
                 Cancel
               </Button>

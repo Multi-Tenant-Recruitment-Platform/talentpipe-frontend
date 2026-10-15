@@ -26,7 +26,7 @@ export function ProfileSection({
         <span className="tp-profile-section-icon">
           <Glyph aria-hidden className="text-[20px]" />
         </span>
-        <div style={{ minWidth: 0 }}>
+        <div className="min-w-0">
           <h2 id={headingId}>{title}</h2>
           {subtitle && <p>{subtitle}</p>}
         </div>

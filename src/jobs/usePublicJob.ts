@@ -3,7 +3,7 @@ import { apiErrorMessage } from '../api/client';
 import { getPublicJob } from '../api/publicJobs';
 import type { JobDetail } from '../api/types';
 
-export type PublicJobState =
+type PublicJobState =
   | { status: 'loading' }
   | { status: 'error'; message: string }
   | { status: 'ready'; job: JobDetail | null };

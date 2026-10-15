@@ -7,7 +7,6 @@ import { CompanyProfileForm } from './CompanyProfileForm';
 import { CompanyProfileSkeleton } from './CompanyProfileSkeleton';
 import { CompanyProfileView, type CompanyProfileVariant } from './CompanyProfileView';
 import { CompanyPublicPreview } from './CompanyPublicPreview';
-import { fontSize, slate } from '../../theme/tokens';
 
 /**
  * The whole view/edit exchange for one company profile: loading, the read
@@ -72,7 +71,7 @@ export function CompanyProfilePanel({
       {/* Load and save failures keep separate slots: a rejected save must not
           blank a profile that loaded perfectly well. */}
       {loadError && (
-        <Alert tone="error" style={{ marginBottom: 24 }}>
+        <Alert tone="error" className="mb-6">
           <Flex wrap align="center" justify="space-between" gap={12}>
             <span>{loadError}</span>
             <Button size="sm" variant="secondary" onClick={() => void reload()}>
@@ -83,7 +82,7 @@ export function CompanyProfilePanel({
       )}
 
       {message && (
-        <Alert tone={message.tone} onDismiss={() => setMessage(null)} style={{ marginBottom: 24 }}>
+        <Alert tone={message.tone} onDismiss={() => setMessage(null)} className="mb-6">
           {message.text}
         </Alert>
       )}
@@ -124,16 +123,7 @@ export function CompanyProfilePanel({
             variant={variant}
           />
           {!canEdit && (
-            <Typography.Paragraph
-              type="secondary"
-              style={{
-                marginTop: 20,
-                marginBottom: 0,
-                borderTop: `1px solid ${slate[100]}`,
-                paddingTop: 20,
-                fontSize: fontSize.caption,
-              }}
-            >
+            <Typography.Paragraph type="secondary" className="mt-5 mb-0 border-t border-slate-100 pt-5 text-caption">
               Your role can view this profile but not change it. Ask a Company Admin to update it.
             </Typography.Paragraph>
           )}

@@ -64,7 +64,7 @@ export function ProfileChecklist({
                 <span className="tp-checklist-mark" />
                 {item.label}
                 <span className="sr-only"> (to do)</span>
-                <RightOutlined aria-hidden className="text-[14px]" style={{ marginLeft: 'auto' }} />
+                <RightOutlined aria-hidden className="ml-auto text-[14px]" />
               </button>
             )}
           </li>

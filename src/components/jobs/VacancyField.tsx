@@ -1,8 +1,7 @@
-import { WarningOutlined } from '@ant-design/icons';
 import { Col, Typography } from 'antd';
 import type { ReactNode } from 'react';
 import { FIELD_LABELS, isRequired, type JobVacancyField } from '../../dashboard/jobVacancy';
-import { fontSize, slate, space } from '../../theme/tokens';
+import { FieldError } from '../ui/FieldError';
 import {
   vacancyErrorId,
   vacancyFieldId,
@@ -50,7 +49,7 @@ export function VacancyField({
       {required && (
         <>
           {' '}
-          <span aria-hidden="true" style={{ color: slate[400], fontWeight: 400 }}>
+          <span aria-hidden="true" className="font-normal text-slate-400">
             *
           </span>
           <span className="sr-only"> (required)</span>
@@ -63,27 +62,10 @@ export function VacancyField({
     <>
       {children}
       {error ? (
-        <Typography.Paragraph
-          id={vacancyErrorId(field)}
-          role="alert"
-          type="danger"
-          style={{
-            display: 'flex',
-            alignItems: 'flex-start',
-            gap: 4,
-            fontSize: fontSize.caption,
-            margin: `${space[0.75]}px 0 0`,
-          }}
-        >
-          <WarningOutlined aria-hidden className="text-[14px]" style={{ marginTop: 1 }} />
-          {error}
-        </Typography.Paragraph>
+        <FieldError id={vacancyErrorId(field)}>{error}</FieldError>
       ) : (
         hint && (
-          <Typography.Text
-            type="secondary"
-            style={{ display: 'block', fontSize: fontSize.caption, marginTop: space[0.75] }}
-          >
+          <Typography.Text type="secondary" className="mt-1.5 block text-caption">
             {hint}
           </Typography.Text>
         )
@@ -97,14 +79,14 @@ export function VacancyField({
         // The id is how a failed submit reaches a group: there is no single
         // control to focus, so the page focuses the first one inside this.
         <div id={vacancyGroupId(field)} role="group" aria-labelledby={vacancyLabelId(field)}>
-          <span id={vacancyLabelId(field)} className="tp-vacancy-label">
+          <span id={vacancyLabelId(field)} className="mb-1.5 block font-medium">
             {name}
           </span>
           {body}
         </div>
       ) : (
         <>
-          <label htmlFor={vacancyFieldId(field)} className="tp-vacancy-label">
+          <label htmlFor={vacancyFieldId(field)} className="mb-1.5 block font-medium">
             {name}
           </label>
           {body}

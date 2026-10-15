@@ -1,9 +1,9 @@
-import { FileAddOutlined, FileTextOutlined, WarningOutlined } from '@ant-design/icons';
+import { FileAddOutlined, FileTextOutlined } from '@ant-design/icons';
 import { Flex, Typography } from 'antd';
 import { useRef, useState, type ChangeEvent, type DragEvent } from 'react';
 import { CV_ACCEPT_ATTRIBUTE, MAX_CV_BYTES, PROFILE_FOCUS_IDS, type DisplayedCv } from '../../candidate/candidateProfile';
 import { formatBytes } from '../../dashboard/companyImages';
-import { fontSize } from '../../theme/tokens';
+import { FieldError } from '../ui/FieldError';
 import { Button } from '../ui/Button';
 
 const PROMPT_ID = 'candidate-cv-prompt';
@@ -107,7 +107,7 @@ export function CandidateCvUpload({
               </p>
               {meta && <p className="tp-file-row-meta">{meta}</p>}
             </div>
-            <Flex gap={8} style={{ flexShrink: 0 }}>
+            <Flex gap={8} className="shrink-0">
               <Button variant="secondary" disabled={disabled} aria-label={`Replace ${cv.name}`} onClick={openPicker}>
                 Replace
               </Button>
@@ -145,20 +145,12 @@ export function CandidateCvUpload({
       )}
 
       {error && (
-        <Typography.Paragraph
-          id={ERROR_ID}
-          role="alert"
-          type="danger"
-          style={{ display: 'flex', alignItems: 'flex-start', gap: 4, fontSize: fontSize.caption, margin: '6px 0 0' }}
-        >
-          <WarningOutlined aria-hidden className="text-[14px]" style={{ marginTop: 1 }} />
-          {error}
-        </Typography.Paragraph>
+        <FieldError id={ERROR_ID}>{error}</FieldError>
       )}
 
       {pendingRemovalName && (
-        <Flex wrap align="center" gap={8} style={{ marginTop: 6 }}>
-          <Typography.Text type="secondary" style={{ minWidth: 0, fontSize: fontSize.small, wordBreak: 'break-all' }}>
+        <Flex wrap align="center" gap={8} className="mt-1.5">
+          <Typography.Text type="secondary" className="min-w-0 break-all text-small">
             <Typography.Text strong>{pendingRemovalName}</Typography.Text> will be removed when you save.
           </Typography.Text>
           <Button

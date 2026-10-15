@@ -12,7 +12,7 @@ import { CompanySocialLinks } from './CompanySocialLinks';
 import { CompanyStoryInformation } from './CompanyStoryInformation';
 import { ContactInformation } from './ContactInformation';
 import { LocationInformation } from './LocationInformation';
-import { fontSize, primary, slate } from '../../theme/tokens';
+import { primary } from '../../theme/tokens';
 
 /**
  * Read-only company profile, composed from the section components.
@@ -41,8 +41,8 @@ function Section({
 }>) {
   if (variant === 'compact') {
     return (
-      <section style={{ borderTop: `1px solid ${slate[100]}`, paddingTop: 24 }}>
-        <Typography.Title level={4} className="tp-legend" style={{ margin: '0 0 16px' }}>
+      <section className="border-t border-slate-100 pt-6">
+        <Typography.Title level={4} className="tp-legend m-0 mb-4">
           {title}
         </Typography.Title>
         {children}
@@ -50,8 +50,8 @@ function Section({
     );
   }
   return (
-    <section style={{ borderTop: `1px solid ${slate[100]}`, paddingTop: 32 }}>
-      <Typography.Title level={3} style={{ fontSize: fontSize.lead, margin: '0 0 20px' }}>
+    <section className="border-t border-slate-100 pt-8">
+      <Typography.Title level={3} className="m-0 mb-5 text-lead">
         {title}
       </Typography.Title>
       {children}
@@ -135,22 +135,12 @@ export function CompanyProfileView({
       {/* Nudge, not nagging: it disappears the moment the profile is complete,
           and only someone who can act on it ever sees it. */}
       {incomplete && canEdit && (
-        <div
-          style={{
-            borderRadius: 12,
-            border: `1px solid ${slate[200]}`,
-            background: slate[50],
-            padding: '12px 16px',
-          }}
-        >
+        <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
           <Flex align="baseline" justify="space-between" gap={12}>
-            <Typography.Text strong style={{ fontSize: fontSize.caption }}>
+            <Typography.Text strong className="text-caption">
               Profile {completeness.filled} of {completeness.total} complete
             </Typography.Text>
-            <Typography.Text
-              type="secondary"
-              style={{ fontSize: fontSize.caption, fontVariantNumeric: 'tabular-nums' }}
-            >
+            <Typography.Text type="secondary" className="text-caption tabular-nums">
               {completeness.percent}%
             </Typography.Text>
           </Flex>
@@ -159,23 +149,17 @@ export function CompanyProfileView({
             showInfo={false}
             size="small"
             strokeColor={primary[600]}
-            style={{ marginBottom: 0 }}
+            className="mb-0"
           />
           {/* Naming what is missing turns a number into a next action. */}
-          <Typography.Text type="secondary" style={{ display: 'block', fontSize: fontSize.caption, marginTop: 4 }}>
+          <Typography.Text type="secondary" className="mt-1 block text-caption">
             Still to add: {completeness.missing.join(', ')}.
           </Typography.Text>
         </div>
       )}
 
-      <Flex
-        wrap
-        align="center"
-        justify="space-between"
-        gap={12}
-        style={{ borderTop: `1px solid ${slate[100]}`, paddingTop: 20 }}
-      >
-        <Typography.Text type="secondary" style={{ fontSize: fontSize.caption }}>
+      <Flex wrap align="center" justify="space-between" gap={12} className="border-t border-slate-100 pt-5">
+        <Typography.Text type="secondary" className="text-caption">
           {updatedAt ? `Last updated ${formatRelativeTime(updatedAt)}` : 'Not edited yet'}
         </Typography.Text>
         <Flex wrap align="center" gap={8}>

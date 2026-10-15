@@ -85,3 +85,8 @@ export function formatRole(role: string): string {
         .join(' ');
   }
 }
+
+/** 'ISO — Name' → 'ISO'. The code is what belongs next to a number. */
+export function currencyCode(currency: string | null): string {
+  return currency ? currency.split('—')[0].trim() : '';
+}

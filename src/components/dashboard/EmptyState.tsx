@@ -1,6 +1,5 @@
 import { Empty, Typography } from 'antd';
 import type { ReactNode } from 'react';
-import { fontSize, slate, space } from '../../theme/tokens';
 import type { IconComponent } from '../ui/icon';
 
 /**
@@ -27,36 +26,19 @@ export function EmptyState({
 }>) {
   return (
     <Empty
-      style={{ paddingBlock: space[5] }}
+      className="py-10"
       image={
-        <span
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: 48,
-            height: 48,
-            borderRadius: '50%',
-            background: slate[100],
-            color: slate[500],
-          }}
-        >
+        <span className="inline-flex size-12 items-center justify-center rounded-full bg-slate-100 text-slate-500">
           <Glyph aria-hidden className="text-[24px]" />
         </span>
       }
       imageStyle={{ height: 48, display: 'flex', justifyContent: 'center' }}
       description={
         <>
-          <Typography.Paragraph
-            strong
-            style={{ marginBottom: space[0.5], fontSize: fontSize.lead, color: slate[900] }}
-          >
+          <Typography.Paragraph strong className="mb-1 text-lead text-slate-900">
             {title}
           </Typography.Paragraph>
-          <Typography.Text
-            type="secondary"
-            style={{ display: 'block', maxWidth: 384, margin: '0 auto' }}
-          >
+          <Typography.Text type="secondary" className="mx-auto my-0 block max-w-96">
             {description}
           </Typography.Text>
         </>

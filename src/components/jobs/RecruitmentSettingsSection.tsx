@@ -3,7 +3,7 @@ import type { UserResponse } from '../../api/types';
 import { useCan } from '../../auth/useCan';
 import { MAX_SCREENING_QUESTIONS, PIPELINE_TEMPLATES } from '../../dashboard/jobVacancy';
 import { useTeamSummary } from '../../dashboard/TeamSummaryContext';
-import { fontSize, space } from '../../theme/tokens';
+import { space } from '../../theme/tokens';
 import { formatRole } from '../../utils/format';
 import { BulletListEditor } from './BulletListEditor';
 import type { VacancySectionProps } from './sectionProps';
@@ -59,7 +59,7 @@ export function RecruitmentSettingsSection({
           allowClear
           showSearch
           optionFilterProp="label"
-          style={{ width: '100%' }}
+          className="w-full"
           onChange={(next: string | undefined) => set('assignedRecruiterId', next ?? '')}
         />
       </VacancyField>
@@ -80,7 +80,7 @@ export function RecruitmentSettingsSection({
           allowClear
           showSearch
           optionFilterProp="label"
-          style={{ width: '100%' }}
+          className="w-full"
           onChange={(next: string | undefined) => set('hiringManagerId', next ?? '')}
         />
       </VacancyField>
@@ -100,19 +100,19 @@ export function RecruitmentSettingsSection({
           }))}
           placeholder="Choose a pipeline"
           allowClear
-          style={{ width: '100%' }}
+          className="w-full"
           onChange={(next: string | undefined) => set('recruitmentPipelineId', next ?? '')}
         />
         {pipeline && (
-          <Flex align="center" gap={space[0.5]} wrap style={{ marginTop: space[1] }}>
+          <Flex align="center" gap={space[0.5]} wrap className="mt-2">
             {pipeline.stages.map((stage, index) => (
               <Flex key={stage} align="center" gap={space[0.5]}>
                 {index > 0 && (
-                  <Typography.Text type="secondary" aria-hidden="true" style={{ fontSize: fontSize.caption }}>
+                  <Typography.Text type="secondary" aria-hidden="true" className="text-caption">
                     →
                   </Typography.Text>
                 )}
-                <Tag style={{ margin: 0 }}>{stage}</Tag>
+                <Tag className="m-0">{stage}</Tag>
               </Flex>
             ))}
           </Flex>

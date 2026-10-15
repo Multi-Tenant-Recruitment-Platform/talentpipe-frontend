@@ -8,14 +8,13 @@ import {
 import { useState, type CSSProperties } from 'react';
 import type { JobSummary } from '../../api/types';
 import { employmentTypeLabel, formatExperience, formatSalary, workplaceTypeLabel } from '../../jobs/jobLabels';
-import { fontSize, fontWeight, radius } from '../../theme/tokens';
 import { formatCalendarDate, formatRelativeTime } from '../../utils/format';
 import type { IconComponent } from '../ui/icon';
 
 const MARK_SIZES = {
-  sm: { width: 40, height: 40, borderRadius: radius.md, fontSize: fontSize.lead },
-  md: { width: 48, height: 48, borderRadius: radius.lg, fontSize: fontSize.title },
-  lg: { width: 64, height: 64, borderRadius: radius.xl, fontSize: fontSize.heading },
+  sm: 'size-10 rounded-md text-lead',
+  md: 'size-12 rounded-lg text-title',
+  lg: 'size-16 rounded-xl text-heading',
 } as const;
 
 /** Company logo, or its initial when there is no logo or it fails to load. Decorative: the name is always shown beside it. */
@@ -24,10 +23,10 @@ export function CompanyMark({ name, logoUrl, size = 'md' }: Readonly<{ name: str
   const box = MARK_SIZES[size];
 
   if (logoUrl && !broken) {
-    return <img src={logoUrl} alt="" onError={() => setBroken(true)} className="tp-job-logo" style={box} />;
+    return <img src={logoUrl} alt="" onError={() => setBroken(true)} className={`tp-job-logo ${box}`} />;
   }
   return (
-    <span aria-hidden="true" className="tp-brand-mark" style={{ ...box, flexShrink: 0, fontWeight: fontWeight.bold }}>
+    <span aria-hidden="true" className={`tp-brand-mark shrink-0 font-bold ${box}`}>
       {name.trim().charAt(0).toUpperCase() || '?'}
     </span>
   );
@@ -37,11 +36,11 @@ export function CompanyMark({ name, logoUrl, size = 'md' }: Readonly<{ name: str
  * Employment type, workplace type and (when hiring several) the number of openings; renders nothing when none is known.
  * Only the employment type takes the accent: the palette keeps green and amber for status, and where a job is done is not one.
  */
-export function JobBadges({ job, style }: Readonly<{ job: JobSummary; style?: CSSProperties }>) {
+export function JobBadges({ job, className = '' }: Readonly<{ job: JobSummary; className?: string }>) {
   const openings = job.openings ?? 0;
   if (!job.employmentType && !job.workplaceType && openings < 2) return null;
   return (
-    <ul className="tp-job-badges" style={style}>
+    <ul className={`tp-job-badges ${className}`}>
       {job.employmentType && (
         <li className="tp-job-badge" data-tone="primary">
           <span className="sr-only">Employment type: </span>

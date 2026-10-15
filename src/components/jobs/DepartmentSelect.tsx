@@ -1,7 +1,6 @@
 import { PlusOutlined } from '@ant-design/icons';
 import { Divider, Select, Typography } from 'antd';
 import { useState } from 'react';
-import { fontSize, space } from '../../theme/tokens';
 import { Button } from '../ui/Button';
 
 /**
@@ -58,12 +57,12 @@ export function DepartmentSelect({
       aria-invalid={invalid || undefined}
       aria-describedby={describedBy}
       placeholder={loading ? 'Loading departments…' : 'Choose a department'}
-      style={{ width: '100%' }}
+      className="w-full"
       searchValue={query}
       onSearch={setQuery}
       onChange={(next: string | undefined) => onChange(next ?? '')}
       notFoundContent={
-        <Typography.Text type="secondary" style={{ fontSize: fontSize.small }}>
+        <Typography.Text type="secondary" className="text-small">
           {departments.length === 0
             ? 'No departments on your company profile yet — type one to use it here.'
             : 'No match. Type a name to use it here.'}
@@ -74,12 +73,12 @@ export function DepartmentSelect({
           {menu}
           {offerNew && (
             <>
-              <Divider style={{ margin: `${space[1]}px 0` }} />
-              <div style={{ padding: `0 ${space[0.5]}px ${space[0.5]}px` }}>
+              <Divider className="mx-0 my-2" />
+              <div className="px-1 pb-1">
                 <Button
                   variant="ghost"
                   size="sm"
-                  style={{ width: '100%', justifyContent: 'flex-start' }}
+                  className="w-full justify-start"
                   onClick={() => {
                     onChange(trimmed);
                     setQuery('');

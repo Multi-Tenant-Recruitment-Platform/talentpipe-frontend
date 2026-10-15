@@ -1,6 +1,5 @@
 import { Tag } from 'antd';
 import type { ReactNode } from 'react';
-import { primary, radius, slate, status } from '../../theme/tokens';
 
 /**
  * The tone vocabulary for status pills.
@@ -23,12 +22,12 @@ export type BadgeTone = 'neutral' | 'accent' | 'success' | 'warning' | 'danger';
  * <p>Each pair is contrast-checked in src/theme/tokens.test.ts — the `*Text`
  * values exist precisely because the base status colours fail as small text.</p>
  */
-const TONE_STYLE: Record<BadgeTone, { bg: string; fg: string; border: string }> = {
-  neutral: { bg: slate[100], fg: slate[700], border: slate[200] },
-  accent: { bg: primary[50], fg: primary[700], border: primary[100] },
-  success: { bg: status.successBg, fg: status.successText, border: status.successBg },
-  warning: { bg: status.warningBg, fg: status.warningText, border: status.warningBg },
-  danger: { bg: status.errorBg, fg: status.errorText, border: status.errorBg },
+const TONE_CLASS: Record<BadgeTone, string> = {
+  neutral: 'border-slate-200 bg-slate-100 text-slate-700',
+  accent: 'border-primary-100 bg-primary-50 text-primary-700',
+  success: 'border-success-bg bg-success-bg text-success-text',
+  warning: 'border-warning-bg bg-warning-bg text-warning-text',
+  danger: 'border-error-bg bg-error-bg text-error-text',
 };
 
 /** Small status/role pill. */
@@ -36,21 +35,10 @@ export function Badge({
   tone = 'neutral',
   children,
 }: Readonly<{ tone?: BadgeTone; children: ReactNode }>) {
-  const style = TONE_STYLE[tone];
-
   // Never `closable`: these are read-only status markers, and a close
   // affordance would put a button in every table row that asserts it has none.
   return (
-    <Tag
-      style={{
-        marginInlineEnd: 0,
-        borderRadius: radius.pill,
-        background: style.bg,
-        borderColor: style.border,
-        color: style.fg,
-        fontWeight: 500,
-      }}
-    >
+    <Tag className={`me-0 rounded-pill font-medium ${TONE_CLASS[tone]}`}>
       {children}
     </Tag>
   );

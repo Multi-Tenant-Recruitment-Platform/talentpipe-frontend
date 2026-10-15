@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { UserResponse } from '../../api/types';
 import { authContextMock, makeUser, setAuth } from '../../test/authHarness';
+import { axiosError } from '../../test/http';
 
 /**
  * Notes for anyone extending this file:
@@ -52,11 +53,6 @@ const UNVERIFIED = makeUser({
   firstName: 'Sithara',
   lastName: 'Fernando',
   status: 'PENDING_VERIFICATION',
-});
-
-const axiosError = (status: number, message = 'boom') => ({
-  isAxiosError: true,
-  response: { status, data: { message } },
 });
 
 function renderTeam() {

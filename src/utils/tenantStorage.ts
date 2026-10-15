@@ -12,7 +12,7 @@ const NAMESPACE = 'talentpipe.tenant.';
 
 const keyFor = (tenantId: string, name: string) => `${NAMESPACE}${tenantId}.${name}`;
 
-export interface TenantStorage {
+interface TenantStorage {
   get(name: string): string | null;
   set(name: string, value: string): void;
   remove(name: string): void;

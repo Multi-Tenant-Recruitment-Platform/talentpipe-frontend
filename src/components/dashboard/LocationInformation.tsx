@@ -1,12 +1,13 @@
 import { BankOutlined, EnvironmentOutlined } from '@ant-design/icons';
-import { Tag, Typography } from 'antd';
+import { Typography } from 'antd';
 import {
   formatLocation,
   formatStreet,
   type CompanyFormValues,
 } from '../../dashboard/companyProfile';
+import { detailGrid } from '../ui/classes';
 import { DetailItem } from './DetailItem';
-import { fontSize, slate } from '../../theme/tokens';
+import { PillList } from './PillList';
 
 /**
  * Where the company is: the street line, then the administrative parts.
@@ -18,7 +19,7 @@ import { fontSize, slate } from '../../theme/tokens';
  */
 export function LocationInformation({ values }: Readonly<{ values: CompanyFormValues }>) {
   return (
-    <dl className="tp-detail-grid">
+    <dl className={detailGrid}>
       <DetailItem
         icon={BankOutlined}
         label="Street address"
@@ -32,56 +33,15 @@ export function LocationInformation({ values }: Readonly<{ values: CompanyFormVa
         testId="company-location"
       />
       {/* Not a DetailItem: the value is a list of chips rather than one string. */}
-      <div
-        className="tp-detail-grid-full"
-        style={{ display: 'flex', minWidth: 0, alignItems: 'flex-start', gap: 12 }}
-      >
-        <span
-          style={{
-            marginTop: 2,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: 32,
-            height: 32,
-            flexShrink: 0,
-            borderRadius: 8,
-            background: slate[50],
-            color: slate[400],
-          }}
-        >
+      <div className="col-span-full flex min-w-0 items-start gap-3">
+        <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-sm bg-slate-50 text-slate-400">
           <BankOutlined aria-hidden className="text-[16px]" />
         </span>
-        <div style={{ minWidth: 0 }}>
-          <dt
-            style={{
-              fontSize: fontSize.caption,
-              fontWeight: 500,
-              textTransform: 'uppercase',
-              letterSpacing: '0.03em',
-              color: slate[400],
-            }}
-          >
-            Other branches
-          </dt>
-          <dd style={{ marginTop: 4, marginInlineStart: 0, minWidth: 0 }} data-testid="company-officeLocations">
+        <div className="min-w-0">
+          <dt className="text-caption font-medium uppercase tracking-[0.03em] text-slate-400">Other branches</dt>
+          <dd className="ms-0 mt-1 min-w-0" data-testid="company-officeLocations">
             {values.officeLocations.length > 0 ? (
-              <ul
-                style={{
-                  display: 'flex',
-                  flexWrap: 'wrap',
-                  gap: 8,
-                  listStyle: 'none',
-                  margin: 0,
-                  padding: 0,
-                }}
-              >
-                {values.officeLocations.map((office) => (
-                  <li key={office}>
-                    <Tag style={{ marginInlineEnd: 0, borderRadius: 999 }}>{office}</Tag>
-                  </li>
-                ))}
-              </ul>
+              <PillList items={values.officeLocations} />
             ) : (
               <Typography.Text type="secondary">Not set</Typography.Text>
             )}

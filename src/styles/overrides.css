@@ -6,92 +6,7 @@
  * token, it belongs there instead.
  */
 
-/* --- ConfirmDialog ------------------------------------------------------- *
- * Kept out of antd Modal on purpose: antd hard-codes role="dialog" on the
- * dialog panel, and a destructive confirmation needs role="alertdialog" so
- * assistive tech announces the consequence before the next click. See
- * src/components/ui/ConfirmDialog.tsx.
- */
-.tp-dialog-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 1000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 16px;
-}
-
-.tp-dialog-backdrop {
-  position: absolute;
-  inset: 0;
-  background: rgb(15 23 42 / 50%);
-  backdrop-filter: blur(2px);
-}
-
-.tp-dialog-panel {
-  position: relative;
-  width: 100%;
-  max-width: 28rem;
-  padding: 24px;
-  border-radius: 16px;
-  background: var(--tp-surface, var(--tp-surface));
-  box-shadow: 0 24px 48px -12px rgb(15 23 42 / 25%);
-}
-
-/* --- Team roster responsive columns -------------------------------------- *
- * Columns are hidden, never re-rendered as a second card list: a dual render
- * makes every getByRole query match twice in jsdom. antd's `responsive` column
- * option is not usable here — it reads matchMedia, which the test environment
- * stubs to `matches: false`, which would delete these columns outright.
- */
-.tp-col-md {
-  display: none;
-}
-
-.tp-col-lg {
-  display: none;
-}
-
-@media (min-width: 768px) {
-  .tp-col-md {
-    display: table-cell;
-  }
-}
-
-@media (min-width: 1024px) {
-  .tp-col-lg {
-    display: table-cell;
-  }
-}
-
-/* The member cell echoes whichever of Role/Joined is currently hidden, so the
-   fact is never missing and never announced twice. */
-.tp-row-echo {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 4px 8px;
-  margin-top: 4px;
-}
-
-@media (min-width: 1024px) {
-  .tp-row-echo {
-    display: none;
-  }
-}
-
-@media (min-width: 768px) {
-  .tp-row-echo-role {
-    display: none;
-  }
-}
-
 /* The roster table bleeds to the card's edges; the toolbar above it does not. */
-.tp-roster-body {
-  padding: 20px 0 8px;
-}
-
 .tp-roster-body > *:first-child {
   padding-inline: 24px;
 }
@@ -149,32 +64,6 @@
   color: var(--tp-slate-600);
 }
 
-/* --- Profile detail lists ------------------------------------------------ *
- * Real <dl>/<dt>/<dd>, laid out as a grid. antd's Row renders a <div>, which
- * would make the terms and definitions inside it invalid, and Descriptions
- * offers no hook for the per-field test ids these carry.
- */
-.tp-detail-grid,
-.tp-detail-grid-3 {
-  display: grid;
-  gap: 20px 24px;
-  margin: 0;
-}
-
-@media (min-width: 640px) {
-  .tp-detail-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .tp-detail-grid-3 {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
-.tp-detail-grid-full {
-  grid-column: 1 / -1;
-}
-
 /* Perks read as a checklist, two columns once there is room for them. */
 .tp-benefit-grid {
   display: grid;
@@ -190,30 +79,6 @@
   }
 }
 
-/* --- Company profile banner ---------------------------------------------- */
-.tp-cover-band {
-  width: 100%;
-  height: 128px;
-  overflow: hidden;
-  border-radius: 12px;
-  background: var(--tp-brand-gradient);
-}
-
-.tp-cover-logo {
-  margin-top: -40px;
-  padding-left: 24px;
-}
-
-@media (min-width: 640px) {
-  .tp-cover-band {
-    height: 176px;
-  }
-
-  .tp-cover-logo {
-    margin-top: -48px;
-  }
-}
-
 /* --- Brand marks --------------------------------------------------------- */
 .tp-brand-mark {
   display: inline-flex;
@@ -222,49 +87,6 @@
   background: var(--tp-brand-gradient);
   color: var(--tp-surface);
   border-radius: 12px;
-}
-
-/* Compact social links on the candidate-facing preview, where the labelled
-   detail-list treatment would be heavier than the content deserves. */
-.tp-social-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  border: 1px solid var(--tp-slate-200);
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--tp-slate-600);
-  text-decoration: none;
-  transition-property: background, border-color, color;
-  transition-duration: var(--tp-motion-base);
-  transition-timing-function: var(--tp-motion-ease);
-}
-
-.tp-social-chip:hover {
-  border-color: var(--tp-slate-300);
-  background: var(--tp-slate-50);
-  color: var(--tp-slate-900);
-}
-
-/* Summary strip on the candidate preview. A real <dl> again, so it cannot be
-   an antd Row — see the note on .tp-detail-grid. */
-.tp-preview-facts {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px 24px;
-  margin: 0;
-  padding: 16px 20px;
-  border: 1px solid var(--tp-slate-200);
-  border-radius: 12px;
-  background: var(--tp-slate-50);
-}
-
-@media (min-width: 640px) {
-  .tp-preview-facts {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
 }
 
 /* A primary call to action that is genuinely a link. antd's Button cannot be
@@ -320,33 +142,8 @@
   box-shadow: none;
 }
 
-/* Stacked proportion bar (pipeline-by-job). A single shared track, because
-   the comparison between segments is the whole point. */
-.tp-stacked-bar {
-  display: flex;
-  width: 100%;
-  min-width: 160px;
-  height: 10px;
-  overflow: hidden;
-  border-radius: 999px;
-  background: var(--tp-slate-100);
-}
-
-/* A List that sits flush inside a Card, with its own inner padding. */
-.tp-flush-list {
-  padding: 0;
-}
-
 .tp-flush-list .ant-list-item {
   padding-inline: 24px;
-}
-
-/* The date/time column on an upcoming-interview row. */
-.tp-interview-when {
-  width: 96px;
-  flex-shrink: 0;
-  border-left: 2px solid var(--tp-primary-500);
-  padding-left: 12px;
 }
 
 .tp-brand-scrim {
@@ -397,70 +194,6 @@
    -------------------------------------------------------------------------- */
 
 /* --- Sidebar ------------------------------------------------------------- */
-.tp-sidebar {
-  display: none;
-}
-
-.tp-dashboard-body {
-  padding-left: 0;
-}
-
-.tp-mobile-only {
-  display: inline-flex;
-}
-
-@media (min-width: 1024px) {
-  .tp-sidebar {
-    display: block;
-  }
-
-  /* Matches Sider width exactly, so content never slides under the rail. */
-  .tp-dashboard-body {
-    padding-left: 256px;
-  }
-
-  .tp-mobile-only {
-    display: none;
-  }
-
-  .tp-sidebar-drawer {
-    display: none;
-  }
-}
-
-.tp-sidebar-inner {
-  height: 100%;
-  background: var(--tp-surface);
-  border-right: 1px solid var(--tp-slate-200);
-}
-
-/* Exactly the header height: this divider and the top bar bottom border form
-   one unbroken line across the fold. */
-.tp-sidebar-brand {
-  height: 64px;
-  flex-shrink: 0;
-  padding-inline: 24px;
-  border-bottom: 1px solid var(--tp-slate-200);
-}
-
-.tp-sidebar-nav {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  padding-top: 16px;
-}
-
-/* Aligned to where the menu icons start: Menu itemMarginInline (8) plus the
-   item inline padding (16). Section label and icon share a left edge. */
-.tp-sidebar-caption {
-  display: block;
-  padding: 0 24px 8px;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
 .tp-sidebar-inner .ant-menu-inline {
   border-inline-end: 0;
 }
@@ -472,48 +205,7 @@
   display: block;
 }
 
-.tp-sidebar-foot {
-  flex-shrink: 0;
-  padding: 8px 0;
-  border-top: 1px solid var(--tp-slate-200);
-}
-
 /* --- Top bar ------------------------------------------------------------- */
-.tp-topbar {
-  position: sticky;
-  top: 0;
-  z-index: 20;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  height: 64px;
-  padding-inline: 16px;
-  background: rgb(255 255 255 / 92%);
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid var(--tp-slate-200);
-  box-shadow: 0 1px 2px rgb(15 23 42 / 4%);
-}
-
-@media (min-width: 640px) {
-  .tp-topbar {
-    padding-inline: 24px;
-  }
-}
-
-/* Flexible but capped: wide enough to read a candidate full name back,
-   narrow enough that the action cluster keeps the right edge. */
-.tp-topbar-search {
-  display: none;
-  flex: 0 1 420px;
-  min-width: 0;
-}
-
-@media (min-width: 640px) {
-  .tp-topbar-search {
-    display: block;
-  }
-}
-
 .tp-topbar-search .ant-input-affix-wrapper {
   border-radius: 999px;
   background: var(--tp-canvas);
@@ -532,117 +224,7 @@
   background: var(--tp-surface);
 }
 
-/* The shortcut hint is a Tag, reset to read as a keycap rather than a label. */
-.tp-kbd {
-  display: none;
-  margin: 0;
-  padding: 1px 7px;
-  border-color: var(--tp-slate-200);
-  border-radius: 6px;
-  background: var(--tp-surface);
-  color: var(--tp-slate-400);
-  font-size: 11px;
-  font-weight: 600;
-  line-height: 18px;
-}
-
-@media (min-width: 1024px) {
-  .tp-kbd {
-    display: inline-block;
-  }
-}
-
-.tp-topbar-divider {
-  height: 24px;
-  margin-inline: 4px;
-  border-color: var(--tp-slate-200);
-}
-
-.tp-icon-button {
-  color: var(--tp-slate-600);
-}
-
-.tp-icon-button:hover {
-  color: var(--tp-slate-900);
-}
-
-/* --- Org badge ----------------------------------------------------------- */
-/* Context, not navigation. Deliberately lighter than the profile block beside
-   it so the workspace identity and the personal identity never compete. */
-.tp-org-tag {
-  display: none;
-  text-decoration: none;
-}
-
-@media (min-width: 768px) {
-  .tp-org-tag {
-    display: inline-flex;
-  }
-}
-
-.tp-org-tag-inner {
-  display: inline-flex;
-  align-items: center;
-  height: 32px;
-  margin: 0;
-  padding-inline: 10px;
-  border-radius: 999px;
-  border-color: var(--tp-slate-200);
-  transition-property: background, border-color;
-  transition-duration: var(--tp-motion-base);
-  transition-timing-function: var(--tp-motion-ease);
-}
-
-.tp-org-tag:hover .tp-org-tag-inner {
-  background: var(--tp-primary-50);
-  border-color: var(--tp-primary-100);
-}
-
-.tp-org-tag-name {
-  max-width: 168px;
-  overflow: hidden;
-  color: var(--tp-slate-700);
-  font-size: 13px;
-  font-weight: 600;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.tp-org-tag:hover .tp-org-tag-name {
-  color: var(--tp-primary-700);
-}
-
 /* --- Profile trigger ----------------------------------------------------- */
-/* One control made of four elements, so it is one button with one hit target
-   and one focus ring — not an avatar sitting next to some text. */
-.tp-profile-trigger {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  height: 44px;
-  padding: 0 8px;
-  border: 1px solid transparent;
-  border-radius: 12px;
-  background: none;
-  color: inherit;
-  font: inherit;
-  cursor: pointer;
-  transition-property: background, border-color;
-  transition-duration: var(--tp-motion-base);
-  transition-timing-function: var(--tp-motion-ease);
-}
-
-.tp-profile-trigger:hover {
-  background: var(--tp-canvas);
-  border-color: var(--tp-slate-200);
-}
-
-.tp-profile-trigger:focus-visible {
-  outline: none;
-  border-color: var(--tp-primary-600);
-  box-shadow: var(--tp-focus-ring);
-}
-
 /* A ring rather than a border: it frames the person without changing the
    avatar's own dimensions. Selected as a descendant rather than through a prop
    — the ring belongs to this trigger, not to every Avatar. */
@@ -657,472 +239,12 @@
   box-shadow: 0 0 0 2px var(--tp-surface), 0 0 0 3px var(--tp-primary-100);
 }
 
-.tp-profile-meta {
-  display: none;
-  min-width: 0;
-  text-align: left;
-  line-height: 1.25;
-}
-
-@media (min-width: 640px) {
-  .tp-profile-meta {
-    display: block;
-  }
-}
-
-.tp-profile-name {
-  display: block;
-  max-width: 150px;
-  overflow: hidden;
-  color: var(--tp-slate-900);
-  font-size: 13.5px;
-  font-weight: 600;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.tp-profile-role {
-  display: block;
-  color: var(--tp-slate-500);
-  font-size: 11.5px;
-  font-weight: 500;
-}
-
-.tp-profile-chevron {
-  color: var(--tp-slate-400);
-  transition-property: color;
-  transition-duration: var(--tp-motion-base);
-  transition-timing-function: var(--tp-motion-ease);
-}
-
-.tp-profile-trigger:hover .tp-profile-chevron {
-  color: var(--tp-slate-600);
-}
-
-/* --- Popovers (notifications, profile) ----------------------------------- */
-.tp-popover {
-  width: 320px;
-  overflow: hidden;
-  border: 1px solid var(--tp-slate-200);
-  border-radius: 14px;
-  background: var(--tp-surface);
-  box-shadow: var(--tp-shadow-lg);
-}
-
-.tp-popover-head {
-  display: block;
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--tp-slate-100);
-}
-
-.tp-notification-list {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  max-height: 360px;
-  overflow-y: auto;
-}
-
-.tp-notification {
-  display: flex;
-  gap: 12px;
-  padding: 12px 16px;
-  transition-property: background;
-  transition-duration: var(--tp-motion-base);
-  transition-timing-function: var(--tp-motion-ease);
-}
-
-.tp-notification + .tp-notification {
-  border-top: 1px solid var(--tp-slate-100);
-}
-
-.tp-notification:hover {
-  background: var(--tp-canvas);
-}
-
-.tp-notification-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  flex-shrink: 0;
-  margin-top: 2px;
-  border-radius: 9px;
-  background: var(--tp-primary-50);
-  color: var(--tp-primary-600);
-}
-
-.tp-profile-popover {
-  width: 268px;
-}
-
-.tp-profile-identity {
-  padding: 14px 16px;
-  border-bottom: 1px solid var(--tp-slate-100);
-}
-
-.tp-profile-menu.ant-menu {
-  border-inline-end: 0;
-  padding: 6px;
-  background: transparent;
-}
-
-/* ==========================================================================
-   Job vacancy form — the long form and its rail
-   ==========================================================================
-   The form is one scrollable page rather than a wizard, so the reader needs a
-   permanent answer to "where am I and how much is left". That is the rail's
-   whole job, and these rules cover the three things antd has no component for:
-   the two-column shell, the sticky rail and action bar, and the numbered
-   section headings that keep a real <fieldset>/<legend> underneath.
-   -------------------------------------------------------------------------- */
-
-.tp-vacancy-layout {
-  display: grid;
-  align-items: start;
-  gap: var(--tp-space-3);
-}
-
-/* A grid item's automatic minimum size is its content, not the track — so a
-   wide control inside the form column (the segmented workplace picker, a
-   textarea's counter row) would push the whole page past the viewport and
-   scroll the body sideways. This is what keeps the column inside the screen. */
-.tp-vacancy-layout > * {
-  min-width: 0;
-}
-
-@media (min-width: 1024px) {
-  .tp-vacancy-layout {
-    grid-template-columns: 220px minmax(0, 1fr);
-    gap: var(--tp-space-4);
-  }
-}
-
-/* --- The rail ------------------------------------------------------------ */
-/* Below the large breakpoint it is a scrollable strip pinned under the top
-   bar; at large it becomes the left column and sticks beside the form. */
-.tp-vacancy-rail {
-  position: sticky;
-  top: var(--tp-header-height);
-  z-index: 10;
-  /* Bleeds to the content edges so the strip reads as chrome, not as a card. */
-  margin-inline: calc(-1 * var(--tp-space-2));
-  padding: var(--tp-space-1) var(--tp-space-2);
-  border-bottom: 1px solid var(--tp-slate-200);
-  background: var(--tp-canvas);
-  overflow-x: auto;
-}
-
-.tp-vacancy-rail-list {
-  display: flex;
-  gap: var(--tp-space-1);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-@media (min-width: 1024px) {
-  .tp-vacancy-rail {
-    /* Clear of the sticky top bar, aligned with the content's own top gutter. */
-    top: calc(var(--tp-header-height) + var(--tp-space-3));
-    margin-inline: 0;
-    padding: 0;
-    border: 0;
-    background: none;
-    overflow: visible;
-  }
-
-  .tp-vacancy-rail-list {
-    flex-direction: column;
-    gap: 2px;
-  }
-}
-
-.tp-vacancy-rail-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-  padding: var(--tp-space-1) 10px;
-  border: 1px solid transparent;
-  border-radius: var(--tp-radius-sm);
-  background: none;
-  color: var(--tp-slate-600);
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-  transition-property: background, color, border-color;
-  transition-duration: var(--tp-motion-base);
-  transition-timing-function: var(--tp-motion-ease);
-}
-
-.tp-vacancy-rail-item:hover {
-  background: var(--tp-slate-100);
-  color: var(--tp-slate-900);
-}
-
-.tp-vacancy-rail-item:focus-visible {
-  outline: none;
-  border-color: var(--tp-primary-600);
-  box-shadow: var(--tp-focus-ring);
-}
-
-.tp-vacancy-rail-item[data-current='true'] {
-  background: var(--tp-primary-50);
-  color: var(--tp-primary-700);
-}
-
-.tp-vacancy-rail-mark {
-  display: inline-flex;
-  flex-shrink: 0;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  border-radius: var(--tp-radius-pill);
-  background: var(--tp-slate-100);
-  color: var(--tp-slate-500);
-  font-size: var(--tp-font-caption);
-  font-weight: var(--tp-weight-semibold);
-  font-variant-numeric: tabular-nums;
-}
-
-.tp-vacancy-rail-item[data-state='started'] .tp-vacancy-rail-mark {
-  background: var(--tp-primary-100);
-  color: var(--tp-primary-700);
-}
-
-.tp-vacancy-rail-item[data-state='done'] .tp-vacancy-rail-mark {
-  background: var(--tp-success-bg);
-  color: var(--tp-success-text);
-}
-
-.tp-vacancy-rail-item[data-state='error'] .tp-vacancy-rail-mark {
-  background: var(--tp-error-bg);
-  color: var(--tp-error-text);
-}
-
-.tp-vacancy-rail-text {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.tp-vacancy-rail-title {
-  font-size: var(--tp-font-small);
-  font-weight: var(--tp-weight-semibold);
-  white-space: nowrap;
-}
-
-.tp-vacancy-rail-state {
-  color: var(--tp-slate-500);
-  font-size: 11.5px;
-  white-space: nowrap;
-}
-
-.tp-vacancy-rail-item[data-state='error'] .tp-vacancy-rail-state {
-  color: var(--tp-error-text);
-}
-
-/* The second line is wayfinding detail; the strip has room for names only. */
-@media (max-width: 1023px) {
-  .tp-vacancy-rail-state {
-    display: none;
-  }
-}
-
-/* --- Sections ------------------------------------------------------------ */
-/* Clears the sticky chrome when the rail jumps to a section — without this the
-   heading lands underneath the top bar and reads as the wrong section. */
-.tp-vacancy-section {
-  scroll-margin-top: 132px;
-}
-
-@media (min-width: 1024px) {
-  .tp-vacancy-section {
-    scroll-margin-top: calc(var(--tp-header-height) + var(--tp-space-2));
-  }
-}
-
-/* A fieldset carries an intrinsic minimum width that would stop the grid
-   inside it from ever shrinking; min-width:0 is what lets the columns wrap. */
-.tp-vacancy-fieldset {
-  min-width: 0;
-  margin: 0;
-  padding: 0;
-  border: 0;
-}
-
-.tp-vacancy-legend {
-  display: flex;
-  align-items: center;
-  gap: var(--tp-space-1-5);
-  width: 100%;
-  padding: 0;
-  margin-bottom: var(--tp-space-0-75);
-}
-
-.tp-vacancy-index {
-  display: inline-flex;
-  flex-shrink: 0;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: var(--tp-radius-sm);
-  background: var(--tp-slate-100);
-  color: var(--tp-slate-500);
-  font-size: var(--tp-font-small);
-  font-weight: var(--tp-weight-semibold);
-  font-variant-numeric: tabular-nums;
-  letter-spacing: 0.02em;
-}
-
-.tp-vacancy-index[data-state='done'] {
-  background: var(--tp-primary-50);
-  color: var(--tp-primary-700);
-}
-
-.tp-vacancy-legend-text {
-  color: var(--tp-slate-900);
-  font-size: var(--tp-font-title);
-  font-weight: var(--tp-weight-semibold);
-  letter-spacing: var(--tp-tracking-heading);
-}
-
-.tp-vacancy-count {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--tp-space-0-5);
-  margin-inline-start: auto;
-  color: var(--tp-slate-500);
-  font-size: var(--tp-font-caption);
-  font-weight: var(--tp-weight-medium);
-  white-space: nowrap;
-}
-
-.tp-vacancy-count[data-state='done'] {
-  color: var(--tp-success-text);
-}
-
-.tp-vacancy-count[data-state='error'] {
-  color: var(--tp-error-text);
-}
-
-/* The count is detail, not structure — at phone width the heading keeps it. */
-@media (max-width: 639px) {
-  .tp-vacancy-count {
-    display: none;
-  }
-}
-
-.tp-vacancy-label {
-  display: block;
-  margin-bottom: var(--tp-space-0-75);
-  font-weight: var(--tp-weight-medium);
-}
-
-/* --- Action bar ---------------------------------------------------------- */
-/* Sticky, not fixed: it rides the bottom of the viewport while the form is
-   taller than the screen, then settles at the end of the column instead of
-   hovering over the last inch of the page forever. The translucency is the
-   same treatment the top bar uses, for the same reason — content passes
-   underneath it. */
-.tp-vacancy-actions {
-  position: sticky;
-  bottom: 0;
-  z-index: 15;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--tp-space-1);
-  margin-top: var(--tp-space-2-5);
-  padding: var(--tp-space-1-5) var(--tp-space-2);
-  border: 1px solid var(--tp-slate-200);
-  border-radius: var(--tp-radius-lg);
-  background: rgb(255 255 255 / 92%);
-  box-shadow: var(--tp-shadow-md);
-  backdrop-filter: blur(10px);
-}
-
-.tp-vacancy-action-group {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--tp-space-1);
-  margin-inline-start: auto;
-}
-
-@media (max-width: 639px) {
-  /* The progress line takes its own row so the three controls stay together. */
-  .tp-vacancy-actions > :first-child {
-    flex-basis: 100%;
-  }
-}
-
-/* --- Bullet list editor --------------------------------------------------- */
-.tp-bullet-rows {
-  display: flex;
-  flex-direction: column;
-  gap: var(--tp-space-1);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.tp-bullet-row {
-  display: flex;
-  align-items: center;
-  gap: var(--tp-space-1);
-}
-
-.tp-bullet-marker {
-  flex-shrink: 0;
-  width: 18px;
-  color: var(--tp-slate-400);
-  font-size: var(--tp-font-caption);
-  font-variant-numeric: tabular-nums;
-  text-align: right;
-}
-
-/* --- Checkbox groups ------------------------------------------------------ */
+/* --- Job vacancy form: checkbox groups ----------------------------------- */
 /* antd spaces sibling checkboxes with an inline margin, which fights any grid
    or wrap layout put around them. */
-.tp-benefit-checks.ant-checkbox-group,
-.tp-day-checks.ant-checkbox-group {
-  display: grid;
-  gap: 10px var(--tp-space-3);
-}
-
 .tp-benefit-checks .ant-checkbox-wrapper,
 .tp-day-checks .ant-checkbox-wrapper {
   margin-inline-start: 0;
-}
-
-@media (min-width: 640px) {
-  .tp-benefit-checks.ant-checkbox-group {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (min-width: 1280px) {
-  .tp-benefit-checks.ant-checkbox-group {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
-.tp-day-checks.ant-checkbox-group {
-  grid-auto-flow: column;
-  grid-auto-columns: max-content;
-  gap: var(--tp-space-1-5);
-}
-
-@media (max-width: 639px) {
-  /* Seven columns do not fit a phone; let them wrap instead of scroll. */
-  .tp-day-checks.ant-checkbox-group {
-    grid-auto-flow: row;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
 }
 
 /* --- Vacancy management (list, detail) ---------------------------------- *
@@ -1197,66 +319,18 @@
   margin-inline-start: var(--tp-space-1);
 }
 
-.tp-vacancy-summary {
-  margin: calc(-1 * var(--tp-space-2)) 0 var(--tp-space-3);
-  color: var(--tp-slate-600);
-  font-size: var(--tp-font-small);
-}
-
 .tp-vacancy-summary .tp-link-button {
   font-weight: var(--tp-weight-medium);
   text-decoration-color: var(--tp-slate-300);
 }
 
-/* Focus target after an action whose row has left the view. The Alert inside
-   already carries the visible frame, so the wrapper adds a ring, not a box. */
-.tp-vacancy-notice {
-  margin-bottom: var(--tp-space-3);
-  border-radius: var(--tp-radius-lg);
-  outline: none;
-}
-
-.tp-vacancy-notice:focus-visible {
-  box-shadow: var(--tp-focus-ring);
-}
-
 /* --- Toolbar ------------------------------------------------------------- */
-.tp-vacancy-toolbar-wrap {
-  padding: var(--tp-space-2-5) var(--tp-space-3) var(--tp-space-1-5);
-  border-bottom: 1px solid var(--tp-slate-200);
-}
-
-/* Five segments do not fit a phone. They scroll rather than wrap, and the
-   padding keeps each button's focus ring inside the scroll box. */
-.tp-segment-scroll {
-  margin: calc(-1 * var(--tp-space-0-5));
-  padding: var(--tp-space-0-5);
-  overflow-x: auto;
-}
-
 .tp-segment-scroll .ant-radio-group {
   display: inline-flex;
   white-space: nowrap;
 }
 
-.tp-vacancy-filters {
-  display: grid;
-  gap: var(--tp-space-1-5);
-}
-
-@media (min-width: 768px) {
-  .tp-vacancy-filters {
-    grid-template-columns: minmax(0, 1fr) 200px 200px;
-  }
-}
-
 /* --- Rows ---------------------------------------------------------------- */
-.tp-vacancy-list {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
 .tp-vacancy-row {
   transition: background var(--tp-motion-base) var(--tp-motion-ease);
 }
@@ -1343,21 +417,6 @@
   box-shadow: var(--tp-focus-ring);
 }
 
-.tp-vacancy-row-meta {
-  margin: 2px 0 0;
-  overflow: hidden;
-  color: var(--tp-slate-500);
-  font-size: var(--tp-font-small);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.tp-vacancy-row-updated {
-  margin: 2px 0 0;
-  color: var(--tp-slate-500);
-  font-size: var(--tp-font-caption);
-}
-
 /* Three facts on one line: status, deadline, applicants (or completeness). */
 .tp-vacancy-row-state {
   grid-area: state;
@@ -1372,40 +431,9 @@
   margin: 0;
 }
 
-.tp-vacancy-row-term {
-  color: var(--tp-slate-500);
-  font-size: var(--tp-font-caption);
-  font-weight: var(--tp-weight-medium);
-}
-
-.tp-vacancy-row-figure {
-  display: block;
-  color: var(--tp-slate-900);
-  font-size: var(--tp-font-body);
-  font-variant-numeric: tabular-nums;
-}
-
-.tp-vacancy-row-muted {
-  color: var(--tp-slate-400);
-}
-
-.tp-vacancy-row-sub {
-  display: block;
-  color: var(--tp-slate-500);
-  font-size: var(--tp-font-caption);
-}
-
 .tp-vacancy-row-actions {
   grid-area: actions;
   justify-self: end;
-}
-
-.tp-vacancy-actions-group {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: flex-end;
-  gap: var(--tp-space-1);
 }
 
 /* Inline actions give way as the row narrows; the ⋮ menu gains the same
@@ -1437,83 +465,7 @@
   }
 }
 
-.tp-vacancy-more.ant-btn {
-  padding-inline: var(--tp-space-0-75);
-}
-
 /* --- Detail page --------------------------------------------------------- */
-.tp-back-link {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--tp-space-0-75);
-  margin-bottom: var(--tp-space-2);
-  color: var(--tp-slate-600);
-  font-size: var(--tp-font-small);
-  font-weight: var(--tp-weight-medium);
-  text-decoration: none;
-}
-
-.tp-back-link:hover {
-  color: var(--tp-primary-700);
-}
-
-.tp-vacancy-detail-header {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--tp-space-2);
-  margin-bottom: var(--tp-space-4);
-}
-
-.tp-vacancy-detail-title-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--tp-space-1-5);
-}
-
-.tp-vacancy-detail-title.ant-typography {
-  margin: 0;
-  font-size: var(--tp-font-heading);
-  letter-spacing: var(--tp-tracking-heading);
-}
-
-.tp-vacancy-detail-deadline {
-  margin: var(--tp-space-0-5) 0 0;
-  color: var(--tp-slate-600);
-  font-size: var(--tp-font-small);
-  font-variant-numeric: tabular-nums;
-}
-
-.tp-vacancy-detail-layout {
-  display: grid;
-  gap: var(--tp-space-3);
-  align-items: start;
-}
-
-.tp-vacancy-detail-layout > * {
-  min-width: 0;
-}
-
-/* On a narrow screen the lifecycle comes first: it says what state the
-   vacancy is in before the reader commits to scrolling its whole advert. */
-.tp-vacancy-detail-layout > aside {
-  order: -1;
-}
-
-@media (min-width: 1024px) {
-  .tp-vacancy-detail-layout {
-    grid-template-columns: minmax(0, 1fr) 320px;
-  }
-
-  .tp-vacancy-detail-layout > aside {
-    position: sticky;
-    top: calc(var(--tp-header-height) + var(--tp-space-3));
-    order: 0;
-  }
-}
-
 .tp-vacancy-block + .tp-vacancy-block {
   margin-top: var(--tp-space-4);
   padding-top: var(--tp-space-3);
@@ -1613,14 +565,6 @@
   font-variant-numeric: tabular-nums;
 }
 
-.tp-vacancy-side-facts {
-  display: grid;
-  gap: var(--tp-space-1-5);
-  margin: var(--tp-space-2) 0 0;
-  padding-top: var(--tp-space-2);
-  border-top: 1px solid var(--tp-slate-100);
-}
-
 .tp-vacancy-side-facts dt {
   color: var(--tp-slate-500);
   font-size: var(--tp-font-caption);
@@ -1630,38 +574,6 @@
 .tp-vacancy-side-facts dd {
   margin: 2px 0 0;
   font-size: var(--tp-font-small);
-}
-
-/* --- Dashboard content --------------------------------------------------- */
-.tp-dashboard-content {
-  padding-block: 32px;
-}
-
-/* --- Page container ------------------------------------------------------ *
- * The one width every page shares: the public header, the public content and
- * the dashboard content all sit on it, so their left and right edges line up.
- * Side gutters grow with the viewport instead of a fixed narrow column.
- */
-.tp-page-container,
-.tp-dashboard-content {
-  width: 100%;
-  max-width: var(--tp-content-max-width);
-  margin-inline: auto;
-  padding-inline: 16px;
-}
-
-@media (min-width: 640px) {
-  .tp-page-container,
-  .tp-dashboard-content {
-    padding-inline: 24px;
-  }
-}
-
-@media (min-width: 1024px) {
-  .tp-page-container,
-  .tp-dashboard-content {
-    padding-inline: 32px;
-  }
 }
 
 /* ==========================================================================
@@ -3676,47 +2588,6 @@ button.tp-checklist-item:hover > .anticon {
 }
 
 /* --- Public header: account menu ----------------------------------------- */
-/* The dashboard's popover shell (.tp-popover), holding links rather than
-   antd Menu items: each entry navigates, so each is announced as a link. */
-.tp-account-panel {
-  width: 280px;
-}
-
-.tp-account-head {
-  display: flex;
-  align-items: center;
-  gap: var(--tp-space-1-5);
-  padding: 14px var(--tp-space-2);
-  border-bottom: 1px solid var(--tp-slate-100);
-}
-
-.tp-account-name,
-.tp-account-email {
-  margin: 0;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
-.tp-account-name {
-  color: var(--tp-slate-900);
-  font-weight: var(--tp-weight-semibold);
-}
-
-.tp-account-email {
-  color: var(--tp-slate-500);
-  font-size: var(--tp-font-caption);
-}
-
-.tp-account-list {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  margin: 0;
-  padding: 6px;
-  list-style: none;
-}
-
 .tp-account-item {
   display: flex;
   align-items: center;
@@ -3735,11 +2606,6 @@ button.tp-checklist-item:hover > .anticon {
   flex-shrink: 0;
   color: var(--tp-slate-400);
   transition: color var(--tp-motion-fast) var(--tp-motion-ease);
-}
-
-.tp-account-item-label {
-  flex: 1;
-  min-width: 0;
 }
 
 a.tp-account-item:hover,
@@ -3775,23 +2641,6 @@ a.tp-account-item[aria-current='page'] .tp-account-item-icon {
 .tp-account-item[aria-disabled='true'] {
   color: var(--tp-slate-500);
   cursor: default;
-}
-
-.tp-soon-tag {
-  flex-shrink: 0;
-  padding: 1px var(--tp-space-1);
-  border-radius: var(--tp-radius-pill);
-  background: var(--tp-sunken);
-  color: var(--tp-slate-600);
-  font-size: 11px;
-  font-weight: var(--tp-weight-semibold);
-  letter-spacing: 0.02em;
-}
-
-/* Ending the session is the one destructive control in the header. */
-.tp-logout-button.ant-btn:not(:disabled):hover {
-  background: var(--tp-error-bg);
-  color: var(--tp-error-text);
 }
 
 /* ==========================================================================

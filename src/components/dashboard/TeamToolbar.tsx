@@ -3,7 +3,6 @@ import { Flex, Input, Radio, Select, Typography } from 'antd';
 import type { Segment } from '../../dashboard/teamRoster';
 import { formatRole } from '../../utils/format';
 import { Button } from '../ui/Button';
-import { fontSize } from '../../theme/tokens';
 
 const SEGMENTS: { id: Segment; label: string }[] = [
   { id: 'all', label: 'All' },
@@ -54,11 +53,11 @@ export function TeamToolbar({
   disabled?: boolean;
 }>) {
   return (
-    <Flex vertical gap={12} style={{ marginBottom: 16 }}>
+    <Flex vertical gap={12} className="mb-4">
       <Flex wrap align="center" justify="space-between" gap={12}>
         {/* The fieldset/legend pair is kept by hand: antd groups the radios
             visually but gives the group no accessible name of its own. */}
-        <fieldset style={{ border: 0, margin: 0, padding: 0, flexShrink: 0 }} disabled={disabled}>
+        <fieldset className="m-0 shrink-0 border-0 p-0" disabled={disabled}>
           <legend className="sr-only">Filter by status</legend>
           <Radio.Group
             value={segment}
@@ -69,18 +68,16 @@ export function TeamToolbar({
             options={SEGMENTS.map(({ id, label }) => ({
               value: id,
               label: (
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <span className="inline-flex items-center gap-1.5">
                   {label}
-                  <span style={{ fontVariantNumeric: 'tabular-nums', opacity: 0.75 }}>
-                    {segmentCounts[id]}
-                  </span>
+                  <span className="tabular-nums opacity-75">{segmentCounts[id]}</span>
                 </span>
               ),
             }))}
           />
         </fieldset>
 
-        <Flex wrap align="center" gap={12} style={{ flex: 1, justifyContent: 'flex-end' }}>
+        <Flex wrap align="center" gap={12} className="flex-1 justify-end">
           <div>
             <label htmlFor="team-role-filter" className="sr-only">
               Filter by role
@@ -90,7 +87,7 @@ export function TeamToolbar({
               value={roleFilter}
               disabled={disabled}
               onChange={onRoleFilterChange}
-              style={{ minWidth: 160 }}
+              className="min-w-40"
               options={[
                 { value: 'ALL', label: 'All roles' },
                 ...roleOptions.map((role) => ({ value: role, label: formatRole(role) })),
@@ -98,7 +95,7 @@ export function TeamToolbar({
             />
           </div>
 
-          <div style={{ width: 256, maxWidth: '100%' }}>
+          <div className="w-64 max-w-full">
             <label htmlFor="team-search" className="sr-only">
               Search teammates by name or email
             </label>
@@ -114,7 +111,7 @@ export function TeamToolbar({
               autoComplete="off"
               aria-describedby="team-result-count"
               allowClear
-              prefix={<SearchOutlined aria-hidden className="text-[16px]" style={{ opacity: 0.45 }} />}
+              prefix={<SearchOutlined aria-hidden className="text-[16px] opacity-45" />}
             />
           </div>
         </Flex>
@@ -128,7 +125,7 @@ export function TeamToolbar({
           role="status"
           aria-live="polite"
           type="secondary"
-          style={{ fontSize: fontSize.caption }}
+          className="text-caption"
         >
           Showing {visibleCount} of {totalCount} {totalCount === 1 ? 'person' : 'people'}
         </Typography.Text>

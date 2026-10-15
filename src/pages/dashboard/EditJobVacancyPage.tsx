@@ -16,7 +16,6 @@ import {
   type JobVacancyFormValues,
 } from '../../dashboard/jobVacancy';
 import { useJobVacancy } from '../../dashboard/useJobVacancies';
-import { space } from '../../theme/tokens';
 
 /**
  * Change a vacancy's content (PB-019).
@@ -147,7 +146,7 @@ export function EditJobVacancyPage() {
       initialNotice={initialNotice}
       banner={
         live ? (
-          <Alert tone="info" style={{ marginBottom: space[2.5] }}>
+          <Alert tone="info" className="mb-5">
             This vacancy is live. Saved changes appear on the candidate portal straight away.
           </Alert>
         ) : undefined

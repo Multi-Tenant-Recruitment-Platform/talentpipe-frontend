@@ -4,7 +4,7 @@ import {
   DeleteOutlined,
   SendOutlined,
 } from '@ant-design/icons';
-import { Flex, Skeleton, Table, Typography, theme } from 'antd';
+import { Flex, Skeleton, Table, Typography } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import type { HTMLAttributes, ReactNode, TdHTMLAttributes } from 'react';
 import type { RosterRow, SortKey, SortState } from '../../dashboard/teamRoster';
@@ -13,7 +13,6 @@ import { Button } from '../ui/Button';
 import { Avatar } from './Avatar';
 import { MemberStatusBadge } from './MemberStatusBadge';
 import { RoleBadge } from './RoleBadge';
-import { fontSize, primary } from '../../theme/tokens';
 
 const ARIA_SORT = { asc: 'ascending', desc: 'descending' } as const;
 
@@ -97,36 +96,18 @@ export function TeamRosterTable({
   refreshing: boolean;
   empty: ReactNode;
 }>) {
-  const { token } = theme.useToken();
-
   const sortableTitle = (key: SortKey, label: string) => {
     const SortGlyph = sort.key === key && sort.dir === 'desc' ? ArrowDownOutlined : ArrowUpOutlined;
     return (
       <button
         type="button"
         onClick={() => onSortChange(key)}
-        style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: 4,
-          border: 0,
-          padding: 0,
-          background: 'transparent',
-          font: 'inherit',
-          color: 'inherit',
-          textTransform: 'uppercase',
-          letterSpacing: '0.03em',
-          cursor: 'pointer',
-        }}
+        className="inline-flex cursor-pointer items-center gap-1 border-0 bg-transparent p-0 uppercase tracking-[0.03em] text-inherit"
       >
         {label}
         <SortGlyph
           aria-hidden
-          className="text-[12px]"
-          style={{
-            opacity: sort.key === key ? 1 : 0.25,
-            color: sort.key === key ? token.colorPrimary : undefined,
-          }}
+          className={sort.key === key ? 'text-[12px] text-primary-600' : 'text-[12px] opacity-25'}
         />
         <span className="sr-only">Sort by {label.toLowerCase()}</span>
       </button>
@@ -161,42 +142,33 @@ export function TeamRosterTable({
         return (
           <Flex align="center" gap={12}>
             <Avatar firstName={row.firstName} lastName={row.lastName} size="sm" />
-            <div style={{ minWidth: 0 }}>
+            <div className="min-w-0">
               <Flex wrap align="center" gap={8}>
                 <Typography.Text strong>{row.fullName}</Typography.Text>
                 {row.isSelf && (
-                  <span
-                    style={{
-                      borderRadius: 999,
-                      background: primary[50],
-                      color: primary[700],
-                      padding: '1px 8px',
-                      fontSize: fontSize.caption,
-                      fontWeight: 600,
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.04em',
-                    }}
-                  >
+                  <span className="rounded-pill bg-primary-50 px-2 py-px text-caption font-semibold uppercase tracking-[0.04em] text-primary-700">
                     You
                   </span>
                 )}
               </Flex>
-              <Typography.Text type="secondary" style={{ display: 'block', fontSize: fontSize.caption }}>
+              <Typography.Text type="secondary" className="block text-caption">
                 {row.email}
               </Typography.Text>
               {/* Echoes the columns hidden at this breakpoint. The wrapper
                   disappears exactly when they reappear, so nothing is ever
                   announced twice. */}
-              <span className="tp-row-echo">
-                <span className="tp-row-echo-role">
+              {/* The member cell echoes whichever of Role/Joined is currently hidden, so the
+                  fact is never missing and never announced twice. */}
+              <span className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 lg:hidden">
+                <span className="md:hidden">
                   <RoleBadge role={row.role} />
                 </span>
-                <Typography.Text type="secondary" style={{ fontSize: fontSize.caption }}>
+                <Typography.Text type="secondary" className="text-caption">
                   Joined {formatDate(row.createdAt)}
                 </Typography.Text>
               </span>
               {lastResend && (
-                <Typography.Text type="secondary" style={{ display: 'block', fontSize: fontSize.caption }}>
+                <Typography.Text type="secondary" className="block text-caption">
                   Re-sent {formatRelativeTime(lastResend)}
                 </Typography.Text>
               )}
@@ -209,7 +181,12 @@ export function TeamRosterTable({
       key: 'role',
       title: sortableTitle('role', 'Role'),
       onHeaderCell: headerSort('role'),
-      className: 'tp-col-md',
+      // --- Team roster responsive columns ---
+      // Columns are hidden, never re-rendered as a second card list: a dual render
+      // makes every getByRole query match twice in jsdom. antd's `responsive` column
+      // option is not usable here — it reads matchMedia, which the test environment
+      // stubs to `matches: false`, which would delete these columns outright.
+      className: 'hidden md:table-cell',
       onCell: cellTestId('role-cell'),
       render: (_, row) =>
         firstLoad ? <Skeleton.Button active size="small" /> : <RoleBadge role={row.role} />,
@@ -226,7 +203,7 @@ export function TeamRosterTable({
       key: 'joined',
       title: sortableTitle('joined', 'Joined'),
       onHeaderCell: headerSort('joined'),
-      className: 'tp-col-lg',
+      className: 'hidden lg:table-cell',
       render: (_, row) =>
         firstLoad ? (
           <Skeleton active title={{ width: 80 }} paragraph={false} />
@@ -249,7 +226,7 @@ export function TeamRosterTable({
           // role or remove an active member, so offering one would promise
           // something the product cannot do.
           return (
-            <span aria-hidden="true" style={{ opacity: 0.35 }}>
+            <span aria-hidden="true" className="opacity-35">
               —
             </span>
           );
@@ -285,7 +262,7 @@ export function TeamRosterTable({
   ];
 
   return (
-    <div style={{ position: 'relative' }}>
+    <div className="relative">
       {/* Background refresh: rows stay put and a thin bar carries the signal,
           so an invite or revoke never blinks the whole table into skeletons. */}
       {refreshing && <div aria-hidden="true" className="tp-refresh-bar" />}

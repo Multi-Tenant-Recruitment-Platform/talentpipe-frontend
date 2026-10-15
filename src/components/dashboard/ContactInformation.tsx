@@ -1,6 +1,7 @@
 import { GlobalOutlined, MailOutlined, PhoneOutlined } from '@ant-design/icons';
 import { websiteLabel, type CompanyFormValues } from '../../dashboard/companyProfile';
 import { DetailItem } from './DetailItem';
+import { detailGrid } from '../ui/classes';
 
 /**
  * How to reach the company: email, phone, website.
@@ -10,7 +11,7 @@ import { DetailItem } from './DetailItem';
  */
 export function ContactInformation({ values }: Readonly<{ values: CompanyFormValues }>) {
   return (
-    <dl className="tp-detail-grid">
+    <dl className={detailGrid}>
       <DetailItem
         icon={MailOutlined}
         label="Email"

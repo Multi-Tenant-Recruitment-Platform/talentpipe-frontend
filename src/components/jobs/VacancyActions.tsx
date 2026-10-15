@@ -116,7 +116,7 @@ export function VacancyActions({
   ];
 
   return (
-    <div className="tp-vacancy-actions-group">
+    <div className="flex flex-wrap items-center justify-end gap-2">
       {set.primary.map((action, i) => (
         <Button
           key={action}
@@ -144,7 +144,7 @@ export function VacancyActions({
             size={onList ? 'sm' : 'md'}
             variant={onList ? 'ghost' : 'secondary'}
             aria-label={`More actions for ${name}`}
-            className="tp-vacancy-more"
+            className="px-1.5"
           >
             <MoreOutlined aria-hidden className="text-[18px]" />
           </Button>

@@ -5,6 +5,7 @@ import { api, apiErrorMessage } from '../api/client';
 import type { CandidateRegisterRequest } from '../api/types';
 import { AuthShell } from '../components/AuthShell';
 import { AuthField } from '../components/auth/AuthField';
+import { useFormFields } from '../components/auth/useFormFields';
 import { AuthHeading } from '../components/auth/AuthHeading';
 import { RegisterTabs } from '../components/RegisterTabs';
 import { Alert } from '../components/ui/Alert';
@@ -32,36 +33,32 @@ function SectionLabel({ children }: Readonly<{ children: ReactNode }>) {
 export function CandidateRegisterPage() {
   const navigate = useNavigate();
 
-  const [fullName, setFullName] = useState('');
-  const [identityCardNumber, setIdentityCardNumber] = useState('');
-  const [address, setAddress] = useState('');
-  const [contactNumber, setContactNumber] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const { values, field } = useFormFields({
+    fullName: '',
+    identityCardNumber: '',
+    address: '',
+    contactNumber: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+  });
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     setError(null);
-    if (password !== confirmPassword) {
+    const { confirmPassword, ...fields } = values;
+    if (fields.password !== confirmPassword) {
       setError('Passwords do not match.');
       return;
     }
     setSubmitting(true);
     try {
-      const request: CandidateRegisterRequest = {
-        fullName,
-        identityCardNumber,
-        address,
-        contactNumber,
-        email,
-        password,
-      };
+      const request: CandidateRegisterRequest = fields;
       await api.post('/public/candidates/register', request);
       // Registration issues no tokens: continue at the candidate login tab.
-      navigate('/login', { state: { mode: 'candidate', registered: 'candidate', email } });
+      navigate('/login', { state: { mode: 'candidate', registered: 'candidate', email: fields.email } });
     } catch (err: unknown) {
       setError(apiErrorMessage(err, 'Registration failed. Please try again.'));
     } finally {
@@ -97,8 +94,7 @@ export function CandidateRegisterPage() {
                   id="fullName"
                   required
                   maxLength={200}
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
+                  {...field('fullName')}
                   autoComplete="name"
                 />
               </AuthField>
@@ -109,8 +105,7 @@ export function CandidateRegisterPage() {
                   id="identityCardNumber"
                   required
                   maxLength={30}
-                  value={identityCardNumber}
-                  onChange={(e) => setIdentityCardNumber(e.target.value)}
+                  {...field('identityCardNumber')}
                   autoComplete="off"
                 />
               </AuthField>
@@ -122,8 +117,7 @@ export function CandidateRegisterPage() {
               id="address"
               required
               maxLength={500}
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
+              {...field('address')}
               autoComplete="street-address"
             />
           </AuthField>
@@ -138,8 +132,7 @@ export function CandidateRegisterPage() {
                   type="tel"
                   required
                   maxLength={20}
-                  value={contactNumber}
-                  onChange={(e) => setContactNumber(e.target.value)}
+                  {...field('contactNumber')}
                   autoComplete="tel"
                   placeholder="+94 77 123 4567"
                 />
@@ -152,8 +145,7 @@ export function CandidateRegisterPage() {
                   type="email"
                   required
                   maxLength={255}
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  {...field('email')}
                   autoComplete="email"
                 />
               </AuthField>
@@ -171,8 +163,7 @@ export function CandidateRegisterPage() {
                   required
                   minLength={8}
                   maxLength={72}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  {...field('password')}
                   autoComplete="new-password"
                 />
               </AuthField>
@@ -185,8 +176,7 @@ export function CandidateRegisterPage() {
                   required
                   minLength={8}
                   maxLength={72}
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  {...field('confirmPassword')}
                   autoComplete="new-password"
                 />
               </AuthField>

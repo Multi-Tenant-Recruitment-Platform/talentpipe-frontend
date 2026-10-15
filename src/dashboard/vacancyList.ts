@@ -114,7 +114,7 @@ export function toVacancySearchParams(query: VacancyQuery): URLSearchParams {
 
 /* --- Selection ----------------------------------------------------------- */
 
-export interface VacancySelection {
+interface VacancySelection {
   visible: JobVacancyResponse[];
   /** After search and department, before the segment — so "Draft 3" says what clicking it shows. */
   counts: Record<VacancySegment, number>;
@@ -210,7 +210,7 @@ export function departmentOptions(
 
 /* --- Summary ------------------------------------------------------------- */
 
-export interface VacancySummary {
+interface VacancySummary {
   live: number;
   drafts: number;
   /** Published, with a deadline between today and seven days from now. */

@@ -8,6 +8,7 @@ import { useAuth } from '../auth/AuthContext';
 import { AuthShell } from '../components/AuthShell';
 import { AuthField } from '../components/auth/AuthField';
 import { AuthHeading } from '../components/auth/AuthHeading';
+import { useFormFields } from '../components/auth/useFormFields';
 import { RegisterTabs } from '../components/RegisterTabs';
 
 /** Company onboarding (PB-001): tenant + first COMPANY_ADMIN, then off to login. */
@@ -15,11 +16,7 @@ export function RegisterPage() {
   const { register } = useAuth();
   const navigate = useNavigate();
 
-  const [companyName, setCompanyName] = useState('');
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const { values, field } = useFormFields({ companyName: '', firstName: '', lastName: '', email: '', password: '' });
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -27,6 +24,7 @@ export function RegisterPage() {
     event.preventDefault();
     setError(null);
     setSubmitting(true);
+    const { companyName, firstName, lastName, email, password } = values;
     try {
       // No workspace address is asked for: the backend derives one from the
       // company name, and nobody needs to know it to sign in.
@@ -68,8 +66,7 @@ export function RegisterPage() {
               id="companyName"
               required
               maxLength={255}
-              value={companyName}
-              onChange={(e) => setCompanyName(e.target.value)}
+              {...field('companyName')}
             />
           </AuthField>
 
@@ -80,8 +77,7 @@ export function RegisterPage() {
                   id="firstName"
                   required
                   maxLength={100}
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
+                  {...field('firstName')}
                 />
               </AuthField>
             </Col>
@@ -91,8 +87,7 @@ export function RegisterPage() {
                   id="lastName"
                   required
                   maxLength={100}
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
+                  {...field('lastName')}
                 />
               </AuthField>
             </Col>
@@ -104,8 +99,7 @@ export function RegisterPage() {
               type="email"
               required
               maxLength={255}
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              {...field('email')}
               autoComplete="email"
             />
           </AuthField>
@@ -117,8 +111,7 @@ export function RegisterPage() {
               required
               minLength={8}
               maxLength={72}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              {...field('password')}
               autoComplete="new-password"
             />
           </AuthField>

@@ -13,7 +13,6 @@ import {
   type JobVacancyFormValues,
 } from '../../dashboard/jobVacancy';
 import { useJobVacancy } from '../../dashboard/useJobVacancies';
-import { space } from '../../theme/tokens';
 
 /**
  * Open a role (PB-011), from scratch or as a copy of another (PB-021).
@@ -113,7 +112,7 @@ export function CreateJobVacancyPage() {
       mode="duplicate"
       initialValues={duplicateValues(original)}
       banner={
-        <Alert tone="info" style={{ marginBottom: space[2.5] }}>
+        <Alert tone="info" className="mb-5">
           Copied from <strong>{original.title || 'Untitled vacancy'}</strong>. Set a new deadline
           and review the details before publishing.
         </Alert>

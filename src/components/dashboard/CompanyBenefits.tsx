@@ -1,7 +1,6 @@
 import { CheckOutlined } from '@ant-design/icons';
 import { Typography } from 'antd';
 import { benefitLabel, sortBenefits } from '../../dashboard/companyProfile';
-import { status } from '../../theme/tokens';
 
 /**
  * The perks a company advertises, as a checked list.
@@ -13,7 +12,7 @@ import { status } from '../../theme/tokens';
 export function CompanyBenefits({ benefits }: Readonly<{ benefits: string[] }>) {
   if (benefits.length === 0) {
     return (
-      <Typography.Paragraph type="secondary" data-testid="company-benefits" style={{ margin: 0 }}>
+      <Typography.Paragraph type="secondary" data-testid="company-benefits" className="m-0">
         No benefits listed yet. These are among the first things candidates look for.
       </Typography.Paragraph>
     );
@@ -22,8 +21,8 @@ export function CompanyBenefits({ benefits }: Readonly<{ benefits: string[] }>) 
   return (
     <ul data-testid="company-benefits" className="tp-benefit-grid">
       {sortBenefits(benefits).map((id) => (
-        <li key={id} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-          <CheckOutlined aria-hidden className="text-[16px]" style={{ marginTop: 3, color: status.success }} />
+        <li key={id} className="flex items-start gap-2">
+          <CheckOutlined aria-hidden className="mt-0.75 text-[16px] text-success" />
           {benefitLabel(id)}
         </li>
       ))}

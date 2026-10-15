@@ -1,6 +1,7 @@
 import { BarChartOutlined, ClockCircleOutlined, GlobalOutlined } from '@ant-design/icons';
 import { currencyCode, type CompanyFormValues } from '../../dashboard/companyProfile';
 import { DetailItem } from './DetailItem';
+import { detailGrid3 } from '../ui/classes';
 
 /**
  * How the company runs: time zone, currency, language — the settings that
@@ -9,7 +10,7 @@ import { DetailItem } from './DetailItem';
  */
 export function CompanyOperations({ values }: Readonly<{ values: CompanyFormValues }>) {
   return (
-    <dl className="tp-detail-grid-3">
+    <dl className={detailGrid3}>
       <DetailItem icon={ClockCircleOutlined} label="Time zone" value={values.timezone} testId="company-timezone" />
       <DetailItem
         icon={BarChartOutlined}

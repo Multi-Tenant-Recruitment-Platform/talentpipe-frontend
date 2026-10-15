@@ -1,6 +1,5 @@
 import type { CSSProperties } from 'react';
 import { companyInitials } from '../../dashboard/companyProfile';
-import { slate } from '../../theme/tokens';
 
 /**
  * The company's logo, or a monogram when there isn't one.
@@ -12,33 +11,27 @@ import { slate } from '../../theme/tokens';
  */
 
 const SIZES = {
-  sm: { box: 48, radius: 8, font: 14 },
-  md: { box: 64, radius: 12, font: 18 },
-  lg: { box: 96, radius: 16, font: 24 },
+  sm: 'size-12 rounded-sm text-[14px]',
+  md: 'size-16 rounded-lg text-[18px]',
+  lg: 'size-24 rounded-xl text-[24px]',
 } as const;
 
-export type CompanyLogoSize = keyof typeof SIZES;
+type CompanyLogoSize = keyof typeof SIZES;
 
 export function CompanyLogo({
   src,
   name,
   size = 'md',
+  className = '',
   style,
 }: Readonly<{
   src: string | null;
   name: string;
   size?: CompanyLogoSize;
+  className?: string;
   style?: CSSProperties;
 }>) {
-  const { box, radius, font } = SIZES[size];
-  const shape: CSSProperties = {
-    width: box,
-    height: box,
-    borderRadius: radius,
-    flexShrink: 0,
-    overflow: 'hidden',
-    ...style,
-  };
+  const shape = `shrink-0 overflow-hidden ${SIZES[size]} ${className}`;
 
   if (src) {
     return (
@@ -47,12 +40,8 @@ export function CompanyLogo({
         // The name, not "logo": a screen reader announcing "ABC Technologies
         // logo, image" says the word twice.
         alt={name || 'Company logo'}
-        style={{
-          ...shape,
-          border: `1px solid ${slate[200]}`,
-          background: '#fff',
-          objectFit: 'contain',
-        }}
+        className={`border border-slate-200 bg-surface object-contain ${shape}`}
+        style={style}
       />
     );
   }
@@ -60,17 +49,8 @@ export function CompanyLogo({
   return (
     <span
       aria-hidden="true"
-      style={{
-        ...shape,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: 'var(--tp-brand-gradient)',
-        color: '#fff',
-        fontSize: font,
-        fontWeight: 600,
-        letterSpacing: '-0.02em',
-      }}
+      className={`flex items-center justify-center bg-(image:--tp-brand-gradient) font-semibold tracking-display text-white ${shape}`}
+      style={style}
     >
       {companyInitials(name)}
     </span>

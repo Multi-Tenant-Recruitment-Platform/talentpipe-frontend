@@ -7,7 +7,6 @@ import {
   type VacancySegment,
   type VacancySort,
 } from '../../dashboard/vacancyList';
-import { fontSize } from '../../theme/tokens';
 import { Button } from '../ui/Button';
 
 export const VACANCY_SEARCH_ID = 'vacancy-search';
@@ -42,12 +41,14 @@ export function VacancyToolbar({
   disabled?: boolean;
 }>) {
   return (
-    <Flex vertical gap={12} className="tp-vacancy-toolbar">
+    <Flex vertical gap={12}>
       {/* Scrolls sideways on a phone instead of wrapping the five segments
           into a ragged second row; the padding keeps the focus ring inside
           the scroll box rather than clipped by it. */}
-      <div className="tp-segment-scroll">
-        <fieldset style={{ border: 0, margin: 0, padding: 0 }} disabled={disabled}>
+      {/* Five segments do not fit a phone. They scroll rather than wrap, and the
+          padding keeps each button's focus ring inside the scroll box. */}
+      <div className="tp-segment-scroll -m-1 overflow-x-auto p-1">
+        <fieldset className="m-0 border-0 p-0" disabled={disabled}>
           <legend className="sr-only">Filter by status</legend>
           <Radio.Group
             value={query.segment}
@@ -58,9 +59,9 @@ export function VacancyToolbar({
             options={VACANCY_SEGMENTS.map(({ id, label }) => ({
               value: id,
               label: (
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <span className="inline-flex items-center gap-1.5">
                   {label}
-                  <span style={{ fontVariantNumeric: 'tabular-nums', opacity: 0.75 }}>
+                  <span className="tabular-nums opacity-75">
                     {counts[id]}
                   </span>
                 </span>
@@ -70,8 +71,8 @@ export function VacancyToolbar({
         </fieldset>
       </div>
 
-      <div className="tp-vacancy-filters">
-        <div className="tp-vacancy-filter-search">
+      <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_200px_200px]">
+        <div>
           <label htmlFor={VACANCY_SEARCH_ID} className="sr-only">
             Search vacancies by title, department, location or skill
           </label>
@@ -87,7 +88,7 @@ export function VacancyToolbar({
             autoComplete="off"
             aria-describedby="vacancy-result-count"
             allowClear
-            prefix={<SearchOutlined aria-hidden className="text-[16px]" style={{ opacity: 0.45 }} />}
+            prefix={<SearchOutlined aria-hidden className="text-[16px] opacity-45" />}
           />
         </div>
 
@@ -100,7 +101,7 @@ export function VacancyToolbar({
             value={query.department}
             disabled={disabled}
             onChange={(department: string) => onChange({ department })}
-            style={{ minWidth: 180, width: '100%' }}
+            className="w-full min-w-45"
             options={[
               { value: '', label: 'All departments' },
               ...departments.map((name) => ({ value: name, label: name })),
@@ -117,19 +118,19 @@ export function VacancyToolbar({
             value={query.sort}
             disabled={disabled}
             onChange={(sort: VacancySort) => onChange({ sort })}
-            style={{ minWidth: 180, width: '100%' }}
+            className="w-full min-w-45"
             options={VACANCY_SORTS.map(({ id, label }) => ({ value: id, label }))}
           />
         </div>
       </div>
 
-      <Flex align="center" justify="space-between" gap={12} style={{ minHeight: 24 }}>
+      <Flex align="center" justify="space-between" gap={12} className="min-h-6">
         <Typography.Text
           id="vacancy-result-count"
           role="status"
           aria-live="polite"
           type="secondary"
-          style={{ fontSize: fontSize.caption }}
+          className="text-caption"
         >
           Showing {visibleCount} of {totalCount} {totalCount === 1 ? 'vacancy' : 'vacancies'}
         </Typography.Text>

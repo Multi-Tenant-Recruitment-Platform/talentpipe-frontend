@@ -74,7 +74,10 @@ export function VacancyDetailPage() {
 
   const backTo = `/dashboard/jobs${listSearch}`;
   const backLink = (
-    <Link to={backTo} className="tp-back-link">
+    <Link
+      to={backTo}
+      className="mb-4 inline-flex items-center gap-1.5 text-small font-medium text-slate-600 no-underline hover:text-primary-700"
+    >
       <ArrowLeftOutlined aria-hidden className="text-[16px]" />
       Back to vacancies
     </Link>
@@ -84,7 +87,7 @@ export function VacancyDetailPage() {
     return (
       <section>
         {backLink}
-        <Card style={{ marginTop: space[2] }}>
+        <Card className="mt-4">
           <RowsSkeleton rows={5} label="Loading vacancy…" />
         </Card>
       </section>
@@ -95,7 +98,7 @@ export function VacancyDetailPage() {
     return (
       <section>
         {backLink}
-        <Card style={{ marginTop: space[2] }}>
+        <Card className="mt-4">
           {notFound ? (
             <EmptyState
               icon={SolutionOutlined}
@@ -150,17 +153,17 @@ export function VacancyDetailPage() {
     <section>
       {backLink}
 
-      <header className="tp-vacancy-detail-header">
-        <div style={{ minWidth: 0 }}>
-          <div className="tp-vacancy-detail-title-row">
-            <Typography.Title level={1} className="tp-vacancy-detail-title">
+      <header className="mb-8 flex flex-wrap items-start justify-between gap-4">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-3">
+            <Typography.Title level={1} className="m-0 text-heading tracking-heading">
               {vacancy.title || 'Untitled vacancy'}
             </Typography.Title>
             <VacancyStatusTag value={vacancy.status} />
           </div>
-          {meta.length > 0 && <p className="tp-vacancy-row-meta">{meta.join(' · ')}</p>}
+          {meta.length > 0 && <p className="m-0 mt-0.5 truncate text-small text-slate-500">{meta.join(' · ')}</p>}
           {vacancy.applicationDeadline && (
-            <p className="tp-vacancy-detail-deadline">
+            <p className="tp-vacancy-detail-deadline m-0 mt-1 text-small tabular-nums text-slate-600">
               Applications close{' '}
               <time dateTime={vacancy.applicationDeadline}>{formatDate(vacancy.applicationDeadline)}</time>
               {signal && (
@@ -193,7 +196,7 @@ export function VacancyDetailPage() {
       )}
 
       {blockers.length > 0 && canManage && (
-        <Alert tone="info" style={{ marginBottom: space[3] }}>
+        <Alert tone="info" className="mb-6">
           This draft needs a little more before it can be published:{' '}
           {blockers.map((blocker, i) => (
             <span key={blocker.section.id}>
@@ -208,11 +211,16 @@ export function VacancyDetailPage() {
         </Alert>
       )}
 
-      <div className="tp-vacancy-detail-layout">
-        <Card styles={{ body: { padding: space[3] } }} className="tp-vacancy-detail-main">
+      <div className="grid items-start gap-6 *:min-w-0 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <Card styles={{ body: { padding: space[3] } }}>
           <VacancyDetailsBody vacancy={vacancy} />
         </Card>
-        <aside aria-label="Vacancy status">
+        {/* On a narrow screen the lifecycle comes first: it says what state the
+            vacancy is in before the reader commits to scrolling its whole advert. */}
+        <aside
+          aria-label="Vacancy status"
+          className="-order-1 lg:sticky lg:top-[calc(var(--tp-header-height)+var(--tp-space-3))] lg:order-none"
+        >
           <VacancyLifecycleCard vacancy={vacancy} />
           {/* TODO(applications): the Candidates and Pipeline views for this
               role attach here once the applications module exists. No empty
