@@ -5,6 +5,8 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { api, apiErrorMessage } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import { AuthShell } from '../components/AuthShell';
+import { AuthField } from '../components/auth/AuthField';
+import { AuthHeading } from '../components/auth/AuthHeading';
 import { GoogleSignInButton } from '../components/auth/GoogleSignInButton';
 import { LoginErrorAlert } from '../components/auth/LoginErrorAlert';
 import { LoginModeTabs, type LoginMode } from '../components/auth/LoginModeTabs';
@@ -12,7 +14,6 @@ import { LoginNotices } from '../components/auth/LoginNotices';
 import { PasswordField } from '../components/auth/PasswordField';
 import { Alert } from '../components/ui/Alert';
 import { Button } from '../components/ui/Button';
-import { fontSize } from '../theme/tokens';
 
 interface LoginLocationState {
   /** Set by the registration pages after a successful sign-up. */
@@ -157,12 +158,7 @@ export function LoginPage() {
 
   return (
     <AuthShell>
-      <Typography.Title level={1} style={{ fontSize: fontSize.heading, margin: 0 }}>
-        Welcome back
-      </Typography.Title>
-      <Typography.Paragraph type="secondary" style={{ margin: '8px 0 0' }}>
-        {copy.subtitle}
-      </Typography.Paragraph>
+      <AuthHeading title="Welcome back">{copy.subtitle}</AuthHeading>
 
       <LoginNotices
         sessionEndReason={sessionEndReason}
@@ -178,10 +174,7 @@ export function LoginPage() {
           {error && <LoginErrorAlert message={error} onResend={onResend} />}
           {notice && <Alert tone="info">{notice}</Alert>}
 
-          <div>
-            <label htmlFor="email" style={{ display: 'block', fontWeight: 500, marginBottom: 6 }}>
-              Email
-            </label>
+          <AuthField id="email" label="Email">
             <Input
               id="email"
               type="email"
@@ -190,18 +183,21 @@ export function LoginPage() {
               onChange={(e) => setEmail(e.target.value)}
               autoComplete="email"
             />
-          </div>
+          </AuthField>
 
           <PasswordField value={password} onChange={setPassword} />
 
-          <Button type="submit" variant="primary" loading={submitting} style={{ width: '100%' }}>
+          <Button type="submit" variant="primary" loading={submitting} className="w-full">
             {submitting ? 'Signing in…' : copy.submit}
           </Button>
         </Flex>
       </form>
 
-      <Divider plain style={{ marginBlock: 24 }}>
-        <Typography.Text className="tp-divider-label" type="secondary">
+      <Divider plain className="my-6">
+        {/* The small uppercase label inside a Divider — "or continue with". Not a
+            kicker above a heading: those were removed, because the heading carries its
+            own weight and the sidebar already names the section. */}
+        <Typography.Text className="text-caption font-semibold uppercase tracking-caps" type="secondary">
           or continue with
         </Typography.Text>
       </Divider>
@@ -214,7 +210,7 @@ export function LoginPage() {
       />
 
       {/* Registration is persona-specific, mirroring the active login tab. */}
-      <Typography.Paragraph type="secondary" style={{ marginTop: 24, textAlign: 'center' }}>
+      <Typography.Paragraph type="secondary" className="mt-6 text-center">
         New to TalentPipe? <Link to={copy.registerPath}>Create an account</Link>
       </Typography.Paragraph>
     </AuthShell>

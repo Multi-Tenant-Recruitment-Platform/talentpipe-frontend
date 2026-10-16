@@ -1,7 +1,7 @@
+import { CheckOutlined, RightOutlined, StarOutlined } from '@ant-design/icons';
 import { Progress } from 'antd';
 import type { ChecklistItem, ChecklistTarget } from '../../candidate/candidateProfile';
 import { primary, slate } from '../../theme/tokens';
-import { Icon } from '../dashboard/Icon';
 import { ProfileSection } from './ProfileSection';
 
 /**
@@ -26,7 +26,7 @@ export function ProfileChecklist({
   return (
     <ProfileSection
       id="profile-checklist"
-      icon="sparkles"
+      icon={StarOutlined}
       title="Complete your profile"
       subtitle={remaining === 0 ? 'All done.' : `${remaining} ${remaining === 1 ? 'step' : 'steps'} left`}
     >
@@ -54,7 +54,7 @@ export function ProfileChecklist({
             {item.done ? (
               <div className="tp-checklist-item" data-done="">
                 <span className="tp-checklist-mark">
-                  <Icon name="check" size={12} />
+                  <CheckOutlined aria-hidden className="text-[12px]" />
                 </span>
                 {item.label}
                 <span className="sr-only"> (done)</span>
@@ -64,7 +64,7 @@ export function ProfileChecklist({
                 <span className="tp-checklist-mark" />
                 {item.label}
                 <span className="sr-only"> (to do)</span>
-                <Icon name="chevron-right" size={14} style={{ marginLeft: 'auto' }} />
+                <RightOutlined aria-hidden className="ml-auto text-[14px]" />
               </button>
             )}
           </li>

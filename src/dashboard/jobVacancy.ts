@@ -9,6 +9,7 @@ import type {
   WeekDay,
   WorkplaceType,
 } from '../api/types';
+import { currencyCode } from '../utils/format';
 import { cleanValues } from './companyProfile';
 
 /**
@@ -343,7 +344,7 @@ export const VACANCY_SECTIONS: VacancySection[] = [
 ];
 
 /** Every field in reading order — the order a failed submit walks. */
-export const VACANCY_FIELD_ORDER: JobVacancyField[] = VACANCY_SECTIONS.flatMap(
+const VACANCY_FIELD_ORDER: JobVacancyField[] = VACANCY_SECTIONS.flatMap(
   (section) => section.fields,
 );
 
@@ -593,7 +594,7 @@ export function sectionsWithErrors(errors: JobVacancyFieldErrors): Set<string> {
  * screen to type into, and a section must not report itself answered because
  * someone pressed Add.</p>
  */
-export function hasValue(values: JobVacancyFormValues, field: JobVacancyField): boolean {
+function hasValue(values: JobVacancyFormValues, field: JobVacancyField): boolean {
   const value = values[field];
   if (Array.isArray(value)) {
     return value.some((entry) => entry.trim() !== '');
@@ -813,10 +814,7 @@ export const shiftTypeLabel = (id: ShiftType | null) => labelFrom(SHIFT_TYPES, i
 export const pipelineLabel = (id: string | null) =>
   PIPELINE_TEMPLATES.find((template) => template.id === id)?.label ?? null;
 
-/** 'ISO — Name' → 'ISO'. The code is what belongs next to a number. */
-export function currencyCode(currency: string | null): string {
-  return currency ? currency.split('—')[0].trim() : '';
-}
+export { currencyCode };
 
 /**
  * 'Mon–Fri' where the selection is a run, 'Mon, Wed, Fri' where it is not.
@@ -897,7 +895,7 @@ export function canEditVacancy(status: VacancyStatus): boolean {
 
 export type VacancyAction = 'view' | 'edit' | 'publish' | 'duplicate' | 'close' | 'archive';
 
-export interface VacancyActionSet {
+interface VacancyActionSet {
   /** Shown as buttons, in this order. */
   primary: VacancyAction[];
   /** Behind the ⋮ menu. Destructive moves come last, below a divider. */
@@ -948,7 +946,7 @@ export function daysBetween(fromIso: string, toIso: string): number {
   return Math.round((Date.parse(`${toIso}T00:00:00Z`) - Date.parse(`${fromIso}T00:00:00Z`)) / DAY_MS);
 }
 
-export interface DeadlineSignal {
+interface DeadlineSignal {
   tone: 'neutral' | 'warning';
   label: string;
 }
@@ -993,7 +991,7 @@ export function deadlineSignal(
 
 /* --- Publish readiness ---------------------------------------------------- */
 
-export interface PublishBlocker {
+interface PublishBlocker {
   section: VacancySection;
   /** Field labels, in reading order. */
   fields: string[];

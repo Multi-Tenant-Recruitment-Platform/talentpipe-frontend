@@ -1,21 +1,15 @@
+import { ClockCircleOutlined, GlobalOutlined, ThunderboltOutlined } from '@ant-design/icons';
 import { Card as AntCard, Col, Flex, Row, Table, Typography } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { Badge } from '../../components/dashboard/Badge';
 import { Card } from '../../components/dashboard/Card';
 import { HiringFunnel } from '../../components/dashboard/HiringFunnel';
-import { Icon, type IconName } from '../../components/dashboard/Icon';
 import { PageHeader } from '../../components/dashboard/PageHeader';
 import { Alert } from '../../components/ui/Alert';
 import { hiringFunnel, jobPipelines, pipelineInsights } from '../../data/mockDashboard';
 import type { JobPipeline } from '../../data/mockDashboard';
-import {
-  dataMarkRing,
-  dataSequence,
-  fontSize,
-  radius,
-  slate,
-  status,
-} from '../../theme/tokens';
+import { dataSequence } from '../../theme/tokens';
+import type { IconComponent } from '../../components/ui/icon';
 
 const STAGE_LABELS = ['Applied', 'Screening', 'Interview', 'Offer', 'Hired'];
 /** Ordered stages read as one measure deepening, not five categories. */
@@ -41,32 +35,32 @@ export function PipelinePage() {
    * bottleneck. The third is a fact with no valence, so it stays neutral.
    */
   const insights: {
-    icon: IconName;
+    icon: IconComponent;
     label: string;
     value: string;
     hint: string;
-    chip: { bg: string; fg: string };
+    chip: string;
   }[] = [
     {
-      icon: 'bolt',
+      icon: ThunderboltOutlined,
       label: 'Fastest stage',
       value: pipelineInsights.fastestStage.label,
       hint: `~${pipelineInsights.fastestStage.days} days on average`,
-      chip: { bg: status.successBg, fg: status.successText },
+      chip: 'bg-success-bg text-success-text',
     },
     {
-      icon: 'clock',
+      icon: ClockCircleOutlined,
       label: 'Slowest stage',
       value: pipelineInsights.slowestStage.label,
       hint: `~${pipelineInsights.slowestStage.days} days on average`,
-      chip: { bg: status.warningBg, fg: status.warningText },
+      chip: 'bg-warning-bg text-warning-text',
     },
     {
-      icon: 'globe',
+      icon: GlobalOutlined,
       label: 'Top candidate source',
       value: pipelineInsights.topSource.label,
       hint: `${pipelineInsights.topSource.share}% of all applicants`,
-      chip: { bg: slate[100], fg: slate[600] },
+      chip: 'bg-slate-100 text-slate-600',
     },
   ];
 
@@ -76,10 +70,10 @@ export function PipelinePage() {
       title: 'Job',
       render: (_, job) => (
         <>
-          <Typography.Text strong style={{ display: 'block' }}>
+          <Typography.Text strong className="block">
             {job.title}
           </Typography.Text>
-          <Typography.Text type="secondary" style={{ fontSize: fontSize.caption }}>
+          <Typography.Text type="secondary" className="text-caption">
             {job.department} · {job.location}
           </Typography.Text>
         </>
@@ -100,27 +94,23 @@ export function PipelinePage() {
           <>
             {/* A stacked bar rather than five separate meters: the point is the
                 proportions between stages, which only a shared track shows. */}
+            {/* Stacked proportion bar (pipeline-by-job). A single shared track, because
+                the comparison between segments is the whole point. */}
             <div
-              className="tp-stacked-bar"
+              className="flex h-2.5 w-full min-w-40 overflow-hidden rounded-pill bg-slate-100"
               title={job.stageCounts.map((n, i) => `${STAGE_LABELS[i]}: ${n}`).join(' · ')}
             >
               {job.stageCounts.map((count, i) =>
                 count > 0 ? (
                   <span
                     key={STAGE_LABELS[i]}
-                    style={{
-                      width: `${(count / total) * 100}%`,
-                      background: STAGE_COLORS[i],
-                      boxShadow: dataMarkRing,
-                    }}
+                    className="shadow-data-ring"
+                    style={{ width: `${(count / total) * 100}%`, background: STAGE_COLORS[i] }}
                   />
                 ) : null,
               )}
             </div>
-            <Typography.Text
-              type="secondary"
-              style={{ display: 'block', marginTop: 6, fontSize: fontSize.caption, fontVariantNumeric: 'tabular-nums' }}
-            >
+            <Typography.Text type="secondary" className="mt-1.5 block text-caption tabular-nums">
               {job.stageCounts.map((n, i) => `${STAGE_LABELS[i].slice(0, 1)}${n}`).join('  ')}
             </Typography.Text>
           </>
@@ -131,7 +121,7 @@ export function PipelinePage() {
       key: 'total',
       title: 'Candidates',
       render: (_, job) => (
-        <Typography.Text strong style={{ fontVariantNumeric: 'tabular-nums' }}>
+        <Typography.Text strong className="tabular-nums">
           {job.stageCounts.reduce((sum, n) => sum + n, 0)}
         </Typography.Text>
       ),
@@ -158,31 +148,19 @@ export function PipelinePage() {
       <Row gutter={[20, 20]}>
         {insights.map((insight) => (
           <Col xs={24} sm={8} key={insight.label}>
-            <AntCard style={{ height: '100%' }} styles={{ body: { padding: 20 } }}>
+            <AntCard className="h-full" styles={{ body: { padding: 20 } }}>
               <Flex align="center" gap={16}>
-                <span
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    width: 44,
-                    height: 44,
-                    flexShrink: 0,
-                    borderRadius: radius.lg,
-                    background: insight.chip.bg,
-                    color: insight.chip.fg,
-                  }}
-                >
-                  <Icon name={insight.icon} size={20} />
+                <span className={`flex size-11 shrink-0 items-center justify-center rounded-lg ${insight.chip}`}>
+                  <insight.icon aria-hidden className="text-[20px]" />
                 </span>
-                <div style={{ minWidth: 0 }}>
-                  <Typography.Text type="secondary" style={{ display: 'block', fontSize: fontSize.caption }}>
+                <div className="min-w-0">
+                  <Typography.Text type="secondary" className="block text-caption">
                     {insight.label}
                   </Typography.Text>
-                  <Typography.Text strong style={{ display: 'block', fontSize: fontSize.lead }}>
+                  <Typography.Text strong className="block text-lead">
                     {insight.value}
                   </Typography.Text>
-                  <Typography.Text type="secondary" style={{ fontSize: fontSize.caption }}>
+                  <Typography.Text type="secondary" className="text-caption">
                     {insight.hint}
                   </Typography.Text>
                 </div>
@@ -193,13 +171,13 @@ export function PipelinePage() {
       </Row>
 
       {/* Company-wide funnel */}
-      <div style={{ marginTop: 24 }}>
+      <div className="mt-6">
         <Card
           title="Company-wide funnel"
           subtitle={`${totalInFunnel.toLocaleString()} applications in the last 90 days · ${overallConversion}% end-to-end conversion`}
         >
           <HiringFunnel stages={hiringFunnel} />
-          <Alert tone="warning" role="status" style={{ marginTop: 24 }}>
+          <Alert tone="warning" role="status" className="mt-6">
             <strong>Screening is your bottleneck.</strong> Candidates wait ~6 days on average before
             moving forward. Consider inviting another interviewer or tightening your screening
             criteria to keep the pipeline flowing.
@@ -208,28 +186,19 @@ export function PipelinePage() {
       </div>
 
       {/* Per-job pipelines */}
-      <div style={{ marginTop: 24 }}>
+      <div className="mt-6">
         <Card
           title="Pipeline by job"
           subtitle="Candidates in each stage, per open role"
-          bodyClassName="tp-roster-body"
+          bodyClassName="tp-roster-body px-0 pt-5 pb-2"
           action={
             <Flex wrap align="center" gap={12}>
               {STAGE_LABELS.map((label, i) => (
-                <Typography.Text
-                  key={label}
-                  type="secondary"
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: fontSize.caption }}
-                >
+                <Typography.Text key={label} type="secondary" className="inline-flex items-center gap-1.5 text-caption">
                   <span
                     aria-hidden="true"
-                    style={{
-                      width: 8,
-                      height: 8,
-                      borderRadius: '50%',
-                      background: STAGE_COLORS[i],
-                      boxShadow: dataMarkRing,
-                    }}
+                    className="size-2 rounded-full shadow-data-ring"
+                    style={{ background: STAGE_COLORS[i] }}
                   />
                   {label}
                 </Typography.Text>

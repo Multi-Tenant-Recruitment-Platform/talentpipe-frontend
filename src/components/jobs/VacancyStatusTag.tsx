@@ -1,6 +1,6 @@
+import { LockOutlined } from '@ant-design/icons';
 import type { VacancyStatus } from '../../api/types';
 import { VACANCY_STATUS_LABEL } from '../../dashboard/jobVacancy';
-import { Icon } from '../dashboard/Icon';
 
 /**
  * Where a vacancy is in its life, as a tag.
@@ -19,7 +19,7 @@ export function VacancyStatusTag({ value }: Readonly<{ value: VacancyStatus }>) 
   return (
     <span className="tp-vacancy-status" data-status={value}>
       {value === 'CLOSED' ? (
-        <Icon name="lock-closed" size={12} />
+        <LockOutlined aria-hidden className="text-[12px]" />
       ) : (
         <span aria-hidden="true" className="tp-vacancy-status-dot" />
       )}

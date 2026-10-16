@@ -1,11 +1,12 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ReactNode } from 'react';
-import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CompanyProfileResponse, UpdateCompanyProfileRequest } from '../../api/types';
 import { toFormValues, toUpdateRequest } from '../../dashboard/companyProfile';
-import { authContextMock, makeUser, setAuth } from '../../test/authHarness';
+import { authContextMock, LocationProbe, makeUser, setAuth } from '../../test/authHarness';
+import { axiosError } from '../../test/http';
 import { makeCompanyProfile } from '../../test/companyFixtures';
 
 /**
@@ -40,11 +41,6 @@ const { CompanyProfileProvider } = await import('../../dashboard/CompanyProfileC
 
 const PROFILE = makeCompanyProfile();
 
-const axiosError = (status: number, message = 'boom') => ({
-  isAxiosError: true,
-  response: { status, data: { message } },
-});
-
 const pngFile = (name = 'logo.png', size = 50_000) => {
   const file = new File(['fake-bytes'], name, { type: 'image/png' });
   Object.defineProperty(file, 'size', { value: size });
@@ -52,10 +48,6 @@ const pngFile = (name = 'logo.png', size = 50_000) => {
 };
 
 /** Where the router currently is, so a test can assert on the URL. */
-function LocationProbe() {
-  return <div data-testid="location">{useLocation().pathname}</div>;
-}
-
 /** The two profile routes exactly as App.tsx declares them, minus the gates. */
 function ProfileRoutes({ path = '/dashboard/profile', extra }: Readonly<{ path?: string; extra?: ReactNode }>) {
   return (

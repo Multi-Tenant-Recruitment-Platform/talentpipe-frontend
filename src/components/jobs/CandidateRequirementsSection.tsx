@@ -55,7 +55,7 @@ export function CandidateRequirementsSection({
           max={50}
           precision={0}
           addonAfter="years"
-          style={{ width: '100%' }}
+          className="w-full"
           onChange={(next) => set('minimumExperienceYears', next)}
         />
       </VacancyField>
@@ -68,7 +68,7 @@ export function CandidateRequirementsSection({
           placeholder="Choose a minimum qualification"
           allowClear
           showSearch
-          style={{ width: '100%' }}
+          className="w-full"
           onChange={(next: string | undefined) => set('education', next ?? '')}
         />
       </VacancyField>
@@ -98,7 +98,7 @@ export function CandidateRequirementsSection({
           options={LANGUAGES.map((language) => ({ value: language, label: language }))}
           placeholder="Choose one or more"
           allowClear
-          style={{ width: '100%' }}
+          className="w-full"
           onChange={(next: string[]) => set('languageRequirements', next)}
         />
       </VacancyField>

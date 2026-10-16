@@ -1,32 +1,37 @@
+import { lazy, Suspense } from 'react';
 import { Route, Routes } from 'react-router-dom';
 import { AuthProvider } from './auth/AuthContext';
 import { Layout } from './components/Layout';
+import { PageLoader } from './components/PageLoader';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { RequirePermission } from './components/RequirePermission';
-import { DashboardLayout } from './layouts/DashboardLayout';
-import { AcceptInvitePage } from './pages/AcceptInvitePage';
-import { ApplyPage } from './pages/ApplyPage';
-import { CandidateProfilePage } from './pages/CandidateProfilePage';
-import { CandidateRegisterPage } from './pages/CandidateRegisterPage';
-import { CompanyProfilePage } from './pages/dashboard/CompanyProfilePage';
-import { CompanySettingsPage } from './pages/dashboard/CompanySettingsPage';
-import { CreateJobVacancyPage } from './pages/dashboard/CreateJobVacancyPage';
-import { EditJobVacancyPage } from './pages/dashboard/EditJobVacancyPage';
-import { JobVacanciesPage } from './pages/dashboard/JobVacanciesPage';
-import { OverviewPage } from './pages/dashboard/OverviewPage';
-import { PipelinePage } from './pages/dashboard/PipelinePage';
-import { TeamPage } from './pages/dashboard/TeamPage';
-import { VacancyDetailPage } from './pages/dashboard/VacancyDetailPage';
 import { ForbiddenPage } from './pages/ForbiddenPage';
-import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
 import { JobDetailPage } from './pages/JobDetailPage';
 import { JobsPage } from './pages/JobsPage';
 import { LandingPage } from './pages/LandingPage';
 import { LoginPage } from './pages/LoginPage';
 import { NotFoundPage } from './pages/NotFoundPage';
-import { RegisterPage } from './pages/RegisterPage';
-import { ResetPasswordPage } from './pages/ResetPasswordPage';
-import { VerifyEmailPage } from './pages/VerifyEmailPage';
+
+// The common public entry points above load up front; everything below is
+// split into its own chunk so a job-board visitor never downloads the dashboard.
+const DashboardLayout = lazy(() => import('./layouts/DashboardLayout').then((m) => ({ default: m.DashboardLayout })));
+const AcceptInvitePage = lazy(() => import('./pages/AcceptInvitePage').then((m) => ({ default: m.AcceptInvitePage })));
+const ApplyPage = lazy(() => import('./pages/ApplyPage').then((m) => ({ default: m.ApplyPage })));
+const CandidateProfilePage = lazy(() => import('./pages/CandidateProfilePage').then((m) => ({ default: m.CandidateProfilePage })));
+const CandidateRegisterPage = lazy(() => import('./pages/CandidateRegisterPage').then((m) => ({ default: m.CandidateRegisterPage })));
+const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage').then((m) => ({ default: m.ForgotPasswordPage })));
+const RegisterPage = lazy(() => import('./pages/RegisterPage').then((m) => ({ default: m.RegisterPage })));
+const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage').then((m) => ({ default: m.ResetPasswordPage })));
+const VerifyEmailPage = lazy(() => import('./pages/VerifyEmailPage').then((m) => ({ default: m.VerifyEmailPage })));
+const CompanyProfilePage = lazy(() => import('./pages/dashboard/CompanyProfilePage').then((m) => ({ default: m.CompanyProfilePage })));
+const CompanySettingsPage = lazy(() => import('./pages/dashboard/CompanySettingsPage').then((m) => ({ default: m.CompanySettingsPage })));
+const CreateJobVacancyPage = lazy(() => import('./pages/dashboard/CreateJobVacancyPage').then((m) => ({ default: m.CreateJobVacancyPage })));
+const EditJobVacancyPage = lazy(() => import('./pages/dashboard/EditJobVacancyPage').then((m) => ({ default: m.EditJobVacancyPage })));
+const JobVacanciesPage = lazy(() => import('./pages/dashboard/JobVacanciesPage').then((m) => ({ default: m.JobVacanciesPage })));
+const OverviewPage = lazy(() => import('./pages/dashboard/OverviewPage').then((m) => ({ default: m.OverviewPage })));
+const PipelinePage = lazy(() => import('./pages/dashboard/PipelinePage').then((m) => ({ default: m.PipelinePage })));
+const TeamPage = lazy(() => import('./pages/dashboard/TeamPage').then((m) => ({ default: m.TeamPage })));
+const VacancyDetailPage = lazy(() => import('./pages/dashboard/VacancyDetailPage').then((m) => ({ default: m.VacancyDetailPage })));
 
 export default function App() {
   return (
@@ -67,7 +72,9 @@ export default function App() {
           path="/dashboard"
           element={
             <ProtectedRoute requires="dashboard.view" redirectTo="/jobs">
-              <DashboardLayout />
+              <Suspense fallback={<PageLoader />}>
+                <DashboardLayout />
+              </Suspense>
             </ProtectedRoute>
           }
         >

@@ -1,3 +1,11 @@
+import {
+  IdcardOutlined,
+  MailOutlined,
+  SearchOutlined,
+  SolutionOutlined,
+  TeamOutlined,
+  UserAddOutlined,
+} from '@ant-design/icons';
 import { Col, Divider, Flex, Row, Typography } from 'antd';
 import { useState } from 'react';
 import { teamApi } from '../../api/team';
@@ -5,7 +13,6 @@ import { useAuth } from '../../auth/AuthContext';
 import { useCan } from '../../auth/useCan';
 import { Card } from '../../components/dashboard/Card';
 import { EmptyState } from '../../components/dashboard/EmptyState';
-import { Icon } from '../../components/dashboard/Icon';
 import { InviteMemberModal, type InviteFormValues } from '../../components/dashboard/InviteMemberModal';
 import { PageHeader } from '../../components/dashboard/PageHeader';
 import { StatCard } from '../../components/dashboard/StatCard';
@@ -155,8 +162,11 @@ export function TeamPage() {
   }
 
   const inviteButton = canInvite ? (
-    <Button variant="primary" onClick={() => setInviteOpen(true)}>
-      <Icon name="user-plus" size={16} />
+    <Button
+      variant="primary"
+      onClick={() => setInviteOpen(true)}
+      icon={<UserAddOutlined aria-hidden className="text-[16px]" />}
+    >
       Invite member
     </Button>
   ) : null;
@@ -166,7 +176,7 @@ export function TeamPage() {
   // failed rather than that the workspace is empty.
   const empty = (
     <EmptyState
-      icon="search"
+      icon={SearchOutlined}
       title={roster.query.trim() ? `No one matches “${roster.query.trim()}”` : 'No one matches these filters'}
       description="Try a different name, email or role — or clear the filters to see everyone."
       action={
@@ -194,7 +204,7 @@ export function TeamPage() {
       {/* Load and action failures keep separate slots: a rejected invite must
           not blank a roster that loaded perfectly well. */}
       {loadError && (
-        <Alert tone="error" style={{ marginBottom: 24 }}>
+        <Alert tone="error" className="mb-6">
           <Flex wrap align="center" justify="space-between" gap={12}>
             <span>{loadError}</span>
             <Button size="sm" variant="secondary" onClick={() => void refresh()}>
@@ -205,34 +215,34 @@ export function TeamPage() {
       )}
 
       {message && (
-        <Alert tone={message.tone} onDismiss={() => setMessage(null)} style={{ marginBottom: 24 }}>
+        <Alert tone={message.tone} onDismiss={() => setMessage(null)} className="mb-6">
           {message.text}
         </Alert>
       )}
 
       <Row gutter={[20, 20]}>
         <Col xs={24} sm={12} xl={6}>
-          <StatCard label="Workspace access" value={kpi(activeCount)} icon="users" />
+          <StatCard label="Workspace access" value={kpi(activeCount)} icon={TeamOutlined} />
         </Col>
         <Col xs={24} sm={12} xl={6}>
-          <StatCard label="HR Managers" value={kpi(hrCount)} icon="briefcase" />
+          <StatCard label="HR Managers" value={kpi(hrCount)} icon={SolutionOutlined} />
         </Col>
         <Col xs={24} sm={12} xl={6}>
           <StatCard
             label="Interviewers"
             value={kpi(interviewerCount)}
-            icon="identification"
+            icon={IdcardOutlined}
           />
         </Col>
         <Col xs={24} sm={12} xl={6}>
-          <StatCard label="Pending invites" value={kpi(pendingCount)} icon="envelope" />
+          <StatCard label="Pending invites" value={kpi(pendingCount)} icon={MailOutlined} />
         </Col>
       </Row>
 
       {/* Disabled and unverified accounts live outside Active and Pending, so
           say where they went rather than letting them look deleted. */}
       {roster.otherCount > 0 && roster.segment !== 'all' && (
-        <Alert tone="info" style={{ marginTop: 24 }}>
+        <Alert tone="info" className="mt-6">
           {roster.otherCount === 1
             ? '1 account is disabled or awaiting email verification.'
             : `${roster.otherCount} accounts are disabled or awaiting email verification.`}{' '}
@@ -243,8 +253,8 @@ export function TeamPage() {
         </Alert>
       )}
 
-      <div style={{ marginTop: 24 }}>
-        <Card bodyClassName="tp-roster-body">
+      <div className="mt-6">
+        <Card bodyClassName="tp-roster-body px-0 pt-5 pb-2">
           <TeamToolbar
           segment={roster.segment}
           onSegmentChange={roster.setSegment}
@@ -278,9 +288,9 @@ export function TeamPage() {
 
           {soloAdmin && (
             <>
-              <Divider style={{ marginBlock: 0 }} />
+              <Divider className="my-0" />
               <EmptyState
-                icon="users"
+                icon={TeamOutlined}
                 title="You're the only person here"
                 description="Invite an HR manager or an interviewer to start sharing the hiring work."
                 action={inviteButton}

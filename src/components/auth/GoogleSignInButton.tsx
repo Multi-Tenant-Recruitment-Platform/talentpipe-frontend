@@ -10,7 +10,7 @@ export function GoogleSignInButton({ onClick }: Readonly<{ onClick: () => void }
       type="button"
       variant="secondary"
       onClick={onClick}
-      style={{ marginTop: 16, width: '100%', display: 'inline-flex', gap: 12 }}
+      className="mt-4 inline-flex w-full gap-3"
     >
       {/* The real Google mark, so it stays recognisable; aria-hidden because
           the button's own text already names the action. */}

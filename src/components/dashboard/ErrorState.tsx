@@ -1,7 +1,7 @@
+import { ReloadOutlined, WarningOutlined } from '@ant-design/icons';
 import { Flex, Typography } from 'antd';
-import { fontSize, radius, slate, space, status } from '../../theme/tokens';
+import { space } from '../../theme/tokens';
 import { Button } from '../ui/Button';
-import { Icon } from './Icon';
 
 /**
  * A panel-level failure: the thing this area exists to show could not be
@@ -36,49 +36,30 @@ export function ErrorState({
   return (
     // role="alert" would interrupt; this is a region the reader lands in, not
     // an event that fires under them. The heading carries the announcement.
-    <Flex
-      vertical
-      align="center"
-      gap={space[1.5]}
-      style={{ paddingBlock: space[5], paddingInline: space[3], textAlign: 'center' }}
-    >
-      <span
-        style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          width: 48,
-          height: 48,
-          borderRadius: '50%',
-          // The one place colour is right: this is a failure, and the tint is
-          // the same red the rest of the system means "error" with.
-          background: status.errorBg,
-          color: status.errorText,
-        }}
-      >
-        <Icon name="warning" size={24} />
+    <Flex vertical align="center" gap={space[1.5]} className="px-6 py-10 text-center">
+      {/* The one place colour is right: this is a failure, and the tint is
+          the same red the rest of the system means "error" with. */}
+      <span className="inline-flex size-12 items-center justify-center rounded-full bg-error-bg text-error-text">
+        <WarningOutlined aria-hidden className="text-[24px]" />
       </span>
 
       <div>
-        <Typography.Paragraph
-          strong
-          style={{ margin: 0, fontSize: fontSize.lead, color: slate[900] }}
-        >
+        <Typography.Paragraph strong className="m-0 text-lead text-slate-900">
           {title}
         </Typography.Paragraph>
-        <Typography.Text
-          type="secondary"
-          style={{ display: 'block', maxWidth: 420, marginTop: space[0.5] }}
-        >
+        <Typography.Text type="secondary" className="mt-1 block max-w-105">
           {description}
         </Typography.Text>
       </div>
 
       {(onRetry || action) && (
-        <Flex gap={space[1]} wrap style={{ marginTop: space[0.5] }}>
+        <Flex gap={space[1]} wrap className="mt-1">
           {onRetry && (
-            <Button variant="secondary" onClick={onRetry}>
-              <Icon name="refresh" size={16} />
+            <Button
+              variant="secondary"
+              onClick={onRetry}
+              icon={<ReloadOutlined aria-hidden className="text-[16px]" />}
+            >
               {retryLabel}
             </Button>
           )}
@@ -116,41 +97,14 @@ export function RowsSkeleton({
           key={i}
           align="center"
           gap={space[1.5]}
-          style={{
-            paddingBlock: space[1.5],
-            borderTop: i === 0 ? undefined : `1px solid ${slate[100]}`,
-          }}
+          className={i === 0 ? 'py-3' : 'border-t border-slate-100 py-3'}
         >
-          {avatar && (
-            <span
-              style={{
-                width: 40,
-                height: 40,
-                flexShrink: 0,
-                borderRadius: '50%',
-                background: slate[100],
-              }}
-            />
-          )}
-          <Flex vertical gap={space[1]} style={{ flex: 1, minWidth: 0 }}>
+          {avatar && <span className="size-10 shrink-0 rounded-full bg-slate-100" />}
+          <Flex vertical gap={space[1]} className="min-w-0 flex-1">
             {/* Two bars of unequal width read as a title and its meta, which is
                 what almost every row in this product actually is. */}
-            <span
-              style={{
-                height: 10,
-                width: `${58 - (i % 3) * 9}%`,
-                borderRadius: radius.pill,
-                background: slate[200],
-              }}
-            />
-            <span
-              style={{
-                height: 8,
-                width: `${34 - (i % 2) * 7}%`,
-                borderRadius: radius.pill,
-                background: slate[100],
-              }}
-            />
+            <span className="h-2.5 rounded-pill bg-slate-200" style={{ width: `${58 - (i % 3) * 9}%` }} />
+            <span className="h-2 rounded-pill bg-slate-100" style={{ width: `${34 - (i % 2) * 7}%` }} />
           </Flex>
         </Flex>
       ))}

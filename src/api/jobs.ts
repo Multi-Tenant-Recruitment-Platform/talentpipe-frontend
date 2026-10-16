@@ -4,6 +4,7 @@ import type {
   JobVacancyResponse,
   JobVacancyUpdateRequest,
   PageResponse,
+  VacancyStatus,
 } from './types';
 
 /**
@@ -59,6 +60,12 @@ export const jobsApi = {
       }
     }
     return all;
+  },
+
+  /** Vacancy totals per status, archived included. A status with none may be absent. */
+  async counts(): Promise<Partial<Record<VacancyStatus, number>>> {
+    const { data } = await api.get<Partial<Record<VacancyStatus, number>>>('/jobs/counts');
+    return data;
   },
 
   /** One vacancy. 404 when it does not exist or belongs to another workspace. */

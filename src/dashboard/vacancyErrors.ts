@@ -22,7 +22,7 @@ export type VacancyRequestKind =
   | 'close'
   | 'archive';
 
-export interface VacancyErrorPlan {
+interface VacancyErrorPlan {
   tone: AlertTone;
   message: string;
   /** True when what is on screen is provably stale and must be re-fetched. */

@@ -10,9 +10,9 @@
 import type { InvitableRole } from '../api/types';
 
 /** Company roles as they appear in the mock team fixtures. */
-export type TeamRole = 'COMPANY_ADMIN' | InvitableRole;
+type TeamRole = 'COMPANY_ADMIN' | InvitableRole;
 
-export interface TeamMember {
+interface TeamMember {
   id: string;
   firstName: string;
   lastName: string;
@@ -22,7 +22,7 @@ export interface TeamMember {
   joinedAt: string;
 }
 
-export interface PendingInvite {
+interface PendingInvite {
   id: string;
   firstName: string;
   lastName: string;
@@ -48,7 +48,7 @@ export interface JobPipeline {
   stageCounts: number[];
 }
 
-export interface UpcomingInterview {
+interface UpcomingInterview {
   id: string;
   candidateName: string;
   jobTitle: string;
@@ -67,10 +67,8 @@ export interface ActivityItem {
 
 /** Headline KPIs shown on the overview page. */
 export const overviewStats = {
-  activeJobs: 8,
   candidatesInPipeline: 306,
   interviewsThisWeek: 14,
-  pendingInvites: 3,
 };
 
 /** Company-wide hiring funnel (all open jobs, last 90 days). */
@@ -315,7 +313,5 @@ export const activityFeed: ActivityItem[] = [
 // settings page never has to know which of the two it is reading.
 
 export const planUsage = {
-  tier: 'Growth',
-  seatsUsed: 11,
   seatsTotal: 15,
 };

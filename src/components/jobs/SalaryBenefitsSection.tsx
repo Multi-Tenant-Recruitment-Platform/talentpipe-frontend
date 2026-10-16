@@ -33,7 +33,7 @@ export function SalaryBenefitsSection({ values, errors, set }: Readonly<VacancyS
           min={0}
           formatter={group}
           prefix={code || undefined}
-          style={{ width: '100%' }}
+          className="w-full"
           onChange={(next) => set('salaryMin', next)}
         />
       </VacancyField>
@@ -46,7 +46,7 @@ export function SalaryBenefitsSection({ values, errors, set }: Readonly<VacancyS
           min={0}
           formatter={group}
           prefix={code || undefined}
-          style={{ width: '100%' }}
+          className="w-full"
           onChange={(next) => set('salaryMax', next)}
         />
       </VacancyField>
@@ -60,7 +60,7 @@ export function SalaryBenefitsSection({ values, errors, set }: Readonly<VacancyS
           placeholder="Choose a currency"
           allowClear
           showSearch
-          style={{ width: '100%' }}
+          className="w-full"
           onChange={(next: string | undefined) => set('currency', next ?? '')}
         />
       </VacancyField>
@@ -78,7 +78,7 @@ export function SalaryBenefitsSection({ values, errors, set }: Readonly<VacancyS
           options={PAY_PERIODS.map((period) => ({ value: period.id, label: period.label }))}
           placeholder="Choose a pay period"
           allowClear
-          style={{ width: '100%' }}
+          className="w-full"
           onChange={(next: PayPeriod | undefined) => set('payPeriod', next ?? '')}
         />
       </VacancyField>
@@ -91,7 +91,7 @@ export function SalaryBenefitsSection({ values, errors, set }: Readonly<VacancyS
         group
       >
         <Checkbox.Group
-          className="tp-benefit-checks"
+          className="tp-benefit-checks grid gap-x-6 gap-y-2.5 sm:grid-cols-2 xl:grid-cols-3"
           value={values.benefits}
           onChange={(next) => set('benefits', next as string[])}
         >

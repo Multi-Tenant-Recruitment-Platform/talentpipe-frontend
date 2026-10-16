@@ -1,7 +1,6 @@
 import { Empty, Typography } from 'antd';
 import type { ReactNode } from 'react';
-import { fontSize, slate, space } from '../../theme/tokens';
-import { Icon, type IconName } from './Icon';
+import type { IconComponent } from '../ui/icon';
 
 /**
  * Centred icon + headline + explanation, with an optional call to action.
@@ -15,48 +14,31 @@ import { Icon, type IconName } from './Icon';
  * does not carry, and the eye should land on the sentence and the button.</p>
  */
 export function EmptyState({
-  icon,
+  icon: Glyph,
   title,
   description,
   action,
 }: Readonly<{
-  icon: IconName;
+  icon: IconComponent;
   title: string;
   description: string;
   action?: ReactNode;
 }>) {
   return (
     <Empty
-      style={{ paddingBlock: space[5] }}
+      className="py-10"
       image={
-        <span
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: 48,
-            height: 48,
-            borderRadius: '50%',
-            background: slate[100],
-            color: slate[500],
-          }}
-        >
-          <Icon name={icon} size={24} />
+        <span className="inline-flex size-12 items-center justify-center rounded-full bg-slate-100 text-slate-500">
+          <Glyph aria-hidden className="text-[24px]" />
         </span>
       }
       imageStyle={{ height: 48, display: 'flex', justifyContent: 'center' }}
       description={
         <>
-          <Typography.Paragraph
-            strong
-            style={{ marginBottom: space[0.5], fontSize: fontSize.lead, color: slate[900] }}
-          >
+          <Typography.Paragraph strong className="mb-1 text-lead text-slate-900">
             {title}
           </Typography.Paragraph>
-          <Typography.Text
-            type="secondary"
-            style={{ display: 'block', maxWidth: 384, margin: '0 auto' }}
-          >
+          <Typography.Text type="secondary" className="mx-auto my-0 block max-w-96">
             {description}
           </Typography.Text>
         </>

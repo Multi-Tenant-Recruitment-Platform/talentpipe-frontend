@@ -1,10 +1,9 @@
+import { ArrowLeftOutlined, LockOutlined } from '@ant-design/icons';
 import { Flex, Result, Typography } from 'antd';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { homeRouteFor, type Permission } from '../auth/permissions';
-import { Icon } from '../components/dashboard/Icon';
 import { RoleBadge } from '../components/dashboard/RoleBadge';
-import { fontSize, slate, status } from '../theme/tokens';
 
 /**
  * Why this particular door is closed. Generic copy is a dead end — naming the
@@ -30,25 +29,14 @@ export function ForbiddenPage({ requires }: Readonly<{ requires?: Permission }>)
 
   return (
     <Result
-      style={{ maxWidth: 512, marginInline: 'auto' }}
+      className="mx-auto max-w-128"
       icon={
-        <span
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: 56,
-            height: 56,
-            borderRadius: 16,
-            background: status.warningBg,
-            color: status.warningText,
-          }}
-        >
-          <Icon name="lock-closed" size={28} />
+        <span className="inline-flex size-14 items-center justify-center rounded-xl bg-warning-bg text-warning-text">
+          <LockOutlined aria-hidden className="text-[28px]" />
         </span>
       }
       title={
-        <Typography.Title level={1} style={{ fontSize: fontSize.heading, margin: 0 }}>
+        <Typography.Title level={1} className="m-0 text-heading">
           You don&rsquo;t have access to this page
         </Typography.Title>
       }
@@ -66,12 +54,8 @@ export function ForbiddenPage({ requires }: Readonly<{ requires?: Permission }>)
       extra={
         <Flex vertical align="center" gap={20}>
           {user && (
-            <Flex
-              align="center"
-              gap={8}
-              style={{ borderRadius: 999, background: slate[50], padding: '6px 12px' }}
-            >
-              <Typography.Text type="secondary" style={{ fontSize: fontSize.caption }}>
+            <Flex align="center" gap={8} className="rounded-pill bg-slate-50 px-3 py-1.5">
+              <Typography.Text type="secondary" className="text-caption">
                 Signed in as
               </Typography.Text>
               <RoleBadge role={user.role} />
@@ -81,7 +65,7 @@ export function ForbiddenPage({ requires }: Readonly<{ requires?: Permission }>)
               other is invalid markup. The icon is aria-hidden, so the link's
               accessible name stays exactly its text. */}
           <Link to={home} className="tp-cta-link">
-            <Icon name="arrow-left" size={16} />
+            <ArrowLeftOutlined aria-hidden className="text-[16px]" />
             {home === '/dashboard' ? 'Back to overview' : 'Browse jobs'}
           </Link>
         </Flex>

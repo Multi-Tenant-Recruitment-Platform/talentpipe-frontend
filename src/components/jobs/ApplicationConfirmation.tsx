@@ -1,8 +1,8 @@
+import { CheckOutlined } from '@ant-design/icons';
 import { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import type { JobApplicationResponse, JobSummary } from '../../api/types';
 import { jobPath } from '../../jobs/jobPaths';
-import { Icon } from '../dashboard/Icon';
 
 export function ApplicationConfirmation({
   job,
@@ -18,7 +18,7 @@ export function ApplicationConfirmation({
   return (
     <section className="tp-job-advert tp-apply-done">
       <span className="tp-apply-done-mark">
-        <Icon name="check" size={32} />
+        <CheckOutlined aria-hidden className="text-[32px]" />
       </span>
       <h1 ref={headingRef} tabIndex={-1} className="tp-apply-done-title">
         Application submitted successfully!

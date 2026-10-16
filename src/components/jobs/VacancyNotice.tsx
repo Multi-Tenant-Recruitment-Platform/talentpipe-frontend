@@ -30,7 +30,9 @@ export const VacancyNotice = forwardRef<
   }>
 >(function VacancyNotice({ id, notice, onDismiss, onShowArchived }, ref) {
   return (
-    <div ref={ref} id={id} tabIndex={-1} className="tp-vacancy-notice">
+    // Focus target after an action whose row has left the view. The Alert inside
+    // already carries the visible frame, so the wrapper adds a ring, not a box.
+    <div ref={ref} id={id} tabIndex={-1} className="mb-6 rounded-lg outline-none focus-visible:shadow-focus">
       <Alert tone={notice.tone} onDismiss={onDismiss}>
         <Flex wrap align="center" justify="space-between" gap={12}>
           <span>{notice.text}</span>

@@ -1,3 +1,4 @@
+import { InboxOutlined, PlusOutlined, SearchOutlined, SolutionOutlined } from '@ant-design/icons';
 import { Card } from 'antd';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
@@ -5,7 +6,6 @@ import type { JobVacancyResponse } from '../../api/types';
 import { useCan } from '../../auth/useCan';
 import { EmptyState } from '../../components/dashboard/EmptyState';
 import { ErrorState, RowsSkeleton } from '../../components/dashboard/ErrorState';
-import { Icon } from '../../components/dashboard/Icon';
 import { PageHeader } from '../../components/dashboard/PageHeader';
 import { useVacancyLifecycle } from '../../components/jobs/useVacancyLifecycle';
 import { moreButtonId } from '../../components/jobs/vacancyFieldIds';
@@ -25,7 +25,6 @@ import {
   toVacancySearchParams,
   type VacancyQuery,
 } from '../../dashboard/vacancyList';
-import { space } from '../../theme/tokens';
 
 const NOTICE_ID = 'vacancy-list-notice';
 
@@ -130,7 +129,7 @@ export function JobVacanciesPage() {
 
   const createButton = canManage ? (
     <Link to="/dashboard/jobs/new" className="tp-cta-link">
-      <Icon name="plus" size={16} />
+      <PlusOutlined aria-hidden className="text-[16px]" />
       Create vacancy
     </Link>
   ) : null;
@@ -177,7 +176,7 @@ export function JobVacanciesPage() {
     body = (
       <Card>
         <EmptyState
-          icon="briefcase"
+          icon={SolutionOutlined}
           title="No vacancies yet"
           description="Create your first one to start collecting applications. It takes about five minutes, and you can save a draft at any point."
           action={createButton ?? undefined}
@@ -187,7 +186,7 @@ export function JobVacanciesPage() {
   } else {
     body = (
       <Card styles={{ body: { padding: 0 } }}>
-        <div className="tp-vacancy-toolbar-wrap">
+        <div className="border-b border-slate-200 px-6 pt-5 pb-3">
           <VacancyToolbar
             query={query}
             onChange={update}
@@ -201,7 +200,7 @@ export function JobVacanciesPage() {
         </div>
 
         {selection.visible.length > 0 ? (
-          <ul className="tp-vacancy-list" aria-label="Vacancies">
+          <ul className="m-0 list-none p-0" aria-label="Vacancies">
             {selection.visible.map((vacancy) => (
               <VacancyRow
                 key={vacancy.id}
@@ -215,7 +214,7 @@ export function JobVacanciesPage() {
           </ul>
         ) : selection.filtersActive ? (
           <EmptyState
-            icon="search"
+            icon={SearchOutlined}
             title={
               query.query.trim()
                 ? `No vacancies match “${query.query.trim()}”`
@@ -234,13 +233,13 @@ export function JobVacanciesPage() {
           />
         ) : query.segment === 'ARCHIVED' ? (
           <EmptyState
-            icon="archive-box"
+            icon={InboxOutlined}
             title="Nothing archived"
             description="Closed vacancies you archive are kept here for reporting."
           />
         ) : (
           <EmptyState
-            icon="briefcase"
+            icon={SolutionOutlined}
             title="Nothing in this view"
             description="No vacancies are in this state right now."
             action={
@@ -264,7 +263,7 @@ export function JobVacanciesPage() {
       </PageHeader>
 
       {summaryParts.length > 0 && (
-        <p className="tp-vacancy-summary">
+        <p className="tp-vacancy-summary m-0 -mt-4 mb-6 text-small text-slate-600">
           {summaryParts.map((part, i) => (
             <span key={part.key}>
               {i > 0 && <span aria-hidden="true"> · </span>}
@@ -278,7 +277,7 @@ export function JobVacanciesPage() {
 
       {/* A failed refresh keeps the rows that loaded; it does not blank them. */}
       {error && vacancies.length > 0 && (
-        <Alert tone="error" style={{ marginBottom: space[3] }}>
+        <Alert tone="error" className="mb-6">
           {error}
         </Alert>
       )}

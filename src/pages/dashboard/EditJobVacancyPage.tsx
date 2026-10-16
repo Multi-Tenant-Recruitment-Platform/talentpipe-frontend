@@ -1,3 +1,4 @@
+import { SolutionOutlined } from '@ant-design/icons';
 import { Card } from 'antd';
 import { useEffect, useMemo, useRef } from 'react';
 import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-router-dom';
@@ -15,7 +16,6 @@ import {
   type JobVacancyFormValues,
 } from '../../dashboard/jobVacancy';
 import { useJobVacancy } from '../../dashboard/useJobVacancies';
-import { space } from '../../theme/tokens';
 
 /**
  * Change a vacancy's content (PB-019).
@@ -98,7 +98,7 @@ export function EditJobVacancyPage() {
       <Card>
         {notFound ? (
           <EmptyState
-            icon="briefcase"
+            icon={SolutionOutlined}
             title="This vacancy doesn't exist or was removed"
             description="It may have been deleted, or it belongs to another workspace."
             action={
@@ -146,7 +146,7 @@ export function EditJobVacancyPage() {
       initialNotice={initialNotice}
       banner={
         live ? (
-          <Alert tone="info" style={{ marginBottom: space[2.5] }}>
+          <Alert tone="info" className="mb-5">
             This vacancy is live. Saved changes appear on the candidate portal straight away.
           </Alert>
         ) : undefined

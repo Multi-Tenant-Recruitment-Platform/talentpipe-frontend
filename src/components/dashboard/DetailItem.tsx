@@ -1,7 +1,6 @@
 import { Typography, theme } from 'antd';
 import type { ReactNode } from 'react';
-import { Icon, type IconName } from './Icon';
-import { fontSize } from '../../theme/tokens';
+import type { IconComponent } from '../ui/icon';
 
 /**
  * One labelled fact in a profile section: icon, label, value.
@@ -15,14 +14,14 @@ import { fontSize } from '../../theme/tokens';
  * hook for the per-field test ids the profile suite reads.</p>
  */
 export function DetailItem({
-  icon,
+  icon: Glyph,
   label,
   value,
   href,
   external = false,
   testId,
 }: Readonly<{
-  icon: IconName;
+  icon: IconComponent;
   label: string;
   /** Display text. Empty string means "not set". */
   value: string;
@@ -41,7 +40,7 @@ export function DetailItem({
       <Typography.Link
         href={href}
         {...(external ? { target: '_blank', rel: 'noreferrer noopener' } : {})}
-        style={{ display: 'block', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis' }}
+        className="block overflow-hidden text-ellipsis font-medium"
       >
         {value}
       </Typography.Link>
@@ -51,36 +50,22 @@ export function DetailItem({
   }
 
   return (
-    <div style={{ display: 'flex', minWidth: 0, alignItems: 'flex-start', gap: 12 }}>
+    <div className="flex min-w-0 items-start gap-3">
       <span
+        className="mt-0.5 flex size-8 shrink-0 items-center justify-center"
         style={{
-          marginTop: 2,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          width: 32,
-          height: 32,
-          flexShrink: 0,
           borderRadius: token.borderRadius,
           background: token.colorFillQuaternary,
           color: token.colorTextTertiary,
         }}
       >
-        <Icon name={icon} size={16} />
+        <Glyph aria-hidden className="text-[16px]" />
       </span>
-      <div style={{ minWidth: 0 }}>
-        <dt
-          style={{
-            fontSize: fontSize.caption,
-            fontWeight: 500,
-            textTransform: 'uppercase',
-            letterSpacing: '0.03em',
-            color: token.colorTextTertiary,
-          }}
-        >
+      <div className="min-w-0">
+        <dt className="text-caption font-medium uppercase tracking-[0.03em]" style={{ color: token.colorTextTertiary }}>
           {label}
         </dt>
-        <dd style={{ marginTop: 2, marginInlineStart: 0, minWidth: 0 }} data-testid={testId}>
+        <dd className="ms-0 mt-0.5 min-w-0" data-testid={testId}>
           {content}
         </dd>
       </div>

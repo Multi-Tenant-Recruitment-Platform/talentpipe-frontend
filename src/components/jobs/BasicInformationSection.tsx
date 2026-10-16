@@ -1,10 +1,9 @@
+import { EnvironmentOutlined } from '@ant-design/icons';
 import { DatePicker, Input, InputNumber, Segmented, Select } from 'antd';
 import dayjs from 'dayjs';
 import type { EmploymentType, WorkplaceType } from '../../api/types';
 import { useCompanyProfileContext } from '../../dashboard/CompanyProfileContext';
 import { EMPLOYMENT_TYPES, WORKPLACE_TYPES } from '../../dashboard/jobVacancy';
-import { slate } from '../../theme/tokens';
-import { Icon } from '../dashboard/Icon';
 import { DepartmentSelect } from './DepartmentSelect';
 import type { VacancySectionProps } from './sectionProps';
 import { VacancyField } from './VacancyField';
@@ -58,7 +57,7 @@ export function BasicInformationSection({ values, errors, set }: Readonly<Vacanc
           min={1}
           max={999}
           precision={0}
-          style={{ width: '100%' }}
+          className="w-full"
           onChange={(next) => set('openings', next)}
         />
       </VacancyField>
@@ -70,7 +69,7 @@ export function BasicInformationSection({ values, errors, set }: Readonly<Vacanc
           status={errors.employmentType ? 'error' : undefined}
           options={EMPLOYMENT_TYPES.map((type) => ({ value: type.id, label: type.label }))}
           placeholder="Choose an employment type"
-          style={{ width: '100%' }}
+          className="w-full"
           onChange={(next: EmploymentType) => set('employmentType', next)}
         />
       </VacancyField>
@@ -101,7 +100,7 @@ export function BasicInformationSection({ values, errors, set }: Readonly<Vacanc
           {...fieldAria('location', errors.location)}
           value={values.location}
           status={errors.location ? 'error' : undefined}
-          prefix={<Icon name="map-pin" size={16} style={{ color: slate[400] }} />}
+          prefix={<EnvironmentOutlined aria-hidden className="text-[16px] text-slate-400" />}
           placeholder="e.g. Colombo, Sri Lanka"
           onChange={(event) => set('location', event.target.value)}
         />
@@ -120,7 +119,7 @@ export function BasicInformationSection({ values, errors, set }: Readonly<Vacanc
           disabledDate={isPast}
           format="D MMM YYYY"
           placeholder="Select a date"
-          style={{ width: '100%' }}
+          className="w-full"
           onChange={(date) => set('applicationDeadline', date ? date.format('YYYY-MM-DD') : '')}
         />
       </VacancyField>

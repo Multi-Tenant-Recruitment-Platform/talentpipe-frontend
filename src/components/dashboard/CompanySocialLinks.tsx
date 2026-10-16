@@ -1,3 +1,4 @@
+import { LinkOutlined } from '@ant-design/icons';
 import { Flex } from 'antd';
 import {
   SOCIAL_FIELDS,
@@ -6,7 +7,7 @@ import {
   type CompanyFormValues,
 } from '../../dashboard/companyProfile';
 import { DetailItem } from './DetailItem';
-import { Icon } from './Icon';
+import { detailGrid } from '../ui/classes';
 
 /**
  * The company's presence elsewhere: LinkedIn, Facebook, X.
@@ -35,11 +36,11 @@ export function CompanySocialLinks({
   }
 
   return (
-    <dl className="tp-detail-grid">
+    <dl className={detailGrid}>
       {shown.map((field) => (
         <DetailItem
           key={field}
-          icon="link"
+          icon={LinkOutlined}
           label={FIELD_LABELS[field]}
           value={values[field] ? websiteLabel(values[field]) : ''}
           href={values[field] || undefined}
@@ -55,6 +56,8 @@ export function CompanySocialLinks({
  * Compact row of social links for the candidate-facing preview, where the
  * labelled-list treatment would be heavier than the content deserves.
  */
+// Compact social links on the candidate-facing preview, where the labelled
+// detail-list treatment would be heavier than the content deserves.
 export function CompanySocialRow({ values }: Readonly<{ values: CompanyFormValues }>) {
   const present = SOCIAL_FIELDS.filter((field) => values[field] !== '');
   if (present.length === 0) {
@@ -70,9 +73,9 @@ export function CompanySocialRow({ values }: Readonly<{ values: CompanyFormValue
           target="_blank"
           rel="noreferrer noopener"
           data-testid={`preview-${field}`}
-          className="tp-social-chip"
+          className="inline-flex items-center gap-1.5 rounded-pill border border-slate-200 px-3 py-1.5 text-caption font-medium text-slate-600 no-underline transition-[background,border-color,color] duration-(--tp-motion-base) ease-standard hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900"
         >
-          <Icon name="link" size={14} style={{ opacity: 0.55 }} />
+          <LinkOutlined aria-hidden className="text-[14px] opacity-55" />
           {FIELD_LABELS[field]}
         </a>
       ))}

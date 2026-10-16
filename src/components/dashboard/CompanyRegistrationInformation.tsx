@@ -1,5 +1,7 @@
+import { IdcardOutlined } from '@ant-design/icons';
 import type { CompanyFormValues } from '../../dashboard/companyProfile';
 import { DetailItem } from './DetailItem';
+import { detailGrid } from '../ui/classes';
 
 /**
  * Legal name and registration number.
@@ -12,15 +14,15 @@ import { DetailItem } from './DetailItem';
  */
 export function CompanyRegistrationInformation({ values }: Readonly<{ values: CompanyFormValues }>) {
   return (
-    <dl className="tp-detail-grid">
+    <dl className={detailGrid}>
       <DetailItem
-        icon="identification"
+        icon={IdcardOutlined}
         label="Legal company name"
         value={values.legalName}
         testId="company-legalName"
       />
       <DetailItem
-        icon="identification"
+        icon={IdcardOutlined}
         label="Registration number"
         value={values.registrationNumber}
         testId="company-registrationNumber"

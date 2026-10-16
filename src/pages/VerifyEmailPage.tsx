@@ -1,12 +1,11 @@
+import { CheckOutlined } from '@ant-design/icons';
 import { Typography } from 'antd';
 import { Alert } from '../components/ui/Alert';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { api, apiErrorMessage } from '../api/client';
 import { AuthShell } from '../components/AuthShell';
-import { Icon } from '../components/dashboard/Icon';
-// Aliased: this page already has a `status` state variable.
-import { fontSize, status as statusColor } from '../theme/tokens';
+import { AuthHeading } from '../components/auth/AuthHeading';
 
 type Status = 'verifying' | 'success' | 'error';
 
@@ -54,39 +53,18 @@ export function VerifyEmailPage() {
   return (
     <AuthShell>
       {status === 'verifying' && (
-        <>
-          <Typography.Title level={1} style={{ fontSize: fontSize.heading, margin: 0 }}>Verifying your email…</Typography.Title>
-          <Typography.Paragraph type="secondary" style={{ margin: '8px 0 0' }}>This only takes a moment.</Typography.Paragraph>
-        </>
+        <AuthHeading title="Verifying your email…">This only takes a moment.</AuthHeading>
       )}
 
       {status === 'success' && (
         <>
-          <span
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: 48,
-              height: 48,
-              borderRadius: '50%',
-              background: statusColor.successBg,
-              color: statusColor.successText,
-            }}
-          >
-            <Icon name="check" size={24} />
+          <span className="flex size-12 items-center justify-center rounded-full bg-success-bg text-success-text">
+            <CheckOutlined aria-hidden className="text-[24px]" />
           </span>
-          <Typography.Title level={1} style={{ fontSize: fontSize.heading, marginTop: 16, marginBottom: 0 }}>
-            Email verified
-          </Typography.Title>
-          <Typography.Paragraph type="secondary" style={{ margin: '8px 0 0' }}>
+          <AuthHeading title="Email verified" className="mt-4">
             Your account is active. You can sign in now.
-          </Typography.Paragraph>
-          <Link
-            to="/login"
-            className="tp-cta-link"
-            style={{ marginTop: 24 }}
-          >
+          </AuthHeading>
+          <Link to="/login" className="tp-cta-link mt-6">
             Continue to sign in
           </Link>
         </>
@@ -94,18 +72,15 @@ export function VerifyEmailPage() {
 
       {status === 'error' && (
         <>
-          <Typography.Title level={1} style={{ fontSize: fontSize.heading, margin: 0 }}>We couldn't verify this link</Typography.Title>
-          <div style={{ marginTop: 16 }}>
+          <AuthHeading title="We couldn't verify this link" />
+          <div className="mt-4">
             <Alert tone="error">{message}</Alert>
           </div>
-          <Typography.Paragraph type="secondary" style={{ marginTop: 16, marginBottom: 0 }}>
+          <Typography.Paragraph type="secondary" className="mt-4 mb-0">
             Verification links expire after 24 hours and can only be used once. Request a fresh one
             from the sign-in page.
           </Typography.Paragraph>
-          <Link
-            to="/login"
-          style={{ display: 'inline-block', marginTop: 24, fontWeight: 600 }}
-          >
+          <Link to="/login" className="mt-6 inline-block font-semibold">
             Back to sign in
           </Link>
         </>

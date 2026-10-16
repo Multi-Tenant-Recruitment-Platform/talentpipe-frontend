@@ -1,3 +1,4 @@
+import { CheckOutlined } from '@ant-design/icons';
 import { Checkbox, Col, Flex, Input, Row, Select, Typography } from 'antd';
 import { useRef, type FormEvent, type ReactNode } from 'react';
 import type { CompanyImageKind } from '../../api/types';
@@ -20,10 +21,9 @@ import {
   type CompanyTextField,
 } from '../../dashboard/companyProfile';
 import { Button } from '../ui/Button';
+import { FieldError } from '../ui/FieldError';
 import { CompanyImagePicker } from './CompanyImagePicker';
 import { CompanyChipListEditor } from './CompanyChipListEditor';
-import { Icon } from './Icon';
-import { fontSize, slate } from '../../theme/tokens';
 
 /**
  * Edit mode for the company profile, laid out in the same three sections the
@@ -48,9 +48,9 @@ const errorId = (field: CompanyTextField) => `company-${field}-error`;
  */
 function Fieldset({ legend, children }: Readonly<{ legend: string; children: ReactNode }>) {
   return (
-    <fieldset style={{ border: 0, borderTop: `1px solid ${slate[100]}`, margin: 0, paddingTop: 24 }}>
+    <fieldset className="m-0 border-0 border-t border-slate-100 pt-6">
       <legend className="tp-legend">{legend}</legend>
-      <Row gutter={[20, 20]} style={{ marginTop: 16 }}>
+      <Row gutter={[20, 20]} className="mt-4">
         {children}
       </Row>
     </fieldset>
@@ -73,23 +73,15 @@ function Field({
 }>) {
   return (
     <Col xs={24} sm={span}>
-      <label htmlFor={fieldId(field)} style={{ display: 'block', fontWeight: 500, marginBottom: 6 }}>
+      <label htmlFor={fieldId(field)} className="mb-1.5 block font-medium">
         {FIELD_LABELS[field]}
       </label>
       {children}
       {error ? (
-        <Typography.Paragraph
-          id={errorId(field)}
-          role="alert"
-          type="danger"
-          style={{ display: 'flex', alignItems: 'flex-start', gap: 4, fontSize: fontSize.caption, margin: '6px 0 0' }}
-        >
-          <Icon name="warning" size={14} style={{ marginTop: 1 }} />
-          {error}
-        </Typography.Paragraph>
+        <FieldError id={errorId(field)}>{error}</FieldError>
       ) : (
         hint && (
-          <Typography.Text type="secondary" style={{ display: 'block', fontSize: fontSize.caption, marginTop: 6 }}>
+          <Typography.Text type="secondary" className="mt-1.5 block text-caption">
             {hint}
           </Typography.Text>
         )
@@ -113,12 +105,12 @@ function CheckboxGroup({
   onToggle: (id: string) => void;
 }>) {
   return (
-    <fieldset style={{ border: 0, borderTop: `1px solid ${slate[100]}`, margin: 0, paddingTop: 24 }}>
+    <fieldset className="m-0 border-0 border-t border-slate-100 pt-6">
       <legend className="tp-legend">{legend}</legend>
-      <Typography.Text type="secondary" style={{ display: 'block', fontSize: fontSize.caption, marginTop: 4 }}>
+      <Typography.Text type="secondary" className="mt-1 block text-caption">
         {hint}
       </Typography.Text>
-      <Row gutter={[24, 10]} style={{ marginTop: 16 }}>
+      <Row gutter={[24, 10]} className="mt-4">
         {options.map((option) => (
           <Col xs={24} sm={12} key={option.id}>
             <Checkbox
@@ -256,7 +248,7 @@ export function CompanyProfileForm({
             id={fieldId('industry')}
             value={values.industry}
             onChange={(value: string) => onChange('industry', value)}
-            style={{ width: '100%' }}
+            className="w-full"
             options={[{ value: '', label: 'Select an industry' }, ...optionsFor(INDUSTRIES, values.industry)]}
             {...a11y('industry')}
           />
@@ -267,7 +259,7 @@ export function CompanyProfileForm({
             id={fieldId('size')}
             value={values.size}
             onChange={(value: string) => onChange('size', value)}
-            style={{ width: '100%' }}
+            className="w-full"
             options={[
               { value: '', label: 'Select a size' },
               ...COMPANY_SIZE_GROUPS.map((group) => ({
@@ -284,7 +276,7 @@ export function CompanyProfileForm({
             id={fieldId('companyType')}
             value={values.companyType}
             onChange={(value: string) => onChange('companyType', value)}
-            style={{ width: '100%' }}
+            className="w-full"
             options={[
               { value: '', label: 'Select a type' },
               ...optionsFor(COMPANY_TYPES, values.companyType),
@@ -322,13 +314,7 @@ export function CompanyProfileForm({
           />
           <Typography.Paragraph
             type={overLimit ? 'danger' : 'secondary'}
-            style={{
-              margin: '4px 0 0',
-              textAlign: 'right',
-              fontSize: fontSize.caption,
-              fontVariantNumeric: 'tabular-nums',
-              fontWeight: overLimit ? 500 : undefined,
-            }}
+            className={`m-0 mt-1 text-right text-caption tabular-nums ${overLimit ? 'font-medium' : ''}`}
           >
             {values.description.trim().length} / {MAX_DESCRIPTION}
           </Typography.Paragraph>
@@ -547,7 +533,7 @@ export function CompanyProfileForm({
             id={fieldId('timezone')}
             value={values.timezone}
             onChange={(value: string) => onChange('timezone', value)}
-            style={{ width: '100%' }}
+            className="w-full"
             showSearch
             options={[
               { value: '', label: 'Select a time zone' },
@@ -562,7 +548,7 @@ export function CompanyProfileForm({
             id={fieldId('currency')}
             value={values.currency}
             onChange={(value: string) => onChange('currency', value)}
-            style={{ width: '100%' }}
+            className="w-full"
             showSearch
             options={[
               { value: '', label: 'Select a currency' },
@@ -577,7 +563,7 @@ export function CompanyProfileForm({
             id={fieldId('language')}
             value={values.language}
             onChange={(value: string) => onChange('language', value)}
-            style={{ width: '100%' }}
+            className="w-full"
             showSearch
             options={[
               { value: '', label: 'Select a language' },
@@ -622,7 +608,7 @@ export function CompanyProfileForm({
           align="center"
           justify="flex-end"
           gap={12}
-          style={{ borderTop: `1px solid ${slate[100]}`, paddingTop: 20 }}
+          className="border-t border-slate-100 pt-5"
         >
           <Button type="button" variant="ghost" onClick={onCancel} disabled={saving}>
             Cancel
@@ -639,7 +625,7 @@ export function CompanyProfileForm({
               'Saving…'
             ) : (
               <>
-                <Icon name="check" size={16} />
+                <CheckOutlined aria-hidden className="text-[16px]" />
                 Save changes
               </>
             )}

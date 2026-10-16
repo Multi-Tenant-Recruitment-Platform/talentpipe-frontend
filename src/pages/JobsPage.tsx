@@ -137,7 +137,7 @@ export function JobsPage() {
           </div>
 
           {ready && hasMore && (
-            <Flex vertical align="center" gap={space[1.5]} style={{ marginTop: space[4] }}>
+            <Flex vertical align="center" gap={space[1.5]} className="mt-8">
               {loadMoreError && <Alert tone="error">{loadMoreError}</Alert>}
               <Button onClick={() => void loadMore()} disabled={loadingMore}>
                 {loadingMore ? 'Loading…' : 'Load more jobs'}

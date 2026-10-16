@@ -12,9 +12,9 @@ import type { AlertTone } from '../components/ui/Alert';
  * of date.</p>
  */
 
-export type CompanyAction = 'load' | 'save';
+type CompanyAction = 'load' | 'save';
 
-export interface CompanyErrorPlan {
+interface CompanyErrorPlan {
   tone: AlertTone;
   message: string;
   /** True when what is on screen is known to be stale and must be re-fetched. */

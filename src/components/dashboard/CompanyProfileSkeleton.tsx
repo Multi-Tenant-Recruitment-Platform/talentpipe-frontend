@@ -27,19 +27,13 @@ export function CompanyProfileSkeleton({ logoSize = 'md' }: Readonly<{ logoSize?
         paragraph={{ rows: 1, width: 128 }}
       />
 
-      <div style={{ borderTop: rule, paddingTop: 24, marginTop: 24 }}>
+      <div className="mt-6 pt-6" style={{ borderTop: rule }}>
         <Skeleton active title={false} paragraph={{ rows: 3, width: ['100%', '92%', '60%'] }} />
       </div>
 
       <div
-        style={{
-          borderTop: rule,
-          paddingTop: 24,
-          marginTop: 24,
-          display: 'grid',
-          gap: 20,
-          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-        }}
+        className="mt-6 grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-5 pt-6"
+        style={{ borderTop: rule }}
       >
         {[0, 1, 2, 3].map((row) => (
           <Skeleton key={row} active title={{ width: 64 }} paragraph={{ rows: 1, width: 160 }} />

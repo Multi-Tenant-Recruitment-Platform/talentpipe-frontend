@@ -2,7 +2,7 @@ import { Button as AntButton } from 'antd';
 import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from 'react';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'dangerSolid';
-export type ButtonSize = 'sm' | 'md';
+type ButtonSize = 'sm' | 'md';
 
 type AntLook = { type: 'primary' | 'default' | 'text'; danger?: boolean };
 
@@ -40,6 +40,8 @@ export const Button = forwardRef<
     size?: ButtonSize;
     /** Shows a spinner and blocks further presses. */
     loading?: boolean;
+    /** Leading icon. antd swaps it for the spinner while `loading`. */
+    icon?: ReactNode;
     children: ReactNode;
   } & Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'type' | 'color'> & {
       type?: 'button' | 'submit' | 'reset';

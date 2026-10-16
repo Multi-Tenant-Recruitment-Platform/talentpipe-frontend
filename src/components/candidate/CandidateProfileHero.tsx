@@ -1,7 +1,14 @@
+import {
+  CameraOutlined,
+  CheckOutlined,
+  IdcardOutlined,
+  MailOutlined,
+  UserOutlined,
+  WarningOutlined,
+} from '@ant-design/icons';
 import { useRef, type ChangeEvent } from 'react';
 import { MAX_PHOTO_BYTES, PROFILE_FOCUS_IDS } from '../../candidate/candidateProfile';
 import { formatBytes, IMAGE_ACCEPT_ATTRIBUTE } from '../../dashboard/companyImages';
-import { Icon } from '../dashboard/Icon';
 import { Button } from '../ui/Button';
 
 const PHOTO_HINT_ID = 'candidate-photo-hint';
@@ -78,13 +85,13 @@ export function CandidateProfileHero({
           {photoUrl ? (
             <img src={photoUrl} alt={displayName ? `Photo of ${displayName}` : 'Your photo'} />
           ) : (
-            <span aria-hidden="true">{initials || <Icon name="user" size={40} />}</span>
+            <span aria-hidden="true">{initials || <UserOutlined aria-hidden className="text-[40px]" />}</span>
           )}
         </div>
 
         <div className="tp-profile-hero-identity">
           <p className="tp-jobs-eyebrow">
-            <Icon name="user" size={14} />
+            <UserOutlined aria-hidden className="text-[14px]" />
             My profile
           </p>
           <h1 id="profile-heading">
@@ -95,13 +102,13 @@ export function CandidateProfileHero({
           <ul className="tp-profile-facts" aria-label="Profile summary">
             {email.trim() && (
               <li className="tp-profile-chip">
-                <Icon name="envelope" size={14} />
+                <MailOutlined aria-hidden className="text-[14px]" />
                 <span className="tp-profile-chip-text">{email.trim()}</span>
               </li>
             )}
             {idNumber.trim() && (
               <li className="tp-profile-chip">
-                <Icon name="identification" size={14} />
+                <IdcardOutlined aria-hidden className="text-[14px]" />
                 <span className="sr-only">ID number </span>
                 <span className="tp-profile-chip-text" data-numeric>
                   {idNumber.trim().toUpperCase()}
@@ -110,7 +117,7 @@ export function CandidateProfileHero({
             )}
             {inTalentPool && (
               <li className="tp-profile-chip tp-profile-chip-pool">
-                <Icon name="check" size={14} />
+                <CheckOutlined aria-hidden className="text-[14px]" />
                 Talent Pool member
               </li>
             )}
@@ -134,8 +141,8 @@ export function CandidateProfileHero({
               disabled={disabled}
               aria-describedby={PHOTO_HINT_ID}
               onClick={() => inputRef.current?.click()}
+              icon={<CameraOutlined aria-hidden className="text-[16px]" />}
             >
-              <Icon name="camera" size={16} />
               {photoUrl ? 'Replace photo' : 'Upload photo'}
             </Button>
             {photoUrl && (
@@ -146,7 +153,7 @@ export function CandidateProfileHero({
           </div>
           {photoError ? (
             <p id={PHOTO_HINT_ID} role="alert" className="tp-profile-photo-error">
-              <Icon name="warning" size={14} />
+              <WarningOutlined aria-hidden className="text-[14px]" />
               {photoError}
             </p>
           ) : (

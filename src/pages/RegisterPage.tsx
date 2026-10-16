@@ -6,19 +6,17 @@ import { Link, useNavigate } from 'react-router-dom';
 import { apiErrorMessage } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import { AuthShell } from '../components/AuthShell';
+import { AuthField } from '../components/auth/AuthField';
+import { AuthHeading } from '../components/auth/AuthHeading';
+import { useFormFields } from '../components/auth/useFormFields';
 import { RegisterTabs } from '../components/RegisterTabs';
-import { fontSize } from '../theme/tokens';
 
 /** Company onboarding (PB-001): tenant + first COMPANY_ADMIN, then off to login. */
 export function RegisterPage() {
   const { register } = useAuth();
   const navigate = useNavigate();
 
-  const [companyName, setCompanyName] = useState('');
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const { values, field } = useFormFields({ companyName: '', firstName: '', lastName: '', email: '', password: '' });
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -26,6 +24,7 @@ export function RegisterPage() {
     event.preventDefault();
     setError(null);
     setSubmitting(true);
+    const { companyName, firstName, lastName, email, password } = values;
     try {
       // No workspace address is asked for: the backend derives one from the
       // company name, and nobody needs to know it to sign in.
@@ -47,109 +46,84 @@ export function RegisterPage() {
 
   return (
     <AuthShell>
-      <Typography.Title level={1} style={{ fontSize: fontSize.heading, margin: 0 }}>Create your account</Typography.Title>
-      <Typography.Paragraph type="secondary" style={{ margin: '8px 0 0' }}>
-        Choose how you want to use TalentPipe.
-      </Typography.Paragraph>
+      <AuthHeading title="Create your account">Choose how you want to use TalentPipe.</AuthHeading>
 
-      <div style={{ marginTop: 24 }}>
+      <div className="mt-6">
         <RegisterTabs active="company" />
       </div>
 
-      <Typography.Title level={2} style={{ fontSize: fontSize.title, marginTop: 24, marginBottom: 0 }}>Register your company</Typography.Title>
-      <Typography.Paragraph type="secondary" style={{ margin: '4px 0 0' }}>
+      <Typography.Title level={2} className="mt-6 mb-0 text-title">Register your company</Typography.Title>
+      <Typography.Paragraph type="secondary" className="m-0 mt-1">
         Creates your company workspace and its first administrator account.
       </Typography.Paragraph>
 
-      <form onSubmit={(e) => void handleSubmit(e)} style={{ marginTop: 24 }}>
+      <form onSubmit={(e) => void handleSubmit(e)} className="mt-6">
         <Flex vertical gap={20}>
-        {error && (
-          <Alert tone="error">{error}</Alert>
-        )}
+          {error && <Alert tone="error">{error}</Alert>}
 
-        <div>
-          <label htmlFor="companyName" style={{ display: 'block', fontWeight: 500, marginBottom: 6 }}>
-            Company name
-          </label>
-          <Input
-            id="companyName"
-            required
-            maxLength={255}
-            value={companyName}
-            onChange={(e) => setCompanyName(e.target.value)}
-          />
-        </div>
-
-        <Row gutter={16}>
-          <Col xs={24} sm={12}>
-            <label htmlFor="firstName" style={{ display: 'block', fontWeight: 500, marginBottom: 6 }}>
-              First name
-            </label>
+          <AuthField id="companyName" label="Company name">
             <Input
-              id="firstName"
+              id="companyName"
               required
-              maxLength={100}
-              value={firstName}
-              onChange={(e) => setFirstName(e.target.value)}
+              maxLength={255}
+              {...field('companyName')}
             />
-          </Col>
-          <Col xs={24} sm={12}>
-            <label htmlFor="lastName" style={{ display: 'block', fontWeight: 500, marginBottom: 6 }}>
-              Last name
-            </label>
+          </AuthField>
+
+          <Row gutter={16}>
+            <Col xs={24} sm={12}>
+              <AuthField id="firstName" label="First name">
+                <Input
+                  id="firstName"
+                  required
+                  maxLength={100}
+                  {...field('firstName')}
+                />
+              </AuthField>
+            </Col>
+            <Col xs={24} sm={12}>
+              <AuthField id="lastName" label="Last name">
+                <Input
+                  id="lastName"
+                  required
+                  maxLength={100}
+                  {...field('lastName')}
+                />
+              </AuthField>
+            </Col>
+          </Row>
+
+          <AuthField id="email" label="Work email">
             <Input
-              id="lastName"
+              id="email"
+              type="email"
               required
-              maxLength={100}
-              value={lastName}
-              onChange={(e) => setLastName(e.target.value)}
+              maxLength={255}
+              {...field('email')}
+              autoComplete="email"
             />
-          </Col>
-        </Row>
+          </AuthField>
 
-        <div>
-          <label htmlFor="email" style={{ display: 'block', fontWeight: 500, marginBottom: 6 }}>
-            Work email
-          </label>
-          <Input
-            id="email"
-            type="email"
-            required
-            maxLength={255}
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            autoComplete="email"
-          />
-        </div>
+          <AuthField id="password" label="Password" hint="At least 8 characters.">
+            <Input
+              id="password"
+              type="password"
+              required
+              minLength={8}
+              maxLength={72}
+              {...field('password')}
+              autoComplete="new-password"
+            />
+          </AuthField>
 
-        <div>
-          <label htmlFor="password" style={{ display: 'block', fontWeight: 500, marginBottom: 6 }}>
-            Password
-          </label>
-          <Input
-            id="password"
-            type="password"
-            required
-            minLength={8}
-            maxLength={72}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            autoComplete="new-password"
-          />
-          <Typography.Text type="secondary" style={{ display: 'block', fontSize: fontSize.caption, marginTop: 4 }}>At least 8 characters.</Typography.Text>
-        </div>
-
-          <Button type="submit" variant="primary" loading={submitting} style={{ width: '100%' }}>
+          <Button type="submit" variant="primary" loading={submitting} className="w-full">
             {submitting ? 'Creating workspace…' : 'Create company account'}
           </Button>
         </Flex>
       </form>
 
-      <Typography.Paragraph type="secondary" style={{ marginTop: 24, textAlign: 'center' }}>
-        Already have an account?{' '}
-        <Link to="/login">
-          Log in
-        </Link>
+      <Typography.Paragraph type="secondary" className="mt-6 text-center">
+        Already have an account? <Link to="/login">Log in</Link>
       </Typography.Paragraph>
     </AuthShell>
   );

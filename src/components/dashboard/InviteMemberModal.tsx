@@ -1,10 +1,10 @@
+import { IdcardOutlined, SendOutlined, SolutionOutlined, UserAddOutlined } from '@ant-design/icons';
 import { Col, Flex, Input, Modal, Radio, Row, Typography, type InputRef } from 'antd';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import type { InvitableRole } from '../../api/types';
 import { Alert, type AlertTone } from '../ui/Alert';
 import { Button } from '../ui/Button';
-import { Icon, type IconName } from './Icon';
-import { fontSize } from '../../theme/tokens';
+import type { IconComponent } from '../ui/icon';
 
 export interface InviteFormValues {
   firstName: string;
@@ -13,18 +13,18 @@ export interface InviteFormValues {
   role: InvitableRole;
 }
 
-const ROLE_OPTIONS: { id: InvitableRole; label: string; description: string; icon: IconName }[] = [
+const ROLE_OPTIONS: { id: InvitableRole; label: string; description: string; icon: IconComponent }[] = [
   {
     id: 'HR_MANAGER',
     label: 'HR Manager',
     description: 'Posts jobs, manages candidates and drives the full pipeline.',
-    icon: 'briefcase',
+    icon: SolutionOutlined,
   },
   {
     id: 'INTERVIEWER',
     label: 'Interviewer',
     description: 'Joins interview panels, scores candidates and leaves feedback.',
-    icon: 'identification',
+    icon: IdcardOutlined,
   },
 ];
 
@@ -109,25 +109,14 @@ export function InviteMemberModal({
       afterOpenChange={(opened) => opened && firstFieldRef.current?.focus()}
       title={
         <Flex align="center" gap={12}>
-          <span
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: 40,
-              height: 40,
-              borderRadius: 10,
-              background: 'var(--tp-brand-gradient)',
-              color: '#fff',
-            }}
-          >
-            <Icon name="user-plus" size={20} />
+          <span className="tp-brand-mark size-10 rounded-md">
+            <UserAddOutlined aria-hidden className="text-[20px]" />
           </span>
           <div>
-            <Typography.Title level={2} style={{ fontSize: fontSize.lead, margin: 0 }}>
+            <Typography.Title level={2} className="m-0 text-lead">
               Invite team member
             </Typography.Title>
-            <Typography.Text type="secondary" style={{ fontSize: fontSize.caption }}>
+            <Typography.Text type="secondary" className="text-caption">
               They&apos;ll get an email with a link to join your workspace. It expires in 7 days.
             </Typography.Text>
           </div>
@@ -136,7 +125,7 @@ export function InviteMemberModal({
     >
       {/* A real form element, so Enter submits from any field. */}
       <form onSubmit={handleSubmit}>
-        <Flex vertical gap={20} style={{ paddingTop: 8 }}>
+        <Flex vertical gap={20} className="pt-2">
           {error && <Alert tone={errorTone}>{error}</Alert>}
 
           <Row gutter={16}>
@@ -151,7 +140,7 @@ export function InviteMemberModal({
                 onChange={(e) => setFirstName(e.target.value)}
                 placeholder="Amaya"
                 autoComplete="off"
-                style={{ marginTop: 6 }}
+                className="mt-1.5"
               />
             </Col>
             <Col xs={24} sm={12}>
@@ -164,7 +153,7 @@ export function InviteMemberModal({
                 onChange={(e) => setLastName(e.target.value)}
                 placeholder="Rathnayake"
                 autoComplete="off"
-                style={{ marginTop: 6 }}
+                className="mt-1.5"
               />
             </Col>
           </Row>
@@ -181,27 +170,27 @@ export function InviteMemberModal({
               onChange={(e) => setEmail(e.target.value)}
               placeholder="name@company.com"
               autoComplete="off"
-              style={{ marginTop: 6 }}
+              className="mt-1.5"
             />
           </div>
 
-          <fieldset disabled={submitting} style={{ border: 0, margin: 0, padding: 0 }}>
-            <legend style={{ fontSize: fontSize.body, fontWeight: 500 }}>Role</legend>
+          <fieldset disabled={submitting} className="m-0 border-0 p-0">
+            <legend className="text-body font-medium">Role</legend>
             <Radio.Group
               value={role}
               onChange={(e) => setRole(e.target.value as InvitableRole)}
               disabled={submitting}
-              style={{ width: '100%', marginTop: 8 }}
+              className="mt-2 w-full"
             >
               <Row gutter={[12, 12]}>
                 {ROLE_OPTIONS.map((option) => (
                   <Col xs={24} sm={12} key={option.id}>
-                    <Radio value={option.id} style={{ display: 'block' }}>
+                    <Radio value={option.id} className="block">
                       <Flex align="center" gap={8}>
-                        <Icon name={option.icon} size={16} />
+                        <option.icon aria-hidden className="text-[16px]" />
                         <Typography.Text strong>{option.label}</Typography.Text>
                       </Flex>
-                      <Typography.Text type="secondary" style={{ fontSize: fontSize.caption }}>
+                      <Typography.Text type="secondary" className="text-caption">
                         {option.description}
                       </Typography.Text>
                     </Radio>
@@ -215,8 +204,12 @@ export function InviteMemberModal({
             <Button type="button" variant="ghost" onClick={onClose} disabled={submitting}>
               Cancel
             </Button>
-            <Button type="submit" variant="primary" disabled={submitting}>
-              <Icon name="send" size={16} />
+            <Button
+              type="submit"
+              variant="primary"
+              disabled={submitting}
+              icon={<SendOutlined aria-hidden className="text-[16px]" />}
+            >
               {submitting ? 'Sending…' : 'Send invitation'}
             </Button>
           </Flex>

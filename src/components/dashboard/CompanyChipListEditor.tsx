@@ -1,9 +1,9 @@
+import { CloseOutlined } from '@ant-design/icons';
 import { Input, Space, Tag, Typography } from 'antd';
 import { useState, type KeyboardEvent } from 'react';
 import { cleanValues } from '../../dashboard/companyProfile';
 import { Button } from '../ui/Button';
-import { Icon } from './Icon';
-import { fontSize, slate } from '../../theme/tokens';
+import { FieldError } from '../ui/FieldError';
 
 /**
  * A free-text list edited as chips: type one, press Enter, it becomes a tag.
@@ -71,12 +71,12 @@ export function CompanyChipListEditor({
 
   return (
     <div>
-      <label htmlFor={id} style={{ display: 'block', fontWeight: 500, marginBottom: 6 }}>
+      <label htmlFor={id} className="mb-1.5 block font-medium">
         {label}
         {required && (
           <>
             {' '}
-            <span aria-hidden="true" style={{ color: slate[400], fontWeight: 400 }}>
+            <span aria-hidden="true" className="font-normal text-slate-400">
               *
             </span>
             <span className="sr-only"> (required)</span>
@@ -85,16 +85,7 @@ export function CompanyChipListEditor({
       </label>
 
       {values.length > 0 && (
-        <ul
-          style={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: 8,
-            listStyle: 'none',
-            margin: '0 0 8px',
-            padding: 0,
-          }}
-        >
+        <ul className="m-0 mb-2 flex list-none flex-wrap gap-2 p-0">
           {values.map((value) => (
             <li key={value}>
               {/* antd's Tag supplies the chip; the list semantics around it are
@@ -103,9 +94,9 @@ export function CompanyChipListEditor({
                 color="geekblue"
                 closable={!disabled}
                 onClose={() => onChange(values.filter((entry) => entry !== value))}
-                closeIcon={<Icon name="x-mark" size={12} />}
+                closeIcon={<CloseOutlined aria-hidden className="text-[12px]" />}
                 aria-label={`Remove ${value}`}
-                style={{ marginInlineEnd: 0, borderRadius: 999 }}
+                className="me-0 rounded-pill"
               >
                 {value}
               </Tag>
@@ -114,7 +105,7 @@ export function CompanyChipListEditor({
         </ul>
       )}
 
-      <Space.Compact style={{ width: '100%' }}>
+      <Space.Compact className="w-full">
         <Input
           id={id}
           value={draft}
@@ -139,23 +130,9 @@ export function CompanyChipListEditor({
         </Button>
       </Space.Compact>
       {error ? (
-        <Typography.Paragraph
-          id={`${id}-error`}
-          role="alert"
-          type="danger"
-          style={{
-            display: 'flex',
-            alignItems: 'flex-start',
-            gap: 4,
-            fontSize: fontSize.caption,
-            margin: '6px 0 0',
-          }}
-        >
-          <Icon name="warning" size={14} style={{ marginTop: 1 }} />
-          {error}
-        </Typography.Paragraph>
+        <FieldError id={`${id}-error`}>{error}</FieldError>
       ) : (
-        <Typography.Text type="secondary" style={{ display: 'block', fontSize: fontSize.caption, marginTop: 6 }}>
+        <Typography.Text type="secondary" className="mt-1.5 block text-caption">
           {hint}
         </Typography.Text>
       )}

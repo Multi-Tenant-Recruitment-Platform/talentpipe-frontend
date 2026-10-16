@@ -43,3 +43,6 @@ coverage
 .env
 .env.*
 !.env.example
+
+# Local Claude Code project instructions — not pushed to GitHub.
+CLAUDE.md

@@ -1,6 +1,12 @@
+import {
+  CheckCircleOutlined,
+  CloseOutlined,
+  InfoCircleOutlined,
+  WarningOutlined,
+} from '@ant-design/icons';
+import type { IconComponent } from './icon';
 import { theme } from 'antd';
 import type { CSSProperties, ReactNode } from 'react';
-import { Icon, type IconName } from '../dashboard/Icon';
 
 export type AlertTone = 'info' | 'success' | 'warning' | 'error';
 
@@ -22,6 +28,7 @@ export function Alert({
   tone,
   role = tone === 'error' || tone === 'warning' ? 'alert' : 'status',
   onDismiss,
+  className = '',
   style,
   children,
 }: Readonly<{
@@ -29,88 +36,74 @@ export function Alert({
   role?: 'alert' | 'status';
   /** When given, renders a dismiss affordance on the right. */
   onDismiss?: () => void;
+  className?: string;
   style?: CSSProperties;
   children: ReactNode;
 }>) {
   const { token } = theme.useToken();
 
-  const TONES: Record<AlertTone, { bg: string; border: string; text: string; icon: IconName }> = {
+  const TONES: Record<AlertTone, { bg: string; border: string; text: string; icon: IconComponent }> = {
     info: {
       bg: token.colorInfoBg,
       border: token.colorInfoBorder,
       text: token.colorInfoText,
-      icon: 'info',
+      icon: InfoCircleOutlined,
     },
     success: {
       bg: token.colorSuccessBg,
       border: token.colorSuccessBorder,
       text: token.colorSuccessText,
-      icon: 'check',
+      icon: CheckCircleOutlined,
     },
     warning: {
       bg: token.colorWarningBg,
       border: token.colorWarningBorder,
       text: token.colorWarningText,
-      icon: 'warning',
+      icon: WarningOutlined,
     },
     error: {
       bg: token.colorErrorBg,
       border: token.colorErrorBorder,
       text: token.colorErrorText,
-      icon: 'warning',
+      icon: WarningOutlined,
     },
   };
 
   const t = TONES[tone];
+  const wrapClass = `flex items-start gap-2.5 border px-3.5 py-3 leading-[1.45] ${className}`;
   const wrapStyle: CSSProperties = {
-    display: 'flex',
-    alignItems: 'flex-start',
-    gap: 10,
-    padding: '12px 14px',
     borderRadius: token.borderRadiusLG,
-    border: `1px solid ${t.border}`,
+    borderColor: t.border,
     background: t.bg,
     color: t.text,
     fontSize: token.fontSize,
-    lineHeight: 1.45,
     ...style,
   };
 
   const content = (
     <>
-      <Icon name={t.icon} size={16} style={{ marginTop: 2 }} />
-      <div style={{ minWidth: 0, flex: 1 }}>{children}</div>
+      <t.icon aria-hidden className="mt-0.5 text-[16px]" />
+      <div className="min-w-0 flex-1">{children}</div>
       {onDismiss && (
         <button
           type="button"
           onClick={onDismiss}
           aria-label="Dismiss"
-          style={{
-            flexShrink: 0,
-            marginTop: -2,
-            marginRight: -4,
-            padding: 4,
-            border: 0,
-            background: 'transparent',
-            color: 'inherit',
-            cursor: 'pointer',
-            opacity: 0.65,
-            borderRadius: token.borderRadius,
-            lineHeight: 0,
-          }}
+          className="-mt-0.5 -mr-1 shrink-0 cursor-pointer border-0 bg-transparent p-1 leading-0 text-inherit opacity-65"
+          style={{ borderRadius: token.borderRadius }}
         >
-          <Icon name="x-mark" size={16} />
+          <CloseOutlined aria-hidden className="text-[16px]" />
         </button>
       )}
     </>
   );
 
   return role === 'status' ? (
-    <output style={wrapStyle}>
+    <output className={wrapClass} style={wrapStyle}>
       {content}
     </output>
   ) : (
-    <div role="alert" style={wrapStyle}>
+    <div role="alert" className={wrapClass} style={wrapStyle}>
       {content}
     </div>
   );

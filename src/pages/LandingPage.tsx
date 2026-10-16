@@ -1,5 +1,13 @@
+import {
+  BankOutlined,
+  CheckOutlined,
+  RightOutlined,
+  SolutionOutlined,
+  UserAddOutlined,
+  UserOutlined,
+} from '@ant-design/icons';
 import { Link } from 'react-router-dom';
-import { Icon, type IconName } from '../components/dashboard/Icon';
+import type { IconComponent } from '../components/ui/icon';
 
 /**
  * The hiring stages, in order. The hero illustration draws one column per
@@ -17,7 +25,7 @@ const STAGES: { name: string; cards: number }[] = [
 /** Every line here is a shipped capability, not a roadmap item. */
 const AUDIENCES: {
   id: string;
-  icon: IconName;
+  icon: IconComponent;
   title: string;
   lede: string;
   points: string[];
@@ -25,7 +33,7 @@ const AUDIENCES: {
 }[] = [
   {
     id: 'employers',
-    icon: 'building',
+    icon: BankOutlined,
     title: 'For employers',
     lede: 'Create your company workspace, invite your hiring team, and manage your pipeline end to end.',
     points: [
@@ -38,7 +46,7 @@ const AUDIENCES: {
   },
   {
     id: 'seekers',
-    icon: 'user',
+    icon: UserOutlined,
     title: 'For job seekers',
     lede: 'Create one candidate account, apply to every company hiring on TalentPipe, and get discovered again.',
     points: [
@@ -51,19 +59,19 @@ const AUDIENCES: {
   },
 ];
 
-const STEPS: { icon: IconName; title: string; text: string }[] = [
+const STEPS: { icon: IconComponent; title: string; text: string }[] = [
   {
-    icon: 'building',
+    icon: BankOutlined,
     title: 'Create your workspace',
     text: 'Register your company and become its first administrator.',
   },
   {
-    icon: 'user-plus',
+    icon: UserAddOutlined,
     title: 'Invite your hiring team',
     text: 'Send email invitations, each with the right role for that person.',
   },
   {
-    icon: 'briefcase',
+    icon: SolutionOutlined,
     title: 'Publish roles and hire',
     text: 'Post vacancies to the job board and review every application in one place.',
   },
@@ -93,7 +101,7 @@ function PipelineIllustration() {
                   <span />
                   <span />
                 </span>
-                {index === STAGES.length - 1 && <Icon name="check" size={14} />}
+                {index === STAGES.length - 1 && <CheckOutlined aria-hidden className="text-[14px]" />}
               </div>
             ))}
           </div>
@@ -121,7 +129,7 @@ export function LandingPage() {
             </Link>
             <Link to="/jobs" className="tp-cta-link tp-cta-link-glass">
               Browse open positions
-              <Icon name="chevron-right" size={16} />
+              <RightOutlined aria-hidden className="text-[16px]" />
             </Link>
           </div>
           <p className="tp-landing-hero-note">
@@ -141,14 +149,14 @@ export function LandingPage() {
           {AUDIENCES.map((audience) => (
             <article key={audience.id} className="tp-landing-audience">
               <span className="tp-landing-icon">
-                <Icon name={audience.icon} size={22} />
+                <audience.icon aria-hidden className="text-[22px]" />
               </span>
               <h3>{audience.title}</h3>
               <p>{audience.lede}</p>
               <ul className="tp-landing-points">
                 {audience.points.map((point) => (
                   <li key={point}>
-                    <Icon name="check" size={16} />
+                    <CheckOutlined aria-hidden className="text-[16px]" />
                     {point}
                   </li>
                 ))}
@@ -174,7 +182,7 @@ export function LandingPage() {
             <li key={step.title} className="tp-landing-step">
               <span className="tp-landing-step-number">{index + 1}</span>
               <span className="tp-landing-icon">
-                <Icon name={step.icon} size={22} />
+                <step.icon aria-hidden className="text-[22px]" />
               </span>
               <h3>{step.title}</h3>
               <p>{step.text}</p>

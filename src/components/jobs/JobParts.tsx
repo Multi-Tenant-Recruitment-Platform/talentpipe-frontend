@@ -1,14 +1,20 @@
+import {
+  BankOutlined,
+  CalendarOutlined,
+  EnvironmentOutlined,
+  SolutionOutlined,
+  WalletOutlined,
+} from '@ant-design/icons';
 import { useState, type CSSProperties } from 'react';
 import type { JobSummary } from '../../api/types';
 import { employmentTypeLabel, formatExperience, formatSalary, workplaceTypeLabel } from '../../jobs/jobLabels';
-import { fontSize, fontWeight, radius } from '../../theme/tokens';
 import { formatCalendarDate, formatRelativeTime } from '../../utils/format';
-import { Icon, type IconName } from '../dashboard/Icon';
+import type { IconComponent } from '../ui/icon';
 
 const MARK_SIZES = {
-  sm: { width: 40, height: 40, borderRadius: radius.md, fontSize: fontSize.lead },
-  md: { width: 48, height: 48, borderRadius: radius.lg, fontSize: fontSize.title },
-  lg: { width: 64, height: 64, borderRadius: radius.xl, fontSize: fontSize.heading },
+  sm: 'size-10 rounded-md text-lead',
+  md: 'size-12 rounded-lg text-title',
+  lg: 'size-16 rounded-xl text-heading',
 } as const;
 
 /** Company logo, or its initial when there is no logo or it fails to load. Decorative: the name is always shown beside it. */
@@ -17,10 +23,10 @@ export function CompanyMark({ name, logoUrl, size = 'md' }: Readonly<{ name: str
   const box = MARK_SIZES[size];
 
   if (logoUrl && !broken) {
-    return <img src={logoUrl} alt="" onError={() => setBroken(true)} className="tp-job-logo" style={box} />;
+    return <img src={logoUrl} alt="" onError={() => setBroken(true)} className={`tp-job-logo ${box}`} />;
   }
   return (
-    <span aria-hidden="true" className="tp-brand-mark" style={{ ...box, flexShrink: 0, fontWeight: fontWeight.bold }}>
+    <span aria-hidden="true" className={`tp-brand-mark shrink-0 font-bold ${box}`}>
       {name.trim().charAt(0).toUpperCase() || '?'}
     </span>
   );
@@ -30,11 +36,11 @@ export function CompanyMark({ name, logoUrl, size = 'md' }: Readonly<{ name: str
  * Employment type, workplace type and (when hiring several) the number of openings; renders nothing when none is known.
  * Only the employment type takes the accent: the palette keeps green and amber for status, and where a job is done is not one.
  */
-export function JobBadges({ job, style }: Readonly<{ job: JobSummary; style?: CSSProperties }>) {
+export function JobBadges({ job, className = '' }: Readonly<{ job: JobSummary; className?: string }>) {
   const openings = job.openings ?? 0;
   if (!job.employmentType && !job.workplaceType && openings < 2) return null;
   return (
-    <ul className="tp-job-badges" style={style}>
+    <ul className={`tp-job-badges ${className}`}>
       {job.employmentType && (
         <li className="tp-job-badge" data-tone="primary">
           <span className="sr-only">Employment type: </span>
@@ -55,7 +61,7 @@ export function JobBadges({ job, style }: Readonly<{ job: JobSummary; style?: CS
 export function Deadline({ date }: Readonly<{ date: string }>) {
   return (
     <p className="tp-job-meta-item">
-      <Icon name="calendar" size={16} />
+      <CalendarOutlined aria-hidden className="text-[16px]" />
       <span>Apply by {formatCalendarDate(date)}</span>
     </p>
   );
@@ -67,17 +73,17 @@ export function JobMeta({
   showDeadline = true,
   style,
 }: Readonly<{ job: JobSummary; showDeadline?: boolean; style?: CSSProperties }>) {
-  const items: { key: string; icon: IconName; label: string; value: string }[] = [];
+  const items: { key: string; icon: IconComponent; label: string; value: string }[] = [];
   const salary = formatSalary(job);
   const experience = formatExperience(job.minimumExperienceYears);
-  if (job.location) items.push({ key: 'location', icon: 'map-pin', label: 'Location', value: job.location });
-  if (job.department) items.push({ key: 'department', icon: 'building', label: 'Department', value: job.department });
-  if (salary) items.push({ key: 'salary', icon: 'banknotes', label: 'Salary', value: salary });
-  if (experience) items.push({ key: 'experience', icon: 'briefcase', label: 'Experience', value: experience });
+  if (job.location) items.push({ key: 'location', icon: EnvironmentOutlined, label: 'Location', value: job.location });
+  if (job.department) items.push({ key: 'department', icon: BankOutlined, label: 'Department', value: job.department });
+  if (salary) items.push({ key: 'salary', icon: WalletOutlined, label: 'Salary', value: salary });
+  if (experience) items.push({ key: 'experience', icon: SolutionOutlined, label: 'Experience', value: experience });
   if (showDeadline && job.applicationDeadline) {
     items.push({
       key: 'deadline',
-      icon: 'calendar',
+      icon: CalendarOutlined,
       label: 'Application deadline',
       value: `Apply by ${formatCalendarDate(job.applicationDeadline)}`,
     });
@@ -88,7 +94,7 @@ export function JobMeta({
     <ul className="tp-job-meta" style={style}>
       {items.map((item) => (
         <li key={item.key} className="tp-job-meta-item">
-          <Icon name={item.icon} size={16} />
+          <item.icon aria-hidden className="text-[16px]" />
           <span className="sr-only">{item.label}: </span>
           <span>{item.value}</span>
         </li>

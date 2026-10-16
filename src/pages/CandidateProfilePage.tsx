@@ -1,3 +1,11 @@
+import {
+  IdcardOutlined,
+  MailOutlined,
+  PhoneOutlined,
+  SolutionOutlined,
+  UserOutlined,
+  WarningOutlined,
+} from '@ant-design/icons';
 import { Card as AntCard, Col, Flex, Input, Row, Skeleton } from 'antd';
 import axios from 'axios';
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent, type ReactNode } from 'react';
@@ -30,10 +38,10 @@ import { CandidateProfileHero } from '../components/candidate/CandidateProfileHe
 import { CandidateTalentPool } from '../components/candidate/CandidateTalentPool';
 import { ProfileChecklist } from '../components/candidate/ProfileChecklist';
 import { ProfileSection } from '../components/candidate/ProfileSection';
-import { Icon, type IconName } from '../components/dashboard/Icon';
 import { Alert } from '../components/ui/Alert';
 import { Button } from '../components/ui/Button';
 import { readFileAsDataUrl } from '../dashboard/companyImages';
+import type { IconComponent } from '../components/ui/icon';
 
 /**
  * My profile — the signed-in candidate's own details, ID number, photo and CV.
@@ -50,16 +58,16 @@ import { readFileAsDataUrl } from '../dashboard/companyImages';
 
 const FIELDS: Record<
   CandidateTextField,
-  { label: string; icon: IconName; optional?: boolean; hint?: string }
+  { label: string; icon: IconComponent; optional?: boolean; hint?: string }
 > = {
-  fullName: { label: 'Full name', icon: 'user' },
+  fullName: { label: 'Full name', icon: UserOutlined },
   identityCardNumber: {
     label: 'ID number',
-    icon: 'identification',
+    icon: IdcardOutlined,
     hint: 'Your national identity card (NIC) or passport number.',
   },
-  email: { label: 'Email', icon: 'envelope' },
-  phone: { label: 'Phone number', icon: 'phone', optional: true },
+  email: { label: 'Email', icon: MailOutlined },
+  phone: { label: 'Phone number', icon: PhoneOutlined, optional: true },
 };
 
 const fieldId = (field: CandidateTextField) => `candidate-${field}`;
@@ -77,7 +85,7 @@ function Field({ field, error, children }: Readonly<{ field: CandidateTextField;
       {children}
       {error ? (
         <p id={errorId(field)} role="alert" className="tp-profile-field-error">
-          <Icon name="warning" size={14} style={{ marginTop: 1 }} />
+          <WarningOutlined aria-hidden className="mt-px text-[14px]" />
           {error}
         </p>
       ) : (
@@ -175,6 +183,7 @@ export function CandidateProfilePage() {
   const fieldProps = (field: CandidateTextField) => {
     const error = visibleError(field);
     const describedBy = error ? errorId(field) : FIELDS[field].hint && hintId(field);
+    const FieldGlyph = FIELDS[field].icon;
     return {
       id: fieldId(field),
       value: form.values[field],
@@ -184,7 +193,7 @@ export function CandidateProfilePage() {
       },
       onBlur: () => setTouched((current) => (current.has(field) ? current : new Set(current).add(field))),
       disabled: saving,
-      prefix: <Icon name={FIELDS[field].icon} size={16} style={{ color: 'var(--tp-slate-400)' }} />,
+      prefix: <FieldGlyph aria-hidden className="text-[16px] text-slate-400" />,
       ...(describedBy ? { 'aria-describedby': describedBy } : {}),
       ...(error ? { status: 'error' as const, 'aria-invalid': true } : {}),
     };
@@ -360,7 +369,7 @@ export function CandidateProfilePage() {
         <form onSubmit={handleSubmit} noValidate className="tp-profile-main">
           <ProfileSection
             id="profile-personal"
-            icon="user"
+            icon={UserOutlined}
             title="Personal information"
             subtitle="How companies identify and contact you."
           >
@@ -404,7 +413,7 @@ export function CandidateProfilePage() {
 
           <ProfileSection
             id="profile-talent-pool"
-            icon="briefcase"
+            icon={SolutionOutlined}
             title="Talent Pool"
             subtitle="Optional. Be considered for roles beyond the ones you apply to."
           >

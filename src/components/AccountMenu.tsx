@@ -1,3 +1,4 @@
+import { AppstoreOutlined, SettingOutlined, SolutionOutlined, UserOutlined } from '@ant-design/icons';
 import { Dropdown } from 'antd';
 import { useEffect, useRef, useState, type FocusEvent, type KeyboardEvent, type RefObject } from 'react';
 import { Link, useLocation } from 'react-router-dom';
@@ -5,7 +6,9 @@ import type { UserResponse } from '../api/types';
 import { can, type Permission } from '../auth/permissions';
 import { formatRole } from '../utils/format';
 import { Avatar } from './dashboard/Avatar';
-import { Icon, type IconName } from './dashboard/Icon';
+import { ProfileTrigger } from './ProfileTrigger';
+import { popoverShell } from './ui/classes';
+import type { IconComponent } from './ui/icon';
 
 /**
  * The signed-in person's menu in the public header: avatar, name and role as
@@ -25,18 +28,18 @@ import { Icon, type IconName } from './dashboard/Icon';
 interface AccountItem {
   key: string;
   label: string;
-  icon: IconName;
+  icon: IconComponent;
   permission: Permission;
   /** Absent while the page is not built yet: listed, but not a link. */
   to?: string;
 }
 
 const ITEMS: AccountItem[] = [
-  { key: 'profile', label: 'My profile', icon: 'user', permission: 'profile.manageOwn', to: '/profile' },
-  { key: 'applications', label: 'Applied jobs', icon: 'briefcase', permission: 'applications.viewOwn' },
-  { key: 'settings', label: 'Settings', icon: 'cog', permission: 'profile.manageOwn' },
+  { key: 'profile', label: 'My profile', icon: UserOutlined, permission: 'profile.manageOwn', to: '/profile' },
+  { key: 'applications', label: 'Applied jobs', icon: SolutionOutlined, permission: 'applications.viewOwn' },
+  { key: 'settings', label: 'Settings', icon: SettingOutlined, permission: 'profile.manageOwn' },
   // Company users reach their workspace from here too, so the menu is never empty.
-  { key: 'dashboard', label: 'Dashboard', icon: 'squares-2x2', permission: 'dashboard.view', to: '/dashboard' },
+  { key: 'dashboard', label: 'Dashboard', icon: AppstoreOutlined, permission: 'dashboard.view', to: '/dashboard' },
 ];
 
 const PANEL_ID = 'account-menu-panel';
@@ -94,30 +97,32 @@ function AccountPanel({
   }
 
   return (
+    // The dashboard's popover shell (.tp-popover), holding links rather than
+    // antd Menu items: each entry navigates, so each is announced as a link.
     <div
       id={PANEL_ID}
       ref={panelRef}
-      className="tp-popover tp-account-panel"
+      className={`w-70 ${popoverShell}`}
       onKeyDown={handleKeyDown}
       onBlur={handleBlur}
     >
-      <div className="tp-account-head">
+      <div className="flex items-center gap-3 border-b border-slate-100 px-4 py-3.5">
         <Avatar firstName={user.firstName || user.email} lastName={user.lastName} size="md" />
-        <div style={{ minWidth: 0 }}>
-          <p className="tp-account-name">{fullNameOf(user)}</p>
-          <p className="tp-account-email">{user.email}</p>
+        <div className="min-w-0">
+          <p className="m-0 truncate font-semibold text-slate-900">{fullNameOf(user)}</p>
+          <p className="m-0 truncate text-caption text-slate-500">{user.email}</p>
         </div>
       </div>
 
       <nav aria-label="Account">
-        <ul className="tp-account-list">
+        <ul className="m-0 flex list-none flex-col gap-0.5 p-1.5">
           {items.map((item) => {
             const content = (
               <>
                 <span className="tp-account-item-icon">
-                  <Icon name={item.icon} size={18} />
+                  <item.icon aria-hidden className="text-[18px]" />
                 </span>
-                <span className="tp-account-item-label">{item.label}</span>
+                <span className="min-w-0 flex-1">{item.label}</span>
               </>
             );
             if (!item.to) {
@@ -127,7 +132,9 @@ function AccountPanel({
                       Listed anyway, so the menu shows what is coming. */}
                   <span className="tp-account-item" aria-disabled="true">
                     {content}
-                    <span className="tp-soon-tag">Soon</span>
+                    <span className="shrink-0 rounded-pill bg-sunken px-2 py-px text-[11px] font-semibold tracking-[0.02em] text-slate-600">
+                      Soon
+                    </span>
                   </span>
                 </li>
               );
@@ -174,21 +181,16 @@ export function AccountMenu({ user }: Readonly<{ user: UserResponse }>) {
       destroyOnHidden
       popupRender={() => <AccountPanel user={user} triggerRef={triggerRef} onClose={close} />}
     >
-      <button
+      <ProfileTrigger
         ref={triggerRef}
-        type="button"
-        className="tp-profile-trigger"
+        firstName={user.firstName || user.email}
+        lastName={user.lastName}
+        name={name}
+        role={formatRole(user.role)}
         aria-label={`Account menu for ${name}`}
         aria-expanded={open}
         aria-controls={open ? PANEL_ID : undefined}
-      >
-        <Avatar firstName={user.firstName || user.email} lastName={user.lastName} size="sm" />
-        <span className="tp-profile-meta">
-          <span className="tp-profile-name">{name}</span>
-          <span className="tp-profile-role">{formatRole(user.role)}</span>
-        </span>
-        <Icon name="chevron-down" size={16} className="tp-profile-chevron" />
-      </button>
+      />
     </Dropdown>
   );
 }

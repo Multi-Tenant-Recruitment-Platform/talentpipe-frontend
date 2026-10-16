@@ -1,6 +1,6 @@
 import { Flex, Progress, Typography } from 'antd';
 import type { FunnelStage } from '../../data/mockDashboard';
-import { fontSize, primary, slate, space } from '../../theme/tokens';
+import { primary, slate, space } from '../../theme/tokens';
 
 /**
  * One accent for every bar.
@@ -15,7 +15,7 @@ import { fontSize, primary, slate, space } from '../../theme/tokens';
 const STAGE_COLOR = primary[600];
 
 /** Conversion percentage from one stage to the next (null for the first). */
-export function stageConversion(stages: FunnelStage[], index: number): number | null {
+function stageConversion(stages: FunnelStage[], index: number): number | null {
   if (index === 0 || stages[index - 1].count === 0) {
     return null;
   }
@@ -44,10 +44,10 @@ export function HiringFunnel({ stages }: Readonly<{ stages: FunnelStage[] }>) {
           <div key={stage.label}>
             <Flex align="baseline" justify="space-between" gap={space[2]}>
               <Typography.Text strong>{stage.label}</Typography.Text>
-              <Typography.Text strong style={{ fontVariantNumeric: 'tabular-nums' }}>
+              <Typography.Text strong className="tabular-nums">
                 {stage.count.toLocaleString()}
                 {conversion !== null && (
-                  <Typography.Text type="secondary" style={{ marginLeft: space[1], fontSize: fontSize.caption }}>
+                  <Typography.Text type="secondary" className="ml-2 text-caption">
                     {conversion}% from {stages[i - 1].label.toLowerCase()}
                   </Typography.Text>
                 )}
@@ -60,7 +60,7 @@ export function HiringFunnel({ stages }: Readonly<{ stages: FunnelStage[] }>) {
               strokeLinecap="round"
               size={['100%', 10]}
               trailColor={slate[100]}
-              style={{ marginBottom: 0 }}
+              className="mb-0"
             />
           </div>
         );

@@ -1,9 +1,8 @@
+import { WarningOutlined } from '@ant-design/icons';
 import { Flex, Typography } from 'antd';
 import { useEffect, useRef, type ReactNode } from 'react';
-import { Icon } from '../dashboard/Icon';
 import { Button } from './Button';
 import { useFocusTrap } from './useFocusTrap';
-import { fontSize, primary, status } from '../../theme/tokens';
 
 /**
  * Confirmation step for an irreversible action.
@@ -79,16 +78,22 @@ export function ConfirmDialog({
     return null;
   }
 
-  const chip =
-    tone === 'danger'
-      ? { background: status.errorBg, color: status.errorText }
-      : { background: primary[50], color: primary[700] };
+  const chip = tone === 'danger' ? 'bg-error-bg text-error-text' : 'bg-primary-50 text-primary-700';
 
   return (
-    <div className="tp-dialog-overlay">
+    // --- ConfirmDialog ---
+    // Kept out of antd Modal on purpose: antd hard-codes role="dialog" on the
+    // dialog panel, and a destructive confirmation needs role="alertdialog" so
+    // assistive tech announces the consequence before the next click. See
+    // src/components/ui/ConfirmDialog.tsx.
+    <div className="fixed inset-0 z-1000 flex items-center justify-center p-4">
       {/* Not a button: a focusable backdrop is a tab stop that reads as an
           unlabelled control and duplicates Cancel. */}
-      <div aria-hidden="true" onClick={() => !busy && onCancel()} className="tp-dialog-backdrop" />
+      <div
+        aria-hidden="true"
+        onClick={() => !busy && onCancel()}
+        className="absolute inset-0 bg-slate-900/50 backdrop-blur-[2px]"
+      />
 
       <div
         ref={dialogRef}
@@ -96,34 +101,23 @@ export function ConfirmDialog({
         aria-modal="true"
         aria-labelledby="confirm-dialog-title"
         aria-describedby="confirm-dialog-description"
-        className="tp-dialog-panel"
+        className="relative w-full max-w-md rounded-xl bg-surface p-6 shadow-xl"
       >
         <Flex gap={16}>
-          <span
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: 44,
-              height: 44,
-              flexShrink: 0,
-              borderRadius: '50%',
-              ...chip,
-            }}
-          >
-            <Icon name="warning" size={20} />
+          <span className={`flex size-11 shrink-0 items-center justify-center rounded-full ${chip}`}>
+            <WarningOutlined aria-hidden className="text-[20px]" />
           </span>
-          <div style={{ minWidth: 0 }}>
-            <Typography.Title id="confirm-dialog-title" level={2} style={{ fontSize: fontSize.lead, margin: 0 }}>
+          <div className="min-w-0">
+            <Typography.Title id="confirm-dialog-title" level={2} className="m-0 text-lead">
               {title}
             </Typography.Title>
-            <div id="confirm-dialog-description" style={{ marginTop: 6, lineHeight: 1.6 }}>
+            <div id="confirm-dialog-description" className="mt-1.5 leading-[1.6]">
               <Typography.Text type="secondary">{description}</Typography.Text>
             </div>
           </div>
         </Flex>
 
-        <Flex align="center" justify="flex-end" gap={12} style={{ marginTop: 24 }}>
+        <Flex align="center" justify="flex-end" gap={12} className="mt-6">
           <Button ref={cancelRef} type="button" variant="ghost" onClick={onCancel} disabled={busy}>
             {cancelLabel}
           </Button>

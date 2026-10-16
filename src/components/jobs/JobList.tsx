@@ -1,7 +1,7 @@
+import { SolutionOutlined } from '@ant-design/icons';
 import { Card, Skeleton } from 'antd';
 import type { JobSummary } from '../../api/types';
 import type { JobsStatus } from '../../jobs/usePublicJobs';
-import { space } from '../../theme/tokens';
 import { EmptyState } from '../dashboard/EmptyState';
 import { Alert } from '../ui/Alert';
 import { Button } from '../ui/Button';
@@ -56,9 +56,9 @@ export function JobList({
   if (status === 'error') {
     return (
       <Alert tone="error">
-        <p style={{ margin: 0 }}>{error ?? 'We could not load job vacancies.'}</p>
+        <p className="m-0">{error ?? 'We could not load job vacancies.'}</p>
         {onRetry && (
-          <Button size="sm" style={{ marginTop: space[1.5] }} onClick={onRetry}>
+          <Button size="sm" className="mt-3" onClick={onRetry}>
             Try again
           </Button>
         )}
@@ -69,7 +69,7 @@ export function JobList({
   if (jobs.length === 0) {
     return (
       <Card>
-        <EmptyState icon="briefcase" title={emptyTitle} description={emptyDescription} />
+        <EmptyState icon={SolutionOutlined} title={emptyTitle} description={emptyDescription} />
       </Card>
     );
   }
