@@ -98,5 +98,5 @@ export function can(role: string | null | undefined, permission: Permission): bo
 
 /** Where a role belongs when it lands somewhere it may not be. */
 export function homeRouteFor(role: string | null | undefined): string {
-  return can(role, 'dashboard.view') ? '/dashboard' : '/jobs';
+  return can(role, 'dashboard.view') ? '/dashboard' : '/';
 }

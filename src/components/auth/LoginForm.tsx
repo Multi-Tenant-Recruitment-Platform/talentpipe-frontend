@@ -1,33 +1,19 @@
-import { Divider, Flex, Input, Typography } from 'antd';
+import { Divider, Flex, Input, Typography, type InputRef } from 'antd';
 import axios from 'axios';
-import { useState, type FormEvent } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { api, apiErrorMessage } from '../api/client';
-import { useAuth } from '../auth/AuthContext';
-import { AuthShell } from '../components/AuthShell';
-import { AuthField } from '../components/auth/AuthField';
-import { AuthHeading } from '../components/auth/AuthHeading';
-import { GoogleSignInButton } from '../components/auth/GoogleSignInButton';
-import { LoginErrorAlert } from '../components/auth/LoginErrorAlert';
-import { LoginModeTabs, type LoginMode } from '../components/auth/LoginModeTabs';
-import { LoginNotices } from '../components/auth/LoginNotices';
-import { PasswordField } from '../components/auth/PasswordField';
-import { Alert } from '../components/ui/Alert';
-import { Button } from '../components/ui/Button';
-
-interface LoginLocationState {
-  /** Set by the registration pages after a successful sign-up. */
-  registered?: boolean | 'company' | 'candidate';
-  /** Pre-selects the login tab (e.g. after candidate registration). */
-  mode?: LoginMode;
-  /** Prefills the email field (e.g. after candidate registration). */
-  email?: string;
-  /** Set by the reset-password page after a successful reset. */
-  passwordReset?: boolean;
-  /** Set by the accept-invite page after activation. */
-  inviteAccepted?: boolean;
-  from?: string;
-}
+import { useId, useState, type FormEvent, type Ref } from 'react';
+import { Link } from 'react-router-dom';
+import { api, apiErrorMessage } from '../../api/client';
+import type { UserResponse } from '../../api/types';
+import { useAuth } from '../../auth/AuthContext';
+import type { LoginIntent } from '../../auth/loginIntent';
+import { Alert } from '../ui/Alert';
+import { Button } from '../ui/Button';
+import { AuthField } from './AuthField';
+import { GoogleSignInButton } from './GoogleSignInButton';
+import { LoginErrorAlert } from './LoginErrorAlert';
+import { LoginModeTabs, type LoginMode } from './LoginModeTabs';
+import { LoginNotices } from './LoginNotices';
+import { PasswordField } from './PasswordField';
 
 /**
  * Everything the two personas word differently. A lookup keeps the page free
@@ -45,14 +31,6 @@ const COPY: Record<LoginMode, { subtitle: string; submit: string; registerPath: 
     registerPath: '/register-candidate',
   },
 };
-
-/**
- * The company dashboard is for company roles only — candidates have no tenant
- * and would hit 403s there, so send them to the job board.
- */
-function homeFor(role: string): string {
-  return role === 'CANDIDATE' ? '/jobs' : '/dashboard';
-}
 
 /**
  * What a failed login should say, and whether to offer a resend.
@@ -89,23 +67,38 @@ async function requestVerificationEmail(email: string): Promise<void> {
 }
 
 /**
- * Login (PB-007), split-screen edition: the brand panel showcases the
- * platform's highlights while the form serves both personas. Both sign in
- * with email and password alone — the backend finds the company account from
- * those, so no workspace address is asked for.
+ * Login (PB-007): the form behind the login popup. It serves both personas;
+ * both sign in with email and password alone — the backend finds the company
+ * account from those, so no workspace address is asked for.
  *
- * <p>The page owns the credentials and the submit; the presentation of each
+ * <p>The form owns the credentials and the submit; the presentation of each
  * region (notices, persona tabs, password) lives in components/auth so this
- * stays a readable description of the flow.</p>
+ * stays a readable description of the flow. Where to go afterwards is the
+ * caller's decision, handed back through `onSuccess`.</p>
  */
-export function LoginPage() {
+export function LoginForm({
+  intent,
+  emailRef,
+  onBusyChange,
+  onSuccess,
+}: Readonly<{
+  intent: LoginIntent;
+  /** Lets the popup put focus in the email field once it has opened. */
+  emailRef?: Ref<InputRef>;
+  /** Reports an in-flight sign-in, so the popup can refuse to close mid-request. */
+  onBusyChange?: (busy: boolean) => void;
+  onSuccess: (user: UserResponse) => void;
+}>) {
   const { login, sessionEndReason } = useAuth();
-  const navigate = useNavigate();
-  const state = (useLocation().state ?? {}) as LoginLocationState;
+  // Generated, not fixed: the popup can open over the registration page, which
+  // has its own `email` and `password` fields.
+  const fieldId = useId();
+  const emailId = `${fieldId}-email`;
+  const passwordId = `${fieldId}-password`;
 
-  const [mode, setMode] = useState<LoginMode>(state.mode ?? 'company');
+  const [mode, setMode] = useState<LoginMode>(intent.mode ?? 'company');
 
-  const [email, setEmail] = useState(state.email ?? '');
+  const [email, setEmail] = useState(intent.email ?? '');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -133,15 +126,17 @@ export function LoginPage() {
     clearMessages();
 
     setSubmitting(true);
+    onBusyChange?.(true);
     try {
       const loggedIn = await login(email, password);
-      navigate(state.from ?? homeFor(loggedIn.role), { replace: true });
+      onSuccess(loggedIn);
     } catch (err: unknown) {
       const failure = loginFailure(err);
       setError(failure.message);
       setNeedsVerification(failure.needsVerification);
     } finally {
       setSubmitting(false);
+      onBusyChange?.(false);
     }
   }
 
@@ -157,14 +152,16 @@ export function LoginPage() {
   const onResend = needsVerification ? () => void handleResendVerification() : undefined;
 
   return (
-    <AuthShell>
-      <AuthHeading title="Welcome back">{copy.subtitle}</AuthHeading>
+    <>
+      <Typography.Paragraph type="secondary" className="m-0">
+        {copy.subtitle}
+      </Typography.Paragraph>
 
       <LoginNotices
         sessionEndReason={sessionEndReason}
-        registered={state.registered}
-        passwordReset={state.passwordReset}
-        inviteAccepted={state.inviteAccepted}
+        registered={intent.registered}
+        passwordReset={intent.passwordReset}
+        inviteAccepted={intent.inviteAccepted}
       />
 
       <LoginModeTabs mode={mode} onSelect={switchMode} />
@@ -174,9 +171,10 @@ export function LoginPage() {
           {error && <LoginErrorAlert message={error} onResend={onResend} />}
           {notice && <Alert tone="info">{notice}</Alert>}
 
-          <AuthField id="email" label="Email">
+          <AuthField id={emailId} label="Email">
             <Input
-              id="email"
+              ref={emailRef}
+              id={emailId}
               type="email"
               required
               value={email}
@@ -185,7 +183,7 @@ export function LoginPage() {
             />
           </AuthField>
 
-          <PasswordField value={password} onChange={setPassword} />
+          <PasswordField id={passwordId} value={password} onChange={setPassword} />
 
           <Button type="submit" variant="primary" loading={submitting} className="w-full">
             {submitting ? 'Signing in…' : copy.submit}
@@ -210,9 +208,9 @@ export function LoginPage() {
       />
 
       {/* Registration is persona-specific, mirroring the active login tab. */}
-      <Typography.Paragraph type="secondary" className="mt-6 text-center">
+      <Typography.Paragraph type="secondary" className="mt-6 mb-0 text-center">
         New to TalentPipe? <Link to={copy.registerPath}>Create an account</Link>
       </Typography.Paragraph>
-    </AuthShell>
+    </>
   );
 }

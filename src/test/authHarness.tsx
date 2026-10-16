@@ -66,7 +66,7 @@ export function RouterHarness({
       <LocationProbe />
       <Routes>
         <Route path="/login" element={<p>login page</p>} />
-        <Route path="/jobs" element={<p>jobs page</p>} />
+        <Route path="/" element={<p>jobs page</p>} />
         <Route path="/dashboard/*" element={children} />
       </Routes>
     </MemoryRouter>

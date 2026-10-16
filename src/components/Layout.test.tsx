@@ -22,13 +22,13 @@ const candidate = makeUser({
   email: 'jane@example.com',
 });
 
-function renderAt(path = '/jobs') {
+function renderAt(path = '/') {
   return render(
     <MemoryRouter initialEntries={[path]}>
       <Routes>
         <Route element={<Layout />}>
+          {/* The job board is the home page. */}
           <Route path="/" element={<p>home page</p>} />
-          <Route path="/jobs" element={<p>jobs page</p>} />
           <Route path="/profile" element={<p>profile page</p>} />
         </Route>
       </Routes>
@@ -49,7 +49,7 @@ describe('Layout — signed-in candidate', () => {
     expect(trigger()).toHaveTextContent('Jane Perera');
     expect(trigger()).toHaveTextContent('Candidate');
     expect(trigger()).toHaveAttribute('aria-expanded', 'false');
-    expect(screen.getByRole('link', { name: 'Browse jobs' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Browse jobs' })).toHaveAttribute('href', '/');
     expect(screen.queryByRole('link', { name: 'My profile' })).not.toBeInTheDocument();
   });
 
@@ -93,7 +93,7 @@ describe('Layout — signed-in candidate', () => {
 
   it('logs out from the icon-only button, which still has a name', async () => {
     const user = userEvent.setup();
-    renderAt();
+    renderAt('/profile');
     const logout = screen.getByRole('button', { name: 'Log out' });
     expect(logout).not.toHaveTextContent('Log out');
     await user.click(logout);
@@ -119,5 +119,30 @@ describe('Layout — other sessions', () => {
     expect(screen.getByRole('button', { name: 'Get started' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Account menu/ })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Log out' })).not.toBeInTheDocument();
+  });
+
+  it('opens login as a popup over the current page instead of leaving it', async () => {
+    setAuth({ user: null });
+    const user = userEvent.setup();
+    renderAt('/profile');
+
+    await user.click(screen.getByRole('button', { name: 'Log in' }));
+
+    const dialog = await screen.findByRole('dialog', { name: 'Welcome back' });
+    expect(within(dialog).getByRole('button', { name: /sign in as company/i })).toBeInTheDocument();
+    expect(screen.getByText('profile page')).toBeInTheDocument();
+  });
+
+  it('closes the login popup on Escape', async () => {
+    setAuth({ user: null });
+    const user = userEvent.setup();
+    renderAt();
+    await user.click(screen.getByRole('button', { name: 'Log in' }));
+    await screen.findByRole('dialog', { name: 'Welcome back' });
+
+    await user.keyboard('{Escape}');
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(screen.getByText('home page')).toBeInTheDocument();
   });
 });

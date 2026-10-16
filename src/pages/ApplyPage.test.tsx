@@ -193,7 +193,7 @@ describe('ApplyPage', () => {
     );
     expect(screen.getByText('app-123')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /submit application/i })).toBeNull();
-    expect(screen.getByRole('link', { name: 'Browse more jobs' })).toHaveAttribute('href', '/jobs');
+    expect(screen.getByRole('link', { name: 'Browse more jobs' })).toHaveAttribute('href', '/');
   });
 
   it('ignores repeat submits while one is in flight and locks the form', async () => {

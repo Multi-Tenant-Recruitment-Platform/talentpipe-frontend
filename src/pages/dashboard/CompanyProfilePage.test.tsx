@@ -578,10 +578,7 @@ describe('the public profile preview', () => {
     expect(within(dialog).queryByText(/PV 12345/)).toBeNull();
     expect(within(dialog).queryByText(/ABC Technologies \(Private\) Limited/)).toBeNull();
     // The jobs board is a real route, so the call to action goes somewhere.
-    expect(within(dialog).getByRole('link', { name: /view open positions/i })).toHaveAttribute(
-      'href',
-      '/jobs',
-    );
+    expect(within(dialog).getByRole('link', { name: /view open positions/i })).toHaveAttribute('href', '/');
   });
 
   it('closes on Escape and returns focus to the trigger', async () => {
