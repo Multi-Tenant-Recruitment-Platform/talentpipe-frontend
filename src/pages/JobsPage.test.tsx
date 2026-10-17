@@ -7,6 +7,9 @@ import { JobList } from '../components/jobs/JobList';
 import { JobDetailPage } from './JobDetailPage';
 import { JobsPage } from './JobsPage';
 
+// The promo card above the filters picks its message from who is signed in.
+vi.mock('../auth/AuthContext', async () => (await import('../test/authHarness')).authContextMock);
+
 vi.mock('../api/publicJobs', () => ({
   listPublicJobs: vi.fn(),
   getPublicJob: vi.fn(),
@@ -73,7 +76,8 @@ describe('JobsPage', () => {
   it('shows the heading and a loading state, then the vacancies', async () => {
     listPublicJobs.mockResolvedValue(page([FULL_JOB, MINIMAL_JOB]));
     renderAt('/jobs');
-    expect(screen.getByRole('heading', { level: 1, name: 'Find your next opportunity' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: 'Find jobs' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: 'Open jobs' })).toBeInTheDocument();
     expect(screen.getByText(/loading job vacancies/i)).toBeInTheDocument();
     expect(await screen.findByRole('article', { name: FULL_JOB.title })).toBeInTheDocument();
     expect(screen.getByText('2 jobs available')).toBeInTheDocument();
@@ -95,7 +99,7 @@ describe('JobsPage', () => {
       expect(c.getByText(text)).toBeInTheDocument();
     }
     expect(c.getByText(/^Apply by .*31.*2026$/)).toBeInTheDocument();
-    // The card is a preview: the summary, department, experience and the rest wait on the details page.
+    // The card is a preview: the summary, department, full experience wording and the rest wait on the details page.
     expect(c.queryByText(FULL_JOB.jobSummary!)).toBeNull();
     expect(c.queryByText(/engineering|years experience|day shift|bachelor|health insurance/i)).toBeNull();
     // Skills are intentionally kept on the details page so the card remains easy to scan.
@@ -109,15 +113,15 @@ describe('JobsPage', () => {
     expect(c.queryByText(/apply by/i)).toBeNull();
     expect(c.queryByRole('list', { name: 'Required skills' })).toBeNull();
     expect(c.queryByText(/posted|openings|experience/i)).toBeNull();
-    // The link names its job, so a list of "View Job" links is still distinguishable.
-    expect(c.getByRole('link', { name: /^view job\W+data analyst$/i })).toBeInTheDocument();
+    // The link names its job, so a list of "Details" links is still distinguishable.
+    expect(c.getByRole('link', { name: /^details\W+data analyst$/i })).toBeInTheDocument();
   });
 
   it('keeps the full title available when the card clamps it', async () => {
     const longTitle = 'Principal '.repeat(20).trim();
     listPublicJobs.mockResolvedValue(page([{ ...MINIMAL_JOB, title: longTitle }]));
     renderAt('/jobs');
-    expect(await screen.findByRole('heading', { level: 2, name: longTitle })).toHaveAttribute('title', longTitle);
+    expect(await screen.findByRole('heading', { level: 3, name: longTitle })).toHaveAttribute('title', longTitle);
   });
 
   it('shows the empty state when nothing is published', async () => {
@@ -198,7 +202,8 @@ describe('JobsPage', () => {
     const titles = () => screen.getAllByRole('article').map((card) => within(card).getByRole('heading').textContent);
     expect(titles()).toEqual([MINIMAL_JOB.title, FULL_JOB.title]);
 
-    await user.click(screen.getByText('Newest'));
+    await user.click(screen.getByRole('combobox', { name: 'Sort jobs' }));
+    await user.click(await screen.findByTitle('Newest'));
     expect(titles()).toEqual([FULL_JOB.title, MINIMAL_JOB.title]);
 
     await user.click(screen.getByRole('checkbox', { name: 'Salary shown' }));
@@ -235,6 +240,25 @@ describe('JobsPage', () => {
     expect(group('Job type').getByRole('checkbox', { name: 'Contract' })).not.toBeChecked();
   });
 
+  it('quick filters under the search bar switch the same filters as the tick boxes', async () => {
+    const user = userEvent.setup();
+    const remote: JobSummary = { ...MINIMAL_JOB, workplaceType: 'REMOTE' };
+    listPublicJobs.mockResolvedValue(page([FULL_JOB, remote]));
+    renderAt('/jobs');
+    await screen.findByRole('article', { name: FULL_JOB.title });
+
+    const quick = within(screen.getByRole('group', { name: 'Quick filters' }));
+    await user.click(quick.getByRole('button', { name: 'Remote' }));
+    expect(quick.getByRole('button', { name: 'Remote' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('checkbox', { name: 'Remote' })).toBeChecked();
+    expect(screen.getAllByRole('article')).toHaveLength(1);
+    expect(screen.getByRole('article', { name: MINIMAL_JOB.title })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('checkbox', { name: 'Remote' }));
+    expect(quick.getByRole('button', { name: 'Remote' })).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.getAllByRole('article')).toHaveLength(2);
+  });
+
   it('leaves the counts off while there are more jobs to load', async () => {
     listPublicJobs.mockResolvedValue(page([FULL_JOB], { total: 40, totalPages: 2 }));
     renderAt('/jobs');
@@ -243,12 +267,12 @@ describe('JobsPage', () => {
     expect(fullTime.parentElement).toHaveTextContent(/^Full time$/);
   });
 
-  it('opens the matching vacancy from View Job', async () => {
+  it('opens the matching vacancy from Details', async () => {
     const user = userEvent.setup();
     listPublicJobs.mockResolvedValue(page([FULL_JOB, MINIMAL_JOB]));
     getPublicJob.mockResolvedValue(FULL_JOB);
     renderAt('/jobs');
-    await user.click(within(await screen.findByRole('article', { name: FULL_JOB.title })).getByRole('link', { name: /view job/i }));
+    await user.click(within(await screen.findByRole('article', { name: FULL_JOB.title })).getByRole('link', { name: /^details/i }));
     expect(getPublicJob).toHaveBeenCalledWith('senior-frontend-engineer-demo-company');
     expect(await screen.findByRole('heading', { level: 1, name: FULL_JOB.title })).toBeInTheDocument();
     expect(screen.getByText('The full description of the role.')).toBeInTheDocument();
@@ -334,6 +358,18 @@ describe('JobList', () => {
       </MemoryRouter>,
     );
     expect(screen.getByText('No matching jobs found')).toBeInTheDocument();
+  });
+
+  it('gives every card a tint, however long its id', () => {
+    // A hash that is not kept in range overflows on a long id and picks no tint.
+    render(
+      <MemoryRouter>
+        <JobList status="ready" jobs={[{ ...MINIMAL_JOB, id: 'f'.repeat(2000) }, { ...MINIMAL_JOB, id: 'job-3' }]} />
+      </MemoryRouter>,
+    );
+    for (const card of screen.getAllByRole('article')) {
+      expect(card.firstElementChild?.className).toMatch(/\bbg-(primary-50|slate-100|primary-100)\b/);
+    }
   });
 
   it('uses job ids as keys so identical titles still render separately', () => {

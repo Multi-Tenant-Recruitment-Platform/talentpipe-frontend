@@ -29,6 +29,7 @@ function renderAt(path = '/') {
         <Route element={<Layout />}>
           {/* The job board is the home page. */}
           <Route path="/" element={<p>home page</p>} />
+          <Route path="/jobs/:jobKey" element={<p>advert page</p>} />
           <Route path="/profile" element={<p>profile page</p>} />
         </Route>
       </Routes>
@@ -49,8 +50,19 @@ describe('Layout — signed-in candidate', () => {
     expect(trigger()).toHaveTextContent('Jane Perera');
     expect(trigger()).toHaveTextContent('Candidate');
     expect(trigger()).toHaveAttribute('aria-expanded', 'false');
-    expect(screen.getByRole('link', { name: 'Browse jobs' })).toHaveAttribute('href', '/');
+    expect(screen.getByRole('link', { name: 'Find jobs' })).toHaveAttribute('href', '/');
     expect(screen.queryByRole('link', { name: 'My profile' })).not.toBeInTheDocument();
+  });
+
+  it('marks Find jobs as the current page on the board and on its adverts, and nowhere else', () => {
+    const findJobs = () => screen.getByRole('link', { name: 'Find jobs' });
+    for (const path of ['/', '/jobs/data-analyst-northwind']) {
+      const { unmount } = renderAt(path);
+      expect(findJobs()).toHaveAttribute('aria-current', 'page');
+      unmount();
+    }
+    renderAt('/profile');
+    expect(findJobs()).not.toHaveAttribute('aria-current');
   });
 
   it('opens a panel with My profile, and lists pages that are not built yet without linking them', async () => {
