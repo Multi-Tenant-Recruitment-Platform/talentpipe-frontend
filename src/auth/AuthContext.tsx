@@ -32,6 +32,8 @@ interface AuthContextValue {
   initializing: boolean;
   /** Set when a session ended by itself rather than by the user logging out. */
   sessionEndReason: SessionEndReason | null;
+  /** Forgets the reason once it has been shown, so it is not repeated on the next login. */
+  clearSessionEndReason: () => void;
   login: (email: string, password: string) => Promise<UserResponse>;
   register: (request: RegisterRequest) => Promise<RegisterResponse>;
   logout: () => Promise<void>;
@@ -151,9 +153,11 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
     }
   }, [clearAuth]);
 
+  const clearSessionEndReason = useCallback(() => setSessionEndReason(null), []);
+
   const value = useMemo(
-    () => ({ user, initializing, sessionEndReason, login, register, logout }),
-    [user, initializing, sessionEndReason, login, register, logout],
+    () => ({ user, initializing, sessionEndReason, clearSessionEndReason, login, register, logout }),
+    [user, initializing, sessionEndReason, clearSessionEndReason, login, register, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

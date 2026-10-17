@@ -181,7 +181,7 @@ export function CompanyPublicPreview({
               than miming a link a candidate would find broken. An anchor,
               not a Button — it navigates, and nesting one in the other is
               invalid markup. */}
-          <Link to="/jobs" onClick={onClose} className="tp-cta-link">
+          <Link to="/" onClick={onClose} className="tp-cta-link">
             <SolutionOutlined aria-hidden className="text-[16px]" />
             View open positions
           </Link>

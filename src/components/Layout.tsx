@@ -3,8 +3,10 @@ import { Button as AntButton, Divider, Flex, Grid, Layout as AntLayout, Menu, To
 import { Suspense } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
+import { useOpenLogin } from '../auth/loginIntent';
 import { can } from '../auth/permissions';
 import { AccountMenu } from './AccountMenu';
+import { LoginModal } from './auth/LoginModal';
 import { PageLoader } from './PageLoader';
 import { Button } from './ui/Button';
 import { pageContainer } from './ui/classes';
@@ -15,6 +17,7 @@ export function Layout() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const screens = Grid.useBreakpoint();
+  const openLogin = useOpenLogin();
 
   async function handleLogout() {
     await logout();
@@ -22,7 +25,7 @@ export function Layout() {
   }
 
   const items = [
-    { key: '/jobs', label: <Link to="/jobs">Browse jobs</Link> },
+    { key: '/', label: <Link to="/">Browse jobs</Link> },
     // The dashboard is the company workspace; candidates have no tenant, so it
     // isn't shown to them. Asks the permission map rather than naming a role,
     // so this and the route guard can never drift apart.
@@ -30,6 +33,9 @@ export function Layout() {
       ? [{ key: '/dashboard', label: <Link to="/dashboard">Dashboard</Link> }]
       : []),
   ];
+  // The board is `/` and its adverts live under `/jobs/…`; a plain prefix test
+  // on `/` would light the item up on every page.
+  const selectedKey = pathname === '/' || pathname.startsWith('/jobs/') ? '/' : pathname.startsWith('/dashboard') ? '/dashboard' : null;
 
   return (
     <AntLayout className="min-h-screen">
@@ -55,7 +61,7 @@ export function Layout() {
                 only exists to give the phone fold something to measure. */}
             <Menu
               mode="horizontal"
-              selectedKeys={items.filter((i) => pathname.startsWith(i.key)).map((i) => i.key)}
+              selectedKeys={selectedKey ? [selectedKey] : []}
               items={items}
               // From `sm` up every link fits, so none may fold into antd's
               // unlabelled "···". Below it, the fold is the phone's "more" menu.
@@ -85,7 +91,9 @@ export function Layout() {
               </>
             ) : (
               <>
-                <Button variant="ghost" size={screens.sm ? 'md' : 'sm'} onClick={() => navigate('/login')}>
+                {/* Opens the login popup over this page, so a visitor reading
+                    an advert does not lose their place to sign in. */}
+                <Button variant="ghost" size={screens.sm ? 'md' : 'sm'} onClick={() => openLogin()}>
                   Log in
                 </Button>
                 <Button variant="primary" size={screens.sm ? 'md' : 'sm'} onClick={() => navigate('/register')}>
@@ -102,6 +110,8 @@ export function Layout() {
           <Outlet />
         </Suspense>
       </AntLayout.Content>
+
+      <LoginModal />
     </AntLayout>
   );
 }

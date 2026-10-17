@@ -23,7 +23,7 @@ export function JobDetailPage() {
   const { jobKey = '' } = useParams();
   return (
     <div>
-      <BackLink to="/jobs">All jobs</BackLink>
+      <BackLink to="/">All jobs</BackLink>
       <div className="mt-6">
         <JobDetailView key={jobKey} jobKey={jobKey} />
       </div>

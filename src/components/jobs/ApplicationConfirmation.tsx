@@ -31,7 +31,7 @@ export function ApplicationConfirmation({
       </p>
 
       <div className="tp-apply-done-actions">
-        <Link to="/jobs" className="tp-cta-link">
+        <Link to="/" className="tp-cta-link">
           Browse more jobs
         </Link>
         <Link to={jobPath(job)} className="tp-cta-link tp-cta-link-ghost">

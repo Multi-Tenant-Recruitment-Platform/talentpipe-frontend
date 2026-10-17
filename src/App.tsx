@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react';
-import { Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { AuthProvider } from './auth/AuthContext';
+import { LoginRedirect } from './components/auth/LoginRedirect';
 import { Layout } from './components/Layout';
 import { PageLoader } from './components/PageLoader';
 import { ProtectedRoute } from './components/ProtectedRoute';
@@ -8,9 +9,13 @@ import { RequirePermission } from './components/RequirePermission';
 import { ForbiddenPage } from './pages/ForbiddenPage';
 import { JobDetailPage } from './pages/JobDetailPage';
 import { JobsPage } from './pages/JobsPage';
-import { LandingPage } from './pages/LandingPage';
-import { LoginPage } from './pages/LoginPage';
 import { NotFoundPage } from './pages/NotFoundPage';
+
+/** The board moved to `/`; old links and bookmarks to `/jobs` still land there. */
+export function JobsRedirect() {
+  const { search, hash } = useLocation();
+  return <Navigate to={{ pathname: '/', search, hash }} replace />;
+}
 
 // The common public entry points above load up front; everything below is
 // split into its own chunk so a job-board visitor never downloads the dashboard.
@@ -39,13 +44,15 @@ export default function App() {
       <Routes>
         {/* Public + auth pages share the marketing chrome. */}
         <Route element={<Layout />}>
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/jobs" element={<JobsPage />} />
+          {/* The job board is the home page. */}
+          <Route path="/" element={<JobsPage />} />
+          <Route path="/jobs" element={<JobsRedirect />} />
           <Route path="/jobs/:jobKey" element={<JobDetailPage />} />
           <Route path="/jobs/:jobKey/apply" element={<ApplyPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/register-candidate" element={<CandidateRegisterPage />} />
-          <Route path="/login" element={<LoginPage />} />
+          {/* Login is a popup now; this opens it over the job board. */}
+          <Route path="/login" element={<LoginRedirect />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           {/* Landing pages for emailed links — the token arrives in the query string. */}
           <Route path="/verify-email" element={<VerifyEmailPage />} />
@@ -71,7 +78,7 @@ export default function App() {
         <Route
           path="/dashboard"
           element={
-            <ProtectedRoute requires="dashboard.view" redirectTo="/jobs">
+            <ProtectedRoute requires="dashboard.view" redirectTo="/">
               <Suspense fallback={<PageLoader />}>
                 <DashboardLayout />
               </Suspense>

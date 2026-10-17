@@ -125,9 +125,9 @@ describe('homeRouteFor', () => {
 
   it('sends candidates, unknown roles and signed-out users to the job board', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    expect(homeRouteFor('CANDIDATE')).toBe('/jobs');
-    expect(homeRouteFor('RECRUITER')).toBe('/jobs');
-    expect(homeRouteFor(null)).toBe('/jobs');
+    expect(homeRouteFor('CANDIDATE')).toBe('/');
+    expect(homeRouteFor('RECRUITER')).toBe('/');
+    expect(homeRouteFor(null)).toBe('/');
     warn.mockRestore();
   });
 });
