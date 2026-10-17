@@ -114,7 +114,7 @@ describe('company login', () => {
     const user = userEvent.setup();
     const dialog = await openFromHeader(user);
 
-    await signIn(user, dialog, /sign in as company/i);
+    await signIn(user, dialog, /^sign in$/i);
 
     expect(login).toHaveBeenCalledWith('admin@acme.test', 'secret123');
     expect(await screen.findByText('dashboard')).toBeInTheDocument();
@@ -140,7 +140,7 @@ describe('company login', () => {
     const user = userEvent.setup();
     const dialog = await openFromHeader(user);
 
-    await signIn(user, dialog, /sign in as company/i);
+    await signIn(user, dialog, /^sign in$/i);
 
     expect(await within(dialog).findByRole('alert')).toHaveTextContent('Invalid credentials');
   });
@@ -150,20 +150,19 @@ describe('company login', () => {
     renderAt({ pathname: '/login', state: { from: '/dashboard/team' } });
     const dialog = await screen.findByRole('dialog', { name: 'Welcome back' });
 
-    await signIn(user, dialog, /sign in as company/i);
+    await signIn(user, dialog, /^sign in$/i);
 
     expect(await screen.findByText('team page')).toBeInTheDocument();
   });
 });
 
 describe('candidate login', () => {
-  it('signs in the same way, and stays on the page they were reading', async () => {
+  it('signs in with the same form, and stays on the page they were reading', async () => {
     login.mockResolvedValue(makeUser({ role: 'CANDIDATE', tenantId: null }));
     const user = userEvent.setup();
     const dialog = await openFromHeader(user);
 
-    await user.click(within(dialog).getByRole('tab', { name: /candidate/i }));
-    await signIn(user, dialog, /sign in as candidate/i);
+    await signIn(user, dialog, /^sign in$/i);
 
     expect(login).toHaveBeenCalledWith('admin@acme.test', 'secret123');
     expect(screen.getByText('board')).toBeInTheDocument();
@@ -172,16 +171,27 @@ describe('candidate login', () => {
 });
 
 describe('what the popup says', () => {
-  it('carries the registration page’s notice, tab and email across', async () => {
+  it('carries the registration page’s notice and email across', async () => {
     renderAt({
       pathname: '/login',
-      state: { registered: 'candidate', mode: 'candidate', email: 'jo@example.test' },
+      state: { registered: 'candidate', email: 'jo@example.test' },
     });
     const dialog = await screen.findByRole('dialog', { name: 'Welcome back' });
 
     expect(within(dialog).getByText(/account created/i)).toBeInTheDocument();
-    expect(within(dialog).getByRole('button', { name: /sign in as candidate/i })).toBeInTheDocument();
     expect(within(dialog).getByLabelText(/email/i)).toHaveValue('jo@example.test');
+  });
+
+  it('is one form for everyone: no candidate/company choice and no Google sign-in', async () => {
+    const user = userEvent.setup();
+    const dialog = await openFromHeader(user);
+
+    // The backend resolves the account from the credentials alone.
+    expect(within(dialog).queryByRole('tab')).not.toBeInTheDocument();
+    expect(within(dialog).queryByRole('tablist')).not.toBeInTheDocument();
+    expect(within(dialog).queryByRole('button', { name: /google/i })).not.toBeInTheDocument();
+    expect(within(dialog).getByRole('button', { name: /^sign in$/i })).toBeInTheDocument();
+    expect(within(dialog).getByRole('link', { name: 'Create an account' })).toHaveAttribute('href', '/register-candidate');
   });
 
   it('forgets why the last session ended once the popup is closed', async () => {

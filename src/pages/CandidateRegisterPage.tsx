@@ -58,7 +58,7 @@ export function CandidateRegisterPage() {
       const request: CandidateRegisterRequest = fields;
       await api.post('/public/candidates/register', request);
       // Registration issues no tokens: continue at the candidate login tab.
-      navigate('/login', { state: { mode: 'candidate', registered: 'candidate', email: fields.email } });
+      navigate('/login', { state: { registered: 'candidate', email: fields.email } });
     } catch (err: unknown) {
       setError(apiErrorMessage(err, 'Registration failed. Please try again.'));
     } finally {

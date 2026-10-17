@@ -18,15 +18,16 @@ export function PasswordField({
   return (
     <div>
       <Flex align="center" justify="space-between" className="mb-1.5">
-        <label htmlFor={id} className="font-medium">
+        <label htmlFor={id} className="text-small font-semibold text-slate-800">
           Password
         </label>
-        <Link to="/forgot-password" className="text-caption font-medium">
+        <Link to="/forgot-password" className="text-caption font-semibold">
           Forgot password?
         </Link>
       </Flex>
       <Input.Password
         id={id}
+        size="large"
         required
         value={value}
         onChange={(e) => onChange(e.target.value)}

@@ -35,7 +35,7 @@ export function RegisterPage() {
       // Registration issues no tokens: continue at login, with the email
       // carried across so the sign-in form is already filled in.
       navigate('/login', {
-        state: { registered: 'company', mode: 'company', email },
+        state: { registered: 'company', email },
       });
     } catch (err: unknown) {
       setError(apiErrorMessage(err, 'Registration failed. Please try again.'));

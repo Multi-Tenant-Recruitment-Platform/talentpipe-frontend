@@ -156,7 +156,7 @@ describe('Layout — other sessions', () => {
     await user.click(screen.getByRole('button', { name: 'Log in' }));
 
     const dialog = await screen.findByRole('dialog', { name: 'Welcome back' });
-    expect(within(dialog).getByRole('button', { name: /sign in as company/i })).toBeInTheDocument();
+    expect(within(dialog).getByRole('button', { name: /^sign in$/i })).toBeInTheDocument();
     expect(screen.getByText('profile page')).toBeInTheDocument();
   });
 
