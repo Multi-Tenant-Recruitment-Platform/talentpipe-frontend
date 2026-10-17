@@ -159,7 +159,7 @@ function AccountPanel({
   );
 }
 
-export function AccountMenu({ user }: Readonly<{ user: UserResponse }>) {
+export function AccountMenu({ user, tone = 'light' }: Readonly<{ user: UserResponse; tone?: 'light' | 'dark' }>) {
   const [open, setOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const name = fullNameOf(user);
@@ -187,6 +187,7 @@ export function AccountMenu({ user }: Readonly<{ user: UserResponse }>) {
         lastName={user.lastName}
         name={name}
         role={formatRole(user.role)}
+        tone={tone}
         aria-label={`Account menu for ${name}`}
         aria-expanded={open}
         aria-controls={open ? PANEL_ID : undefined}

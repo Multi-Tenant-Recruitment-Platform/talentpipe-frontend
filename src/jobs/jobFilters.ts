@@ -1,4 +1,5 @@
-import type { EmploymentType, JobSummary, WorkplaceType } from '../api/types';
+import type { EmploymentType, JobSummary, PayPeriod, WorkplaceType } from '../api/types';
+import { currencyCode } from './jobLabels';
 
 /**
  * Search, filters and sorting for the public job board.
@@ -11,6 +12,17 @@ import type { EmploymentType, JobSummary, WorkplaceType } from '../api/types';
 
 export type JobSort = 'relevant' | 'newest';
 
+/** How much experience a job may ask for. A job that names none asks for none. */
+export type ExperienceLevel = 'any' | 'none' | 'upTo2' | 'upTo5' | 'fivePlus';
+
+export const EXPERIENCE_LEVELS: { id: ExperienceLevel; label: string }[] = [
+  { id: 'any', label: 'Any experience' },
+  { id: 'none', label: 'No experience' },
+  { id: 'upTo2', label: 'Up to 2 years' },
+  { id: 'upTo5', label: 'Up to 5 years' },
+  { id: 'fivePlus', label: '5+ years' },
+];
+
 export interface JobFilters {
   /** Words that must all appear in the title, company, department, skills or summary. */
   keyword: string;
@@ -20,6 +32,14 @@ export interface JobFilters {
   workplaceTypes: WorkplaceType[];
   /** Only jobs that state what they pay. */
   salaryOnly: boolean;
+  experience: ExperienceLevel;
+  /** Null means any. */
+  payPeriod: PayPeriod | null;
+  /**
+   * Only jobs whose stated pay overlaps this range. Meaningful only within one
+   * pay period and one currency, which {@link salaryBounds} decides.
+   */
+  salaryRange: [number, number] | null;
   sort: JobSort;
 }
 
@@ -29,6 +49,9 @@ export const NO_FILTERS: JobFilters = {
   employmentTypes: [],
   workplaceTypes: [],
   salaryOnly: false,
+  experience: 'any',
+  payPeriod: null,
+  salaryRange: null,
   sort: 'relevant',
 };
 
@@ -38,7 +61,19 @@ export const hasActiveFilters = (filters: JobFilters) =>
   Boolean(filters.location.trim()) ||
   filters.employmentTypes.length > 0 ||
   filters.workplaceTypes.length > 0 ||
-  filters.salaryOnly;
+  filters.salaryOnly ||
+  filters.experience !== 'any' ||
+  filters.payPeriod !== null ||
+  filters.salaryRange !== null;
+
+/** How many choices are narrowing the list — the number on the Filters badge. Text search is not one of them. */
+export const activeFilterCount = (filters: JobFilters) =>
+  filters.employmentTypes.length +
+  filters.workplaceTypes.length +
+  (filters.salaryOnly ? 1 : 0) +
+  (filters.experience !== 'any' ? 1 : 0) +
+  (filters.payPeriod ? 1 : 0) +
+  (filters.salaryRange ? 1 : 0);
 
 /** Case- and accent-insensitive, so "colombo" finds "Colombo" and "resume" finds "résumé". */
 const fold = (text: string) =>
@@ -49,7 +84,52 @@ const fold = (text: string) =>
 
 const words = (text: string) => fold(text).split(/\s+/).filter(Boolean);
 
-export const hasSalary =(job: JobSummary) => (job.salaryMin ?? null) !== null || (job.salaryMax ?? null) !== null;
+export const hasSalary = (job: JobSummary) => (job.salaryMin ?? null) !== null || (job.salaryMax ?? null) !== null;
+
+function matchesExperience(job: JobSummary, level: ExperienceLevel): boolean {
+  const years = job.minimumExperienceYears ?? 0;
+  switch (level) {
+    case 'none':
+      return years === 0;
+    case 'upTo2':
+      return years <= 2;
+    case 'upTo5':
+      return years <= 5;
+    case 'fivePlus':
+      return years >= 5;
+    default:
+      return true;
+  }
+}
+
+/** The pay a job states, as a range; a one-sided salary is a range of one point. */
+function salarySpan(job: JobSummary): [number, number] | null {
+  const min = job.salaryMin ?? job.salaryMax ?? null;
+  const max = job.salaryMax ?? job.salaryMin ?? null;
+  return min === null || max === null ? null : [min, max];
+}
+
+export type SalaryBounds =
+  | { available: true; min: number; max: number; currency: string }
+  | { available: false; reason: string };
+
+/**
+ * The salary slider's range for one pay period, or why there is none. Pay is
+ * only comparable within one period and one currency, so a range is offered
+ * only when every job with a stated salary in that period shares a currency.
+ */
+export function salaryBounds(jobs: JobSummary[], payPeriod: PayPeriod | null): SalaryBounds {
+  if (!payPeriod) return { available: false, reason: 'Choose a pay period to set a range' };
+  const paid = jobs.filter((job) => job.payPeriod === payPeriod && hasSalary(job));
+  if (paid.length === 0) return { available: false, reason: 'No salaries stated for this pay period' };
+  const currencies = new Set(paid.map((job) => currencyCode(job.currency)));
+  if (currencies.size > 1) return { available: false, reason: 'Salaries are in different currencies' };
+  const spans = paid.map((job) => salarySpan(job) as [number, number]);
+  const min = Math.min(...spans.map(([low]) => low));
+  const max = Math.max(...spans.map(([, high]) => high));
+  if (min === max) return { available: false, reason: 'Every salary here is the same' };
+  return { available: true, min, max, currency: [...currencies][0] };
+}
 
 /** 2 when every word is in the title, 1 when the job matches elsewhere, 0 when it does not match. */
 function keywordRank(job: JobSummary, keywords: string[]): number {
@@ -81,7 +161,15 @@ export function filterJobs(jobs: JobSummary[], filters: JobFilters): JobSummary[
       if (filters.workplaceTypes.length > 0 && !(job.workplaceType && filters.workplaceTypes.includes(job.workplaceType))) {
         return false;
       }
-      return !filters.salaryOnly || hasSalary(job);
+      if (filters.salaryOnly && !hasSalary(job)) return false;
+      if (!matchesExperience(job, filters.experience)) return false;
+      if (filters.payPeriod && job.payPeriod !== filters.payPeriod) return false;
+      if (filters.salaryRange) {
+        const span = salarySpan(job);
+        const [low, high] = filters.salaryRange;
+        if (!span || span[1] < low || span[0] > high) return false;
+      }
+      return true;
     });
 
   if (filters.sort === 'newest') {

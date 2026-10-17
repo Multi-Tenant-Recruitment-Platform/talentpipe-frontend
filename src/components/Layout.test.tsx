@@ -49,7 +49,7 @@ describe('Layout — signed-in candidate', () => {
     expect(trigger()).toHaveTextContent('Jane Perera');
     expect(trigger()).toHaveTextContent('Candidate');
     expect(trigger()).toHaveAttribute('aria-expanded', 'false');
-    expect(screen.getByRole('link', { name: 'Browse jobs' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Find jobs' })).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'My profile' })).not.toBeInTheDocument();
   });
 

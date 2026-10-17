@@ -9,11 +9,20 @@ import { JobCard } from './JobCard';
 
 const SKELETON_COUNT = 6;
 
-/** Shaped like the card it stands in for — a mark, a title, a few lines — so the list does not jump when the jobs land. */
+/** The board's grid. Grid items default to min-width: auto, so `min-w-0` keeps one long title from widening its column. */
+const grid = 'm-0 grid list-none gap-4 p-0 md:grid-cols-2 xl:grid-cols-3 [&>*]:min-w-0';
+
+/** Shaped like the card it stands in for — a tinted panel, then a footer — so the list does not jump when the jobs land. */
 function JobCardSkeleton() {
   return (
-    <div className="tp-job-card">
-      <Skeleton active avatar={{ shape: 'square', size: 40 }} paragraph={{ rows: 3 }} />
+    <div className="rounded-2xl border border-slate-200 bg-surface p-1.5 shadow-sm">
+      <div className="rounded-xl bg-slate-100 p-4">
+        <Skeleton active title={{ width: '70%' }} paragraph={{ rows: 3, width: ['40%', '90%', '60%'] }} />
+      </div>
+      <div className="flex items-center justify-between px-3 pt-3.5 pb-2.5">
+        <Skeleton.Input active size="small" />
+        <Skeleton.Button active shape="round" />
+      </div>
     </div>
   );
 }
@@ -44,7 +53,7 @@ export function JobList({
         <span className="sr-only" role="status">
           Loading job vacancies…
         </span>
-        <div className="tp-job-grid">
+        <div className={grid}>
           {Array.from({ length: SKELETON_COUNT }, (_, i) => (
             <JobCardSkeleton key={i} />
           ))}
@@ -75,7 +84,7 @@ export function JobList({
   }
 
   return (
-    <ul className="tp-job-grid">
+    <ul className={grid}>
       {jobs.map((job) => (
         <li key={job.id}>
           <JobCard job={job} />
