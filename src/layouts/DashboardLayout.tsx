@@ -16,6 +16,7 @@ import {
 import {
   Badge,
   Button,
+  ConfigProvider,
   Divider,
   Drawer,
   Dropdown,
@@ -27,6 +28,7 @@ import {
   Tag,
   Typography,
   type InputRef,
+  type ThemeConfig,
 } from 'antd';
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
@@ -46,6 +48,26 @@ import { activeTenant } from '../tenant/activeTenant';
 import { formatRole } from '../utils/format';
 import { tenantStorage } from '../utils/tenantStorage';
 import type { IconComponent } from '../components/ui/icon';
+import { primary, slate, surface } from '../theme/tokens';
+
+/**
+ * The sidebar's menu on its slate ground. The current page is a filled
+ * brand-blue pill — the same blue as the Search and Get started buttons on the
+ * public site — and the rest are slate-300, which reads at 12:1 on slate-900.
+ */
+const SIDEBAR_MENU_THEME: ThemeConfig = {
+  components: {
+    Menu: {
+      itemBg: 'transparent',
+      itemColor: slate[300],
+      itemHoverColor: surface.base,
+      itemHoverBg: slate[800],
+      itemActiveBg: slate[800],
+      itemSelectedBg: primary[600],
+      itemSelectedColor: surface.base,
+    },
+  },
+};
 
 /** Each entry names the permission that earns it a place in the sidebar. */
 const NAV_ITEMS: {
@@ -193,19 +215,21 @@ function SidebarContent({ onNavigate }: Readonly<{ onNavigate?: () => void }>) {
   const navItems = NAV_ITEMS.filter((item) => allow(item.permission));
 
   return (
-    // Light chrome: the sidebar recedes so the workspace data is the only
-    // thing competing for attention. Brand colour is spent on one mark and
-    // the active nav row, nowhere else.
-    <Flex vertical className="tp-sidebar-inner h-full border-r border-slate-200 bg-surface">
+    // Dark chrome, the slate of the public site's header and hero strip, so
+    // the workspace and the job board read as one product. The content area
+    // stays light: the sidebar frames the work rather than competing with it.
+    // Brand colour is spent on one mark and the active nav row, nowhere else.
+    <Flex vertical className="tp-sidebar-inner h-full border-r border-slate-800 bg-slate-900">
       {/* Brand. Exactly the header's height, so this divider and the top bar's
           bottom border form one continuous line across the fold. */}
       {/* Exactly the header height: this divider and the top bar bottom border form
           one unbroken line across the fold. */}
-      <Flex align="center" gap={10} className="h-16 shrink-0 border-b border-slate-200 px-6">
-        <span className="tp-brand-mark">
-          <FunnelPlotOutlined aria-hidden className="text-[16px]" />
+      <Flex align="center" gap={10} className="h-16 shrink-0 border-b border-slate-800 px-6">
+        {/* The same mark as the public header. */}
+        <span aria-hidden="true" className="tp-brand-mark size-8 font-bold">
+          T
         </span>
-        <Typography.Text strong className="text-lead tracking-heading">
+        <Typography.Text strong className="text-title tracking-heading text-white">
           TalentPipe
         </Typography.Text>
       </Flex>
@@ -214,47 +238,49 @@ function SidebarContent({ onNavigate }: Readonly<{ onNavigate?: () => void }>) {
       <div className="min-h-0 flex-1 overflow-y-auto pt-4">
         {/* Aligned to where the menu icons start: Menu itemMarginInline (8) plus the
             item inline padding (16). Section label and icon share a left edge. */}
-        <Typography.Text
-          type="secondary"
-          className="block px-6 pb-2 text-[11px] font-semibold uppercase tracking-[0.08em]"
-        >
+        {/* slate-400, not 500: 500 falls below 4.5:1 on slate-900. */}
+        <Typography.Text className="block px-6 pb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-400">
           Menu
         </Typography.Text>
-        <Menu
-          mode="inline"
-          selectedKeys={selectedKeyFor(pathname)}
-          items={navItems.map((item) => ({
-            key: item.to,
-            icon: <item.icon aria-hidden className="text-[20px]" />,
-            label: (
-              <Link to={item.to} onClick={onNavigate}>
-                {item.label}
-              </Link>
-            ),
-          }))}
-        />
+        <ConfigProvider theme={SIDEBAR_MENU_THEME}>
+          <Menu
+            mode="inline"
+            selectedKeys={selectedKeyFor(pathname)}
+            items={navItems.map((item) => ({
+              key: item.to,
+              icon: <item.icon aria-hidden className="text-[20px]" />,
+              label: (
+                <Link to={item.to} onClick={onNavigate}>
+                  {item.label}
+                </Link>
+              ),
+            }))}
+          />
+        </ConfigProvider>
       </div>
 
       {/* Pinned to the bottom edge. Rendered through a Menu as well, rather
           than as a hand-styled link, so its icon gap and left padding are
           structurally identical to the rows above instead of two numbers that
           drift apart later. */}
-      <div className="shrink-0 border-t border-slate-200 py-2">
-        <Menu
-          mode="inline"
-          selectable={false}
-          items={[
-            {
-              key: 'back-to-site',
-              icon: <ArrowLeftOutlined aria-hidden className="text-[20px]" />,
-              label: (
-                <Link to="/" onClick={onNavigate}>
-                  Back to site
-                </Link>
-              ),
-            },
-          ]}
-        />
+      <div className="shrink-0 border-t border-slate-800 py-2">
+        <ConfigProvider theme={SIDEBAR_MENU_THEME}>
+          <Menu
+            mode="inline"
+            selectable={false}
+            items={[
+              {
+                key: 'back-to-site',
+                icon: <ArrowLeftOutlined aria-hidden className="text-[20px]" />,
+                label: (
+                  <Link to="/" onClick={onNavigate}>
+                    Back to site
+                  </Link>
+                ),
+              },
+            ]}
+          />
+        </ConfigProvider>
       </div>
     </Flex>
   );
@@ -329,14 +355,14 @@ function DashboardChrome() {
         open={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
         closable={false}
-        styles={{ body: { padding: 0 } }}
+        styles={{ body: { padding: 0 }, section: { background: slate[900] } }}
         rootClassName="lg:hidden"
       >
         <SidebarContent onNavigate={() => setSidebarOpen(false)} />
       </Drawer>
 
       {/* Static sidebar */}
-      <Layout.Sider width={256} theme="light" className="fixed inset-y-0 left-0 z-30 hidden lg:block">
+      <Layout.Sider width={256} theme="light" className="fixed inset-y-0 left-0 z-30 hidden bg-slate-900 lg:block">
         <SidebarContent />
       </Layout.Sider>
 

@@ -146,6 +146,10 @@ export const antdTheme: ThemeConfig = {
     },
     Card: {
       colorBorderSecondary: slate[200],
+      // The same rounder shell as the public job pages' cards, so a dashboard
+      // panel and a job advert section read as one family. The soft shadow
+      // that goes with it is set once for every card in main.tsx.
+      borderRadiusLG: radius.xl,
     },
     Modal: {
       borderRadiusLG: radius.xl,

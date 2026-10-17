@@ -2,17 +2,20 @@ import type { ReactNode } from 'react';
 import { pageContainer } from '../ui/classes';
 
 /**
- * The dark strip the public job pages open with — the board, a job's details
- * and its application form — so the three read as one product.
+ * TalentPipe's signature surface: slate deepening into the brand blue, two
+ * soft glows and a fading dot grid. Absolutely positioned — drop it as the
+ * first child of a `relative isolate overflow-hidden bg-slate-900` element and
+ * it fills that element behind the content.
  *
- * <p>It starts in the header's own slate and deepens into the brand blue, so
- * header and strip read as one surface. The glows and the dot grid are
- * decoration only; text on it is white, slate-300 or slate-400, all of which
+ * <p>Every hero in the product draws from this one component — the job
+ * board's strip, a job's details and application, each dashboard page header
+ * and the candidate's profile — so they are one surface, not five lookalikes.
+ * Decoration only; text on it is white, slate-300 or slate-400, all of which
  * clear 4.5:1 from the slate top to the primary-900 bottom.</p>
  */
-export function HeroBand({ children, className = '' }: Readonly<{ children: ReactNode; className?: string }>) {
+export function HeroBackdrop() {
   return (
-    <div className="relative isolate overflow-hidden bg-slate-900">
+    <>
       <div aria-hidden="true" className="absolute inset-0 -z-10 bg-linear-to-b from-slate-900 via-slate-900 to-primary-900" />
       <div
         aria-hidden="true"
@@ -23,7 +26,22 @@ export function HeroBand({ children, className = '' }: Readonly<{ children: Reac
         className="absolute -top-40 left-1/2 -z-10 h-96 w-[56rem] max-w-[140vw] -translate-x-1/2 rounded-full bg-primary-600/35 blur-3xl"
       />
       <div aria-hidden="true" className="absolute -right-32 -bottom-40 -z-10 size-[28rem] rounded-full bg-primary-500/25 blur-3xl" />
+    </>
+  );
+}
 
+/** The class a {@link HeroBackdrop} host needs: a positioning context that clips the glows. */
+export const heroSurface = 'relative isolate overflow-hidden bg-slate-900';
+
+/**
+ * The full-width strip the public job pages open with — the board, a job's
+ * details and its application form — so the three read as one product. The
+ * header above it is the same slate, so the two read as one surface.
+ */
+export function HeroBand({ children, className = '' }: Readonly<{ children: ReactNode; className?: string }>) {
+  return (
+    <div className={heroSurface}>
+      <HeroBackdrop />
       <div className={`${pageContainer} ${className}`}>{children}</div>
     </div>
   );

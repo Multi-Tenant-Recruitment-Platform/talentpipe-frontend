@@ -1,6 +1,5 @@
 import { useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import type { LoginMode } from '../components/auth/LoginModeTabs';
 
 /**
  * Why the login popup is open, and what it should say and do.
@@ -14,8 +13,6 @@ import type { LoginMode } from '../components/auth/LoginModeTabs';
 export interface LoginIntent {
   /** Set by the registration pages after a successful sign-up. */
   registered?: boolean | 'company' | 'candidate';
-  /** Pre-selects the login tab (e.g. after candidate registration). */
-  mode?: LoginMode;
   /** Prefills the email field (e.g. after candidate registration). */
   email?: string;
   /** Set by the reset-password page after a successful reset. */

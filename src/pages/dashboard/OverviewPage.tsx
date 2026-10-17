@@ -197,14 +197,14 @@ export function OverviewPage() {
       <Row gutter={[20, 20]}>
         {/* Published vacancies, from GET /jobs/counts. No trend delta: the API
             keeps no history to compare against. */}
-        <Col xs={24} sm={12} xl={6}>
+        <Col xs={12} xl={6}>
           <StatCard
             label="Active jobs"
             value={activeJobs === null ? '—' : String(activeJobs)}
             icon={SolutionOutlined}
           />
         </Col>
-        <Col xs={24} sm={12} xl={6}>
+        <Col xs={12} xl={6}>
           <StatCard
             label="Candidates in pipeline"
             value={overviewStats.candidatesInPipeline.toLocaleString()}
@@ -212,7 +212,7 @@ export function OverviewPage() {
             delta={{ value: '+18%', direction: 'up', hint: 'vs last week' }}
           />
         </Col>
-        <Col xs={24} sm={12} xl={6}>
+        <Col xs={12} xl={6}>
           <StatCard
             label="Interviews this week"
             value={String(overviewStats.interviewsThisWeek)}
@@ -222,7 +222,7 @@ export function OverviewPage() {
         </Col>
         {/* The only KPI on this row with a real backend behind it — the rest
             wait on the Job / Candidate / Interview modules. */}
-        <Col xs={24} sm={12} xl={6}>
+        <Col xs={12} xl={6}>
           <StatCard
             label="Pending invites"
             value={teamLoading ? '—' : String(pendingInvites.length)}
@@ -253,7 +253,7 @@ export function OverviewPage() {
             <Flex vertical gap={20}>
               {healthMetrics.map((metric) => (
                 <Flex align="center" gap={16} key={metric.label}>
-                  <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-600">
+                  <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary-50 text-primary-600">
                     <metric.icon aria-hidden className="text-[20px]" />
                   </span>
                   <div className="min-w-0">
@@ -329,7 +329,7 @@ export function OverviewPage() {
                   // Neutral by design: a feed of five hues turns a
                   // chronology into a colour key nobody is given. The icon
                   // already says what kind of event this was.
-                  <span className="flex size-7 items-center justify-center rounded-full bg-slate-100 text-slate-600">
+                  <span className="flex size-7 items-center justify-center rounded-full bg-primary-50 text-primary-600">
                     <ActivityGlyph kind={item.icon} />
                   </span>
                 ),

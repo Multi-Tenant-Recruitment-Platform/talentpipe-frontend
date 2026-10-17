@@ -42,7 +42,7 @@ export function AcceptInvitePage() {
     setSubmitting(true);
     try {
       await api.post('/auth/accept-invite', { token, password });
-      navigate('/login', { state: { mode: 'company', inviteAccepted: true } });
+      navigate('/login', { state: { inviteAccepted: true } });
     } catch (err: unknown) {
       setError(
         apiErrorMessage(err, 'We could not accept this invitation. It may have expired or already been used.'),

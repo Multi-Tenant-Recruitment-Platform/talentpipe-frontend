@@ -51,14 +51,7 @@ export function DetailItem({
 
   return (
     <div className="flex min-w-0 items-start gap-3">
-      <span
-        className="mt-0.5 flex size-8 shrink-0 items-center justify-center"
-        style={{
-          borderRadius: token.borderRadius,
-          background: token.colorFillQuaternary,
-          color: token.colorTextTertiary,
-        }}
-      >
+      <span className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary-50 text-primary-600">
         <Glyph aria-hidden className="text-[16px]" />
       </span>
       <div className="min-w-0">

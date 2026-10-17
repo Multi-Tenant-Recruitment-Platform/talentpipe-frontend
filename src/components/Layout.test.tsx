@@ -103,13 +103,28 @@ describe('Layout — signed-in candidate', () => {
     expect(within(panel()).getByRole('link', { name: 'My profile' })).toHaveAttribute('aria-current', 'page');
   });
 
-  it('logs out from the icon-only button, which still has a name', async () => {
+  it('logs out from the account menu, as in the dashboard, with no separate button in the header', async () => {
     const user = userEvent.setup();
     renderAt('/profile');
+    // Log out lives behind the name only.
+    expect(screen.queryByRole('button', { name: 'Log out' })).not.toBeInTheDocument();
+
+    await user.click(trigger());
     const logout = screen.getByRole('button', { name: 'Log out' });
-    expect(logout).not.toHaveTextContent('Log out');
+    expect(logout).toHaveTextContent('Log out');
+    // Below the person's pages, not among them.
+    expect(within(panel()).queryByRole('button', { name: 'Log out' })).not.toBeInTheDocument();
+
     await user.click(logout);
     expect(await screen.findByText('home page')).toBeInTheDocument();
+  });
+
+  it('shows the role in the menu header, as the dashboard does', async () => {
+    const user = userEvent.setup();
+    renderAt();
+    await user.click(trigger());
+    const header = screen.getByText('jane@example.com').parentElement!;
+    expect(within(header).getByText('Candidate')).toBeInTheDocument();
   });
 });
 
@@ -141,7 +156,7 @@ describe('Layout — other sessions', () => {
     await user.click(screen.getByRole('button', { name: 'Log in' }));
 
     const dialog = await screen.findByRole('dialog', { name: 'Welcome back' });
-    expect(within(dialog).getByRole('button', { name: /sign in as company/i })).toBeInTheDocument();
+    expect(within(dialog).getByRole('button', { name: /^sign in$/i })).toBeInTheDocument();
     expect(screen.getByText('profile page')).toBeInTheDocument();
   });
 

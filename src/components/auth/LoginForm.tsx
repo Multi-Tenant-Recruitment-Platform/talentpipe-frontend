@@ -1,4 +1,5 @@
-import { Divider, Flex, Input, Typography, type InputRef } from 'antd';
+import { ArrowRightOutlined } from '@ant-design/icons';
+import { Flex, Input, Typography, type InputRef } from 'antd';
 import axios from 'axios';
 import { useId, useState, type FormEvent, type Ref } from 'react';
 import { Link } from 'react-router-dom';
@@ -8,29 +9,9 @@ import { useAuth } from '../../auth/AuthContext';
 import type { LoginIntent } from '../../auth/loginIntent';
 import { Alert } from '../ui/Alert';
 import { Button } from '../ui/Button';
-import { AuthField } from './AuthField';
-import { GoogleSignInButton } from './GoogleSignInButton';
 import { LoginErrorAlert } from './LoginErrorAlert';
-import { LoginModeTabs, type LoginMode } from './LoginModeTabs';
 import { LoginNotices } from './LoginNotices';
 import { PasswordField } from './PasswordField';
-
-/**
- * Everything the two personas word differently. A lookup keeps the page free
- * of per-mode branching in the markup.
- */
-const COPY: Record<LoginMode, { subtitle: string; submit: string; registerPath: string }> = {
-  company: {
-    subtitle: 'Sign in to your company workspace.',
-    submit: 'Sign in as company',
-    registerPath: '/register',
-  },
-  candidate: {
-    subtitle: 'Sign in to track your applications.',
-    submit: 'Sign in as candidate',
-    registerPath: '/register-candidate',
-  },
-};
 
 /**
  * What a failed login should say, and whether to offer a resend.
@@ -67,14 +48,19 @@ async function requestVerificationEmail(email: string): Promise<void> {
 }
 
 /**
- * Login (PB-007): the form behind the login popup. It serves both personas;
- * both sign in with email and password alone — the backend finds the company
- * account from those, so no workspace address is asked for.
+ * Login (PB-007): the form behind the login popup — one form for everyone.
+ *
+ * <p>Candidates and company users sign in identically, with email and
+ * password alone: the backend finds which account the credentials belong to
+ * and returns its role, and the popup routes on that. So there is no
+ * "candidate or company?" choice to make first — it would only have relabelled
+ * the same request, and would have made someone stop to classify themselves
+ * before doing the one thing they came to do.</p>
  *
  * <p>The form owns the credentials and the submit; the presentation of each
- * region (notices, persona tabs, password) lives in components/auth so this
- * stays a readable description of the flow. Where to go afterwards is the
- * caller's decision, handed back through `onSuccess`.</p>
+ * region (notices, password) lives in components/auth so this stays a
+ * readable description of the flow. Where to go afterwards is the caller's
+ * decision, handed back through `onSuccess`.</p>
  */
 export function LoginForm({
   intent,
@@ -96,8 +82,6 @@ export function LoginForm({
   const emailId = `${fieldId}-email`;
   const passwordId = `${fieldId}-password`;
 
-  const [mode, setMode] = useState<LoginMode>(intent.mode ?? 'company');
-
   const [email, setEmail] = useState(intent.email ?? '');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -108,22 +92,11 @@ export function LoginForm({
   // because the caller has already proven they know the password.
   const [needsVerification, setNeedsVerification] = useState(false);
 
-  const copy = COPY[mode];
-
-  function clearMessages() {
+  async function handleSubmit(event: FormEvent) {
+    event.preventDefault();
     setError(null);
     setNotice(null);
     setNeedsVerification(false);
-  }
-
-  function switchMode(next: LoginMode) {
-    setMode(next);
-    clearMessages();
-  }
-
-  async function handleSubmit(event: FormEvent) {
-    event.preventDefault();
-    clearMessages();
 
     setSubmitting(true);
     onBusyChange?.(true);
@@ -153,8 +126,8 @@ export function LoginForm({
 
   return (
     <>
-      <Typography.Paragraph type="secondary" className="m-0">
-        {copy.subtitle}
+      <Typography.Paragraph className="m-0 text-center text-slate-600">
+        Sign in to your TalentPipe account.
       </Typography.Paragraph>
 
       <LoginNotices
@@ -164,52 +137,50 @@ export function LoginForm({
         inviteAccepted={intent.inviteAccepted}
       />
 
-      <LoginModeTabs mode={mode} onSelect={switchMode} />
-
-      <form onSubmit={(e) => void handleSubmit(e)}>
+      <form onSubmit={(e) => void handleSubmit(e)} className="mt-6">
         <Flex vertical gap={20}>
           {error && <LoginErrorAlert message={error} onResend={onResend} />}
           {notice && <Alert tone="info">{notice}</Alert>}
 
-          <AuthField id={emailId} label="Email">
+          <div>
+            <label htmlFor={emailId} className="mb-1.5 block text-small font-semibold text-slate-800">
+              Email
+            </label>
             <Input
               ref={emailRef}
               id={emailId}
+              size="large"
               type="email"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               autoComplete="email"
+              placeholder="you@example.com"
             />
-          </AuthField>
+          </div>
 
           <PasswordField id={passwordId} value={password} onChange={setPassword} />
 
-          <Button type="submit" variant="primary" loading={submitting} className="w-full">
-            {submitting ? 'Signing in…' : copy.submit}
+          <Button
+            type="submit"
+            variant="primary"
+            loading={submitting}
+            className="mt-1 h-12 w-full rounded-pill text-lead shadow-primary"
+          >
+            {submitting ? 'Signing in…' : 'Sign in'}
+            {!submitting && <ArrowRightOutlined aria-hidden className="text-[14px]" />}
           </Button>
         </Flex>
       </form>
 
-      <Divider plain className="my-6">
-        {/* The small uppercase label inside a Divider — "or continue with". Not a
-            kicker above a heading: those were removed, because the heading carries its
-            own weight and the sidebar already names the section. */}
-        <Typography.Text className="text-caption font-semibold uppercase tracking-caps" type="secondary">
-          or continue with
-        </Typography.Text>
-      </Divider>
-
-      <GoogleSignInButton
-        onClick={() => {
-          setError(null);
-          setNotice('Google sign-in is coming soon.');
-        }}
-      />
-
-      {/* Registration is persona-specific, mirroring the active login tab. */}
-      <Typography.Paragraph type="secondary" className="mt-6 mb-0 text-center">
-        New to TalentPipe? <Link to={copy.registerPath}>Create an account</Link>
+      {/* Both sign-up pages carry their own job seeker / company switch, so
+          one link serves everyone; it starts on the job seeker form, as most
+          people opening this popup are on the job board. */}
+      <Typography.Paragraph className="mt-6 mb-0 border-t border-slate-100 pt-5 text-center text-slate-600">
+        New to TalentPipe?{' '}
+        <Link to="/register-candidate" className="font-semibold">
+          Create an account
+        </Link>
       </Typography.Paragraph>
     </>
   );

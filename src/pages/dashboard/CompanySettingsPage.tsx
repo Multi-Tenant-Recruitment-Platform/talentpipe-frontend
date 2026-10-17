@@ -85,10 +85,15 @@ export function CompanySettingsPage() {
             <Col xs={24} lg={12}>
               <Card title="Plan & usage" subtitle="Current subscription">
                 <Flex align="center" justify="space-between">
-                  <Typography.Text strong className="inline-flex items-center gap-2">
+                  {/* The gap sits on a plain wrapper: `Typography.Text strong` wraps
+                      its children in one <strong>, which leaves a flex gap on
+                      the Text itself nothing to space. */}
+                  <span className="inline-flex items-center gap-2">
                     <StarOutlined aria-hidden className="text-[16px] text-primary-600" />
-                    {controller.profile ? `${statusLabel(controller.profile.planTier)} plan` : '—'}
-                  </Typography.Text>
+                    <Typography.Text strong>
+                      {controller.profile ? `${statusLabel(controller.profile.planTier)} plan` : '—'}
+                    </Typography.Text>
+                  </span>
                   <Badge>Monthly</Badge>
                 </Flex>
                 <div className="mt-4">

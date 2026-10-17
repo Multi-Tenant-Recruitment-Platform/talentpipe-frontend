@@ -60,7 +60,7 @@ export function PipelinePage() {
       label: 'Top candidate source',
       value: pipelineInsights.topSource.label,
       hint: `${pipelineInsights.topSource.share}% of all applicants`,
-      chip: 'bg-slate-100 text-slate-600',
+      chip: 'bg-primary-50 text-primary-600',
     },
   ];
 
