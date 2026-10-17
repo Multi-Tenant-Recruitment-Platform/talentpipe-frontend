@@ -11,13 +11,14 @@ import { Link } from 'react-router-dom';
  * password input contributes no `textbox` role of its own.</p>
  */
 export function PasswordField({
+  id = 'password',
   value,
   onChange,
-}: Readonly<{ value: string; onChange: (next: string) => void }>) {
+}: Readonly<{ id?: string; value: string; onChange: (next: string) => void }>) {
   return (
     <div>
       <Flex align="center" justify="space-between" className="mb-1.5">
-        <label htmlFor="password" className="font-medium">
+        <label htmlFor={id} className="font-medium">
           Password
         </label>
         <Link to="/forgot-password" className="text-caption font-medium">
@@ -25,7 +26,7 @@ export function PasswordField({
         </Link>
       </Flex>
       <Input.Password
-        id="password"
+        id={id}
         required
         value={value}
         onChange={(e) => onChange(e.target.value)}

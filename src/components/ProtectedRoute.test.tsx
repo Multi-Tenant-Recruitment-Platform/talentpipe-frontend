@@ -9,7 +9,7 @@ const { ProtectedRoute } = await import('./ProtectedRoute');
 function renderGuard(initialEntry = '/dashboard') {
   return render(
     <RouterHarness initialEntry={initialEntry}>
-      <ProtectedRoute requires="dashboard.view" redirectTo="/jobs">
+      <ProtectedRoute requires="dashboard.view" redirectTo="/">
         <p>workspace</p>
       </ProtectedRoute>
     </RouterHarness>,

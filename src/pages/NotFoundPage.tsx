@@ -1,5 +1,5 @@
 import { ArrowLeftOutlined, SearchOutlined } from '@ant-design/icons';
-import { Flex, Result, Typography } from 'antd';
+import { Result, Typography } from 'antd';
 import { Link } from 'react-router-dom';
 
 /**
@@ -27,15 +27,11 @@ export function NotFoundPage() {
         </>
       }
       extra={
-        <Flex wrap justify="center" gap={12}>
-          <Link to="/" className="tp-cta-link">
-            <ArrowLeftOutlined aria-hidden className="text-[16px]" />
-            Back to home
-          </Link>
-          <Link to="/jobs" className="tp-cta-link tp-cta-link-ghost">
-            Browse jobs
-          </Link>
-        </Flex>
+        // Home is the job board, so one way back covers both.
+        <Link to="/" className="tp-cta-link">
+          <ArrowLeftOutlined aria-hidden className="text-[16px]" />
+          Browse jobs
+        </Link>
       }
     />
   );

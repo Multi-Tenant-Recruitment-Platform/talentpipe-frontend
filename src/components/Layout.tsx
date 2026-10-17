@@ -1,23 +1,28 @@
 import { LogoutOutlined } from '@ant-design/icons';
 import { Button as AntButton, Divider, Flex, Grid, Layout as AntLayout, Tooltip, Typography } from 'antd';
 import { Suspense } from 'react';
-import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
+import { useOpenLogin } from '../auth/loginIntent';
 import { can } from '../auth/permissions';
 import { AccountMenu } from './AccountMenu';
+import { LoginModal } from './auth/LoginModal';
 import { PageLoader } from './PageLoader';
 import { Button } from './ui/Button';
 import { pageContainer } from './ui/classes';
 
+/** The job board is the home page; each job's details and application form live under `/jobs/…`. */
+const isJobPage = (pathname: string) => pathname === '/' || pathname.startsWith('/jobs/');
+
 /**
  * Pages that run edge to edge — a full-width band right under the header —
  * and so put their own content on the page container instead of Layout's:
- * the job board, and each job's details and application form under it.
+ * the job pages.
  */
-const isFullBleed = (pathname: string) => pathname === '/jobs' || pathname.startsWith('/jobs/');
+const isFullBleed = isJobPage;
 
 /** A site link: slate on the dark bar, white with an accent underline at the bar's bottom edge when current. */
-const navLinkClass = ({ isActive }: { isActive: boolean }) =>
+const navLinkClass = (isActive: boolean) =>
   `relative flex h-16 items-center px-2 text-body font-medium no-underline transition-colors duration-(--tp-motion-base) after:absolute after:inset-x-2 after:bottom-0 after:h-0.5 after:rounded-pill sm:px-3 sm:after:inset-x-3 ${
     isActive ? 'text-white after:bg-primary-600 hover:text-white' : 'text-slate-300 hover:text-white'
   }`;
@@ -28,18 +33,24 @@ export function Layout() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const screens = Grid.useBreakpoint();
+  const openLogin = useOpenLogin();
 
   async function handleLogout() {
     await logout();
     navigate('/', { replace: true });
   }
 
+  // Each link says when it is current. The board is `/` and its adverts live
+  // under `/jobs/…`, which a router match on `/` cannot express — and a plain
+  // prefix test on `/` would light the link up on every page.
   const links = [
-    { to: '/jobs', label: 'Find jobs' },
+    { to: '/', label: 'Find jobs', current: isJobPage(pathname) },
     // The dashboard is the company workspace; candidates have no tenant, so it
     // isn't shown to them. Asks the permission map rather than naming a role,
     // so this and the route guard can never drift apart.
-    ...(user && can(user.role, 'dashboard.view') ? [{ to: '/dashboard', label: 'Dashboard' }] : []),
+    ...(user && can(user.role, 'dashboard.view')
+      ? [{ to: '/dashboard', label: 'Dashboard', current: pathname.startsWith('/dashboard') }]
+      : []),
   ];
   const fullBleed = isFullBleed(pathname);
 
@@ -69,9 +80,14 @@ export function Layout() {
                 into an unlabelled "more" menu. */}
             <nav aria-label="Main" className="flex min-w-0 items-center">
               {links.map((link) => (
-                <NavLink key={link.to} to={link.to} className={navLinkClass}>
+                <Link
+                  key={link.to}
+                  to={link.to}
+                  aria-current={link.current ? 'page' : undefined}
+                  className={navLinkClass(link.current)}
+                >
                   {link.label}
-                </NavLink>
+                </Link>
               ))}
             </nav>
           </Flex>
@@ -99,11 +115,13 @@ export function Layout() {
               </>
             ) : (
               <>
+                {/* Opens the login popup over this page, so a visitor reading
+                    an advert does not lose their place to sign in. */}
                 <Button
                   variant="ghost"
                   size={screens.sm ? 'md' : 'sm'}
                   className="text-white hover:bg-slate-800 hover:text-white"
-                  onClick={() => navigate('/login')}
+                  onClick={() => openLogin()}
                 >
                   Log in
                 </Button>
@@ -121,6 +139,8 @@ export function Layout() {
           <Outlet />
         </Suspense>
       </AntLayout.Content>
+
+      <LoginModal />
     </AntLayout>
   );
 }

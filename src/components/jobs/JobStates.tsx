@@ -58,7 +58,7 @@ export function JobUnavailable() {
         icon={SolutionOutlined}
         title="This job is not available."
         description="It may have been closed or removed. Browse the other open positions instead."
-        action={<BackLink to="/jobs">All jobs</BackLink>}
+        action={<BackLink to="/">All jobs</BackLink>}
       />
     </Card>
   );

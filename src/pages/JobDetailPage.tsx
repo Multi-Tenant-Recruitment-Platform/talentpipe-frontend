@@ -16,7 +16,7 @@ function Shell({ hero, children }: Readonly<{ hero?: ReactNode; children: ReactN
   return (
     <div>
       <HeroBand className={hero ? 'pt-6 pb-20 lg:pt-8 lg:pb-24' : 'pt-6 pb-16'}>
-        <BackLink to="/jobs" tone="dark">
+        <BackLink to="/" tone="dark">
           All jobs
         </BackLink>
         {hero && <div className="mt-6">{hero}</div>}

@@ -39,7 +39,7 @@ export function ApplicationConfirmation({
 
         <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
           <Link
-            to="/jobs"
+            to="/"
             className="group flex h-11 items-center justify-center gap-2 rounded-pill bg-primary-600 px-6 font-semibold text-white no-underline shadow-primary transition-colors hover:bg-primary-500 hover:text-white"
           >
             Browse more jobs
