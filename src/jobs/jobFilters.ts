@@ -145,47 +145,58 @@ const publishedTime = (job: JobSummary) => {
   return Number.isNaN(time) ? null : time;
 };
 
+/** No choices means any; otherwise the job must have one of them. */
+const oneOf = <T>(choices: T[], value: T | null | undefined) =>
+  choices.length === 0 || (value !== null && value !== undefined && choices.includes(value));
+
+/** No range means any; otherwise the job's stated pay must overlap it. A job that states none cannot. */
+function overlapsRange(job: JobSummary, range: [number, number] | null): boolean {
+  if (!range) return true;
+  const span = salarySpan(job);
+  return span !== null && span[1] >= range[0] && span[0] <= range[1];
+}
+
+/** Every narrowing except the keyword, which ranks the jobs as well as filtering them. */
+function passesFilters(job: JobSummary, filters: JobFilters, place: string): boolean {
+  return (
+    (!place || fold(job.location ?? '').includes(place)) &&
+    oneOf(filters.employmentTypes, job.employmentType) &&
+    oneOf(filters.workplaceTypes, job.workplaceType) &&
+    (!filters.salaryOnly || hasSalary(job)) &&
+    matchesExperience(job, filters.experience) &&
+    (!filters.payPeriod || job.payPeriod === filters.payPeriod) &&
+    overlapsRange(job, filters.salaryRange)
+  );
+}
+
+/** A match, with what the sorts need: its keyword rank and where the API put it. */
+interface Ranked {
+  job: JobSummary;
+  index: number;
+  rank: number;
+}
+
+/** "Newest": latest first. Jobs with no publish date go last rather than pretending to be new or old. */
+function byNewest(a: Ranked, b: Ranked): number {
+  const at = publishedTime(a.job);
+  const bt = publishedTime(b.job);
+  if (at === bt) return a.index - b.index;
+  if (at === null) return 1;
+  if (bt === null) return -1;
+  return bt - at;
+}
+
+/** "Most relevant": title matches first, otherwise the order the API chose. */
+const byRelevance = (a: Ranked, b: Ranked) => b.rank - a.rank || a.index - b.index;
+
 /** The jobs that pass every filter, in the chosen order. Never mutates its input. */
 export function filterJobs(jobs: JobSummary[], filters: JobFilters): JobSummary[] {
   const keywords = words(filters.keyword);
   const place = fold(filters.location.trim());
 
-  const matches = jobs
-    .map((job, index) => ({ job, index, rank: keywordRank(job, keywords) }))
-    .filter(({ job, rank }) => {
-      if (rank === 0) return false;
-      if (place && !fold(job.location ?? '').includes(place)) return false;
-      if (filters.employmentTypes.length > 0 && !(job.employmentType && filters.employmentTypes.includes(job.employmentType))) {
-        return false;
-      }
-      if (filters.workplaceTypes.length > 0 && !(job.workplaceType && filters.workplaceTypes.includes(job.workplaceType))) {
-        return false;
-      }
-      if (filters.salaryOnly && !hasSalary(job)) return false;
-      if (!matchesExperience(job, filters.experience)) return false;
-      if (filters.payPeriod && job.payPeriod !== filters.payPeriod) return false;
-      if (filters.salaryRange) {
-        const span = salarySpan(job);
-        const [low, high] = filters.salaryRange;
-        if (!span || span[1] < low || span[0] > high) return false;
-      }
-      return true;
-    });
-
-  if (filters.sort === 'newest') {
-    // Jobs with no publish date go last rather than pretending to be new or old.
-    matches.sort((a, b) => {
-      const at = publishedTime(a.job);
-      const bt = publishedTime(b.job);
-      if (at === bt) return a.index - b.index;
-      if (at === null) return 1;
-      if (bt === null) return -1;
-      return bt - at;
-    });
-  } else {
-    // "Most relevant": title matches first, otherwise the order the API chose.
-    matches.sort((a, b) => b.rank - a.rank || a.index - b.index);
-  }
-
-  return matches.map(({ job }) => job);
+  return jobs
+    .map((job, index): Ranked => ({ job, index, rank: keywordRank(job, keywords) }))
+    .filter(({ job, rank }) => rank > 0 && passesFilters(job, filters, place))
+    .sort(filters.sort === 'newest' ? byNewest : byRelevance)
+    .map(({ job }) => job);
 }

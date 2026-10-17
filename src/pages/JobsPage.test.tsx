@@ -360,6 +360,18 @@ describe('JobList', () => {
     expect(screen.getByText('No matching jobs found')).toBeInTheDocument();
   });
 
+  it('gives every card a tint, however long its id', () => {
+    // A hash that is not kept in range overflows on a long id and picks no tint.
+    render(
+      <MemoryRouter>
+        <JobList status="ready" jobs={[{ ...MINIMAL_JOB, id: 'f'.repeat(2000) }, { ...MINIMAL_JOB, id: 'job-3' }]} />
+      </MemoryRouter>,
+    );
+    for (const card of screen.getAllByRole('article')) {
+      expect(card.firstElementChild?.className).toMatch(/\bbg-(primary-50|slate-100|primary-100)\b/);
+    }
+  });
+
   it('uses job ids as keys so identical titles still render separately', () => {
     render(
       <MemoryRouter>

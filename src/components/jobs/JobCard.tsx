@@ -13,10 +13,16 @@ import { CompanyMark, PostedAt } from './JobParts';
  */
 const TINTS = ['bg-primary-50', 'bg-slate-100', 'bg-primary-100'] as const;
 
+/**
+ * A polynomial hash of the id, reduced modulo the number of tints at every
+ * step. Modular arithmetic gives the same remainder as hashing in full and
+ * reducing once, but the running value stays below 31 × TINTS.length, so it
+ * can never lose precision or overflow — however long the id.
+ */
 function tintOf(id: string) {
   let hash = 0;
-  for (const char of id) hash = (hash * 31 + char.charCodeAt(0)) | 0;
-  return TINTS[Math.abs(hash) % TINTS.length];
+  for (const char of id) hash = (hash * 31 + char.charCodeAt(0)) % TINTS.length;
+  return TINTS[hash];
 }
 
 const DAY_MS = 24 * 60 * 60 * 1000;
