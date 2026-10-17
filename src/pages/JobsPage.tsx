@@ -2,6 +2,7 @@ import { FilterOutlined, SlidersOutlined } from '@ant-design/icons';
 import { Drawer, Flex, Select } from 'antd';
 import { useMemo, useState } from 'react';
 import type { PublicJobSearch } from '../api/publicJobs';
+import { HeroBand } from '../components/jobs/HeroBand';
 import { JobList } from '../components/jobs/JobList';
 import { JobPromoCard } from '../components/jobs/JobPromoCard';
 import { JobFilterBar, JobSearchBar, QuickFilters } from '../components/jobs/JobSearch';
@@ -92,40 +93,25 @@ export function JobsPage() {
   return (
     <section>
       {/* A compact search strip: no headline, just the bar and its chips, so
-          the first jobs stay above the fold. It starts in the header's own
-          slate and deepens into the brand blue, so header and strip read as
-          one surface. Glows and the dot grid are decoration only. */}
-      <div className="relative isolate overflow-hidden bg-slate-900">
-        <div aria-hidden="true" className="absolute inset-0 -z-10 bg-linear-to-b from-slate-900 via-slate-900 to-primary-900" />
-        <div
-          aria-hidden="true"
-          className="absolute inset-0 -z-10 bg-[radial-gradient(var(--tp-slate-700)_1px,transparent_1px)] bg-size-[22px_22px] opacity-40 [mask-image:radial-gradient(ellipse_70%_60%_at_50%_0%,black,transparent)]"
-        />
-        <div
-          aria-hidden="true"
-          className="absolute -top-40 left-1/2 -z-10 h-96 w-[56rem] max-w-[140vw] -translate-x-1/2 rounded-full bg-primary-600/35 blur-3xl"
-        />
-        <div aria-hidden="true" className="absolute -right-32 -bottom-40 -z-10 size-[28rem] rounded-full bg-primary-500/25 blur-3xl" />
+          the first jobs stay above the fold. */}
+      <HeroBand className="py-6 lg:py-8">
+        {/* The page's one h1, for screen readers and the document outline;
+            the search bar itself says what this page is for. */}
+        <h1 className="sr-only">Find jobs</h1>
 
-        <div className={`${pageContainer} py-6 lg:py-8`}>
-          {/* The page's one h1, for screen readers and the document outline;
-              the search bar itself says what this page is for. */}
-          <h1 className="sr-only">Find jobs</h1>
-
-          <div className="mx-auto max-w-6xl">
-            <JobSearchBar
-              key={searchKey}
-              keyword={search.keyword}
-              location={search.location}
-              onSearch={(keyword, location) => setSearch({ keyword, location })}
-              filters={filters}
-              onChange={setFilters}
-              jobs={jobs}
-            />
-          </div>
-          <QuickFilters filters={filters} onChange={setFilters} className="mt-4 justify-center" />
+        <div className="mx-auto max-w-6xl">
+          <JobSearchBar
+            key={searchKey}
+            keyword={search.keyword}
+            location={search.location}
+            onSearch={(keyword, location) => setSearch({ keyword, location })}
+            filters={filters}
+            onChange={setFilters}
+            jobs={jobs}
+          />
         </div>
-      </div>
+        <QuickFilters filters={filters} onChange={setFilters} className="mt-4 justify-center" />
+      </HeroBand>
 
       <div className={`${pageContainer} py-8 lg:py-10`}>
         <div className={showFilters ? 'grid gap-8 lg:grid-cols-[16rem_minmax(0,1fr)] lg:items-start' : ''}>

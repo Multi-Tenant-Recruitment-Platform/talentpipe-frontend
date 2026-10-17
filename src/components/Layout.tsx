@@ -11,9 +11,10 @@ import { pageContainer } from './ui/classes';
 
 /**
  * Pages that run edge to edge — a full-width band right under the header —
- * and so put their own content on the page container instead of Layout's.
+ * and so put their own content on the page container instead of Layout's:
+ * the job board, and each job's details and application form under it.
  */
-const FULL_BLEED_PATHS = new Set(['/jobs']);
+const isFullBleed = (pathname: string) => pathname === '/jobs' || pathname.startsWith('/jobs/');
 
 /** A site link: slate on the dark bar, white with an accent underline at the bar's bottom edge when current. */
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
@@ -40,7 +41,7 @@ export function Layout() {
     // so this and the route guard can never drift apart.
     ...(user && can(user.role, 'dashboard.view') ? [{ to: '/dashboard', label: 'Dashboard' }] : []),
   ];
-  const fullBleed = FULL_BLEED_PATHS.has(pathname);
+  const fullBleed = isFullBleed(pathname);
 
   return (
     <AntLayout className="min-h-screen">

@@ -1,5 +1,5 @@
-import { CloseOutlined, FileOutlined, UploadOutlined } from '@ant-design/icons';
-import { Checkbox, Input, Typography } from 'antd';
+import { ArrowRightOutlined, CloseOutlined, FileOutlined, UploadOutlined } from '@ant-design/icons';
+import { Checkbox, ConfigProvider, Input, Typography, type ThemeConfig } from 'antd';
 import { useRef, useState, type ChangeEvent, type DragEvent, type FormEvent, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { submitApplication } from '../../api/applications';
@@ -31,10 +31,30 @@ import { jobPath } from '../../jobs/jobPaths';
 import { Alert } from '../ui/Alert';
 import { Button } from '../ui/Button';
 import { FieldError } from '../ui/FieldError';
-import { CompanyMark, JobBadges } from './JobParts';
+import { CompanyMark } from './JobParts';
 import { detailGrid, detailGrid3 } from '../ui/classes';
+import { heroChip } from './HeroBand';
+import { employmentTypeLabel, workplaceTypeLabel } from '../../jobs/jobLabels';
+import { primary, radius, slate, space } from '../../theme/tokens';
 
 const fieldId = (name: ApplicationField) => `application-${name}`;
+
+/**
+ * Roomier, softer fields for a form people fill in once and care about: a
+ * taller control, a larger radius, and a placeholder at slate-500 so example
+ * text stays legible (antd's default fails 4.5:1).
+ */
+const FORM_THEME: ThemeConfig = {
+  components: {
+    Input: {
+      controlHeight: 44,
+      borderRadius: radius.lg,
+      paddingInline: space[1.5] + 2,
+      hoverBorderColor: primary[500],
+      colorTextPlaceholder: slate[500],
+    },
+  },
+};
 
 function RequiredMark() {
   return (
@@ -55,7 +75,7 @@ function Field({
 }: Readonly<{ id: string; label: string; required?: boolean; error?: string; hint?: ReactNode; className?: string; children: ReactNode }>) {
   return (
     <div className={className}>
-      <label htmlFor={id} className="mb-1.5 block font-medium">
+      <label htmlFor={id} className="mb-1.5 block text-small font-semibold text-slate-800">
         {label}
         {required && <RequiredMark />}
       </label>
@@ -113,9 +133,9 @@ function ResumePicker({
     if (dropped && !isDisabled()) choose(dropped);
   };
 
-  let tone = '';
-  if (dragging) tone = ' tp-resume-dragging';
-  else if (invalid) tone = ' tp-resume-invalid';
+  let tone = 'border-primary-200 bg-primary-50/40 hover:border-primary-500 hover:bg-primary-50';
+  if (dragging) tone = 'border-primary-600 bg-primary-50';
+  else if (invalid) tone = 'border-error bg-error-bg/40';
 
   return (
     <div onDragOver={onDragOver} onDragLeave={() => setDragging(false)} onDrop={onDrop}>
@@ -132,11 +152,17 @@ function ResumePicker({
         className="sr-only"
       />
       {file ? (
-        <div className={`tp-resume-file${tone}`}>
-          <FileOutlined aria-hidden className="text-[32px]" />
-          <div className="tp-resume-file-text">
-            <p className="tp-resume-file-name tp-truncate">{file.name}</p>
-            <p className="tp-resume-file-size">{formatFileSize(file.size)}</p>
+        <div
+          className={`flex items-center gap-3 rounded-2xl border bg-surface p-3 pl-4 ${
+            invalid ? 'border-error bg-error-bg/40' : 'border-slate-200'
+          }`}
+        >
+          <span aria-hidden="true" className="grid size-11 flex-none place-items-center rounded-xl bg-primary-50 text-primary-600">
+            <FileOutlined className="text-[20px]" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="m-0 truncate font-semibold text-slate-900">{file.name}</p>
+            <p className="m-0 text-caption text-slate-500">{formatFileSize(file.size)}</p>
           </div>
           <Button variant="ghost" size="sm" onClick={openPicker}>
             Replace
@@ -147,14 +173,76 @@ function ResumePicker({
         </div>
       ) : (
         // Pointer-only shortcut to the input above, which carries the accessible name.
-        <div aria-hidden="true" onClick={openPicker} className={`tp-resume-zone${tone}`}>
-          <UploadOutlined aria-hidden className="text-[32px]" />
-          <p>
-            <strong>Choose a file</strong> or drag it here
+        <div
+          aria-hidden="true"
+          onClick={openPicker}
+          className={`flex cursor-pointer flex-col items-center gap-3 rounded-2xl border-2 border-dashed px-6 py-8 text-center transition-colors duration-(--tp-motion-fast) ${tone}`}
+        >
+          <span className="grid size-12 place-items-center rounded-full bg-surface text-primary-600 shadow-sm">
+            <UploadOutlined className="text-[20px]" />
+          </span>
+          <p className="m-0 text-body text-slate-600">
+            <strong className="font-semibold text-primary-700">Choose a file</strong> or drag it here
           </p>
         </div>
       )}
     </div>
+  );
+}
+
+/** One numbered step of the form: a legend with its number, a note, then the fields. */
+const step = 'm-0 min-w-0 border-0 p-0';
+/**
+ * The rule between steps is its own element: a border on the fieldset itself
+ * would be drawn through its legend, the way browsers render fieldsets.
+ */
+const StepRule = () => <hr aria-hidden="true" className="m-0 h-px border-0 bg-slate-200" />;
+const stepLegend = 'm-0 flex items-center gap-3 p-0 text-title font-bold text-slate-900';
+const stepNote = 'm-0 mt-1.5 mb-5 pl-11 text-small text-slate-500';
+
+function StepNumber({ n }: Readonly<{ n: number }>) {
+  return (
+    <span aria-hidden="true" className="grid size-8 flex-none place-items-center rounded-full bg-primary-600 text-small font-bold text-white">
+      {n}
+    </span>
+  );
+}
+
+/**
+ * The job being applied for, on the dark strip the page opens with. Once the
+ * application is sent the confirmation carries the page's h1, so the title
+ * steps down to a paragraph (`titleAs`).
+ */
+export function ApplyHero({ job, titleAs: Title = 'h1' }: Readonly<{ job: JobSummary; titleAs?: 'h1' | 'p' }>) {
+  const openings = job.openings ?? 0;
+  const chips = [
+    job.employmentType && employmentTypeLabel(job.employmentType),
+    job.workplaceType && workplaceTypeLabel(job.workplaceType),
+    openings >= 2 && `${openings} openings`,
+  ].filter((chip): chip is string => Boolean(chip));
+
+  return (
+    <header className="flex items-start gap-4 sm:gap-5">
+      <span className="flex-none rounded-2xl bg-surface p-1 shadow-lg ring-1 ring-white/10">
+        <CompanyMark name={job.companyName} logoUrl={job.companyLogoUrl} size="lg" />
+      </span>
+      <div className="min-w-0">
+        <p className="m-0 text-caption font-bold tracking-caps text-primary-200 uppercase">Apply for</p>
+        <Title className="m-0 mt-1 text-heading leading-tight font-bold tracking-display text-white [overflow-wrap:anywhere] sm:text-[34px]">
+          {job.title}
+        </Title>
+        <p className="m-0 mt-1 text-lead font-medium text-slate-300">{job.companyName}</p>
+        {chips.length > 0 && (
+          <ul className="m-0 mt-4 flex list-none flex-wrap gap-2 p-0">
+            {chips.map((chip) => (
+              <li key={chip} className={heroChip}>
+                {chip}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </header>
   );
 }
 
@@ -232,29 +320,27 @@ export function ApplicationForm({
   }
 
   return (
-    <article className="tp-job-advert">
-      <div aria-hidden="true" className="tp-job-advert-band" />
-      <header className="tp-job-advert-head tp-job-advert-body tp-apply-head">
-        <CompanyMark name={job.companyName} logoUrl={job.companyLogoUrl} size="lg" />
-        <div className="min-w-0">
-          <p className="tp-apply-eyebrow">Apply for</p>
-          <h1 className="tp-job-advert-title">{job.title}</h1>
-          <p className="tp-job-advert-company">{job.companyName}</p>
-          <JobBadges job={job} className="mt-3" />
-        </div>
-      </header>
+    <ConfigProvider theme={FORM_THEME}>
+      <form
+        noValidate
+        onSubmit={(e) => void handleSubmit(e)}
+        aria-busy={submitting}
+        className="overflow-hidden rounded-2xl border border-slate-200 bg-surface shadow-lg"
+      >
+        <div className="p-6 sm:p-8">
+          {submitError && (
+            <Alert tone="error" className="mb-6">
+              {submitError}
+            </Alert>
+          )}
 
-      <form noValidate onSubmit={(e) => void handleSubmit(e)} className="tp-job-advert-body" aria-busy={submitting}>
-        {submitError && (
-          <Alert tone="error" className="mb-6">
-            {submitError}
-          </Alert>
-        )}
-
-        <fieldset disabled={submitting} className="tp-apply-groups">
-          <fieldset className="tp-apply-group">
-            <legend className="tp-legend">Your details</legend>
-            <p className="tp-apply-note">
+        <fieldset disabled={submitting} className="m-0 flex min-w-0 flex-col gap-8 border-0 p-0">
+          <fieldset className={step}>
+            <legend className={stepLegend}>
+              <StepNumber n={1} />
+              Your details
+            </legend>
+            <p className={stepNote}>
               Fields marked <RequiredMark /> are required.
             </p>
             <div className={detailGrid}>
@@ -273,9 +359,14 @@ export function ApplicationForm({
             </div>
           </fieldset>
 
-          <fieldset className="tp-apply-group">
-            <legend className="tp-legend">Experience</legend>
-            <p className="tp-apply-note">Your CV and where you are in your career today.</p>
+          <StepRule />
+
+          <fieldset className={step}>
+            <legend className={stepLegend}>
+              <StepNumber n={2} />
+              Experience
+            </legend>
+            <p className={stepNote}>Your CV and where you are in your career today.</p>
             <div className={detailGrid3}>
               <Field
                 id="application-resume"
@@ -293,7 +384,7 @@ export function ApplicationForm({
                   onChange={setResume}
                 />
               </Field>
-              <Field id="application-currentTitle" label="Current job title" error={errors.currentTitle} className="tp-apply-span-2">
+              <Field id="application-currentTitle" label="Current job title" error={errors.currentTitle} className="sm:col-span-2">
                 <Input
                   {...field('currentTitle')}
                   maxLength={MAX_TITLE}
@@ -315,9 +406,14 @@ export function ApplicationForm({
             </div>
           </fieldset>
 
-          <fieldset className="tp-apply-group">
-            <legend className="tp-legend">Additional information</legend>
-            <p className="tp-apply-note">Optional, but it helps the hiring team get to know you.</p>
+          <StepRule />
+
+          <fieldset className={step}>
+            <legend className={stepLegend}>
+              <StepNumber n={3} />
+              Additional information
+            </legend>
+            <p className={stepNote}>Optional, but it helps the hiring team get to know you.</p>
             <div className={detailGrid3}>
               <Field
                 id="application-portfolioUrl"
@@ -345,7 +441,7 @@ export function ApplicationForm({
             </div>
           </fieldset>
 
-          <div>
+          <div className="rounded-xl border border-slate-200 bg-canvas p-4">
             <Checkbox
               id={fieldId('consent')}
               name="consent"
@@ -362,16 +458,26 @@ export function ApplicationForm({
             {errors.consent && <FieldError id={`${fieldId('consent')}-error`}>{errors.consent}</FieldError>}
           </div>
         </fieldset>
+        </div>
 
-        <div className="tp-apply-actions">
-          <Link to={jobPath(job)} className="tp-cta-link tp-cta-link-ghost">
+        <div className="flex flex-col-reverse gap-3 border-t border-slate-200 bg-canvas px-6 py-4 sm:flex-row sm:items-center sm:justify-end sm:px-8">
+          <Link
+            to={jobPath(job)}
+            className="flex h-11 items-center justify-center rounded-pill px-5 font-semibold text-slate-700 no-underline transition-colors hover:bg-sunken hover:text-slate-900"
+          >
             Cancel
           </Link>
-          <Button type="submit" variant="primary" disabled={submitting}>
+          <Button
+            type="submit"
+            variant="primary"
+            disabled={submitting}
+            className="h-11 rounded-pill px-6 shadow-primary"
+          >
             {submitting ? 'Submitting…' : 'Submit Application'}
+            {!submitting && <ArrowRightOutlined aria-hidden className="text-[14px]" />}
           </Button>
         </div>
       </form>
-    </article>
+    </ConfigProvider>
   );
 }
