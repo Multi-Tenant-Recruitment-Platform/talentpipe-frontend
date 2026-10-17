@@ -1,5 +1,4 @@
-import { LogoutOutlined } from '@ant-design/icons';
-import { Button as AntButton, Divider, Flex, Grid, Layout as AntLayout, Tooltip, Typography } from 'antd';
+import { Flex, Grid, Layout as AntLayout, Typography } from 'antd';
 import { Suspense } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
@@ -29,16 +28,11 @@ const navLinkClass = (isActive: boolean) =>
 
 /** Shared page chrome: top navigation + content outlet. */
 export function Layout() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const screens = Grid.useBreakpoint();
   const openLogin = useOpenLogin();
-
-  async function handleLogout() {
-    await logout();
-    navigate('/', { replace: true });
-  }
 
   // Each link says when it is current. The board is `/` and its adverts live
   // under `/jobs/…`, which a router match on `/` cannot express — and a plain
@@ -94,25 +88,9 @@ export function Layout() {
 
           <Flex align="center" gap={screens.sm ? 8 : 4} className="flex-none">
             {user ? (
-              <>
-                {/* The person's own pages live behind their name, not in the
-                    site navigation beside Find jobs. */}
-                <AccountMenu user={user} tone="dark" />
-                <Divider orientation="vertical" className="mx-1 h-6 border-slate-700" />
-                {/* Icon-only by design, so the tooltip and the accessible name
-                    both carry the word; it turns red on hover because it ends
-                    the session — the one destructive control in the header. */}
-                <Tooltip title="Log out" placement="bottomRight">
-                  <AntButton
-                    type="text"
-                    shape="circle"
-                    aria-label="Log out"
-                    className="border border-slate-700 text-slate-300 hover:border-error-bg hover:bg-error-bg hover:text-error-text"
-                    icon={<LogoutOutlined aria-hidden className="text-[16px]" />}
-                    onClick={() => void handleLogout()}
-                  />
-                </Tooltip>
-              </>
+              // The person's own pages — and Log out — live behind their name,
+              // as in the dashboard, not in the site navigation beside Find jobs.
+              <AccountMenu user={user} tone="dark" />
             ) : (
               <>
                 {/* Opens the login popup over this page, so a visitor reading

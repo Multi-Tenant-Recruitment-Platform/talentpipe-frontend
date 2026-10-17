@@ -1,11 +1,13 @@
-import { AppstoreOutlined, SettingOutlined, SolutionOutlined, UserOutlined } from '@ant-design/icons';
+import { AppstoreOutlined, LogoutOutlined, SettingOutlined, SolutionOutlined, UserOutlined } from '@ant-design/icons';
 import { Dropdown } from 'antd';
 import { useEffect, useRef, useState, type FocusEvent, type KeyboardEvent, type RefObject } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import type { UserResponse } from '../api/types';
+import { useAuth } from '../auth/AuthContext';
 import { can, type Permission } from '../auth/permissions';
 import { formatRole } from '../utils/format';
 import { Avatar } from './dashboard/Avatar';
+import { RoleBadge } from './dashboard/RoleBadge';
 import { ProfileTrigger } from './ProfileTrigger';
 import { popoverShell } from './ui/classes';
 import type { IconComponent } from './ui/icon';
@@ -15,14 +17,15 @@ import type { IconComponent } from './ui/icon';
  * one trigger, opening a panel of the pages that belong to them.
  *
  * <p>The same trigger and popover as the dashboard's account block, so the
- * two headers read as one product. It differs in two deliberate ways: Log out
- * is not in here — it sits beside the trigger as its own control — and the
- * panel is a list of links, not antd's `Menu`, because these items navigate,
- * and a link is what a screen reader should announce for that.</p>
+ * two headers read as one product: name, email and role, the person's pages,
+ * then Log out last, set apart and red because it ends the session. The pages
+ * are a list of links, not antd's `Menu`, because they navigate and a link is
+ * what a screen reader should announce for that; Log out is an action, so it
+ * is a button.</p>
  *
  * <p>Keyboard: opening moves focus into the panel, the arrow keys step through
- * the items, Escape closes and hands focus back to the trigger, and tabbing
- * out of the panel closes it.</p>
+ * the items (Log out included), Escape closes and hands focus back to the
+ * trigger, and tabbing out of the panel closes it.</p>
  */
 
 interface AccountItem {
@@ -59,10 +62,19 @@ function AccountPanel({
   onClose: (restoreFocus: boolean) => void;
 }>) {
   const { pathname } = useLocation();
+  const { logout } = useAuth();
+  const navigate = useNavigate();
   const panelRef = useRef<HTMLDivElement>(null);
   const items = ITEMS.filter((item) => can(user.role, item.permission));
 
-  const links = () => Array.from(panelRef.current?.querySelectorAll<HTMLAnchorElement>('a[href]') ?? []);
+  // Everything the arrow keys step through: the page links, then Log out.
+  const links = () => Array.from(panelRef.current?.querySelectorAll<HTMLElement>('a[href], button') ?? []);
+
+  async function handleLogout() {
+    onClose(false);
+    await logout();
+    navigate('/', { replace: true });
+  }
 
   useEffect(() => {
     // After the popup has painted, or the focus lands on nothing.
@@ -81,7 +93,7 @@ function AccountPanel({
     }
     event.preventDefault();
     const all = links();
-    const at = all.indexOf(document.activeElement as HTMLAnchorElement);
+    const at = all.indexOf(document.activeElement as HTMLElement);
     const step = event.key === 'ArrowDown' ? 1 : -1;
     all[(at + step + all.length) % all.length]?.focus();
   }
@@ -111,6 +123,9 @@ function AccountPanel({
         <div className="min-w-0">
           <p className="m-0 truncate font-semibold text-slate-900">{fullNameOf(user)}</p>
           <p className="m-0 truncate text-caption text-slate-500">{user.email}</p>
+          <div className="mt-1.5">
+            <RoleBadge role={user.role} />
+          </div>
         </div>
       </div>
 
@@ -155,6 +170,22 @@ function AccountPanel({
           })}
         </ul>
       </nav>
+
+      {/* Ending the session is destructive enough to be labelled and to turn
+          red under the cursor, set apart below the pages — as in the
+          dashboard's account menu. */}
+      <div className="border-t border-slate-100 p-1.5">
+        <button
+          type="button"
+          onClick={() => void handleLogout()}
+          className="tp-account-item w-full cursor-pointer border-0 bg-transparent text-left text-error-text hover:bg-error-bg focus-visible:bg-error-bg focus-visible:outline-offset-[-2px]"
+        >
+          <span className="tp-account-item-icon text-error-text">
+            <LogoutOutlined aria-hidden className="text-[18px]" />
+          </span>
+          <span className="min-w-0 flex-1">Log out</span>
+        </button>
+      </div>
     </div>
   );
 }
