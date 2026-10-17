@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useCan } from '../../auth/useCan';
 import { EmptyState } from '../../components/dashboard/EmptyState';
+import { bannerActions, pageBanner } from '../../components/dashboard/PageHeader';
+import { HeroBackdrop } from '../../components/jobs/HeroBand';
 import { ErrorState, RowsSkeleton } from '../../components/dashboard/ErrorState';
 import { useVacancyLifecycle } from '../../components/jobs/useVacancyLifecycle';
 import { VacancyActions } from '../../components/jobs/VacancyActions';
@@ -151,38 +153,53 @@ export function VacancyDetailPage() {
 
   return (
     <section>
-      {backLink}
-
-      <header className="mb-8 flex flex-wrap items-start justify-between gap-4">
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-3">
-            <Typography.Title level={1} className="m-0 text-heading tracking-heading">
-              {vacancy.title || 'Untitled vacancy'}
-            </Typography.Title>
-            <VacancyStatusTag value={vacancy.status} />
+      {/* The same banner every workspace page opens with, carrying the way
+          back as well, as a job's own page does on the public board. */}
+      <header className={pageBanner}>
+        <HeroBackdrop />
+        <Link
+          to={backTo}
+          className="group mb-5 inline-flex items-center gap-1.5 text-small font-medium text-slate-300 no-underline hover:text-white"
+        >
+          <ArrowLeftOutlined
+            aria-hidden
+            className="text-[14px] transition-transform duration-(--tp-motion-base) group-hover:-translate-x-0.5"
+          />
+          Back to vacancies
+        </Link>
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-3">
+              <Typography.Title level={1} className="m-0 text-heading tracking-heading text-white">
+                {vacancy.title || 'Untitled vacancy'}
+              </Typography.Title>
+              <VacancyStatusTag value={vacancy.status} />
+            </div>
+            {meta.length > 0 && <p className="m-0 mt-1 truncate text-small text-slate-300">{meta.join(' · ')}</p>}
+            {vacancy.applicationDeadline && (
+              <p className="tp-vacancy-detail-deadline m-0 mt-1 text-small tabular-nums text-slate-300">
+                Applications close{' '}
+                <time dateTime={vacancy.applicationDeadline}>{formatDate(vacancy.applicationDeadline)}</time>
+                {signal && (
+                  <span className="tp-deadline-signal" data-tone={signal.tone}>
+                    {signal.label}
+                  </span>
+                )}
+              </p>
+            )}
           </div>
-          {meta.length > 0 && <p className="m-0 mt-0.5 truncate text-small text-slate-500">{meta.join(' · ')}</p>}
-          {vacancy.applicationDeadline && (
-            <p className="tp-vacancy-detail-deadline m-0 mt-1 text-small tabular-nums text-slate-600">
-              Applications close{' '}
-              <time dateTime={vacancy.applicationDeadline}>{formatDate(vacancy.applicationDeadline)}</time>
-              {signal && (
-                <span className="tp-deadline-signal" data-tone={signal.tone}>
-                  {signal.label}
-                </span>
-              )}
-            </p>
+
+          {canManage && (
+            <div className={bannerActions}>
+              <VacancyActions
+                vacancy={vacancy}
+                context="detail"
+                busy={lifecycle.busyId === vacancy.id}
+                onAction={onAction}
+              />
+            </div>
           )}
         </div>
-
-        {canManage && (
-          <VacancyActions
-            vacancy={vacancy}
-            context="detail"
-            busy={lifecycle.busyId === vacancy.id}
-            onAction={onAction}
-          />
-        )}
       </header>
 
       {notice && (

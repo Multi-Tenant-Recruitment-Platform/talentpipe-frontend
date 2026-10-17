@@ -31,7 +31,7 @@ export function Card({
     title || subtitle ? (
       <div className="min-w-0 py-1">
         {title && (
-          <Typography.Title level={2} className="m-0 text-lead">
+          <Typography.Title level={2} className="m-0 text-title tracking-heading">
             {title}
           </Typography.Title>
         )}

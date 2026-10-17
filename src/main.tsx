@@ -18,7 +18,9 @@ import { antdTheme } from './theme/antdTheme';
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <StyleProvider layer>
-      <ConfigProvider theme={antdTheme}>
+      {/* Every card carries the same soft shadow as the job pages' cards — set
+          here once rather than on each of the ~40 cards across the app. */}
+      <ConfigProvider theme={antdTheme} card={{ className: 'shadow-sm' }}>
         <AntApp>
           <BrowserRouter>
             <App />

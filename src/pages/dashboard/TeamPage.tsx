@@ -221,20 +221,20 @@ export function TeamPage() {
       )}
 
       <Row gutter={[20, 20]}>
-        <Col xs={24} sm={12} xl={6}>
+        <Col xs={12} xl={6}>
           <StatCard label="Workspace access" value={kpi(activeCount)} icon={TeamOutlined} />
         </Col>
-        <Col xs={24} sm={12} xl={6}>
+        <Col xs={12} xl={6}>
           <StatCard label="HR Managers" value={kpi(hrCount)} icon={SolutionOutlined} />
         </Col>
-        <Col xs={24} sm={12} xl={6}>
+        <Col xs={12} xl={6}>
           <StatCard
             label="Interviewers"
             value={kpi(interviewerCount)}
             icon={IdcardOutlined}
           />
         </Col>
-        <Col xs={24} sm={12} xl={6}>
+        <Col xs={12} xl={6}>
           <StatCard label="Pending invites" value={kpi(pendingCount)} icon={MailOutlined} />
         </Col>
       </Row>

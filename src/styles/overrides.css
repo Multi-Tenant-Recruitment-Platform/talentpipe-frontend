@@ -299,9 +299,21 @@
   font-weight: var(--tp-weight-medium);
 }
 
+/* On the detail page's dark banner the signal becomes a pill on its own tint:
+   slate-500 and warning-text are legible only on a light ground, and each tint
+   pairing below is the one tokens.test.ts checks. */
 .tp-vacancy-detail-deadline .tp-deadline-signal {
-  display: inline;
+  display: inline-block;
   margin-inline-start: var(--tp-space-1);
+  padding: 1px var(--tp-space-1);
+  border-radius: var(--tp-radius-pill);
+  background: var(--tp-slate-800);
+  color: var(--tp-slate-200);
+}
+
+.tp-vacancy-detail-deadline .tp-deadline-signal[data-tone='warning'] {
+  background: var(--tp-warning-bg);
+  color: var(--tp-warning-text);
 }
 
 .tp-vacancy-summary .tp-link-button {
@@ -1006,13 +1018,16 @@
 /* --- My profile: hero ---------------------------------------------------- */
 /* The jobs hero's panel, so the candidate's two pages read as one product. */
 .tp-profile-hero {
+  /* A host for HeroBackdrop: the same slate-to-blue surface, glows and dot
+     grid as the job pages and the dashboard's page headers. */
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
   display: grid;
   gap: var(--tp-space-3);
   padding: var(--tp-space-3);
   border-radius: var(--tp-radius-2xl);
-  background:
-    radial-gradient(circle at 92% 0%, rgb(255 255 255 / 14%), transparent 42%),
-    linear-gradient(135deg, var(--tp-primary-700), var(--tp-primary-900));
+  background: var(--tp-slate-900);
   color: var(--tp-surface);
   box-shadow: var(--tp-shadow-lg);
 }

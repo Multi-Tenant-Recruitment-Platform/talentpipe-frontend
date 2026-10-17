@@ -10,6 +10,7 @@ import { useRef, type ChangeEvent } from 'react';
 import { MAX_PHOTO_BYTES, PROFILE_FOCUS_IDS } from '../../candidate/candidateProfile';
 import { formatBytes, IMAGE_ACCEPT_ATTRIBUTE } from '../../dashboard/companyImages';
 import { Button } from '../ui/Button';
+import { HeroBackdrop } from '../jobs/HeroBand';
 
 const PHOTO_HINT_ID = 'candidate-photo-hint';
 
@@ -80,6 +81,7 @@ export function CandidateProfileHero({
 
   return (
     <section className="tp-profile-hero" aria-labelledby="profile-heading">
+      <HeroBackdrop />
       <div className="tp-profile-hero-main">
         <div className="tp-profile-avatar">
           {photoUrl ? (
