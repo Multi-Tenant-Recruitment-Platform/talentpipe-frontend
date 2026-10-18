@@ -7,6 +7,7 @@ import { useAuth } from '../../auth/AuthContext';
 import { readLoginIntent } from '../../auth/loginIntent';
 import { homeRouteFor } from '../../auth/permissions';
 import { LoginForm } from './LoginForm';
+import { BrandLogo } from '../BrandLogo';
 
 /**
  * The login popup, rendered once by the public layout.
@@ -97,9 +98,8 @@ export function LoginModal() {
       afterOpenChange={(opened) => opened && emailRef.current?.focus()}
       title={
         <>
-          <div aria-hidden="true" className="mb-4 flex items-center justify-center gap-2">
-            <span className="tp-brand-mark size-8 font-bold">T</span>
-            <span className="text-title font-semibold text-slate-900">TalentPipe</span>
+          <div aria-hidden="true" className="mb-4 flex justify-center">
+            <BrandLogo tone="light" markClassName="h-9 w-auto" />
           </div>
           <Typography.Title level={2} className="m-0 text-heading tracking-heading text-slate-900">
             Welcome back

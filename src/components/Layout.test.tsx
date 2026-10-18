@@ -172,4 +172,17 @@ describe('Layout — other sessions', () => {
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
     expect(screen.getByText('home page')).toBeInTheDocument();
   });
+
+  it('opens registration as a popup on the job seeker / company choice', async () => {
+    setAuth({ user: null });
+    const user = userEvent.setup();
+    renderAt('/profile');
+
+    await user.click(screen.getByRole('button', { name: 'Get started' }));
+
+    const dialog = await screen.findByRole('dialog', { name: 'Create your account' });
+    expect(within(dialog).getByRole('button', { name: /looking for a job/i })).toBeInTheDocument();
+    expect(within(dialog).getByRole('button', { name: /i'm hiring/i })).toBeInTheDocument();
+    expect(screen.getByText('profile page')).toBeInTheDocument();
+  });
 });

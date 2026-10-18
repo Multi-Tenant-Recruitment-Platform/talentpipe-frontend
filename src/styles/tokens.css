@@ -30,6 +30,10 @@
   --tp-primary-900: #16307f;
   --tp-primary-950: #0d1f52;
 
+  /* --- Logo (see logo in tokens.ts) — reserved for BrandMark ----------- */
+  --tp-logo-cyan: #00f0f0;
+  --tp-logo-violet: #7c3aed;
+
   /* --- Data ramp (see dataSequence in tokens.ts) ------------------------- */
   --tp-data-1: #a8bdfd;
   --tp-data-2: #6f8ffa;

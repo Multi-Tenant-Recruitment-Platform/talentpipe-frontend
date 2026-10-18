@@ -1,14 +1,17 @@
-import { Flex, Grid, Layout as AntLayout, Typography } from 'antd';
+import { Flex, Grid, Layout as AntLayout } from 'antd';
 import { Suspense } from 'react';
-import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { Link, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { useOpenLogin } from '../auth/loginIntent';
+import { useOpenRegister } from '../auth/registerIntent';
 import { can } from '../auth/permissions';
 import { AccountMenu } from './AccountMenu';
 import { LoginModal } from './auth/LoginModal';
+import { RegisterModal } from './auth/RegisterModal';
 import { PageLoader } from './PageLoader';
 import { Button } from './ui/Button';
 import { pageContainer } from './ui/classes';
+import { BrandLogo } from './BrandLogo';
 
 /** The job board is the home page; each job's details and application form live under `/jobs/…`. */
 const isJobPage = (pathname: string) => pathname === '/' || pathname.startsWith('/jobs/');
@@ -29,10 +32,10 @@ const navLinkClass = (isActive: boolean) =>
 /** Shared page chrome: top navigation + content outlet. */
 export function Layout() {
   const { user } = useAuth();
-  const navigate = useNavigate();
   const { pathname } = useLocation();
   const screens = Grid.useBreakpoint();
   const openLogin = useOpenLogin();
+  const openRegister = useOpenRegister();
 
   // Each link says when it is current. The board is `/` and its adverts live
   // under `/jobs/…`, which a router match on `/` cannot express — and a plain
@@ -57,17 +60,10 @@ export function Layout() {
       >
         <Flex align="center" justify="space-between" gap={16} className={pageContainer}>
           <Flex align="center" gap={screens.md ? 32 : 8} className="min-w-0">
-            <Link to="/" aria-label="TalentPipe home" className="flex flex-none items-center gap-2 no-underline">
-              <span aria-hidden="true" className="tp-brand-mark size-8 font-bold">
-                T
-              </span>
+            <Link to="/" aria-label="TalentPipe home" className="flex flex-none items-center no-underline">
               {/* On a phone the mark alone carries the brand, so the actions
                   beside it keep their full labels instead of overflowing. */}
-              {screens.sm && (
-                <Typography.Text strong className="whitespace-nowrap text-title text-white">
-                  TalentPipe
-                </Typography.Text>
-              )}
+              <BrandLogo tone="dark" showName={Boolean(screens.sm)} />
             </Link>
 
             {/* Two short links fit at every width, so there is nothing to fold
@@ -103,7 +99,7 @@ export function Layout() {
                 >
                   Log in
                 </Button>
-                <Button variant="primary" size={screens.sm ? 'md' : 'sm'} onClick={() => navigate('/register')}>
+                <Button variant="primary" size={screens.sm ? 'md' : 'sm'} onClick={() => openRegister('choose')}>
                   Get started
                 </Button>
               </>
@@ -119,6 +115,7 @@ export function Layout() {
       </AntLayout.Content>
 
       <LoginModal />
+      <RegisterModal />
     </AntLayout>
   );
 }

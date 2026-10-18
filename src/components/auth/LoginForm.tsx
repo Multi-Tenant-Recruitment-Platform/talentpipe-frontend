@@ -2,7 +2,7 @@ import { ArrowRightOutlined } from '@ant-design/icons';
 import { Flex, Input, Typography, type InputRef } from 'antd';
 import axios from 'axios';
 import { useId, useState, type FormEvent, type Ref } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { api, apiErrorMessage } from '../../api/client';
 import type { UserResponse } from '../../api/types';
 import { useAuth } from '../../auth/AuthContext';
@@ -76,6 +76,8 @@ export function LoginForm({
   onSuccess: (user: UserResponse) => void;
 }>) {
   const { login, sessionEndReason } = useAuth();
+  const { pathname, search, hash } = useLocation();
+  const here = { pathname, search, hash };
   // Generated, not fixed: the popup can open over the registration page, which
   // has its own `email` and `password` fields.
   const fieldId = useId();
@@ -173,12 +175,11 @@ export function LoginForm({
         </Flex>
       </form>
 
-      {/* Both sign-up pages carry their own job seeker / company switch, so
-          one link serves everyone; it starts on the job seeker form, as most
-          people opening this popup are on the job board. */}
+      {/* Swaps this popup for the registration one, over the same page. It
+          opens on the job seeker / company choice, so one link serves everyone. */}
       <Typography.Paragraph className="mt-6 mb-0 border-t border-slate-100 pt-5 text-center text-slate-600">
         New to TalentPipe?{' '}
-        <Link to="/register-candidate" className="font-semibold">
+        <Link to={here} replace state={{ register: { step: 'choose' } }} className="font-semibold">
           Create an account
         </Link>
       </Typography.Paragraph>
