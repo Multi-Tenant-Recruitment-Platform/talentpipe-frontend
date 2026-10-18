@@ -80,6 +80,22 @@ export const dataSequence = ['#a8bdfd', '#6f8ffa', '#3b6bf6', '#2348d6', '#16307
 /** Hairline on any filled data mark, so a pale segment still has an edge. */
 export const dataMarkRing = 'inset 0 0 0 1px rgb(15 23 42 / 12%)';
 
+/* --- Logo --------------------------------------------------------------- */
+
+/**
+ * The logo's own two colours: the mark runs from cyan at its foot to violet at
+ * its top right, as in the supplied artwork.
+ *
+ * <p>Reserved for the TalentPipe logo (`BrandMark`) and nothing else — never
+ * for text, buttons, panels or data. They sit outside the interface palette on
+ * purpose: a brand mark is identity, not a state, and keeping its hues off
+ * every other surface is what lets it stand out wherever it appears.</p>
+ */
+export const logo = {
+  cyan: '#00f0f0',
+  violet: '#7c3aed',
+} as const;
+
 /* --- Status ------------------------------------------------------------- */
 
 /**

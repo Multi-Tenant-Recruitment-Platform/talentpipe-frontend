@@ -49,6 +49,7 @@ import { formatRole } from '../utils/format';
 import { tenantStorage } from '../utils/tenantStorage';
 import type { IconComponent } from '../components/ui/icon';
 import { primary, slate, surface } from '../theme/tokens';
+import { BrandLogo } from '../components/BrandLogo';
 
 /**
  * The sidebar's menu on its slate ground. The current page is a filled
@@ -225,13 +226,8 @@ function SidebarContent({ onNavigate }: Readonly<{ onNavigate?: () => void }>) {
       {/* Exactly the header height: this divider and the top bar bottom border form
           one unbroken line across the fold. */}
       <Flex align="center" gap={10} className="h-16 shrink-0 border-b border-slate-800 px-6">
-        {/* The same mark as the public header. */}
-        <span aria-hidden="true" className="tp-brand-mark size-8 font-bold">
-          T
-        </span>
-        <Typography.Text strong className="text-title tracking-heading text-white">
-          TalentPipe
-        </Typography.Text>
+        {/* The same logo as the public header. */}
+        <BrandLogo tone="dark" />
       </Flex>
 
       {/* Primary navigation — only what this role may actually open. */}

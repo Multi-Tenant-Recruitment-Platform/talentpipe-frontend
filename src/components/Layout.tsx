@@ -1,4 +1,4 @@
-import { Flex, Grid, Layout as AntLayout, Typography } from 'antd';
+import { Flex, Grid, Layout as AntLayout } from 'antd';
 import { Suspense } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
@@ -9,6 +9,7 @@ import { LoginModal } from './auth/LoginModal';
 import { PageLoader } from './PageLoader';
 import { Button } from './ui/Button';
 import { pageContainer } from './ui/classes';
+import { BrandLogo } from './BrandLogo';
 
 /** The job board is the home page; each job's details and application form live under `/jobs/…`. */
 const isJobPage = (pathname: string) => pathname === '/' || pathname.startsWith('/jobs/');
@@ -57,17 +58,10 @@ export function Layout() {
       >
         <Flex align="center" justify="space-between" gap={16} className={pageContainer}>
           <Flex align="center" gap={screens.md ? 32 : 8} className="min-w-0">
-            <Link to="/" aria-label="TalentPipe home" className="flex flex-none items-center gap-2 no-underline">
-              <span aria-hidden="true" className="tp-brand-mark size-8 font-bold">
-                T
-              </span>
+            <Link to="/" aria-label="TalentPipe home" className="flex flex-none items-center no-underline">
               {/* On a phone the mark alone carries the brand, so the actions
                   beside it keep their full labels instead of overflowing. */}
-              {screens.sm && (
-                <Typography.Text strong className="whitespace-nowrap text-title text-white">
-                  TalentPipe
-                </Typography.Text>
-              )}
+              <BrandLogo tone="dark" showName={Boolean(screens.sm)} />
             </Link>
 
             {/* Two short links fit at every width, so there is nothing to fold

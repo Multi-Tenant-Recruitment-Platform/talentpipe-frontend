@@ -2,6 +2,7 @@ import { AppstoreOutlined, BarChartOutlined, StarFilled, StarOutlined, TeamOutli
 import { Flex, Typography } from 'antd';
 import type { ReactNode } from 'react';
 import interviewImage from '../assets/interview.jpg';
+import { BrandLogo } from './BrandLogo';
 
 interface Feature {
   title: string;
@@ -69,14 +70,7 @@ export function AuthBrandPanel() {
       {/* space-between pins the wordmark to the top and the copy to the
           bottom, the way the reference layout reads. */}
       <Flex vertical justify="space-between" className="relative flex-1 p-10 xl:p-12">
-        <Flex align="center" gap={10}>
-          <span className="flex size-9 items-center justify-center rounded-lg border border-white/25 bg-white/15 font-bold text-white backdrop-blur-xs">
-            T
-          </span>
-          <Typography.Text strong className="text-title text-white">
-            TalentPipe
-          </Typography.Text>
-        </Flex>
+        <BrandLogo tone="dark" markClassName="h-9 w-auto" />
 
         <div className="mt-10">
           <span className="inline-flex items-center gap-1.5 rounded-pill border border-white/25 bg-white/10 px-3 py-1 text-caption font-semibold uppercase tracking-caps text-primary-50 backdrop-blur-xs">

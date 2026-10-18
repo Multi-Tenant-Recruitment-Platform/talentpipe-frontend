@@ -14,6 +14,7 @@ import {
   fontWeight,
   layout,
   letterSpacing,
+  logo,
   lineHeight,
   motion,
   primary,
@@ -60,6 +61,10 @@ describe('tokens.css mirrors tokens.ts', () => {
 
   it.each(Object.entries(primary))('primary-%s', (step, hex) => {
     expect(cssVar(`--tp-primary-${step}`)).toBe(hex);
+  });
+
+  it.each(Object.entries(logo))('logo-%s', (name, hex) => {
+    expect(cssVar(`--tp-logo-${name}`)).toBe(hex);
   });
 
   it('status colours', () => {
