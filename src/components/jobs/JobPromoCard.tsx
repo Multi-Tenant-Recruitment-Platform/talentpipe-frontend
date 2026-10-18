@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthContext';
 import { can } from '../../auth/permissions';
 
@@ -35,7 +35,13 @@ function ArcPattern() {
 /** The dark card above the filters: one door, chosen for whoever is looking. */
 export function JobPromoCard({ className = '' }: Readonly<{ className?: string }>) {
   const { user } = useAuth();
+  const { pathname, search, hash } = useLocation();
   const promo = promoFor(user?.role);
+  // Signed out, the door is sign-up: open the job seeker form in place rather
+  // than leaving the board — whoever is reading this is looking for work.
+  const linkProps = user
+    ? { to: promo.to }
+    : { to: { pathname, search, hash }, replace: true, state: { register: { step: 'candidate' } } };
 
   return (
     <section
@@ -47,7 +53,7 @@ export function JobPromoCard({ className = '' }: Readonly<{ className?: string }
         {promo.title}
       </h2>
       <Link
-        to={promo.to}
+        {...linkProps}
         className="relative rounded-pill bg-primary-100 px-4 py-2 text-center text-small font-semibold text-primary-700 no-underline transition-colors duration-(--tp-motion-base) hover:bg-primary-200 hover:text-primary-900"
       >
         {promo.cta}

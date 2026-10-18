@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { AuthProvider } from './auth/AuthContext';
 import { LoginRedirect } from './components/auth/LoginRedirect';
+import { RegisterRedirect } from './components/auth/RegisterRedirect';
 import { Layout } from './components/Layout';
 import { PageLoader } from './components/PageLoader';
 import { ProtectedRoute } from './components/ProtectedRoute';
@@ -23,9 +24,7 @@ const DashboardLayout = lazy(() => import('./layouts/DashboardLayout').then((m) 
 const AcceptInvitePage = lazy(() => import('./pages/AcceptInvitePage').then((m) => ({ default: m.AcceptInvitePage })));
 const ApplyPage = lazy(() => import('./pages/ApplyPage').then((m) => ({ default: m.ApplyPage })));
 const CandidateProfilePage = lazy(() => import('./pages/CandidateProfilePage').then((m) => ({ default: m.CandidateProfilePage })));
-const CandidateRegisterPage = lazy(() => import('./pages/CandidateRegisterPage').then((m) => ({ default: m.CandidateRegisterPage })));
 const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage').then((m) => ({ default: m.ForgotPasswordPage })));
-const RegisterPage = lazy(() => import('./pages/RegisterPage').then((m) => ({ default: m.RegisterPage })));
 const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage').then((m) => ({ default: m.ResetPasswordPage })));
 const VerifyEmailPage = lazy(() => import('./pages/VerifyEmailPage').then((m) => ({ default: m.VerifyEmailPage })));
 const CompanyProfilePage = lazy(() => import('./pages/dashboard/CompanyProfilePage').then((m) => ({ default: m.CompanyProfilePage })));
@@ -49,8 +48,9 @@ export default function App() {
           <Route path="/jobs" element={<JobsRedirect />} />
           <Route path="/jobs/:jobKey" element={<JobDetailPage />} />
           <Route path="/jobs/:jobKey/apply" element={<ApplyPage />} />
-          <Route path="/register" element={<RegisterPage />} />
-          <Route path="/register-candidate" element={<CandidateRegisterPage />} />
+          {/* Registration is a popup too; these open it at the matching form. */}
+          <Route path="/register" element={<RegisterRedirect step="company" />} />
+          <Route path="/register-candidate" element={<RegisterRedirect step="candidate" />} />
           {/* Login is a popup now; this opens it over the job board. */}
           <Route path="/login" element={<LoginRedirect />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />

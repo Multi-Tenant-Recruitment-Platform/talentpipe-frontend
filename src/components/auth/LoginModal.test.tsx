@@ -191,7 +191,7 @@ describe('what the popup says', () => {
     expect(within(dialog).queryByRole('tablist')).not.toBeInTheDocument();
     expect(within(dialog).queryByRole('button', { name: /google/i })).not.toBeInTheDocument();
     expect(within(dialog).getByRole('button', { name: /^sign in$/i })).toBeInTheDocument();
-    expect(within(dialog).getByRole('link', { name: 'Create an account' })).toHaveAttribute('href', '/register-candidate');
+    expect(within(dialog).getByRole('link', { name: 'Create an account' })).toHaveAttribute('href', '/');
   });
 
   it('forgets why the last session ended once the popup is closed', async () => {

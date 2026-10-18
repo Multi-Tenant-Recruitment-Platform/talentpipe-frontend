@@ -1,11 +1,13 @@
 import { Flex, Grid, Layout as AntLayout } from 'antd';
 import { Suspense } from 'react';
-import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { Link, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { useOpenLogin } from '../auth/loginIntent';
+import { useOpenRegister } from '../auth/registerIntent';
 import { can } from '../auth/permissions';
 import { AccountMenu } from './AccountMenu';
 import { LoginModal } from './auth/LoginModal';
+import { RegisterModal } from './auth/RegisterModal';
 import { PageLoader } from './PageLoader';
 import { Button } from './ui/Button';
 import { pageContainer } from './ui/classes';
@@ -30,10 +32,10 @@ const navLinkClass = (isActive: boolean) =>
 /** Shared page chrome: top navigation + content outlet. */
 export function Layout() {
   const { user } = useAuth();
-  const navigate = useNavigate();
   const { pathname } = useLocation();
   const screens = Grid.useBreakpoint();
   const openLogin = useOpenLogin();
+  const openRegister = useOpenRegister();
 
   // Each link says when it is current. The board is `/` and its adverts live
   // under `/jobs/…`, which a router match on `/` cannot express — and a plain
@@ -97,7 +99,7 @@ export function Layout() {
                 >
                   Log in
                 </Button>
-                <Button variant="primary" size={screens.sm ? 'md' : 'sm'} onClick={() => navigate('/register')}>
+                <Button variant="primary" size={screens.sm ? 'md' : 'sm'} onClick={() => openRegister('choose')}>
                   Get started
                 </Button>
               </>
@@ -113,6 +115,7 @@ export function Layout() {
       </AntLayout.Content>
 
       <LoginModal />
+      <RegisterModal />
     </AntLayout>
   );
 }
