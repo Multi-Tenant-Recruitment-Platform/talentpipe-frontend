@@ -61,7 +61,7 @@ export function LoginModal() {
 
   function handleSuccess(signedIn: UserResponse) {
     signedInHere.current = true;
-    const home = homeRouteFor(signedIn.role);
+    const home = homeRouteFor(signedIn);
     if (intent?.from) {
       // Back to the protected page that sent them here.
       navigate(intent.from, { replace: true });

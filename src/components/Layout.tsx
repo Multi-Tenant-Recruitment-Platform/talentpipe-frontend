@@ -45,7 +45,7 @@ export function Layout() {
     // The dashboard is the company workspace; candidates have no tenant, so it
     // isn't shown to them. Asks the permission map rather than naming a role,
     // so this and the route guard can never drift apart.
-    ...(user && can(user.role, 'dashboard.view')
+    ...(user && can(user, 'dashboard.view')
       ? [{ to: '/dashboard', label: 'Dashboard', current: pathname.startsWith('/dashboard') }]
       : []),
   ];

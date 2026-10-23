@@ -161,7 +161,7 @@ export function TeamRosterTable({
                   fact is never missing and never announced twice. */}
               <span className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 lg:hidden">
                 <span className="md:hidden">
-                  <RoleBadge role={row.role} />
+                  <RoleBadge role={row.role} roleName={row.roleLabel} />
                 </span>
                 <Typography.Text type="secondary" className="text-caption">
                   Joined {formatDate(row.createdAt)}
@@ -189,7 +189,7 @@ export function TeamRosterTable({
       className: 'hidden md:table-cell',
       onCell: cellTestId('role-cell'),
       render: (_, row) =>
-        firstLoad ? <Skeleton.Button active size="small" /> : <RoleBadge role={row.role} />,
+        firstLoad ? <Skeleton.Button active size="small" /> : <RoleBadge role={row.role} roleName={row.roleLabel} />,
     },
     {
       key: 'status',

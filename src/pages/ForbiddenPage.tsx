@@ -27,7 +27,7 @@ const REASONS: Partial<Record<Permission, string>> = {
  */
 export function ForbiddenPage({ requires }: Readonly<{ requires?: Permission }>) {
   const { user } = useAuth();
-  const home = homeRouteFor(user?.role);
+  const home = homeRouteFor(user);
 
   return (
     <Result
@@ -60,7 +60,7 @@ export function ForbiddenPage({ requires }: Readonly<{ requires?: Permission }>)
               <Typography.Text type="secondary" className="text-caption">
                 Signed in as
               </Typography.Text>
-              <RoleBadge role={user.role} />
+              <RoleBadge role={user.role} roleName={user.roleName} />
             </Flex>
           )}
           {/* An anchor, not a Button: this navigates, and nesting one in the

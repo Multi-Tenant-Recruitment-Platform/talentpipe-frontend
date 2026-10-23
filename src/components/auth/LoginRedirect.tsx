@@ -20,7 +20,7 @@ export function LoginRedirect() {
     return <PageLoader />;
   }
   if (user) {
-    return <Navigate to={intent.from ?? homeRouteFor(user.role)} replace />;
+    return <Navigate to={intent.from ?? homeRouteFor(user)} replace />;
   }
   return <Navigate to="/" replace state={{ login: intent }} />;
 }

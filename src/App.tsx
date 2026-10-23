@@ -124,10 +124,12 @@ export default function App() {
           {/* The form has its own URL for the same reasons the profile editor
               does: it survives a reload, it can be linked to, and Back leaves
               it rather than unwinding one field at a time. */}
+          {/* Every member may read the vacancies they work on; creating and
+              editing still needs jobs.manage. */}
           <Route
             path="jobs"
             element={
-              <RequirePermission permission="jobs.manage">
+              <RequirePermission permission="jobs.view">
                 <JobVacanciesPage />
               </RequirePermission>
             }
@@ -145,7 +147,7 @@ export default function App() {
           <Route
             path="jobs/:id"
             element={
-              <RequirePermission permission="jobs.manage">
+              <RequirePermission permission="jobs.view">
                 <VacancyDetailPage />
               </RequirePermission>
             }
