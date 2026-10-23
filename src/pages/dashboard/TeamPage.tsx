@@ -1,31 +1,43 @@
 import {
   IdcardOutlined,
   MailOutlined,
+  SafetyCertificateOutlined,
   SearchOutlined,
   SolutionOutlined,
   TeamOutlined,
+  ToolOutlined,
   UserAddOutlined,
 } from '@ant-design/icons';
 import { Col, Divider, Flex, Row, Typography } from 'antd';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { teamApi } from '../../api/team';
+import type { InviteUserRequest, RoleResponse } from '../../api/types';
 import { useAuth } from '../../auth/AuthContext';
 import { useCan } from '../../auth/useCan';
 import { Card } from '../../components/dashboard/Card';
 import { EmptyState } from '../../components/dashboard/EmptyState';
-import { InviteMemberModal, type InviteFormValues } from '../../components/dashboard/InviteMemberModal';
+import {
+  InviteMemberModal,
+  type InviteFormValues,
+  type InviteRoleOption,
+} from '../../components/dashboard/InviteMemberModal';
 import { PageHeader } from '../../components/dashboard/PageHeader';
 import { StatCard } from '../../components/dashboard/StatCard';
 import { TeamRosterTable } from '../../components/dashboard/TeamRosterTable';
+import { TeamSectionNav } from '../../components/dashboard/TeamSectionNav';
 import { TeamToolbar } from '../../components/dashboard/TeamToolbar';
+import { ChangeRoleDialog } from '../../components/roles/ChangeRoleDialog';
+import type { RoleChoice } from '../../components/roles/DeleteRoleDialog';
 import { Alert, type AlertTone } from '../../components/ui/Alert';
 import { Button } from '../../components/ui/Button';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
+import { heldPermissions, isWorkspaceOwner, roleUnavailableReason } from '../../dashboard/roleEditor';
+import { describeRoleError } from '../../dashboard/roleErrors';
 import { describeTeamError, type TeamAction } from '../../dashboard/teamErrors';
 import { useTeamRoster, type RosterRow } from '../../dashboard/teamRoster';
 import { useTeamSummary } from '../../dashboard/TeamSummaryContext';
 import { useResendLog } from '../../dashboard/useResendLog';
-import { formatRole } from '../../utils/format';
+import { usePermissionCatalogue, useWorkspaceRoles } from '../../dashboard/useWorkspaceRoles';
 
 interface PageMessage {
   tone: AlertTone;
@@ -43,6 +55,11 @@ interface PageMessage {
  *
  * <p>`GET /team` supports no query parameters, so all searching, filtering and
  * sorting happens client-side over the full array — see `teamRoster.ts`.</p>
+ *
+ * <p>With company roles (ADR-9) invitations offer the workspace's own roles,
+ * and someone who may manage members can move a person to another role from
+ * their row. On a server older than roles neither is offered and the page
+ * keeps the two fixed roles it always had.</p>
  */
 export function TeamPage() {
   const { user } = useAuth();
@@ -62,6 +79,19 @@ export function TeamPage() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [busyAction, setBusyAction] = useState<'resend' | 'revoke' | null>(null);
   const [pendingRevoke, setPendingRevoke] = useState<RosterRow | null>(null);
+  const [pendingChange, setPendingChange] = useState<RosterRow | null>(null);
+  const [changeBusy, setChangeBusy] = useState(false);
+  const [changeError, setChangeError] = useState<string | null>(null);
+
+  const workspaceRoles = useWorkspaceRoles();
+  const roles = workspaceRoles.roles;
+  const catalogue = usePermissionCatalogue(roles.length > 0);
+  const held = useMemo(() => heldPermissions(user, catalogue.groups), [user, catalogue.groups]);
+  const actorIsOwner = isWorkspaceOwner(user, roles);
+  const choices: RoleChoice[] = useMemo(
+    () => roles.map((role) => ({ role, unavailable: roleUnavailableReason(role, held, actorIsOwner) })),
+    [roles, held, actorIsOwner],
+  );
 
   // `refresh()` flips the shared context back to loading, so without this split
   // every invite and revoke would blink the whole table into skeletons.
@@ -70,6 +100,29 @@ export function TeamPage() {
 
   const canManage = allow('team.invite.manage');
   const canInvite = allow('team.invite');
+  const rolesKnown = roles.length > 0;
+  const canMoveMembers = allow('team.manage') && rolesKnown;
+
+  /** Someone who can do more than you can is not yours to move — the server's rule, shown early. */
+  function canChangeRole(row: RosterRow): boolean {
+    if (!canMoveMembers || row.isSelf) {
+      return false;
+    }
+    const current = choices.find((choice) => choice.role.id === row.roleId);
+    return !current?.unavailable;
+  }
+
+  // Owner is never offered: invitations can't make someone an Owner.
+  const inviteRoles: InviteRoleOption[] = choices
+    .filter(({ role }) => !role.locked)
+    .map(({ role, unavailable }) => ({
+      id: role.id,
+      name: role.name,
+      description: role.description,
+      permissionCount: role.permissions.length,
+      unavailable,
+      suggested: role.systemRole === 'RECRUITER',
+    }));
 
   const activeCount = roster.rows.filter((row) => row.status === 'ACTIVE').length;
   const hrCount = roster.rows.filter((r) => r.status === 'ACTIVE' && r.role === 'HR_MANAGER').length;
@@ -78,6 +131,7 @@ export function TeamPage() {
   ).length;
   const pendingCount = roster.rows.filter((row) => row.status === 'INVITED').length;
   const kpi = (value: number) => (firstLoad ? '—' : String(value));
+  const customCount = roles.filter((role) => role.systemRole === null).length;
 
   /** Routes a failure to the right surface and re-syncs when the screen is stale. */
   async function handleFailure(err: unknown, action: TeamAction) {
@@ -97,20 +151,53 @@ export function TeamPage() {
     setMessage(null);
     setInviteError(null);
     setInviteSubmitting(true);
+    const request: InviteUserRequest = values.roleId
+      ? { firstName: values.firstName, lastName: values.lastName, email: values.email, roleId: values.roleId }
+      : { firstName: values.firstName, lastName: values.lastName, email: values.email, role: values.role };
     try {
-      await teamApi.invite(values);
+      await teamApi.invite(request);
       // Refresh before closing so the new row is already on screen when the
       // dialog disappears — no gap where nothing seems to have happened.
       await refresh();
       setInviteOpen(false);
       setMessage({
         tone: 'success',
-        text: `Invitation sent to ${values.email}. They'll join as ${formatRole(values.role)} once they accept — the link expires in 7 days.`,
+        text: `Invitation sent to ${values.email}. They'll join as ${values.roleLabel} once they accept — the link expires in 7 days.`,
       });
     } catch (err: unknown) {
       await handleFailure(err, 'invite');
     } finally {
       setInviteSubmitting(false);
+    }
+  }
+
+  async function handleChangeRole(row: RosterRow, role: RoleResponse) {
+    setMessage(null);
+    setChangeError(null);
+    setChangeBusy(true);
+    try {
+      await teamApi.changeRole(row.id, role.id);
+      // Both lists change: the member's row, and the two roles' member counts.
+      await Promise.all([refresh(), workspaceRoles.refresh()]);
+      setPendingChange(null);
+      setMessage({
+        tone: 'success',
+        text:
+          row.status === 'INVITED'
+            ? `${row.fullName} will join as ${role.name}.`
+            : `${row.fullName} is now ${role.name}. Their access changed straight away.`,
+      });
+    } catch (err: unknown) {
+      const plan = describeRoleError(err, 'assign');
+      if (plan.notFound || plan.refetch) {
+        setPendingChange(null);
+        setMessage({ tone: plan.tone, text: plan.message });
+        await Promise.all([refresh(), workspaceRoles.refresh()]);
+      } else {
+        setChangeError(plan.message);
+      }
+    } finally {
+      setChangeBusy(false);
     }
   }
 
@@ -201,6 +288,8 @@ export function TeamPage() {
         {inviteButton}
       </PageHeader>
 
+      <TeamSectionNav counts={{ members: firstLoad ? undefined : roster.rows.length, roles: roles.length || undefined }} />
+
       {/* Load and action failures keep separate slots: a rejected invite must
           not blank a roster that loaded perfectly well. */}
       {loadError && (
@@ -224,16 +313,27 @@ export function TeamPage() {
         <Col xs={12} xl={6}>
           <StatCard label="Workspace access" value={kpi(activeCount)} icon={TeamOutlined} />
         </Col>
-        <Col xs={12} xl={6}>
-          <StatCard label="HR Managers" value={kpi(hrCount)} icon={SolutionOutlined} />
-        </Col>
-        <Col xs={12} xl={6}>
-          <StatCard
-            label="Interviewers"
-            value={kpi(interviewerCount)}
-            icon={IdcardOutlined}
-          />
-        </Col>
+        {/* With company roles a count per fixed role says little — a custom
+            role holds people too — so the tiles count the roles instead. */}
+        {rolesKnown ? (
+          <>
+            <Col xs={12} xl={6}>
+              <StatCard label="Roles" value={String(roles.length)} icon={SafetyCertificateOutlined} />
+            </Col>
+            <Col xs={12} xl={6}>
+              <StatCard label="Custom roles" value={String(customCount)} icon={ToolOutlined} />
+            </Col>
+          </>
+        ) : (
+          <>
+            <Col xs={12} xl={6}>
+              <StatCard label="HR Managers" value={kpi(hrCount)} icon={SolutionOutlined} />
+            </Col>
+            <Col xs={12} xl={6}>
+              <StatCard label="Interviewers" value={kpi(interviewerCount)} icon={IdcardOutlined} />
+            </Col>
+          </>
+        )}
         <Col xs={12} xl={6}>
           <StatCard label="Pending invites" value={kpi(pendingCount)} icon={MailOutlined} />
         </Col>
@@ -281,6 +381,11 @@ export function TeamPage() {
             resentAt={resentAt}
             onResend={(row) => void handleResend(row)}
             onRevoke={setPendingRevoke}
+            canChangeRole={canChangeRole}
+            onChangeRole={(row) => {
+              setChangeError(null);
+              setPendingChange(row);
+            }}
             firstLoad={firstLoad}
             refreshing={refreshing}
             empty={empty}
@@ -292,7 +397,11 @@ export function TeamPage() {
               <EmptyState
                 icon={TeamOutlined}
                 title="You're the only person here"
-                description="Invite an HR manager or an interviewer to start sharing the hiring work."
+                description={
+                  rolesKnown
+                    ? 'Invite a teammate with one of your roles to start sharing the hiring work.'
+                    : 'Invite an HR manager or an interviewer to start sharing the hiring work.'
+                }
                 action={inviteButton}
               />
             </>
@@ -304,6 +413,7 @@ export function TeamPage() {
       {canInvite && inviteOpen && (
         <InviteMemberModal
           open
+          roles={inviteRoles}
           onClose={() => {
             setInviteOpen(false);
             setInviteError(null);
@@ -315,6 +425,16 @@ export function TeamPage() {
           focusField={inviteError?.focus ?? null}
         />
       )}
+
+      <ChangeRoleDialog
+        member={pendingChange}
+        choices={choices}
+        catalogue={catalogue.groups}
+        busy={changeBusy}
+        error={changeError}
+        onConfirm={(row, role) => void handleChangeRole(row, role)}
+        onCancel={() => setPendingChange(null)}
+      />
 
       <ConfirmDialog
         open={pendingRevoke !== null}

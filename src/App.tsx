@@ -47,6 +47,11 @@ const PipelineTemplatesPage = lazy(() =>
 );
 const PipelinePage = lazy(() => import('./pages/dashboard/PipelinePage').then((m) => ({ default: m.PipelinePage })));
 const TeamPage = lazy(() => import('./pages/dashboard/TeamPage').then((m) => ({ default: m.TeamPage })));
+const RolesPage = lazy(() => import('./pages/dashboard/RolesPage').then((m) => ({ default: m.RolesPage })));
+const RoleEditorPage = lazy(() => import('./pages/dashboard/RoleEditorPage').then((m) => ({ default: m.RoleEditorPage })));
+const RoleActivityPage = lazy(() =>
+  import('./pages/dashboard/RoleActivityPage').then((m) => ({ default: m.RoleActivityPage })),
+);
 const VacancyDetailPage = lazy(() => import('./pages/dashboard/VacancyDetailPage').then((m) => ({ default: m.VacancyDetailPage })));
 
 export default function App() {
@@ -110,6 +115,41 @@ export default function App() {
             element={
               <RequirePermission permission="team.view">
                 <TeamPage />
+              </RequirePermission>
+            }
+          />
+          {/* Roles (ADR-9): anyone who sees the team may read them; changing
+              them, and the log of changes, needs roles.manage. `new` is
+              static, so it outranks `:id`. */}
+          <Route
+            path="team/roles"
+            element={
+              <RequirePermission permission="roles.view">
+                <RolesPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="team/roles/new"
+            element={
+              <RequirePermission permission="roles.manage">
+                <RoleEditorPage mode="create" />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="team/roles/:id"
+            element={
+              <RequirePermission permission="roles.view">
+                <RoleEditorPage key="edit" mode="edit" />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="team/activity"
+            element={
+              <RequirePermission permission="roles.manage">
+                <RoleActivityPage />
               </RequirePermission>
             }
           />

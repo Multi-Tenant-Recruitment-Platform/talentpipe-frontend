@@ -9,17 +9,17 @@ import {
 } from 'react';
 import { apiErrorMessage } from '../api/client';
 import { teamApi } from '../api/team';
-import type { UserResponse } from '../api/types';
+import type { TeamMemberResponse } from '../api/types';
 import { useAuth } from '../auth/AuthContext';
 import { useCan } from '../auth/useCan';
 
 interface TeamSummary {
   /** Everyone in the workspace, including the signed-in admin. */
-  members: UserResponse[];
+  members: TeamMemberResponse[];
   /** Members who have accepted and can sign in. */
-  activeMembers: UserResponse[];
+  activeMembers: TeamMemberResponse[];
   /** Invitations that have not been accepted yet. */
-  pendingInvites: UserResponse[];
+  pendingInvites: TeamMemberResponse[];
   /** Seats consumed = active people + outstanding invitations holding a seat. */
   seatsUsed: number;
   loading: boolean;
@@ -28,7 +28,7 @@ interface TeamSummary {
   refresh: () => Promise<void>;
 }
 
-const EMPTY: UserResponse[] = [];
+const EMPTY: TeamMemberResponse[] = [];
 
 const TeamSummaryContext = createContext<TeamSummary | null>(null);
 
@@ -38,7 +38,7 @@ const TeamSummaryContext = createContext<TeamSummary | null>(null);
  * page's tables. Before this, the sidebar and the team page each issued their
  * own request for the same list on every navigation.
  *
- * <p>The endpoint is COMPANY_ADMIN-only on the backend, so the fetch is gated
+ * <p>The endpoint needs `team.view` on the backend, so the fetch is gated
  * on the same permission the route guard uses. For any other role this stays
  * empty and non-loading rather than firing a request that can only 403.</p>
  */
@@ -47,7 +47,7 @@ export function TeamSummaryProvider({ children }: Readonly<{ children: ReactNode
   const { user } = useAuth();
   const canRead = allow('team.view');
 
-  const [members, setMembers] = useState<UserResponse[]>(EMPTY);
+  const [members, setMembers] = useState<TeamMemberResponse[]>(EMPTY);
   const [loading, setLoading] = useState(canRead);
   const [error, setError] = useState<string | null>(null);
 

@@ -3,6 +3,7 @@ import {
   ArrowUpOutlined,
   DeleteOutlined,
   SendOutlined,
+  SwapOutlined,
 } from '@ant-design/icons';
 import { Flex, Skeleton, Table, Typography } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
@@ -79,6 +80,8 @@ export function TeamRosterTable({
   resentAt,
   onResend,
   onRevoke,
+  canChangeRole = () => false,
+  onChangeRole,
   firstLoad,
   refreshing,
   empty,
@@ -92,6 +95,9 @@ export function TeamRosterTable({
   resentAt: (userId: string) => string | null;
   onResend: (row: RosterRow) => void;
   onRevoke: (row: RosterRow) => void;
+  /** Whether this row's role may be changed from here; nothing offers it by default. */
+  canChangeRole?: (row: RosterRow) => boolean;
+  onChangeRole?: (row: RosterRow) => void;
   firstLoad: boolean;
   refreshing: boolean;
   empty: ReactNode;
@@ -221,10 +227,12 @@ export function TeamRosterTable({
         }
         const busy = busyId === row.id;
         const resendLabel = resentAt(row.id) ? 'Resend again' : 'Resend';
-        if (!canManage || (!row.canResend && !row.canRevoke)) {
-          // Deliberately not a disabled button: there is no API to change a
-          // role or remove an active member, so offering one would promise
-          // something the product cannot do.
+        const invitation = canManage && (row.canResend || row.canRevoke);
+        const changeRole = Boolean(onChangeRole) && canChangeRole(row);
+        if (!invitation && !changeRole) {
+          // Deliberately not a disabled button: removing an active member has
+          // no API yet, and a role change is offered only where it can happen,
+          // so a greyed-out control would promise something that cannot.
           return (
             <span aria-hidden="true" className="opacity-35">
               —
@@ -233,7 +241,19 @@ export function TeamRosterTable({
         }
         return (
           <Flex align="center" justify="flex-end" gap={8}>
-            {row.canResend && (
+            {changeRole && (
+              <Button
+                size="sm"
+                variant="ghost"
+                disabled={busy}
+                onClick={() => onChangeRole?.(row)}
+                icon={<SwapOutlined aria-hidden className="text-[14px]" />}
+                aria-label={`Change role for ${row.fullName}`}
+              >
+                Change role
+              </Button>
+            )}
+            {invitation && row.canResend && (
               <Button
                 size="sm"
                 variant="secondary"
@@ -244,7 +264,7 @@ export function TeamRosterTable({
                 {busy && busyAction === 'resend' ? 'Resending…' : resendLabel}
               </Button>
             )}
-            {row.canRevoke && (
+            {invitation && row.canRevoke && (
               <Button
                 size="sm"
                 variant="danger"
