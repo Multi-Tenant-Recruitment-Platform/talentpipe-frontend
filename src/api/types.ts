@@ -507,3 +507,71 @@ export interface ApiError {
   message: string;
   path: string;
 }
+
+/* --- Pipeline templates --------------------------------------------------- *
+ * Mirrors of the backend DTOs in `com.talentpipe.pipeline.dto`
+ * (PipelineTemplateRequest / PipelineTemplateResponse /
+ * PipelineTemplateSummaryResponse / PipelineStageRequest / PipelineStageResponse).
+ * Responses carry no tenantId: the backend scopes every query by the token.
+ */
+
+/**
+ * One stage kind in a hiring pipeline. Post application is always first and
+ * onboard always last; screening and the interview rounds sit between them.
+ */
+export type PipelineStageType = 'POST_APPLICATION' | 'SCREENING' | 'INTERVIEW' | 'ONBOARD';
+
+/** Archived templates are kept, because jobs created from them point back at them. */
+export type PipelineTemplateStatus = 'ACTIVE' | 'ARCHIVED';
+
+export interface PipelineStage {
+  id: string;
+  /** 0-based and consecutive — the backend rejects any other numbering. Computed from screen order, never typed. */
+  position: number;
+  stageType: PipelineStageType;
+  name: string;
+  /** The interviewer score a candidate must reach, 0–100. Required on interview rounds; must be null elsewhere. */
+  benchmark: number | null;
+}
+
+/** Fields the list and the full template share. */
+interface PipelineTemplateBase {
+  id: string;
+  name: string;
+  /** The backend stores a missing description as an empty string. */
+  description: string | null;
+  /** AI scores at or above this move on automatically. */
+  defaultAutoThreshold: number;
+  /** AI scores from here up to the auto threshold wait for a person. Lower scores are rejected. */
+  defaultManualThreshold: number;
+  /** Whether jobs using this template may add an ideal-candidate scorecard. */
+  idealMatchingEnabled: boolean;
+  status: PipelineTemplateStatus;
+  stageCount: number;
+  interviewRoundCount: number;
+  createdAt: string;
+  updatedAt: string;
+  /** Set when the template is archived; null while active. */
+  archivedAt: string | null;
+}
+
+/** A template with its stages in position order — `GET /pipeline-templates/{id}`. */
+export interface PipelineTemplate extends PipelineTemplateBase {
+  stages: PipelineStage[];
+}
+
+/** One row of `GET /pipeline-templates` (paged). No stages — the counts describe its shape. */
+export type PipelineTemplateSummary = PipelineTemplateBase;
+
+/** One stage of a create or update request. */
+export type PipelineStageRequest = Omit<PipelineStage, 'id'>;
+
+/** Body of `POST /pipeline-templates` and `PUT /pipeline-templates/{id}`. */
+export interface PipelineTemplateRequest {
+  name: string;
+  description: string | null;
+  defaultAutoThreshold: number;
+  defaultManualThreshold: number;
+  idealMatchingEnabled: boolean;
+  stages: PipelineStageRequest[];
+}

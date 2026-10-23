@@ -116,7 +116,15 @@ describe('the choice', () => {
     const user = userEvent.setup();
     const dialog = await openChooser(user);
 
-    within(dialog).getByRole('button', { name: /looking for a job/i }).focus();
+    // The modal moves focus to its heading once the open animation ends
+    // (afterOpenChange). Focusing the choice before that lost the race on a
+    // slow machine: focus jumped to the heading and Enter did nothing.
+    await waitFor(() =>
+      expect(within(dialog).getByRole('heading', { name: 'Create your account' })).toHaveFocus(),
+    );
+    const choice = within(dialog).getByRole('button', { name: /looking for a job/i });
+    choice.focus();
+    expect(choice).toHaveFocus();
     await user.keyboard('{Enter}');
 
     expect(await screen.findByRole('dialog', { name: 'Create your candidate account' })).toBeInTheDocument();

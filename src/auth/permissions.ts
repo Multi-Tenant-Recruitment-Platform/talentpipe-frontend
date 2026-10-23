@@ -26,6 +26,8 @@ export const PERMISSIONS = [
   'billing.view', // plan & seat usage
   'jobs.browse',
   'jobs.manage', // open a role: create and publish vacancies (PB-011)
+  'templates.view', // GET /pipeline-templates — read the reusable hiring pipelines
+  'templates.manage', // create, edit and archive pipeline templates
   'applications.viewOwn',
   'profile.manageOwn', // a candidate's own My profile page
 ] as const;
@@ -52,6 +54,8 @@ const ROLE_PERMISSIONS: Record<Role, ReadonlySet<Permission>> = {
     'team.invite.manage',
     'pipeline.manage',
     'jobs.manage',
+    'templates.view',
+    'templates.manage',
     'settings.view',
     'settings.edit',
     'billing.view',
@@ -65,7 +69,16 @@ const ROLE_PERMISSIONS: Record<Role, ReadonlySet<Permission>> = {
   // jobs.manage sits alongside pipeline.manage rather than with the admin-only
   // cells above. An INTERVIEWER stays out: they read the pipeline, they do not
   // decide what the company hires for.
-  HR_MANAGER: new Set([...COMPANY_BASE, 'pipeline.manage', 'jobs.manage', 'settings.view']),
+  // Pipeline templates are the admin's to shape; the HR manager, as the one who
+  // opens roles, only needs to read them to pick one for a job. The backend
+  // grants GET to "company admin, job creator" and nothing more.
+  HR_MANAGER: new Set([
+    ...COMPANY_BASE,
+    'pipeline.manage',
+    'jobs.manage',
+    'templates.view',
+    'settings.view',
+  ]),
   INTERVIEWER: new Set(COMPANY_BASE),
   CANDIDATE: new Set(['jobs.browse', 'applications.viewOwn', 'profile.manageOwn']),
 };

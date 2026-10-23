@@ -1,6 +1,7 @@
 import { WarningOutlined } from '@ant-design/icons';
 import { Flex, Typography } from 'antd';
 import { useEffect, useRef, type ReactNode } from 'react';
+import { Alert } from './Alert';
 import { Button } from './Button';
 import { useFocusTrap } from './useFocusTrap';
 
@@ -30,6 +31,7 @@ export function ConfirmDialog({
   cancelLabel = 'Cancel',
   tone = 'danger',
   busy = false,
+  error = null,
   fallbackFocusId = 'team-search',
   onConfirm,
   onCancel,
@@ -40,8 +42,14 @@ export function ConfirmDialog({
   confirmLabel: string;
   busyLabel?: string;
   cancelLabel?: string;
-  tone?: 'danger' | 'primary';
+  /**
+   * `warning` is for a consequential step that is not destructive — archiving
+   * something that stays on record — where red would overstate it.
+   */
+  tone?: 'danger' | 'primary' | 'warning';
   busy?: boolean;
+  /** Why the last attempt failed. Shown inside the dialog, which stays open for another try. */
+  error?: string | null;
   /**
    * Where focus goes on close when the control that opened the dialog is gone
    * — a revoked invitation's row, a menu item that unmounted. Defaults to the
@@ -78,7 +86,12 @@ export function ConfirmDialog({
     return null;
   }
 
-  const chip = tone === 'danger' ? 'bg-error-bg text-error-text' : 'bg-primary-50 text-primary-700';
+  const CHIP = {
+    danger: 'bg-error-bg text-error-text',
+    primary: 'bg-primary-50 text-primary-700',
+    warning: 'bg-warning-bg text-warning-text',
+  } as const;
+  const chip = CHIP[tone];
 
   return (
     // --- ConfirmDialog ---
@@ -114,6 +127,11 @@ export function ConfirmDialog({
             <div id="confirm-dialog-description" className="mt-1.5 leading-[1.6]">
               <Typography.Text type="secondary">{description}</Typography.Text>
             </div>
+            {error && (
+              <Alert tone="error" className="mt-3">
+                {error}
+              </Alert>
+            )}
           </div>
         </Flex>
 

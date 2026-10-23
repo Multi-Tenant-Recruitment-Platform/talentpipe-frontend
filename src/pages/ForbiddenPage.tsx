@@ -16,6 +16,8 @@ const REASONS: Partial<Record<Permission, string>> = {
   'settings.edit': 'Only a Company Admin can change company settings.',
   'billing.view': 'Plan and billing are visible to Company Admins only.',
   'pipeline.manage': 'Moving candidates between stages is limited to admins and HR managers.',
+  'templates.view': 'Pipeline templates are visible to Company Admins and HR managers.',
+  'templates.manage': 'Only a Company Admin can create or change pipeline templates.',
 };
 
 /**

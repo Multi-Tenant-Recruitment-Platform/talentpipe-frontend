@@ -7,6 +7,7 @@ import {
   FunnelPlotOutlined,
   LogoutOutlined,
   MenuOutlined,
+  NodeIndexOutlined,
   SearchOutlined,
   SettingOutlined,
   SolutionOutlined,
@@ -82,6 +83,13 @@ const NAV_ITEMS: {
   // Vacancies sit above Pipeline because that is the order the work happens
   // in: a role is opened, then its candidates move through it.
   { to: '/dashboard/jobs', label: 'Job Vacancies', icon: SolutionOutlined, permission: 'jobs.manage' },
+  // Templates sit beside vacancies: a job is opened from one.
+  {
+    to: '/dashboard/pipeline-templates',
+    label: 'Pipeline Templates',
+    icon: NodeIndexOutlined,
+    permission: 'templates.view',
+  },
   { to: '/dashboard/pipeline', label: 'Pipeline', icon: FunnelPlotOutlined, permission: 'pipeline.view' },
   { to: '/dashboard/team', label: 'Team', icon: TeamOutlined, permission: 'team.view' },
   {
@@ -111,7 +119,8 @@ const NOTIFICATIONS = [
  */
 function selectedKeyFor(pathname: string): string[] {
   const match = NAV_ITEMS.filter((item) =>
-    item.end ? pathname === item.to : pathname.startsWith(item.to),
+    // Segment-aware: /dashboard/pipeline must not claim /dashboard/pipeline-templates.
+    item.end ? pathname === item.to : pathname === item.to || pathname.startsWith(`${item.to}/`),
   );
   // Longest path wins, so /dashboard/profile/edit selects Profile Management.
   const best = match.reduce<(typeof NAV_ITEMS)[number] | undefined>(

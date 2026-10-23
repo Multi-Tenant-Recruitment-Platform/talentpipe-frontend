@@ -51,6 +51,15 @@ const EXPECTED: Record<Permission, Record<Role, boolean>> = {
   // rather than with the admin-only cells. An interviewer reads the pipeline;
   // they do not decide what the company hires for.
   'jobs.manage': { COMPANY_ADMIN: true, HR_MANAGER: true, INTERVIEWER: false, CANDIDATE: false },
+  // Templates are read by whoever opens roles and changed only by the admin.
+  // An interviewer never picks a pipeline, so the list would only be noise.
+  'templates.view': { COMPANY_ADMIN: true, HR_MANAGER: true, INTERVIEWER: false, CANDIDATE: false },
+  'templates.manage': {
+    COMPANY_ADMIN: true,
+    HR_MANAGER: false,
+    INTERVIEWER: false,
+    CANDIDATE: false,
+  },
   'applications.viewOwn': {
     COMPANY_ADMIN: false,
     HR_MANAGER: false,

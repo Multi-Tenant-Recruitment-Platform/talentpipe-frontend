@@ -33,6 +33,18 @@ const CreateJobVacancyPage = lazy(() => import('./pages/dashboard/CreateJobVacan
 const EditJobVacancyPage = lazy(() => import('./pages/dashboard/EditJobVacancyPage').then((m) => ({ default: m.EditJobVacancyPage })));
 const JobVacanciesPage = lazy(() => import('./pages/dashboard/JobVacanciesPage').then((m) => ({ default: m.JobVacanciesPage })));
 const OverviewPage = lazy(() => import('./pages/dashboard/OverviewPage').then((m) => ({ default: m.OverviewPage })));
+const CreatePipelineTemplatePage = lazy(() =>
+  import('./pages/dashboard/CreatePipelineTemplatePage').then((m) => ({ default: m.CreatePipelineTemplatePage })),
+);
+const EditPipelineTemplatePage = lazy(() =>
+  import('./pages/dashboard/EditPipelineTemplatePage').then((m) => ({ default: m.EditPipelineTemplatePage })),
+);
+const PipelineTemplateDetailPage = lazy(() =>
+  import('./pages/dashboard/PipelineTemplateDetailPage').then((m) => ({ default: m.PipelineTemplateDetailPage })),
+);
+const PipelineTemplatesPage = lazy(() =>
+  import('./pages/dashboard/PipelineTemplatesPage').then((m) => ({ default: m.PipelineTemplatesPage })),
+);
 const PipelinePage = lazy(() => import('./pages/dashboard/PipelinePage').then((m) => ({ default: m.PipelinePage })));
 const TeamPage = lazy(() => import('./pages/dashboard/TeamPage').then((m) => ({ default: m.TeamPage })));
 const VacancyDetailPage = lazy(() => import('./pages/dashboard/VacancyDetailPage').then((m) => ({ default: m.VacancyDetailPage })));
@@ -143,6 +155,41 @@ export default function App() {
             element={
               <RequirePermission permission="jobs.manage">
                 <EditJobVacancyPage />
+              </RequirePermission>
+            }
+          />
+          {/* Pipeline templates: everyone who opens roles may read them; only an
+              admin shapes them. `new` is static, so it outranks `:id` and a
+              template can never be fetched with the id "new". */}
+          <Route
+            path="pipeline-templates"
+            element={
+              <RequirePermission permission="templates.view">
+                <PipelineTemplatesPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="pipeline-templates/new"
+            element={
+              <RequirePermission permission="templates.manage">
+                <CreatePipelineTemplatePage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="pipeline-templates/:id"
+            element={
+              <RequirePermission permission="templates.view">
+                <PipelineTemplateDetailPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="pipeline-templates/:id/edit"
+            element={
+              <RequirePermission permission="templates.manage">
+                <EditPipelineTemplatePage />
               </RequirePermission>
             }
           />
