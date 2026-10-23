@@ -180,7 +180,10 @@ function fromBackendKeys(role: string, keys: readonly string[]): ReadonlySet<Per
  * inheriting someone else's access.
  */
 export function permissionsFor(subject: PermissionSubject): ReadonlySet<Permission> {
-  if (subject === null || subject === undefined || typeof subject === 'string') {
+  if (subject === null || subject === undefined) {
+    return EMPTY;
+  }
+  if (typeof subject === 'string') {
     return roleMatrix(subject);
   }
   const { role, permissions, tenantId } = subject;
