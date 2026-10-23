@@ -17,6 +17,7 @@ vi.mock('../../auth/AuthContext', () => ({
     sessionEndReason: null,
     clearSessionEndReason: vi.fn(),
     login: vi.fn(),
+    selectWorkspace: vi.fn(),
     register,
     logout: vi.fn(),
   }),

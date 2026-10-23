@@ -34,7 +34,14 @@ interface AuthContextValue {
   sessionEndReason: SessionEndReason | null;
   /** Forgets the reason once it has been shown, so it is not repeated on the next login. */
   clearSessionEndReason: () => void;
+  /**
+   * Signs in with email and password. When they fit more than one account it
+   * rejects with `409 WORKSPACE_SELECTION_REQUIRED`; finish with
+   * {@link selectWorkspace}.
+   */
   login: (email: string, password: string) => Promise<UserResponse>;
+  /** Second step of a sign-in that fitted several accounts: signs in to the chosen one. */
+  selectWorkspace: (selectionToken: string, accountId: string) => Promise<UserResponse>;
   register: (request: RegisterRequest) => Promise<RegisterResponse>;
   logout: () => Promise<void>;
 }
@@ -134,6 +141,17 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
     [applyAuth],
   );
 
+  const selectWorkspace = useCallback(
+    async (selectionToken: string, accountId: string) => {
+      // The token proves the password was checked against this account a
+      // moment ago, so the password is not sent again.
+      const { data } = await api.post<AuthResponse>('/auth/login/select', { selectionToken, accountId });
+      applyAuth(data);
+      return data.user;
+    },
+    [applyAuth],
+  );
+
   const register = useCallback(async (request: RegisterRequest) => {
     const { data } = await api.post<RegisterResponse>('/auth/register', request);
     return data;
@@ -156,8 +174,8 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   const clearSessionEndReason = useCallback(() => setSessionEndReason(null), []);
 
   const value = useMemo(
-    () => ({ user, initializing, sessionEndReason, clearSessionEndReason, login, register, logout }),
-    [user, initializing, sessionEndReason, clearSessionEndReason, login, register, logout],
+    () => ({ user, initializing, sessionEndReason, clearSessionEndReason, login, selectWorkspace, register, logout }),
+    [user, initializing, sessionEndReason, clearSessionEndReason, login, selectWorkspace, register, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
