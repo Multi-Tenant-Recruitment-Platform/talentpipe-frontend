@@ -1,5 +1,6 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { StrictMode } from 'react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { RoleAuditEvent } from '../../api/types';
@@ -39,20 +40,23 @@ const AMAYA = makeUser({ id: 'u-3', firstName: 'Amaya', lastName: 'Perera', role
 const NIMAL = makeUser({ id: 'u-4', firstName: 'Nimal', lastName: 'Fernando', role: 'CUSTOM', roleId: 'r-custom', roleName: 'Hiring Coordinator' });
 const ROLES = [OWNER, RECRUITER, INTERVIEWER, COORDINATOR];
 
+/** In StrictMode, as main.tsx renders the app: effects run, are cleaned up and run again. */
 function renderAt(path: string) {
   return render(
-    <MemoryRouter initialEntries={[path]}>
-      <LocationProbe />
-      <TeamSummaryProvider>
-        <Routes>
-          <Route path="/dashboard/team" element={<p>members page</p>} />
-          <Route path="/dashboard/team/roles" element={<RolesPage />} />
-          <Route path="/dashboard/team/roles/new" element={<RoleEditorPage mode="create" />} />
-          <Route path="/dashboard/team/roles/:id" element={<RoleEditorPage mode="edit" />} />
-          <Route path="/dashboard/team/activity" element={<RoleActivityPage />} />
-        </Routes>
-      </TeamSummaryProvider>
-    </MemoryRouter>,
+    <StrictMode>
+      <MemoryRouter initialEntries={[path]}>
+        <LocationProbe />
+        <TeamSummaryProvider>
+          <Routes>
+            <Route path="/dashboard/team" element={<p>members page</p>} />
+            <Route path="/dashboard/team/roles" element={<RolesPage />} />
+            <Route path="/dashboard/team/roles/new" element={<RoleEditorPage mode="create" />} />
+            <Route path="/dashboard/team/roles/:id" element={<RoleEditorPage mode="edit" />} />
+            <Route path="/dashboard/team/activity" element={<RoleActivityPage />} />
+          </Routes>
+        </TeamSummaryProvider>
+      </MemoryRouter>
+    </StrictMode>,
   );
 }
 

@@ -70,13 +70,16 @@ export function RoleActivityPage() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<Filter>('all');
-  const mounted = useRef(true);
-  useEffect(
-    () => () => {
+  // Set on mount as well as cleared on unmount: StrictMode mounts, unmounts
+  // and mounts again, and a flag only ever cleared would stay false for good,
+  // dropping every answer.
+  const mounted = useRef(false);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
       mounted.current = false;
-    },
-    [],
-  );
+    };
+  }, []);
 
   // The first page keeps whatever is on screen until it answers; only an older
   // page shows its own progress, on the button that asked for it.
