@@ -39,6 +39,15 @@ const CHOICE_EXPIRED =
  */
 function loginFailure(err: unknown): { message: string; needsVerification: boolean } {
   const code = apiErrorCode(err);
+  if (code === 'INVITATION_NOT_ACCEPTED') {
+    // What to do, not just what is wrong: the account is waiting on a link
+    // the person already has.
+    return {
+      message:
+        "You haven't accepted your invitation yet. Open the link in your invitation email to set a password, then sign in here.",
+      needsVerification: false,
+    };
+  }
   const message = apiErrorMessage(err, 'Login failed. Please try again.');
   const needsVerification = code
     ? code === 'ACCOUNT_NOT_VERIFIED'

@@ -282,7 +282,7 @@ describe('accounts that are not ready yet', () => {
     const dialog = await openFromHeader(user);
     await signIn(user, dialog, /^sign in$/i);
 
-    expect(await within(dialog).findByRole('alert')).toHaveTextContent('not been accepted');
+    expect(await within(dialog).findByRole('alert')).toHaveTextContent(/open the link in your invitation email/i);
     expect(within(dialog).queryByRole('button', { name: /new verification link/i })).not.toBeInTheDocument();
   });
 });
