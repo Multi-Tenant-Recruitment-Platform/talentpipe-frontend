@@ -3,13 +3,20 @@ import { Col, Flex, Input, Row, type InputRef } from 'antd';
 import { useId, useState, type FormEvent, type Ref } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiErrorMessage } from '../../api/client';
+import { apiFieldErrorMap } from '../../api/errors';
 import { useAuth } from '../../auth/AuthContext';
 import { Alert } from '../ui/Alert';
 import { Button } from '../ui/Button';
 import { RegisterField } from './RegisterField';
-import { useFormFields } from './useFormFields';
+import { fieldErrorProps, knownFieldErrors, useFormFields } from './useFormFields';
 
-/** Company onboarding (PB-001): tenant + first COMPANY_ADMIN, then off to login. */
+/**
+ * Company onboarding (PB-001): tenant + first COMPANY_ADMIN, then off to login.
+ *
+ * <p>The server names a refused field by its path in the request
+ * (`admin.email`); those land under the field they mean, with the caret on
+ * the first.</p>
+ */
 export function CompanyRegisterForm({
   firstFieldRef,
   onBusyChange,
@@ -25,7 +32,13 @@ export function CompanyRegisterForm({
   const uid = useId();
   const id = (name: string) => `${name}${uid}`;
 
-  const { values, field } = useFormFields({ companyName: '', firstName: '', lastName: '', email: '', password: '' });
+  const { values, field, errors, setErrors } = useFormFields({
+    companyName: '',
+    firstName: '',
+    lastName: '',
+    email: '',
+    password: '',
+  });
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -48,7 +61,14 @@ export function CompanyRegisterForm({
         state: { registered: 'company', email },
       });
     } catch (err: unknown) {
-      setError(apiErrorMessage(err, 'Registration failed. Please try again.'));
+      const found = knownFieldErrors(values, apiFieldErrorMap(err, 'admin.'));
+      const first = Object.keys(found)[0];
+      if (first) {
+        setErrors(found);
+        document.getElementById(id(first))?.focus();
+      } else {
+        setError(apiErrorMessage(err, 'Registration failed. Please try again.'));
+      }
     } finally {
       setSubmitting(false);
       onBusyChange?.(false);
@@ -60,7 +80,7 @@ export function CompanyRegisterForm({
       <Flex vertical gap={20}>
         {error && <Alert tone="error">{error}</Alert>}
 
-        <RegisterField id={id('companyName')} label="Company name">
+        <RegisterField id={id('companyName')} error={errors.companyName} label="Company name">
           <Input
             ref={firstFieldRef}
             id={id('companyName')}
@@ -68,23 +88,38 @@ export function CompanyRegisterForm({
             required
             maxLength={255}
             {...field('companyName')}
+            {...fieldErrorProps(id('companyName'), errors.companyName)}
           />
         </RegisterField>
 
         <Row gutter={16}>
           <Col xs={24} sm={12}>
-            <RegisterField id={id('firstName')} label="First name">
-              <Input id={id('firstName')} size="large" required maxLength={100} {...field('firstName')} />
+            <RegisterField id={id('firstName')} error={errors.firstName} label="First name">
+              <Input
+                id={id('firstName')}
+                size="large"
+                required
+                maxLength={100}
+                {...field('firstName')}
+                {...fieldErrorProps(id('firstName'), errors.firstName)}
+              />
             </RegisterField>
           </Col>
           <Col xs={24} sm={12}>
-            <RegisterField id={id('lastName')} label="Last name">
-              <Input id={id('lastName')} size="large" required maxLength={100} {...field('lastName')} />
+            <RegisterField id={id('lastName')} error={errors.lastName} label="Last name">
+              <Input
+                id={id('lastName')}
+                size="large"
+                required
+                maxLength={100}
+                {...field('lastName')}
+                {...fieldErrorProps(id('lastName'), errors.lastName)}
+              />
             </RegisterField>
           </Col>
         </Row>
 
-        <RegisterField id={id('email')} label="Work email">
+        <RegisterField id={id('email')} error={errors.email} label="Work email">
           <Input
             id={id('email')}
             size="large"
@@ -92,11 +127,12 @@ export function CompanyRegisterForm({
             required
             maxLength={255}
             {...field('email')}
+            {...fieldErrorProps(id('email'), errors.email)}
             autoComplete="email"
           />
         </RegisterField>
 
-        <RegisterField id={id('password')} label="Password" hint="At least 8 characters.">
+        <RegisterField id={id('password')} error={errors.password} label="Password" hint="At least 8 characters.">
           <Input
             id={id('password')}
             size="large"
@@ -105,6 +141,7 @@ export function CompanyRegisterForm({
             minLength={8}
             maxLength={72}
             {...field('password')}
+            {...fieldErrorProps(id('password'), errors.password)}
             autoComplete="new-password"
           />
         </RegisterField>
