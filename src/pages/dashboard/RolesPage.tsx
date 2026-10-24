@@ -10,7 +10,7 @@ import { ErrorState } from '../../components/dashboard/ErrorState';
 import { PageHeader } from '../../components/dashboard/PageHeader';
 import { TeamSectionNav } from '../../components/dashboard/TeamSectionNav';
 import { VacancyNotice, type VacancyNoticeValue } from '../../components/jobs/VacancyNotice';
-import { DeleteRoleDialog, type RoleChoice } from '../../components/roles/DeleteRoleDialog';
+import { DeleteRoleDialog } from '../../components/roles/DeleteRoleDialog';
 import { RoleCard } from '../../components/roles/RoleCard';
 import { Button } from '../../components/ui/Button';
 import {
@@ -18,6 +18,7 @@ import {
   isWorkspaceOwner,
   MAX_CUSTOM_ROLES,
   roleUnavailableReason,
+  type RoleChoice,
 } from '../../dashboard/roleEditor';
 import { describeRoleError } from '../../dashboard/roleErrors';
 import { useTeamSummary } from '../../dashboard/TeamSummaryContext';

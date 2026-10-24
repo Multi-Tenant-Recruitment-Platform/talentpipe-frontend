@@ -141,7 +141,7 @@ export default function App() {
             path="team/roles/:id"
             element={
               <RequirePermission permission="roles.view">
-                <RoleEditorPage key="edit" mode="edit" />
+                <RoleEditorPage mode="edit" />
               </RequirePermission>
             }
           />

@@ -2,46 +2,10 @@ import { DeleteOutlined } from '@ant-design/icons';
 import { Flex, Modal, Select, Typography } from 'antd';
 import { useMemo, useState } from 'react';
 import type { RoleResponse } from '../../api/types';
+import { closestRole, type RoleChoice } from '../../dashboard/roleEditor';
 import { Alert } from '../ui/Alert';
 import { Button } from '../ui/Button';
 import { ConfirmDialog } from '../ui/ConfirmDialog';
-
-export interface RoleChoice {
-  role: RoleResponse;
-  /** Why this role cannot be chosen; absent when it can. */
-  unavailable?: string;
-}
-
-/** Share of permissions two roles have in common — 1 for the same set, 0 for nothing shared. */
-function similarity(a: readonly string[], b: readonly string[]): number {
-  const left = new Set(a);
-  const right = new Set(b);
-  const union = new Set([...left, ...right]).size;
-  if (union === 0) {
-    return 1;
-  }
-  return [...left].filter((key) => right.has(key)).length / union;
-}
-
-/**
- * The role closest to {@code role} in what it allows, among those that can be
- * chosen: the least surprising place for its members to land.
- */
-export function closestRole(role: RoleResponse, choices: readonly RoleChoice[]): RoleResponse | null {
-  let best: RoleResponse | null = null;
-  let bestScore = -1;
-  for (const choice of choices) {
-    if (choice.unavailable || choice.role.id === role.id) {
-      continue;
-    }
-    const score = choice.role.locked ? -0.5 : similarity(role.permissions, choice.role.permissions);
-    if (score > bestScore) {
-      best = choice.role;
-      bestScore = score;
-    }
-  }
-  return best;
-}
 
 /**
  * Deleting a custom role.

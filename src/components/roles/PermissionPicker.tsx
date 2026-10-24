@@ -9,7 +9,7 @@ import {
   toggleGroup,
   togglePermission,
 } from '../../dashboard/roleEditor';
-import { groupIcon } from './PermissionCoverage';
+import { groupIcon } from './groupIcons';
 
 /** "A", "A and B", "A, B and C". */
 function listOf(items: readonly string[]): string {

@@ -3,11 +3,10 @@ import { Flex, Modal, Select, Typography } from 'antd';
 import { useMemo, useState } from 'react';
 import type { PermissionGroup, RoleResponse } from '../../api/types';
 import type { RosterRow } from '../../dashboard/teamRoster';
-import { diffPermissions, permissionIndex, permissionLabel } from '../../dashboard/roleEditor';
+import { diffPermissions, permissionIndex, permissionLabel, type RoleChoice } from '../../dashboard/roleEditor';
 import { Avatar } from '../dashboard/Avatar';
 import { Alert } from '../ui/Alert';
 import { Button } from '../ui/Button';
-import type { RoleChoice } from './DeleteRoleDialog';
 
 /** Every key, for the Owner role, whose list is "everything" whatever it says. */
 function effective(role: RoleResponse | undefined, catalogue: readonly PermissionGroup[]): string[] {

@@ -78,10 +78,10 @@ export function RoleActivityPage() {
     [],
   );
 
+  // The first page keeps whatever is on screen until it answers; only an older
+  // page shows its own progress, on the button that asked for it.
   const load = useCallback(async (pageToLoad: number) => {
-    if (pageToLoad === 0) {
-      setLoading(true);
-    } else {
+    if (pageToLoad > 0) {
       setLoadingMore(true);
     }
     try {

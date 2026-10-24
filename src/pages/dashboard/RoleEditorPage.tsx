@@ -21,7 +21,7 @@ import { ErrorState } from '../../components/dashboard/ErrorState';
 import { PageHeader } from '../../components/dashboard/PageHeader';
 import { TeamSectionNav } from '../../components/dashboard/TeamSectionNav';
 import { VacancyNotice, type VacancyNoticeValue } from '../../components/jobs/VacancyNotice';
-import { DeleteRoleDialog, type RoleChoice } from '../../components/roles/DeleteRoleDialog';
+import { DeleteRoleDialog } from '../../components/roles/DeleteRoleDialog';
 import { PermissionCoverage } from '../../components/roles/PermissionCoverage';
 import { PermissionPicker } from '../../components/roles/PermissionPicker';
 import { RoleKindBadge, RoleMark } from '../../components/roles/RoleCard';
@@ -48,6 +48,7 @@ import {
   validateRole,
   type RoleErrors,
   type RoleField,
+  type RoleChoice,
   type RoleFormValues,
 } from '../../dashboard/roleEditor';
 import { describeRoleError } from '../../dashboard/roleErrors';
@@ -67,7 +68,11 @@ const BLANK_START = '__blank__';
 const NOTICE_ID = 'role-editor-notice';
 const PEOPLE_SHOWN = 6;
 
-/** Loads one role for the editor, and reloads it on demand (after a stale save). */
+/**
+ * Loads one role for the editor, and reloads it on demand (after a stale
+ * save). The editor is remounted for each role, so "loading" only ever means
+ * the first answer; a reload keeps the role on screen until the new copy lands.
+ */
 function useRole(id: string | undefined) {
   const [role, setRole] = useState<RoleResponse | null>(null);
   const [loading, setLoading] = useState(Boolean(id));
@@ -78,7 +83,6 @@ function useRole(id: string | undefined) {
     if (!id) {
       return null;
     }
-    setLoading(true);
     try {
       const loaded = await rolesApi.get(id);
       setRole(loaded);
@@ -135,9 +139,17 @@ function ChangeChip({ kind, children }: Readonly<{ kind: 'gained' | 'lost'; chil
  * <p>Saves carry the version the editor loaded. When someone else saved first
  * the server answers 409, and the editor offers their version rather than a
  * retry that could only fail the same way.</p>
+ *
+ * <p>Keyed by the role id, so moving from one role to another — after
+ * Duplicate, say — starts a fresh editor instead of showing the previous
+ * role's values until the next one arrives.</p>
  */
 export function RoleEditorPage({ mode }: Readonly<{ mode: EditorMode }>) {
   const { id } = useParams<{ id: string }>();
+  return <RoleEditor key={mode === 'edit' ? id : 'new'} mode={mode} id={mode === 'edit' ? id : undefined} />;
+}
+
+function RoleEditor({ mode, id }: Readonly<{ mode: EditorMode; id: string | undefined }>) {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
@@ -147,7 +159,7 @@ export function RoleEditorPage({ mode }: Readonly<{ mode: EditorMode }>) {
   const catalogue = usePermissionCatalogue();
   const workspace = useWorkspaceRoles();
   const { members, refresh: refreshTeam } = useTeamSummary();
-  const loaded = useRole(mode === 'edit' ? id : undefined);
+  const loaded = useRole(id);
   const role = loaded.role;
 
   const [initial, setInitial] = useState<RoleFormValues>(EMPTY_ROLE_VALUES);
@@ -182,17 +194,18 @@ export function RoleEditorPage({ mode }: Readonly<{ mode: EditorMode }>) {
   }, [notice]);
 
   // The form follows the role whenever a new copy of it arrives: first load,
-  // a save, or loading someone else's newer version.
-  useEffect(() => {
-    if (role) {
-      const next = toRoleFormValues(role);
-      setInitial(next);
-      setValues(next);
-      setTouched(new Set());
-      setShowAll(false);
-      setServerErrors({});
-    }
-  }, [role]);
+  // a save, or loading someone else's newer version. Adjusted while rendering
+  // rather than in an effect, so the stale values are never painted.
+  const [formFor, setFormFor] = useState<RoleResponse | null>(null);
+  if (role && role !== formFor) {
+    const next = toRoleFormValues(role);
+    setFormFor(role);
+    setInitial(next);
+    setValues(next);
+    setTouched(new Set());
+    setShowAll(false);
+    setServerErrors({});
+  }
 
   /* --- What the signed-in member may do here ------------------------------ */
 

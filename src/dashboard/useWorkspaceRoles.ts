@@ -50,12 +50,12 @@ export function useWorkspaceRoles(): RolesController {
   const canRead = allow('roles.view');
   const begin = useLatest();
   const [roles, setRoles] = useState<RoleResponse[]>([]);
-  const [loading, setLoading] = useState(canRead);
+  // Waiting on the first answer; only meaningful while the roles can be read.
+  const [waiting, setWaiting] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
     if (!canRead) {
-      setLoading(false);
       return;
     }
     const current = begin();
@@ -71,7 +71,7 @@ export function useWorkspaceRoles(): RolesController {
       }
     } finally {
       if (current()) {
-        setLoading(false);
+        setWaiting(false);
       }
     }
   }, [begin, canRead]);
@@ -94,7 +94,7 @@ export function useWorkspaceRoles(): RolesController {
     setRoles((current) => current.filter((role) => role.id !== id));
   }, []);
 
-  return { roles, loading, error, refresh, apply, drop };
+  return { roles, loading: canRead && waiting, error, refresh, apply, drop };
 }
 
 interface CatalogueController {
@@ -108,12 +108,11 @@ interface CatalogueController {
 export function usePermissionCatalogue(enabled = true): CatalogueController {
   const begin = useLatest();
   const [groups, setGroups] = useState<PermissionGroup[]>([]);
-  const [loading, setLoading] = useState(enabled);
+  const [waiting, setWaiting] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
     if (!enabled) {
-      setLoading(false);
       return;
     }
     const current = begin();
@@ -129,7 +128,7 @@ export function usePermissionCatalogue(enabled = true): CatalogueController {
       }
     } finally {
       if (current()) {
-        setLoading(false);
+        setWaiting(false);
       }
     }
   }, [begin, enabled]);
@@ -138,5 +137,5 @@ export function usePermissionCatalogue(enabled = true): CatalogueController {
     void refresh();
   }, [refresh]);
 
-  return { groups, loading, error, refresh };
+  return { groups, loading: enabled && waiting, error, refresh };
 }
