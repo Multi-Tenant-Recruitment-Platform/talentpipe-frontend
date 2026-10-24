@@ -36,7 +36,7 @@ vi.mock('../../dashboard/CompanyProfileContext', () => ({
 
 const team = vi.hoisted(() => ({ activeMembers: [] as unknown[] }));
 vi.mock('../../dashboard/TeamSummaryContext', () => ({
-  useTeamSummary: () => ({ activeMembers: team.activeMembers, loading: false }),
+  useTeamSummary: () => ({ activeMembers: team.activeMembers, members: team.activeMembers, loading: false }),
 }));
 
 const api = vi.hoisted(() => ({
@@ -612,6 +612,30 @@ describe('who works on a vacancy', () => {
 
     expect(api.replaceHiringTeam).toHaveBeenCalledWith('v-1', ['u-4']);
     expect(await screen.findByText('Nimal Fernando')).toBeInTheDocument();
+  });
+});
+
+describe('who created a vacancy', () => {
+  it('is named on its page when the team list knows them', async () => {
+    team.activeMembers = [
+      { ...person('u-3', 'Amaya', 'Perera', 'Recruiter'), role: 'HR_MANAGER', tenantId: 't-1', createdAt: '' },
+    ];
+    api.get.mockResolvedValue(makeVacancy({ id: 'v-1', status: 'PUBLISHED', createdBy: 'u-3' }));
+    render(<VacancyRoutes path="/dashboard/jobs/v-1" />);
+
+    expect(await screen.findByText('by Amaya Perera', { exact: false })).toBeInTheDocument();
+  });
+
+  it('says "You" for the signed-in member, and nothing for someone unknown', async () => {
+    api.get.mockResolvedValue(makeVacancy({ id: 'v-1', status: 'PUBLISHED', createdBy: 'u-1' }));
+    const { unmount } = render(<VacancyRoutes path="/dashboard/jobs/v-1" />);
+    expect(await screen.findByText('by You', { exact: false })).toBeInTheDocument();
+    unmount();
+
+    api.get.mockResolvedValue(makeVacancy({ id: 'v-1', status: 'PUBLISHED', createdBy: 'u-gone' }));
+    render(<VacancyRoutes path="/dashboard/jobs/v-1" />);
+    await screen.findByRole('heading', { level: 1 });
+    expect(screen.queryByText(/^by /)).toBeNull();
   });
 });
 
