@@ -15,6 +15,21 @@ const isPast = (date: dayjs.Dayjs) => date.isBefore(dayjs().startOf('day'));
 export function BasicInformationSection({ values, errors, set }: Readonly<VacancySectionProps>) {
   const profile = useCompanyProfileContext();
 
+  // A vacancy is filed under one of its company's own industries — the main
+  // one and up to three more from the profile — so the board's industry
+  // filter finds it. A company with none set sees no field at all; the
+  // server would refuse anything chosen, and files the vacancy without one.
+  const main = profile.saved.industry.trim();
+  const industries = [main, ...profile.saved.additionalIndustries].filter(
+    (industry, index, all) => industry !== '' && all.indexOf(industry) === index,
+  );
+  // A vacancy keeps an industry its company has since dropped, so it stays
+  // on the list rather than reading as nothing chosen.
+  if (values.industry !== '' && !industries.includes(values.industry)) {
+    industries.push(values.industry);
+  }
+  const showIndustry = industries.length > 0;
+
   return (
     <>
       <VacancyField
@@ -34,7 +49,7 @@ export function BasicInformationSection({ values, errors, set }: Readonly<Vacanc
 
       <VacancyField
         field="department"
-        span={16}
+        span={showIndustry ? 10 : 16}
         error={errors.department}
         hint="Defined on your company profile."
       >
@@ -49,7 +64,31 @@ export function BasicInformationSection({ values, errors, set }: Readonly<Vacanc
         />
       </VacancyField>
 
-      <VacancyField field="openings" span={8} error={errors.openings}>
+      {showIndustry && (
+        <VacancyField
+          field="industry"
+          span={8}
+          error={errors.industry}
+          hint={industries.length > 1 ? 'One of the industries on your company profile.' : 'From your company profile.'}
+        >
+          <Select
+            {...fieldAria('industry', errors.industry)}
+            value={values.industry === '' ? undefined : values.industry}
+            status={errors.industry ? 'error' : undefined}
+            options={industries.map((industry) => ({
+              value: industry,
+              label: industry === main ? `${industry} · main` : industry,
+            }))}
+            // Left empty, the server files a new vacancy under the main industry.
+            placeholder={main ? `${main} (main)` : 'Choose an industry'}
+            allowClear
+            className="w-full"
+            onChange={(next: string | undefined) => set('industry', next ?? '')}
+          />
+        </VacancyField>
+      )}
+
+      <VacancyField field="openings" span={showIndustry ? 6 : 8} error={errors.openings}>
         <InputNumber
           {...fieldAria('openings', errors.openings)}
           value={values.openings}

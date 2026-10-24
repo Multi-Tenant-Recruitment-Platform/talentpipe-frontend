@@ -6,10 +6,12 @@ import { useCan } from '../../auth/useCan';
 import { EmptyState } from '../../components/dashboard/EmptyState';
 import { bannerActions, pageBanner } from '../../components/dashboard/PageHeader';
 import { HeroBackdrop } from '../../components/jobs/HeroBand';
+import { HiringTeamCard } from '../../components/jobs/HiringTeamCard';
 import { ErrorState, RowsSkeleton } from '../../components/dashboard/ErrorState';
 import { useVacancyLifecycle } from '../../components/jobs/useVacancyLifecycle';
 import { VacancyActions } from '../../components/jobs/VacancyActions';
 import { VacancyDetailsBody } from '../../components/jobs/VacancyDetailsBody';
+import { VacancyFeaturesCard } from '../../components/jobs/VacancyFeaturesCard';
 import { VacancyLifecycleCard } from '../../components/jobs/VacancyLifecycleCard';
 import { VacancyNotice, type VacancyNoticeValue } from '../../components/jobs/VacancyNotice';
 import { VacancyStatusTag } from '../../components/jobs/VacancyStatusTag';
@@ -235,10 +237,12 @@ export function VacancyDetailPage() {
         {/* On a narrow screen the lifecycle comes first: it says what state the
             vacancy is in before the reader commits to scrolling its whole advert. */}
         <aside
-          aria-label="Vacancy status"
-          className="-order-1 lg:sticky lg:top-[calc(var(--tp-header-height)+var(--tp-space-3))] lg:order-none"
+          aria-label="About this vacancy"
+          className="-order-1 flex flex-col gap-5 lg:order-none"
         >
           <VacancyLifecycleCard vacancy={vacancy} />
+          <HiringTeamCard vacancy={vacancy} />
+          <VacancyFeaturesCard vacancy={vacancy} onChanged={replace} />
           {/* TODO(applications): the Candidates and Pipeline views for this
               role attach here once the applications module exists. No empty
               tabs before then — a tab with nothing behind it is a dead end. */}

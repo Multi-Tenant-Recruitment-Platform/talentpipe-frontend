@@ -47,10 +47,14 @@ export function JobVacanciesPage() {
   const [params, setParams] = useSearchParams();
   const allow = useCan();
   const canManage = allow('jobs.manage');
+  // Someone who sees every vacancy may narrow to their own; for everyone else
+  // the server already lists only the vacancies they work on.
+  const seesAll = allow('jobs.viewAll');
   const profile = useCompanyProfileContext();
-  const { vacancies, loading, error, refresh, replace } = useJobVacancyList();
-
   const query = useMemo(() => parseVacancyQuery(params), [params]);
+  const mine = seesAll && query.mine;
+  const { vacancies, loading, error, refresh, replace } = useJobVacancyList(mine);
+
   const selection = useMemo(() => selectVacancies(vacancies, query), [vacancies, query]);
   const summary = useMemo(() => summarizeVacancies(vacancies), [vacancies]);
   const departments = useMemo(
@@ -172,6 +176,32 @@ export function JobVacanciesPage() {
         />
       </Card>
     );
+  } else if (vacancies.length === 0 && mine) {
+    body = (
+      <Card>
+        <EmptyState
+          icon={SolutionOutlined}
+          title="Nothing is assigned to you yet"
+          description="Vacancies appear here when you are their recruiter or hiring manager, or someone adds you to their hiring team."
+          action={
+            <button type="button" className="tp-link-button" onClick={() => update({ mine: false })}>
+              Show every vacancy
+            </button>
+          }
+        />
+      </Card>
+    );
+  } else if (vacancies.length === 0 && !seesAll) {
+    body = (
+      <Card>
+        <EmptyState
+          icon={SolutionOutlined}
+          title="No vacancies to show you yet"
+          description="You see the vacancies you work on — as their recruiter or hiring manager, or on their hiring team. Ask whoever runs hiring to add you to one."
+          action={createButton ?? undefined}
+        />
+      </Card>
+    );
   } else if (vacancies.length === 0) {
     body = (
       <Card>
@@ -196,6 +226,7 @@ export function JobVacanciesPage() {
             totalCount={segmentTotal}
             filtersActive={selection.filtersActive}
             onClearFilters={() => update({ query: '', department: '' })}
+            onMineChange={seesAll ? (next) => update({ mine: next }) : undefined}
           />
         </div>
 
@@ -257,7 +288,11 @@ export function JobVacanciesPage() {
     <section>
       <PageHeader
         title="Job vacancies"
-        subtitle="Every role this workspace is hiring for, from first draft to archive."
+        subtitle={
+          seesAll
+            ? 'Every role this workspace is hiring for, from first draft to archive.'
+            : 'The roles you work on — as recruiter, hiring manager or on the hiring team.'
+        }
       >
         {vacancies.length > 0 && createButton}
       </PageHeader>

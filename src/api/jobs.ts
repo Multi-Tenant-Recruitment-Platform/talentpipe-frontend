@@ -1,11 +1,19 @@
 import { api } from './client';
 import type {
+  HiringTeamResponse,
   JobVacancyRequest,
   JobVacancyResponse,
   JobVacancyUpdateRequest,
   PageResponse,
+  VacancyFeaturesRequest,
   VacancyStatus,
 } from './types';
+
+/** Narrows the list on the server. */
+export interface VacancyListFilter {
+  /** `me`, or a member's id: the vacancies that person recruits for, manages or is on the hiring team of. */
+  assignedTo?: string;
+}
 
 /**
  * Job vacancy endpoints (PB-011, PB-018 → PB-022).
@@ -48,11 +56,11 @@ export const jobsApi = {
    * it needs the whole set, and the segment counts would lie if it only had the
    * first page of it.</p>
    */
-  async list(): Promise<JobVacancyResponse[]> {
+  async list(filter: VacancyListFilter = {}): Promise<JobVacancyResponse[]> {
     const all: JobVacancyResponse[] = [];
     for (let page = 0; page < MAX_PAGES; page++) {
       const { data } = await api.get<PageResponse<JobVacancyResponse>>('/jobs', {
-        params: { page, size: PAGE_SIZE },
+        params: { page, size: PAGE_SIZE, ...(filter.assignedTo ? { assignedTo: filter.assignedTo } : {}) },
       });
       all.push(...data.content);
       if (page + 1 >= data.totalPages) {
@@ -107,6 +115,30 @@ export const jobsApi = {
   /** CLOSED → ARCHIVED. Leaves the active lists; kept for reporting. */
   async archive(id: string): Promise<JobVacancyResponse> {
     const { data } = await api.post<JobVacancyResponse>(`/jobs/${encodeURIComponent(id)}/archive`);
+    return data;
+  },
+
+  /** The recruiter, the hiring manager and everyone else working on the vacancy. */
+  async hiringTeam(id: string): Promise<HiringTeamResponse> {
+    const { data } = await api.get<HiringTeamResponse>(`/jobs/${encodeURIComponent(id)}/hiring-team`);
+    return data;
+  },
+
+  /**
+   * Replaces the hiring team (not the recruiter or hiring manager, which the
+   * vacancy form sets). 422 when the vacancy is archived or someone added is
+   * not an active member.
+   */
+  async replaceHiringTeam(id: string, memberIds: string[]): Promise<HiringTeamResponse> {
+    const { data } = await api.put<HiringTeamResponse>(`/jobs/${encodeURIComponent(id)}/hiring-team`, {
+      memberIds,
+    });
+    return data;
+  },
+
+  /** Turns AI screening or candidate matching on or off; a switch left out keeps its value. 422 once closed. */
+  async switchFeatures(id: string, request: VacancyFeaturesRequest): Promise<JobVacancyResponse> {
+    const { data } = await api.patch<JobVacancyResponse>(`/jobs/${encodeURIComponent(id)}/features`, request);
     return data;
   },
 };

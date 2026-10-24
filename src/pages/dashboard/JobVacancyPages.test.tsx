@@ -24,15 +24,19 @@ vi.setConfig({ testTimeout: 20_000 });
 
 vi.mock('../../auth/AuthContext', () => authContextMock);
 
+/** The company profile the form reads departments and industries from; tests adjust it. */
+const profileSaved = vi.hoisted(() => ({
+  departments: ['Engineering', 'Design'],
+  industry: '',
+  additionalIndustries: [] as string[],
+}));
 vi.mock('../../dashboard/CompanyProfileContext', () => ({
-  useCompanyProfileContext: () => ({
-    saved: { departments: ['Engineering', 'Design'] },
-    loading: false,
-  }),
+  useCompanyProfileContext: () => ({ saved: profileSaved, loading: false }),
 }));
 
+const team = vi.hoisted(() => ({ activeMembers: [] as unknown[] }));
 vi.mock('../../dashboard/TeamSummaryContext', () => ({
-  useTeamSummary: () => ({ activeMembers: [], loading: false }),
+  useTeamSummary: () => ({ activeMembers: team.activeMembers, loading: false }),
 }));
 
 const api = vi.hoisted(() => ({
@@ -43,6 +47,9 @@ const api = vi.hoisted(() => ({
   publish: vi.fn(),
   close: vi.fn(),
   archive: vi.fn(),
+  hiringTeam: vi.fn(),
+  replaceHiringTeam: vi.fn(),
+  switchFeatures: vi.fn(),
 }));
 vi.mock('../../api/jobs', () => ({ jobsApi: api }));
 
@@ -91,6 +98,10 @@ beforeEach(() => {
     fn.mockReset();
   }
   api.list.mockResolvedValue([]);
+  api.hiringTeam.mockResolvedValue({ vacancyId: 'v-1', recruiter: null, hiringManager: null, members: [] });
+  profileSaved.industry = '';
+  profileSaved.additionalIndustries = [];
+  team.activeMembers = [];
 });
 
 /* --- Create ------------------------------------------------------------- */
@@ -487,5 +498,155 @@ describe('a vacancy’s page', () => {
 
     const link = await screen.findByRole('link', { name: /candidate requirements/i });
     expect(link).toHaveAttribute('href', '/dashboard/jobs/v-1/edit#requirements');
+  });
+});
+
+/* --- Company roles, industries and AI switches --------------------------- */
+
+const person = (id: string, firstName: string, lastName: string, roleName: string) => ({
+  id,
+  firstName,
+  lastName,
+  email: `${firstName.toLowerCase()}@acme.test`,
+  roleName,
+  status: 'ACTIVE',
+});
+
+describe('the industry a vacancy is filed under', () => {
+  it('offers the company industries and sends the one chosen', async () => {
+    profileSaved.industry = 'Information Technology';
+    profileSaved.additionalIndustries = ['Financial Services'];
+    api.create.mockResolvedValue(makeVacancy({ id: 'v-9', status: 'DRAFT' }));
+    api.get.mockResolvedValue(makeVacancy({ id: 'v-9', status: 'DRAFT' }));
+    const user = userEvent.setup();
+    render(<VacancyRoutes path="/dashboard/jobs/new" />);
+
+    await user.click(screen.getByLabelText(/^industry/i));
+    expect(await screen.findByTitle('Information Technology · main')).toBeInTheDocument();
+    await user.click(screen.getByTitle('Financial Services'));
+    fill(/job title/i, 'Payments Engineer');
+    await user.click(screen.getByRole('button', { name: /save draft/i }));
+
+    expect(api.create).toHaveBeenCalledWith(expect.objectContaining({ industry: 'Financial Services' }));
+  });
+
+  it('leaves the choice to the server when nothing is picked, and has no field without industries', async () => {
+    api.create.mockResolvedValue(makeVacancy({ id: 'v-9', status: 'DRAFT' }));
+    api.get.mockResolvedValue(makeVacancy({ id: 'v-9', status: 'DRAFT' }));
+    const user = userEvent.setup();
+    render(<VacancyRoutes path="/dashboard/jobs/new" />);
+
+    expect(screen.queryByLabelText(/^industry/i)).toBeNull();
+    fill(/job title/i, 'Payments Engineer');
+    await user.click(screen.getByRole('button', { name: /save draft/i }));
+
+    expect(api.create).toHaveBeenCalledWith(expect.objectContaining({ industry: null }));
+  });
+});
+
+describe('only the vacancies I work on', () => {
+  it('asks the server for them, and keeps the choice in the address', async () => {
+    api.list.mockResolvedValue([makeVacancy({ id: 'v-1', status: 'PUBLISHED' })]);
+    const user = userEvent.setup();
+    render(<VacancyRoutes path="/dashboard/jobs" />);
+
+    await user.click(await screen.findByRole('switch', { name: /only mine/i }));
+
+    await waitFor(() => expect(api.list).toHaveBeenLastCalledWith({ assignedTo: 'me' }));
+    expect(location()).toHaveTextContent('mine=1');
+  });
+
+  it('says so when nothing is assigned to you', async () => {
+    api.list.mockResolvedValue([]);
+    render(<VacancyRoutes path="/dashboard/jobs?mine=1" />);
+
+    expect(await screen.findByText('Nothing is assigned to you yet')).toBeInTheDocument();
+  });
+
+  it('is not offered to someone who only sees their own vacancies already', async () => {
+    setAuth({ user: makeUser({ role: 'CUSTOM', roleId: 'r-x', permissions: ['jobs.manage'] }), initializing: false });
+    api.list.mockResolvedValue([makeVacancy({ id: 'v-1', status: 'PUBLISHED' })]);
+    render(<VacancyRoutes path="/dashboard/jobs" />);
+
+    expect(await screen.findByText(/the roles you work on/i)).toBeInTheDocument();
+    expect(screen.queryByRole('switch', { name: /only mine/i })).toBeNull();
+  });
+});
+
+describe('who works on a vacancy', () => {
+  it('names the recruiter, the hiring manager and the team', async () => {
+    api.get.mockResolvedValue(makeVacancy({ id: 'v-1', status: 'PUBLISHED' }));
+    api.hiringTeam.mockResolvedValue({
+      vacancyId: 'v-1',
+      recruiter: person('u-2', 'Kasun', 'Silva', 'Recruiter'),
+      hiringManager: null,
+      members: [person('u-3', 'Amaya', 'Perera', 'Interviewer')],
+    });
+    render(<VacancyRoutes path="/dashboard/jobs/v-1" />);
+
+    expect(await screen.findByText('Kasun Silva')).toBeInTheDocument();
+    expect(screen.getByText('Not assigned')).toBeInTheDocument();
+    expect(screen.getByText('Amaya Perera')).toBeInTheDocument();
+  });
+
+  it('replaces the team with the people chosen', async () => {
+    team.activeMembers = [
+      { ...person('u-3', 'Amaya', 'Perera', 'Interviewer'), role: 'INTERVIEWER', tenantId: 't-1', createdAt: '' },
+      { ...person('u-4', 'Nimal', 'Fernando', 'Interviewer'), role: 'INTERVIEWER', tenantId: 't-1', createdAt: '' },
+    ];
+    api.get.mockResolvedValue(makeVacancy({ id: 'v-1', status: 'PUBLISHED' }));
+    api.replaceHiringTeam.mockResolvedValue({
+      vacancyId: 'v-1',
+      recruiter: null,
+      hiringManager: null,
+      members: [person('u-4', 'Nimal', 'Fernando', 'Interviewer')],
+    });
+    const user = userEvent.setup();
+    render(<VacancyRoutes path="/dashboard/jobs/v-1" />);
+
+    await user.click(await screen.findByRole('button', { name: /^edit$/i }));
+    const dialog = await screen.findByRole('dialog', { name: /hiring team/i });
+    await user.click(within(dialog).getByLabelText('People'));
+    await user.click(await screen.findByTitle('Nimal Fernando · Interviewer'));
+    await user.click(within(dialog).getByRole('button', { name: /save team/i }));
+
+    expect(api.replaceHiringTeam).toHaveBeenCalledWith('v-1', ['u-4']);
+    expect(await screen.findByText('Nimal Fernando')).toBeInTheDocument();
+  });
+});
+
+describe('the AI switches', () => {
+  it('saves a switch as soon as it is flipped', async () => {
+    api.get.mockResolvedValue(makeVacancy({ id: 'v-1', status: 'PUBLISHED', aiScreeningEnabled: false }));
+    api.switchFeatures.mockResolvedValue(makeVacancy({ id: 'v-1', status: 'PUBLISHED', aiScreeningEnabled: true }));
+    const user = userEvent.setup();
+    render(<VacancyRoutes path="/dashboard/jobs/v-1" />);
+
+    const ai = await screen.findByRole('switch', { name: 'AI screening' });
+    expect(ai).not.toBeChecked();
+    await user.click(ai);
+
+    expect(api.switchFeatures).toHaveBeenCalledWith('v-1', { aiScreeningEnabled: true });
+    await waitFor(() => expect(screen.getByRole('switch', { name: 'AI screening' })).toBeChecked());
+  });
+
+  it('puts a refused switch back and says why', async () => {
+    api.get.mockResolvedValue(makeVacancy({ id: 'v-1', status: 'PUBLISHED', candidateMatchingEnabled: false }));
+    api.switchFeatures.mockRejectedValue(httpError(422, 'This vacancy has closed.'));
+    const user = userEvent.setup();
+    render(<VacancyRoutes path="/dashboard/jobs/v-1" />);
+
+    await user.click(await screen.findByRole('switch', { name: 'Candidate matching' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('This vacancy has closed.');
+    expect(screen.getByRole('switch', { name: 'Candidate matching' })).not.toBeChecked();
+  });
+
+  it('cannot be changed once the vacancy has ended', async () => {
+    api.get.mockResolvedValue(makeVacancy({ id: 'v-1', status: 'CLOSED' }));
+    render(<VacancyRoutes path="/dashboard/jobs/v-1" />);
+
+    expect(await screen.findByRole('switch', { name: 'AI screening' })).toBeDisabled();
+    expect(screen.getByText(/this vacancy has ended/i)).toBeInTheDocument();
   });
 });

@@ -40,6 +40,8 @@ import { cleanValues } from './companyProfile';
 export interface JobVacancyFormValues {
   title: string;
   department: string;
+  /** One of the company's industries; `''` leaves it to the server (the main one, or what it had). */
+  industry: string;
   openings: number | null;
   employmentType: EmploymentType | '';
   workplaceType: WorkplaceType | '';
@@ -82,6 +84,7 @@ export type JobVacancyFieldErrors = Partial<Record<JobVacancyField, string>>;
 export const EMPTY_VACANCY_VALUES: JobVacancyFormValues = {
   title: '',
   department: '',
+  industry: '',
   openings: 1,
   employmentType: '',
   // Prefilled because a segmented control cannot render "nothing chosen": antd
@@ -119,6 +122,7 @@ export const EMPTY_VACANCY_VALUES: JobVacancyFormValues = {
 export const FIELD_LABELS: Record<JobVacancyField, string> = {
   title: 'Job title',
   department: 'Department',
+  industry: 'Industry',
   openings: 'Number of openings',
   employmentType: 'Employment type',
   workplaceType: 'Workplace type',
@@ -268,6 +272,7 @@ export const VACANCY_SECTIONS: VacancySection[] = [
     fields: [
       'title',
       'department',
+      'industry',
       'openings',
       'employmentType',
       'workplaceType',
@@ -366,6 +371,7 @@ const MULTILINE_FIELDS = new Set<JobVacancyField>([
 const TEXT_FIELDS = [
   'title',
   'department',
+  'industry',
   'location',
   'applicationDeadline',
   'jobSummary',
@@ -705,6 +711,7 @@ function toVacancyContent(values: JobVacancyFormValues): Omit<JobVacancyRequest,
     // them, and the form never reaches PUBLISHED without validating.
     title: n.title,
     department: n.department,
+    industry: orNull(n.industry),
     openings: n.openings ?? 1,
     employmentType: n.employmentType === '' ? null : n.employmentType,
     workplaceType: n.workplaceType === '' ? null : n.workplaceType,
@@ -752,6 +759,7 @@ export function toFormValues(vacancy: JobVacancyResponse): JobVacancyFormValues 
   return {
     title: vacancy.title ?? '',
     department: vacancy.department ?? '',
+    industry: vacancy.industry ?? '',
     openings: vacancy.openings ?? 1,
     employmentType: vacancy.employmentType ?? '',
     workplaceType: vacancy.workplaceType ?? '',

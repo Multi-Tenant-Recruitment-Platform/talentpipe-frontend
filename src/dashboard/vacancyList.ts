@@ -24,6 +24,11 @@ export interface VacancyQuery {
   /** '' means every department. */
   department: string;
   sort: VacancySort;
+  /**
+   * Only the vacancies the signed-in member works on. Answered by the server,
+   * which knows the hiring teams; everything else here stays client-side.
+   */
+  mine: boolean;
 }
 
 export const DEFAULT_VACANCY_QUERY: VacancyQuery = {
@@ -31,6 +36,7 @@ export const DEFAULT_VACANCY_QUERY: VacancyQuery = {
   query: '',
   department: '',
   sort: 'newest',
+  mine: false,
 };
 
 /** In display order. "All" excludes Archived — see {@link inSegment}. */
@@ -91,6 +97,7 @@ export function parseVacancyQuery(params: URLSearchParams): VacancyQuery {
     query: params.get('q') ?? '',
     department: params.get('dept') ?? '',
     sort,
+    mine: params.get('mine') === '1',
   };
 }
 
@@ -108,6 +115,9 @@ export function toVacancySearchParams(query: VacancyQuery): URLSearchParams {
   }
   if (query.sort !== DEFAULT_VACANCY_QUERY.sort) {
     params.set('sort', query.sort);
+  }
+  if (query.mine) {
+    params.set('mine', '1');
   }
   return params;
 }
