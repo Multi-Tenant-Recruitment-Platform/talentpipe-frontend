@@ -10,6 +10,7 @@ import {
   CURRENCIES,
   FIELD_LABELS,
   INDUSTRIES,
+  MAX_ADDITIONAL_INDUSTRIES,
   LANGUAGES,
   MAX_DESCRIPTION,
   SOCIAL_FIELDS,
@@ -254,7 +255,37 @@ export function CompanyProfileForm({
           />
         </Field>
 
-        <Field field="size" error={errors.size}>
+        {/* Up to three more, for a company that works across sectors. Each is
+            one its vacancies can be filed under and found by on the board. */}
+        <Col xs={24} sm={12}>
+          <label htmlFor="company-additional-industries" className="mb-1.5 block font-medium">
+            Other industries
+          </label>
+          <Select
+            id="company-additional-industries"
+            mode="multiple"
+            value={values.additionalIndustries}
+            onChange={(next: string[]) => onChangeList('additionalIndustries', next)}
+            className="w-full"
+            maxCount={MAX_ADDITIONAL_INDUSTRIES}
+            disabled={values.industry === ''}
+            placeholder={values.industry === '' ? 'Choose the main industry first' : 'Optional'}
+            options={optionsFor(INDUSTRIES, '')
+              .filter((option) => option.value !== values.industry)
+              .concat(
+                values.additionalIndustries
+                  .filter((industry) => !INDUSTRIES.includes(industry))
+                  .map((industry) => ({ value: industry, label: industry })),
+              )}
+            aria-describedby="company-additional-industries-hint"
+          />
+          <Typography.Text id="company-additional-industries-hint" type="secondary" className="mt-1.5 block text-caption">
+            Up to {MAX_ADDITIONAL_INDUSTRIES}. Vacancies can be filed under any of these, and candidates can find them
+            by it.
+          </Typography.Text>
+        </Col>
+
+        <Field field="size" span={8} error={errors.size}>
           <Select
             id={fieldId('size')}
             value={values.size}
@@ -271,7 +302,7 @@ export function CompanyProfileForm({
           />
         </Field>
 
-        <Field field="companyType" error={errors.companyType}>
+        <Field field="companyType" span={8} error={errors.companyType}>
           <Select
             id={fieldId('companyType')}
             value={values.companyType}
@@ -285,7 +316,7 @@ export function CompanyProfileForm({
           />
         </Field>
 
-        <Field field="foundedYear" error={errors.foundedYear}>
+        <Field field="foundedYear" span={8} error={errors.foundedYear}>
           <Input
             id={fieldId('foundedYear')}
             type="number"
