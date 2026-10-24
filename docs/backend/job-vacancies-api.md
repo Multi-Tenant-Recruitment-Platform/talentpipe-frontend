@@ -26,6 +26,11 @@ in the same PR pair.
 
 ## 2. Authorization
 
+> **Since company roles (ADR-9)** access follows the caller's permissions, not these fixed roles: any member may
+> list the vacancies they work on, `jobs.view.all` sees every one, `jobs.manage` writes and `jobs.publish` moves them
+> through their life. See [company-roles-and-access-api.md](company-roles-and-access-api.md) §3 and §5. The table
+> below is how the fixed roles map onto that.
+
 | Role | Access |
 |---|---|
 | `COMPANY_ADMIN` | everything below |
@@ -48,6 +53,9 @@ If you split permissions (for example only admins may archive), tell the fronten
 | POST | `/jobs/{id}/publish` | — | `200 JobVacancyResponse` | `DRAFT → PUBLISHED` |
 | POST | `/jobs/{id}/close` | — | `200 JobVacancyResponse` | `PUBLISHED → CLOSED` |
 | POST | `/jobs/{id}/archive` | — | `200 JobVacancyResponse` | `CLOSED → ARCHIVED` |
+| GET | `/jobs/{id}/hiring-team` | — | `200 HiringTeamResponse` | Recruiter, hiring manager and the rest of the team. |
+| PUT | `/jobs/{id}/hiring-team` | `{ memberIds }` | `200 HiringTeamResponse` | Replace the team (not recruiter or manager). |
+| PATCH | `/jobs/{id}/features` | `{ aiScreeningEnabled?, candidateMatchingEnabled? }` | `200 JobVacancyResponse` | AI switches; 422 once closed. |
 
 Every write returns the vacancy **as now stored**. The frontend renders that response and does not guess.
 
@@ -184,7 +192,8 @@ On failure return `422` with **one** human sentence naming what is missing, for 
 
 ## 8. Optional later: server-side list filtering
 
-Not needed now. If the list grows large, accept these on `GET /jobs` and the frontend will switch to them:
+`assignedTo=me|{userId}`, `department` and `status` exist now (see the roles doc §5); the frontend uses
+`assignedTo=me` for "Only mine". The rest is still not needed. If the list grows large, accept these on `GET /jobs` and the frontend will switch to them:
 `status` (`DRAFT|PUBLISHED|CLOSED|ARCHIVED|ACTIVE` where ACTIVE means "not archived"), `q` (title, department,
 location, skills), `department`, `sort` (`createdAt,desc` | `updatedAt,desc` | `applicationDeadline,asc` | `title,asc`),
 plus `GET /jobs/counts` → `{ "DRAFT": 3, "PUBLISHED": 12, "CLOSED": 3, "ARCHIVED": 4 }`.
