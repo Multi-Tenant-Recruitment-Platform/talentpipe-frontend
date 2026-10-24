@@ -4,10 +4,11 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react';
-import { api, SESSION_EXPIRED_EVENT } from '../api/client';
+import { ACCESS_DENIED_EVENT, api, SESSION_EXPIRED_EVENT } from '../api/client';
 import { tokenStore } from '../api/tokenStore';
 import type { AuthResponse, RegisterRequest, RegisterResponse, UserResponse } from '../api/types';
 import {
@@ -34,12 +35,22 @@ interface AuthContextValue {
   sessionEndReason: SessionEndReason | null;
   /** Forgets the reason once it has been shown, so it is not repeated on the next login. */
   clearSessionEndReason: () => void;
+  /**
+   * Signs in with email and password. When they fit more than one account it
+   * rejects with `409 WORKSPACE_SELECTION_REQUIRED`; finish with
+   * {@link selectWorkspace}.
+   */
   login: (email: string, password: string) => Promise<UserResponse>;
+  /** Second step of a sign-in that fitted several accounts: signs in to the chosen one. */
+  selectWorkspace: (selectionToken: string, accountId: string) => Promise<UserResponse>;
   register: (request: RegisterRequest) => Promise<RegisterResponse>;
   logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
+
+/** How often a run of refusals may re-read the user's permissions. */
+const PERMISSIONS_REREAD_MS = 5_000;
 
 export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   const [user, setUser] = useState<UserResponse | null>(null);
@@ -104,6 +115,29 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
     return () => window.removeEventListener(SESSION_EXPIRED_EVENT, onExpired);
   }, [clearAuth]);
 
+  // The server refused something the screen offered: the user's role may have
+  // changed since they signed in. Read their permissions again, so menus and
+  // buttons follow without a reload. One read at a time, and not more than
+  // every few seconds however many requests are refused together.
+  const permissionsReadAt = useRef(0);
+  useEffect(() => {
+    const onDenied = () => {
+      const now = Date.now();
+      if (!tokenStore.getAccessToken() || now - permissionsReadAt.current < PERMISSIONS_REREAD_MS) {
+        return;
+      }
+      permissionsReadAt.current = now;
+      api
+        .get<UserResponse>('/auth/me')
+        .then(({ data }) => setUser((current) => (current && current.id === data.id ? data : current)))
+        .catch(() => {
+          // A failed read leaves things as they were; the refusal is shown anyway.
+        });
+    };
+    window.addEventListener(ACCESS_DENIED_EVENT, onDenied);
+    return () => window.removeEventListener(ACCESS_DENIED_EVENT, onDenied);
+  }, []);
+
   // A response arrived for another workspace, or another tab signed into one.
   // Ends the session locally and deliberately does NOT call /auth/logout: the
   // session state is exactly what we have stopped trusting.
@@ -134,6 +168,17 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
     [applyAuth],
   );
 
+  const selectWorkspace = useCallback(
+    async (selectionToken: string, accountId: string) => {
+      // The token proves the password was checked against this account a
+      // moment ago, so the password is not sent again.
+      const { data } = await api.post<AuthResponse>('/auth/login/select', { selectionToken, accountId });
+      applyAuth(data);
+      return data.user;
+    },
+    [applyAuth],
+  );
+
   const register = useCallback(async (request: RegisterRequest) => {
     const { data } = await api.post<RegisterResponse>('/auth/register', request);
     return data;
@@ -156,8 +201,8 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   const clearSessionEndReason = useCallback(() => setSessionEndReason(null), []);
 
   const value = useMemo(
-    () => ({ user, initializing, sessionEndReason, clearSessionEndReason, login, register, logout }),
-    [user, initializing, sessionEndReason, clearSessionEndReason, login, register, logout],
+    () => ({ user, initializing, sessionEndReason, clearSessionEndReason, login, selectWorkspace, register, logout }),
+    [user, initializing, sessionEndReason, clearSessionEndReason, login, selectWorkspace, register, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

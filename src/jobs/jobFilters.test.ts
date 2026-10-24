@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import type { JobSummary } from '../api/types';
-import { NO_FILTERS, activeFilterCount, filterJobs, hasActiveFilters, salaryBounds } from './jobFilters';
+import {
+  NO_FILTERS,
+  activeFilterCount,
+  boardFacets,
+  filterJobs,
+  hasActiveFilters,
+  salaryBoundsFrom,
+  toBoardParams,
+} from './jobFilters';
 
 const FRONTEND: JobSummary = {
   id: '1',
@@ -111,31 +119,123 @@ describe('activeFilterCount', () => {
   });
 });
 
-describe('salaryBounds', () => {
-  const paid = (id: string, currency: string, salaryMin: number, salaryMax: number): JobSummary => ({
-    ...ANALYST,
-    id,
-    payPeriod: 'MONTHLY',
+describe('filterJobs, with the newer filters', () => {
+  it('narrows by industry, and keeps a salary range to its currency', () => {
+    const tech = { ...FRONTEND, id: 'tech', industry: 'Information Technology' };
+    const bank = { ...FRONTEND, id: 'bank', industry: 'Finance & Banking' };
+    expect(ids(filterJobs([tech, bank], { ...NO_FILTERS, industry: 'Finance & Banking' }))).toEqual(['bank']);
+
+    const lkr = { ...ANALYST, id: 'lkr', payPeriod: 'MONTHLY' as const, currency: 'LKR', salaryMin: 100, salaryMax: 200 };
+    const usd = { ...lkr, id: 'usd', currency: 'USD — US dollar' };
+    const range = { ...NO_FILTERS, payPeriod: 'MONTHLY' as const, salaryRange: [150, 300] as [number, number] };
+    expect(ids(filterJobs([lkr, usd], { ...range, currency: 'USD' }))).toEqual(['usd']);
+    expect(ids(filterJobs([lkr, usd], range))).toEqual(['lkr', 'usd']);
+  });
+});
+
+describe('toBoardParams', () => {
+  it('sends nothing for the plain board', () => {
+    expect(toBoardParams(NO_FILTERS)).toEqual({});
+    expect(toBoardParams({ keyword: '  ', sort: 'relevant' })).toEqual({});
+  });
+
+  it('names every choice the way the backend reads it', () => {
+    expect(
+      toBoardParams({
+        ...NO_FILTERS,
+        keyword: ' react ',
+        location: 'Colombo',
+        industry: 'Information Technology',
+        employmentTypes: ['FULL_TIME', 'CONTRACT'],
+        workplaceTypes: ['REMOTE'],
+        experience: 'upTo2',
+        salaryOnly: true,
+        payPeriod: 'MONTHLY',
+        currency: 'LKR',
+        salaryRange: [100000, 250000],
+        sort: 'newest',
+      }),
+    ).toEqual({
+      q: 'react',
+      location: 'Colombo',
+      industry: 'Information Technology',
+      employmentType: 'FULL_TIME,CONTRACT',
+      workplaceType: 'REMOTE',
+      maxExperience: 2,
+      salaryOnly: true,
+      payPeriod: 'MONTHLY',
+      currency: 'LKR',
+      salaryMin: 100000,
+      salaryMax: 250000,
+      sort: 'newest',
+    });
+  });
+
+  it('turns experience levels into bounds', () => {
+    expect(toBoardParams({ experience: 'none' })).toEqual({ maxExperience: 0 });
+    expect(toBoardParams({ experience: 'fivePlus' })).toEqual({ minExperience: 5 });
+  });
+
+  it('never sends a salary range without its pay period, which the backend refuses', () => {
+    expect(toBoardParams({ salaryRange: [1, 2], currency: 'LKR' })).toEqual({});
+  });
+});
+
+describe('boardFacets', () => {
+  it('counts what the jobs hold, most populated first, and spans pay per period and currency', () => {
+    const paid = (id: string, currency: string, salaryMin: number, salaryMax: number): JobSummary => ({
+      ...ANALYST,
+      id,
+      industry: 'Information Technology',
+      payPeriod: 'MONTHLY',
+      currency,
+      salaryMin,
+      salaryMax,
+    });
+    const facets = boardFacets([...JOBS, paid('a', 'LKR', 100, 200), paid('b', 'LKR — Sri Lankan rupee', 50, 400)]);
+    expect(facets.employmentTypes).toEqual([
+      { value: 'CONTRACT', count: 1 },
+      { value: 'FULL_TIME', count: 1 },
+    ]);
+    expect(facets.industries).toEqual([{ value: 'Information Technology', count: 2 }]);
+    expect(facets.salaryRanges).toEqual([{ payPeriod: 'MONTHLY', currency: 'LKR', min: 50, max: 400, count: 2 }]);
+  });
+});
+
+describe('salaryBoundsFrom', () => {
+  const range = (currency: string, min: number, max: number, count: number) => ({
+    payPeriod: 'MONTHLY' as const,
     currency,
-    salaryMin,
-    salaryMax,
+    min,
+    max,
+    count,
   });
 
   it('needs a pay period first', () => {
-    expect(salaryBounds([paid('a', 'LKR', 1, 2)], null)).toEqual({ available: false, reason: 'Choose a pay period to set a range' });
+    expect(salaryBoundsFrom([range('LKR', 1, 2, 1)], null, null)).toEqual({
+      available: false,
+      reason: 'Choose a pay period to set a range',
+    });
   });
 
-  it('spans every stated salary in that period and currency', () => {
-    expect(salaryBounds([paid('a', 'LKR', 100, 200), paid('b', 'LKR', 50, 400)], 'MONTHLY')).toEqual({
+  it('spans the most common currency, and offers the others', () => {
+    const ranges = [range('USD', 1000, 5000, 2), range('LKR', 50, 400, 7)];
+    expect(salaryBoundsFrom(ranges, 'MONTHLY', null)).toEqual({
       available: true,
       min: 50,
       max: 400,
       currency: 'LKR',
+      currencies: ['LKR', 'USD'],
     });
+    expect(salaryBoundsFrom(ranges, 'MONTHLY', 'USD')).toMatchObject({ min: 1000, max: 5000, currency: 'USD' });
   });
 
-  it('offers no range across currencies, or where nothing is stated', () => {
-    expect(salaryBounds([paid('a', 'LKR', 1, 2), paid('b', 'USD', 1, 2)], 'MONTHLY').available).toBe(false);
-    expect(salaryBounds([ANALYST], 'MONTHLY').available).toBe(false);
+  it('offers no range where nothing is stated, or every salary is the same', () => {
+    expect(salaryBoundsFrom([], 'MONTHLY', null).available).toBe(false);
+    expect(salaryBoundsFrom(undefined, 'HOURLY', null).available).toBe(false);
+    expect(salaryBoundsFrom([range('LKR', 100, 100, 3)], 'MONTHLY', null)).toEqual({
+      available: false,
+      reason: 'Every salary here is the same',
+    });
   });
 });

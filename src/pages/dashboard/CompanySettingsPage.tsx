@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { useCan } from '../../auth/useCan';
 import { Badge, type BadgeTone } from '../../components/dashboard/Badge';
 import { Card } from '../../components/dashboard/Card';
+import { HiringSettingsCard } from '../../components/dashboard/HiringSettingsCard';
 import { PageHeader } from '../../components/dashboard/PageHeader';
 import { Button } from '../../components/ui/Button';
 import { useTeamSummary } from '../../dashboard/TeamSummaryContext';
@@ -12,7 +13,8 @@ import { planUsage } from '../../data/mockDashboard';
 import { primary } from '../../theme/tokens';
 
 /**
- * Company settings — the workspace identity and the plan.
+ * Company settings — the workspace identity, how hiring works here, and the
+ * plan.
  *
  * <p>The company profile itself is not repeated here: it lives on Profile
  * Management, and a second copy of the same form on this page was only a
@@ -46,7 +48,7 @@ export function CompanySettingsPage() {
     <>
       <PageHeader
         title="Company settings"
-        subtitle="Manage your workspace identity and plan."
+        subtitle="Manage your workspace identity, hiring defaults and plan."
       />
 
       <div>
@@ -110,8 +112,8 @@ export function CompanySettingsPage() {
                     className="mb-0"
                   />
                   <Typography.Text type="secondary" className="text-caption">
-                    {seatsLeft} {seatsLeft === 1 ? 'seat' : 'seats'} left — invite HR managers and
-                    interviewers anytime.
+                    {seatsLeft} {seatsLeft === 1 ? 'seat' : 'seats'} left — invite teammates with any of
+                    your roles, anytime.
                   </Typography.Text>
                 </div>
                 <Button
@@ -124,6 +126,10 @@ export function CompanySettingsPage() {
               </Card>
             </Col>
           )}
+
+          <Col xs={24}>
+            <HiringSettingsCard />
+          </Col>
         </Row>
 
         {/* The profile moved out of this page; say where it went, so nobody

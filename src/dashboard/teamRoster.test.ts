@@ -111,7 +111,21 @@ describe('search and filter', () => {
 
   it('derives role options from the data so an unexpected role stays filterable', () => {
     const rows = toRosterRows([...ALL, member({ id: 'u-9', role: 'SUPER_ADMIN' })], 'u-1');
-    expect(selectRoster(rows, BASE).roleOptions).toContain('SUPER_ADMIN');
+    expect(selectRoster(rows, BASE).roleOptions).toContainEqual({ value: 'SUPER_ADMIN', label: 'Super Admin' });
+  });
+
+  it('groups company roles by id and labels them with the name the company gave the role', () => {
+    const rows = toRosterRows(
+      [
+        member({ id: 'u-7', role: 'CUSTOM', roleId: 'r-coord', roleName: 'Hiring Coordinator' }),
+        member({ id: 'u-8', role: 'CUSTOM', roleId: 'r-coord', roleName: 'Hiring Coordinator' }),
+      ],
+      'u-1',
+    );
+
+    expect(rows[0].roleLabel).toBe('Hiring Coordinator');
+    expect(selectRoster(rows, BASE).roleOptions).toEqual([{ value: 'r-coord', label: 'Hiring Coordinator' }]);
+    expect(selectRoster(rows, { ...BASE, roleFilter: 'r-coord' }).visible).toHaveLength(2);
   });
 });
 

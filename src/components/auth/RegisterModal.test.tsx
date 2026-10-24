@@ -17,6 +17,7 @@ vi.mock('../../auth/AuthContext', () => ({
     sessionEndReason: null,
     clearSessionEndReason: vi.fn(),
     login: vi.fn(),
+    selectWorkspace: vi.fn(),
     register,
     logout: vi.fn(),
   }),
@@ -83,7 +84,7 @@ function fillCompany(dialog: HTMLElement) {
 
 function fillCandidate(dialog: HTMLElement, confirm = 'secret123') {
   fill(dialog, /^full name$/i, 'Jo Perera');
-  fill(dialog, /^id card number$/i, '991234567V');
+  fill(dialog, /^nic number$/i, '991234567V');
   fill(dialog, /^address$/i, '1 Galle Road, Colombo');
   fill(dialog, /^contact number$/i, '+94 77 123 4567');
   fill(dialog, /^email$/i, 'jo@example.test');
@@ -100,6 +101,15 @@ beforeEach(() => {
 });
 
 afterEach(cleanup);
+
+/** The backend's answer to a form it refused, field by field. */
+const refusedFields = (fieldErrors: { field: string; message: string }[]) => ({
+  isAxiosError: true,
+  response: {
+    status: 400,
+    data: { code: 'VALIDATION_FAILED', message: fieldErrors.map((e) => e.message).join(' '), fieldErrors },
+  },
+});
 
 describe('the choice', () => {
   it('offers job seeker and company, before any form', async () => {
@@ -175,6 +185,28 @@ describe('company registration', () => {
     expect(screen.queryByRole('dialog', { name: 'Register your company' })).not.toBeInTheDocument();
   });
 
+  it('puts a refused field\'s message under that field, and the caret in it', async () => {
+    register.mockRejectedValue(
+      refusedFields([{ field: 'admin.email', message: 'Enter a valid email address, like you@company.com.' }]),
+    );
+    const user = userEvent.setup();
+    renderAt('/register');
+    const form = await screen.findByRole('dialog', { name: 'Register your company' });
+
+    fillCompany(form);
+    await user.click(within(form).getByRole('button', { name: /create company account/i }));
+
+    const email = within(form).getByLabelText(/^work email$/i);
+    expect(await within(form).findByText('Enter a valid email address, like you@company.com.')).toBeInTheDocument();
+    expect(email).toHaveAttribute('aria-invalid', 'true');
+    expect(email).toHaveFocus();
+
+    // The message goes as soon as the field is changed.
+    await user.type(email, 'x');
+    expect(within(form).queryByText('Enter a valid email address, like you@company.com.')).toBeNull();
+    expect(email).not.toHaveAttribute('aria-invalid');
+  });
+
   it('shows a failure inside the popup', async () => {
     register.mockRejectedValue(axiosError(409, 'An account with this email already exists.'));
     const user = userEvent.setup();
@@ -219,7 +251,44 @@ describe('candidate registration', () => {
     await user.click(within(form).getByRole('button', { name: /create candidate account/i }));
 
     expect(await within(form).findByRole('alert')).toHaveTextContent('Passwords do not match.');
+    expect(within(form).getByLabelText(/^confirm password$/i)).toHaveAttribute('aria-invalid', 'true');
     expect(post).not.toHaveBeenCalled();
+  });
+
+  it('asks for an NIC in either format, and no longer than one can be', async () => {
+    renderAt('/register-candidate');
+    const form = await screen.findByRole('dialog', { name: 'Create your candidate account' });
+
+    expect(within(form).getByText('e.g. 200012345678 or 912345678V')).toBeInTheDocument();
+    expect(within(form).getByLabelText(/^nic number$/i)).toHaveAttribute('maxlength', '20');
+  });
+
+  it('shows the server\'s reason for an NIC under the NIC', async () => {
+    post.mockRejectedValue(
+      refusedFields([{ field: 'identityCardNumber', message: 'Enter a valid NIC number, e.g. 200012345678 or 912345678V.' }]),
+    );
+    const user = userEvent.setup();
+    renderAt('/register-candidate');
+    const form = await screen.findByRole('dialog', { name: 'Create your candidate account' });
+
+    fillCandidate(form);
+    await user.click(within(form).getByRole('button', { name: /create candidate account/i }));
+
+    expect(await within(form).findByText(/enter a valid nic number/i)).toBeInTheDocument();
+    expect(within(form).getByLabelText(/^nic number$/i)).toHaveFocus();
+  });
+
+  it('points an email that already has an account at the email field', async () => {
+    post.mockRejectedValue(axiosError(409, "Email 'jo@example.test' is already registered"));
+    const user = userEvent.setup();
+    renderAt('/register-candidate');
+    const form = await screen.findByRole('dialog', { name: 'Create your candidate account' });
+
+    fillCandidate(form);
+    await user.click(within(form).getByRole('button', { name: /create candidate account/i }));
+
+    expect(await within(form).findByText(/already has a candidate account/i)).toBeInTheDocument();
+    expect(within(form).getByLabelText(/^email$/i)).toHaveAttribute('aria-invalid', 'true');
   });
 });
 

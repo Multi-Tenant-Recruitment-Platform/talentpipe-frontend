@@ -58,7 +58,11 @@ const COMPANY_LIST_FIELDS = [
   'benefits',
   'officeLocations',
   'departments',
+  'additionalIndustries',
 ] as const;
+
+/** How many industries a company may list besides its main one (the backend's limit). */
+export const MAX_ADDITIONAL_INDUSTRIES = 3;
 export type CompanyListField = (typeof COMPANY_LIST_FIELDS)[number];
 
 type CompanyField = CompanyTextField | CompanyListField;
@@ -251,6 +255,7 @@ export const EMPTY_FORM_VALUES: CompanyFormValues = {
   benefits: [],
   officeLocations: [],
   departments: [],
+  additionalIndustries: [],
 };
 
 /** Human label for a field, used in labels, prompts and error summaries. */
@@ -286,6 +291,7 @@ export const FIELD_LABELS: Record<CompanyField, string> = {
   benefits: 'Benefits & perks',
   officeLocations: 'Other branches',
   departments: 'Departments',
+  additionalIndustries: 'Other industries',
 };
 
 /** The social fields, in the order they are shown. */
@@ -342,6 +348,7 @@ export function toFormValues(profile: CompanyProfileResponse): CompanyFormValues
     country: text(profile.country),
     officeLocations: cleanValues(profile.officeLocations ?? []),
     departments: cleanValues(profile.departments ?? []),
+    additionalIndustries: cleanValues(profile.additionalIndustries ?? []),
     // Sorted on the way in, so a backend that returns them in insertion order
     // cannot make the same set look like a change.
     benefits: sortBenefits(profile.benefits ?? []),
@@ -391,6 +398,11 @@ export function normalizeFormValues(values: CompanyFormValues): CompanyFormValue
     normalized[field] = cleanValues(values[field]);
   }
   normalized.benefits = sortBenefits(values.benefits);
+  // The main industry is never also an "other" one: the backend drops it, so
+  // keeping it here would show a change that saving cannot make.
+  normalized.additionalIndustries = cleanValues(values.additionalIndustries).filter(
+    (industry) => industry !== normalized.industry,
+  );
   return normalized;
 }
 
@@ -604,6 +616,7 @@ export function toUpdateRequest(values: CompanyFormValues): UpdateCompanyProfile
     country: orNull(n.country),
     officeLocations: n.officeLocations,
     departments: n.departments,
+    additionalIndustries: n.additionalIndustries,
   };
 }
 

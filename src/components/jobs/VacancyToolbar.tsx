@@ -1,5 +1,5 @@
 import { SearchOutlined } from '@ant-design/icons';
-import { Flex, Input, Radio, Select, Typography } from 'antd';
+import { Flex, Input, Radio, Select, Switch, Typography } from 'antd';
 import {
   VACANCY_SEGMENTS,
   VACANCY_SORTS,
@@ -28,6 +28,7 @@ export function VacancyToolbar({
   totalCount,
   filtersActive,
   onClearFilters,
+  onMineChange,
   disabled = false,
 }: Readonly<{
   query: VacancyQuery;
@@ -38,6 +39,11 @@ export function VacancyToolbar({
   totalCount: number;
   filtersActive: boolean;
   onClearFilters: () => void;
+  /**
+   * Offered to someone who sees every vacancy, to narrow to the ones they work
+   * on. Left out for everyone else: their list already is exactly that.
+   */
+  onMineChange?: (mine: boolean) => void;
   disabled?: boolean;
 }>) {
   return (
@@ -134,11 +140,27 @@ export function VacancyToolbar({
         >
           Showing {visibleCount} of {totalCount} {totalCount === 1 ? 'vacancy' : 'vacancies'}
         </Typography.Text>
-        {filtersActive && (
-          <Button size="sm" variant="ghost" onClick={onClearFilters}>
-            Clear filters
-          </Button>
-        )}
+        <Flex align="center" gap={12}>
+          {filtersActive && (
+            <Button size="sm" variant="ghost" onClick={onClearFilters}>
+              Clear filters
+            </Button>
+          )}
+          {onMineChange && (
+            <span className="inline-flex items-center gap-2">
+              <Switch
+                id="vacancy-mine"
+                size="small"
+                checked={query.mine}
+                disabled={disabled}
+                onChange={onMineChange}
+              />
+              <label htmlFor="vacancy-mine" className="cursor-pointer text-small font-medium text-slate-700">
+                Only mine
+              </label>
+            </span>
+          )}
+        </Flex>
       </Flex>
     </Flex>
   );

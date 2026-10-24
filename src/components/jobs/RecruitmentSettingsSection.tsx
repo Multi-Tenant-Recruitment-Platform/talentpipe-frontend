@@ -1,10 +1,10 @@
 import { Flex, Select, Tag, Typography } from 'antd';
 import type { UserResponse } from '../../api/types';
+import { roleLabelFor } from '../../auth/permissions';
 import { useCan } from '../../auth/useCan';
 import { MAX_SCREENING_QUESTIONS, PIPELINE_TEMPLATES } from '../../dashboard/jobVacancy';
 import { useTeamSummary } from '../../dashboard/TeamSummaryContext';
 import { space } from '../../theme/tokens';
-import { formatRole } from '../../utils/format';
 import { BulletListEditor } from './BulletListEditor';
 import type { VacancySectionProps } from './sectionProps';
 import { VacancyField } from './VacancyField';
@@ -12,7 +12,7 @@ import { fieldAria, vacancyFieldId } from './vacancyFieldIds';
 
 const personOption = (member: UserResponse) => ({
   value: member.id,
-  label: `${member.firstName} ${member.lastName} · ${formatRole(member.role)}`,
+  label: `${member.firstName} ${member.lastName} · ${roleLabelFor(member)}`,
 });
 
 export function RecruitmentSettingsSection({
@@ -23,19 +23,20 @@ export function RecruitmentSettingsSection({
   const allow = useCan();
   const { activeMembers, loading } = useTeamSummary();
 
-  // GET /team is COMPANY_ADMIN-only on the backend, so an HR manager has no
-  // roster to choose from. Showing an empty dropdown would read as a broken
+  // GET /team needs team.view, so a role without it has no roster to
+  // choose from. Showing an empty dropdown would read as a broken
   // control; saying who can assign is the honest version, and the vacancy is
   // still perfectly valid without either name.
   const canSeeRoster = allow('team.view');
 
   const rosterHint = canSeeRoster
     ? undefined
-    : 'Only a company admin can assign people to a vacancy. Yours can set this after you create it.';
+    : 'Only someone who can see your team can assign people. They can set this after you create it.';
 
-  const recruiters = activeMembers.filter(
-    (member) => member.role === 'HR_MANAGER' || member.role === 'COMPANY_ADMIN',
-  );
+  // Any active member may recruit for a role — with company roles, a custom
+  // "Talent Partner" is as likely a recruiter as the default Recruiter — so
+  // the list is everyone, labelled with the role they hold.
+  const recruiters = activeMembers;
 
   const pipeline = PIPELINE_TEMPLATES.find(
     (template) => template.id === values.recruitmentPipelineId,

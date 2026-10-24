@@ -1,9 +1,9 @@
 import axios from 'axios';
 import { MOCK_PUBLIC_JOBS } from '../data/mockPublicJobs';
-import { NO_FILTERS, filterJobs } from '../jobs/jobFilters';
+import { NO_FILTERS, boardFacets, filterJobs, toBoardParams, type JobFilters } from '../jobs/jobFilters';
 import { jobUrlKey } from '../jobs/jobPaths';
 import { api } from './client';
-import type { JobDetail, JobSummary, PageResponse } from './types';
+import type { JobDetail, JobFilterOptions, JobSummary, PageResponse } from './types';
 
 const PUBLIC_JOBS_PAGE_SIZE = 20;
 
@@ -16,27 +16,28 @@ const USE_MOCK = import.meta.env.VITE_PUBLIC_JOBS_SOURCE === 'mock';
 const MOCK_LATENCY_MS = 400;
 const delay = () => new Promise((resolve) => setTimeout(resolve, MOCK_LATENCY_MS));
 
-/** What the backend searches by. Blank means "do not narrow by this". */
-export interface PublicJobSearch {
-  /** Matched against title, skills, summary and description, ranked by relevance. */
-  keyword?: string;
-  /** Matched anywhere in the vacancy's location, ignoring case. */
-  location?: string;
-}
+/**
+ * What the board is searching for: the words and place typed into the search
+ * bar, and every filter beside it. Each part is optional; anything missing is
+ * "any".
+ */
+export type PublicJobQuery = Partial<JobFilters>;
 
 /**
  * Published vacancies only; the backend decides what is publicly visible.
- * The search runs in the database, over every published vacancy, so a match
- * is found whichever page it would otherwise have been on.
+ * The search and every filter run in the database, over every published
+ * vacancy, so a match is found whichever page it would otherwise have been
+ * on. Whatever is at its default is left out of the request (see
+ * `toBoardParams`), so an unfiltered request stays the plain board.
  */
 export async function listPublicJobs(
   page = 0,
-  { keyword = '', location = '' }: PublicJobSearch = {},
+  query: PublicJobQuery = {},
   size = PUBLIC_JOBS_PAGE_SIZE,
 ): Promise<PageResponse<JobSummary>> {
   if (USE_MOCK) {
     await delay();
-    const matches = filterJobs(MOCK_PUBLIC_JOBS, { ...NO_FILTERS, keyword, location });
+    const matches = filterJobs(MOCK_PUBLIC_JOBS, { ...NO_FILTERS, ...query });
     return {
       content: matches.slice(page * size, (page + 1) * size),
       page,
@@ -46,9 +47,22 @@ export async function listPublicJobs(
     };
   }
   const { data } = await api.get<PageResponse<JobSummary>>('/public/jobs', {
-    // Left out rather than sent empty, so an unfiltered request stays the plain board.
-    params: { page, size, ...(keyword && { q: keyword }), ...(location && { location }) },
+    params: { page, size, ...toBoardParams(query) },
   });
+  return data;
+}
+
+/**
+ * What the board can be filtered by right now — the industries, job types,
+ * workplaces and salary spans of the published jobs, each with how many hold
+ * it. Endpoint: GET /api/v1/public/jobs/filters.
+ */
+export async function getPublicJobFilters(): Promise<JobFilterOptions> {
+  if (USE_MOCK) {
+    await delay();
+    return boardFacets(MOCK_PUBLIC_JOBS);
+  }
+  const { data } = await api.get<JobFilterOptions>('/public/jobs/filters');
   return data;
 }
 

@@ -1,10 +1,10 @@
 import { ArrowRightOutlined } from '@ant-design/icons';
 import { Flex, Input, Typography, type InputRef } from 'antd';
-import axios from 'axios';
-import { useId, useState, type FormEvent, type Ref } from 'react';
+import { useEffect, useId, useState, type FormEvent, type Ref } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { api, apiErrorMessage } from '../../api/client';
-import type { UserResponse } from '../../api/types';
+import { apiErrorCode, apiErrorDetails, apiErrorStatus } from '../../api/errors';
+import type { UserResponse, WorkspaceChoice, WorkspaceSelection } from '../../api/types';
 import { useAuth } from '../../auth/AuthContext';
 import type { LoginIntent } from '../../auth/loginIntent';
 import { Alert } from '../ui/Alert';
@@ -12,6 +12,13 @@ import { Button } from '../ui/Button';
 import { LoginErrorAlert } from './LoginErrorAlert';
 import { LoginNotices } from './LoginNotices';
 import { PasswordField } from './PasswordField';
+import { WorkspacePicker } from './WorkspacePicker';
+
+/** Which part of the sign-in the popup is showing, so it can name itself. */
+export type LoginStep = 'credentials' | 'choose';
+
+const CHOICE_EXPIRED =
+  'That took a little too long, so we stopped waiting for your choice. Sign in again to pick an account.';
 
 /**
  * What a failed login should say, and whether to offer a resend.
@@ -24,14 +31,28 @@ import { PasswordField } from './PasswordField';
  * other login failure. Only a 403 naming an unverified account is different,
  * because there the resend is both useful and safe — the caller has already
  * proven they know the password.</p>
+ *
+ * <p>Decided by the error code, not by the words of the message: an invitation
+ * that was never accepted answers 403 too, and offering it a verification link
+ * would send a link that cannot help. Servers older than the codes are read
+ * the old way.</p>
  */
 function loginFailure(err: unknown): { message: string; needsVerification: boolean } {
-  const status = axios.isAxiosError(err) ? err.response?.status : undefined;
+  const code = apiErrorCode(err);
+  if (code === 'INVITATION_NOT_ACCEPTED') {
+    // What to do, not just what is wrong: the account is waiting on a link
+    // the person already has.
+    return {
+      message:
+        "You haven't accepted your invitation yet. Open the link in your invitation email to set a password, then sign in here.",
+      needsVerification: false,
+    };
+  }
   const message = apiErrorMessage(err, 'Login failed. Please try again.');
-  return {
-    message,
-    needsVerification: status === 403 && message.toLowerCase().includes('not verified'),
-  };
+  const needsVerification = code
+    ? code === 'ACCOUNT_NOT_VERIFIED'
+    : apiErrorStatus(err) === 403 && message.toLowerCase().includes('not verified');
+  return { message, needsVerification };
 }
 
 /**
@@ -57,15 +78,22 @@ async function requestVerificationEmail(email: string): Promise<void> {
  * the same request, and would have made someone stop to classify themselves
  * before doing the one thing they came to do.</p>
  *
+ * <p>When the credentials fit more than one account — the same email in two
+ * companies, or a company member who is also a candidate — the backend asks
+ * which one (409 WORKSPACE_SELECTION_REQUIRED) and the form becomes a short
+ * list of those accounts. Picking one finishes the sign-in without asking for
+ * the password again; the choice lapses after two minutes.</p>
+ *
  * <p>The form owns the credentials and the submit; the presentation of each
- * region (notices, password) lives in components/auth so this stays a
- * readable description of the flow. Where to go afterwards is the caller's
- * decision, handed back through `onSuccess`.</p>
+ * region (notices, password, the account list) lives in components/auth so
+ * this stays a readable description of the flow. Where to go afterwards is the
+ * caller's decision, handed back through `onSuccess`.</p>
  */
 export function LoginForm({
   intent,
   emailRef,
   onBusyChange,
+  onStepChange,
   onSuccess,
 }: Readonly<{
   intent: LoginIntent;
@@ -73,9 +101,11 @@ export function LoginForm({
   emailRef?: Ref<InputRef>;
   /** Reports an in-flight sign-in, so the popup can refuse to close mid-request. */
   onBusyChange?: (busy: boolean) => void;
+  /** Reports which step is showing, so the popup's heading can follow it. */
+  onStepChange?: (step: LoginStep) => void;
   onSuccess: (user: UserResponse) => void;
 }>) {
-  const { login, sessionEndReason } = useAuth();
+  const { login, selectWorkspace, sessionEndReason } = useAuth();
   const { pathname, search, hash } = useLocation();
   const here = { pathname, search, hash };
   // Generated, not fixed: the popup can open over the registration page, which
@@ -93,6 +123,35 @@ export function LoginForm({
   // which is the only case where offering a resend is useful — and safe,
   // because the caller has already proven they know the password.
   const [needsVerification, setNeedsVerification] = useState(false);
+  // The accounts to choose from, once the backend has asked which one.
+  const [selection, setSelection] = useState<WorkspaceSelection | null>(null);
+  const [openingId, setOpeningId] = useState<string | null>(null);
+  const [choiceError, setChoiceError] = useState<string | null>(null);
+  const [choiceNeedsVerification, setChoiceNeedsVerification] = useState(false);
+
+  const step: LoginStep = selection ? 'choose' : 'credentials';
+  useEffect(() => {
+    onStepChange?.(step);
+  }, [step, onStepChange]);
+
+  // The choice is single-use and short-lived on the server; when it lapses,
+  // go back to the form and say why rather than letting a click fail later.
+  useEffect(() => {
+    if (!selection) {
+      return undefined;
+    }
+    const timer = window.setTimeout(() => backToCredentials(CHOICE_EXPIRED), selection.expiresInSeconds * 1000);
+    return () => window.clearTimeout(timer);
+  }, [selection]);
+
+  /** Leaves the account list, keeping the email so only the password is retyped. */
+  function backToCredentials(message: string | null = null) {
+    setSelection(null);
+    setChoiceError(null);
+    setChoiceNeedsVerification(false);
+    setPassword('');
+    setError(message);
+  }
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -106,11 +165,46 @@ export function LoginForm({
       const loggedIn = await login(email, password);
       onSuccess(loggedIn);
     } catch (err: unknown) {
+      const choices = apiErrorCode(err) === 'WORKSPACE_SELECTION_REQUIRED'
+        ? apiErrorDetails<WorkspaceSelection>(err)
+        : null;
+      if (choices && choices.accounts.length > 0) {
+        setSelection(choices);
+        return;
+      }
       const failure = loginFailure(err);
       setError(failure.message);
       setNeedsVerification(failure.needsVerification);
     } finally {
       setSubmitting(false);
+      onBusyChange?.(false);
+    }
+  }
+
+  async function handleChoose(choice: WorkspaceChoice) {
+    if (!selection) {
+      return;
+    }
+    setChoiceError(null);
+    setChoiceNeedsVerification(false);
+    setOpeningId(choice.accountId);
+    onBusyChange?.(true);
+    try {
+      const signedIn = await selectWorkspace(selection.selectionToken, choice.accountId);
+      onSuccess(signedIn);
+    } catch (err: unknown) {
+      if (apiErrorCode(err) === 'INVALID_TOKEN') {
+        // Used or expired: the only way on is to sign in again.
+        backToCredentials(CHOICE_EXPIRED);
+        return;
+      }
+      // Not verified, invitation pending or locked: this account cannot open
+      // yet, but the others still can, so the list stays.
+      const failure = loginFailure(err);
+      setChoiceError(failure.message);
+      setChoiceNeedsVerification(failure.needsVerification);
+    } finally {
+      setOpeningId(null);
       onBusyChange?.(false);
     }
   }
@@ -125,6 +219,30 @@ export function LoginForm({
 
   // Offered only for an unverified account; `undefined` hides the affordance.
   const onResend = needsVerification ? () => void handleResendVerification() : undefined;
+
+  if (selection) {
+    return (
+      <>
+        <WorkspacePicker
+          email={email}
+          accounts={selection.accounts}
+          busyAccountId={openingId}
+          error={choiceError}
+          onResend={
+            choiceNeedsVerification
+              ? () => {
+                  void requestVerificationEmail(email);
+                  setChoiceNeedsVerification(false);
+                  setChoiceError(`If ${email} needs verifying, a new link is on its way.`);
+                }
+              : undefined
+          }
+          onChoose={(choice) => void handleChoose(choice)}
+          onBack={() => backToCredentials()}
+        />
+      </>
+    );
+  }
 
   return (
     <>

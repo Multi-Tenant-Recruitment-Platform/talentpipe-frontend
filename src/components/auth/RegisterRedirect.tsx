@@ -17,7 +17,7 @@ export function RegisterRedirect({ step }: Readonly<{ step: Exclude<RegisterStep
     return <PageLoader />;
   }
   if (user) {
-    return <Navigate to={homeRouteFor(user.role)} replace />;
+    return <Navigate to={homeRouteFor(user)} replace />;
   }
   return <Navigate to="/" replace state={{ register: { step } }} />;
 }

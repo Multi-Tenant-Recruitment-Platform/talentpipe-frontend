@@ -6,6 +6,7 @@ import type { UserResponse } from '../../api/types';
 import { LocationProbe, makeUser } from '../../test/authHarness';
 
 const login = vi.fn();
+const selectWorkspace = vi.fn();
 const clearSessionEndReason = vi.fn();
 const auth: { user: UserResponse | null; sessionEndReason: 'expired' | null } = {
   user: null,
@@ -18,6 +19,7 @@ vi.mock('../../auth/AuthContext', () => ({
     initializing: false,
     clearSessionEndReason,
     login,
+    selectWorkspace,
     register: vi.fn(),
     logout: vi.fn(),
   }),
@@ -70,6 +72,7 @@ async function signIn(user: ReturnType<typeof userEvent.setup>, dialog: HTMLElem
 beforeEach(() => {
   login.mockReset();
   login.mockResolvedValue(makeUser());
+  selectWorkspace.mockReset();
   clearSessionEndReason.mockReset();
   auth.user = null;
   auth.sessionEndReason = null;
@@ -167,6 +170,120 @@ describe('candidate login', () => {
     expect(login).toHaveBeenCalledWith('admin@acme.test', 'secret123');
     expect(screen.getByText('board')).toBeInTheDocument();
     expect(screen.getByTestId('location')).toHaveTextContent(/^\/$/);
+  });
+});
+
+/** The backend's answer when one email and password fit several accounts. */
+const severalAccounts = {
+  isAxiosError: true,
+  response: {
+    status: 409,
+    data: {
+      code: 'WORKSPACE_SELECTION_REQUIRED',
+      message: 'This email and password match more than one account.',
+      details: {
+        selectionToken: 'choice-token',
+        expiresInSeconds: 120,
+        accounts: [
+          { accountId: 'u-acme', type: 'COMPANY', workspaceName: 'Acme', subdomain: 'acme', roleName: 'Recruiter' },
+          { accountId: 'u-globex', type: 'COMPANY', workspaceName: 'Globex', subdomain: 'globex', roleName: 'Interviewer' },
+          { accountId: 'c-1', type: 'CANDIDATE', roleName: 'Candidate' },
+        ],
+      },
+    },
+  },
+};
+
+const failure = (status: number, code: string, message: string) => ({
+  isAxiosError: true,
+  response: { status, data: { code, message } },
+});
+
+describe('an email with several accounts', () => {
+  it('asks which account to open, then signs in to it without the password again', async () => {
+    login.mockRejectedValue(severalAccounts);
+    selectWorkspace.mockResolvedValue(makeUser({ tenantName: 'Globex' }));
+    const user = userEvent.setup();
+    await signIn(user, await openFromHeader(user), /^sign in$/i);
+
+    const dialog = await screen.findByRole('dialog', { name: 'Choose an account' });
+    const accounts = within(within(dialog).getByRole('list', { name: 'Your accounts' })).getAllByRole('button');
+    expect(accounts.map((button) => button.textContent)).toEqual([
+      expect.stringContaining('Acme'),
+      expect.stringContaining('Globex'),
+      expect.stringContaining('Job seeker profile'),
+    ]);
+
+    await user.click(within(dialog).getByRole('button', { name: /globex/i }));
+
+    expect(selectWorkspace).toHaveBeenCalledWith('choice-token', 'u-globex');
+    expect(await screen.findByText('dashboard')).toBeInTheDocument();
+  });
+
+  it('keeps the list when the chosen account cannot open yet, so another can be picked', async () => {
+    login.mockRejectedValue(severalAccounts);
+    selectWorkspace.mockRejectedValue(
+      failure(403, 'ACCOUNT_NOT_VERIFIED', 'Your email address is not verified yet.'),
+    );
+    const user = userEvent.setup();
+    await signIn(user, await openFromHeader(user), /^sign in$/i);
+    const dialog = await screen.findByRole('dialog', { name: 'Choose an account' });
+
+    await user.click(within(dialog).getByRole('button', { name: /acme/i }));
+
+    expect(await within(dialog).findByRole('alert')).toHaveTextContent('not verified');
+    expect(within(dialog).getByRole('button', { name: /new verification link/i })).toBeInTheDocument();
+    expect(within(dialog).getByRole('button', { name: /globex/i })).toBeEnabled();
+  });
+
+  it('goes back to the form when the choice has expired, keeping the email', async () => {
+    login.mockRejectedValue(severalAccounts);
+    selectWorkspace.mockRejectedValue(failure(401, 'INVALID_TOKEN', 'Invalid or expired token'));
+    const user = userEvent.setup();
+    await signIn(user, await openFromHeader(user), /^sign in$/i);
+    const picker = await screen.findByRole('dialog', { name: 'Choose an account' });
+
+    await user.click(within(picker).getByRole('button', { name: /acme/i }));
+
+    const dialog = await screen.findByRole('dialog', { name: 'Welcome back' });
+    expect(within(dialog).getByRole('alert')).toHaveTextContent(/sign in again/i);
+    expect(within(dialog).getByLabelText(/email/i)).toHaveValue('admin@acme.test');
+    expect(within(dialog).getByLabelText(/password/i)).toHaveValue('');
+  });
+
+  it('lets the person go back and use a different email', async () => {
+    login.mockRejectedValue(severalAccounts);
+    const user = userEvent.setup();
+    await signIn(user, await openFromHeader(user), /^sign in$/i);
+    const picker = await screen.findByRole('dialog', { name: 'Choose an account' });
+
+    await user.click(within(picker).getByRole('button', { name: /use a different email/i }));
+
+    expect(await screen.findByRole('dialog', { name: 'Welcome back' })).toBeInTheDocument();
+    expect(selectWorkspace).not.toHaveBeenCalled();
+  });
+});
+
+describe('accounts that are not ready yet', () => {
+  it('offers a new verification link for an unverified account', async () => {
+    login.mockRejectedValue(failure(403, 'ACCOUNT_NOT_VERIFIED', 'Your email address is not verified yet.'));
+    const user = userEvent.setup();
+    const dialog = await openFromHeader(user);
+    await signIn(user, dialog, /^sign in$/i);
+
+    expect(await within(dialog).findByRole('button', { name: /new verification link/i })).toBeInTheDocument();
+  });
+
+  it('does not offer one for an invitation that was never accepted, which a link cannot fix', async () => {
+    login.mockRejectedValue(
+      failure(403, 'INVITATION_NOT_ACCEPTED', 'This invitation has not been accepted yet.'),
+    );
+    const user = userEvent.setup();
+    const dialog = await openFromHeader(user);
+    await signIn(user, dialog, /^sign in$/i);
+
+    expect(await within(dialog).findByRole('alert')).toHaveTextContent(/open the link in your invitation email/i);
+    expect(within(dialog).queryByRole('button', { name: /new verification link/i })).not.toBeInTheDocument();
   });
 });
 

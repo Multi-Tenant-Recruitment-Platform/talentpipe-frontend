@@ -1,5 +1,6 @@
 import { useDeferredValue, useMemo, useState } from 'react';
 import type { UserResponse } from '../api/types';
+import { roleLabelFor } from '../auth/permissions';
 import type { BadgeTone } from '../components/dashboard/Badge';
 import { formatRole } from '../utils/format';
 
@@ -77,7 +78,13 @@ export interface RosterRow {
   lastName: string;
   fullName: string;
   email: string;
+  /** The fixed role underneath (COMPANY_ADMIN, …, or CUSTOM); tones the badge. */
   role: string;
+  /** The company role's id, when the server sends one. */
+  roleId: string | null;
+  /** What the role filter groups by: the role id, or the fixed role on older servers. */
+  roleKey: string;
+  /** The company's name for the role. */
   roleLabel: string;
   status: string;
   statusLabel: string;
@@ -98,7 +105,7 @@ export function toRosterRows(members: UserResponse[], selfId: string | undefined
   return members.map((member) => {
     const meta = statusMeta(member.status);
     const fullName = `${member.firstName} ${member.lastName}`.trim();
-    const roleLabel = formatRole(member.role);
+    const roleLabel = roleLabelFor(member);
     const isInvited = member.status === 'INVITED';
 
     return {
@@ -108,6 +115,8 @@ export function toRosterRows(members: UserResponse[], selfId: string | undefined
       fullName,
       email: member.email,
       role: member.role,
+      roleId: member.roleId ?? null,
+      roleKey: member.roleId ?? member.role,
       roleLabel,
       status: member.status,
       statusLabel: meta.label,
@@ -137,7 +146,7 @@ interface RosterSelection {
   segmentCounts: Record<Segment, number>;
   /** Rows in neither Active nor Pending — disabled or unverified. */
   otherCount: number;
-  roleOptions: string[];
+  roleOptions: { value: string; label: string }[];
 }
 
 function compare(a: RosterRow, b: RosterRow, key: SortKey): number {
@@ -160,7 +169,7 @@ export function selectRoster(rows: RosterRow[], q: RosterQuery): RosterSelection
 
   const matched = rows.filter(
     (row) =>
-      (q.roleFilter === 'ALL' || row.role === q.roleFilter) &&
+      (q.roleFilter === 'ALL' || row.roleKey === q.roleFilter) &&
       (needle === '' || row.search.includes(needle)),
   );
 
@@ -194,9 +203,9 @@ export function selectRoster(rows: RosterRow[], q: RosterQuery): RosterSelection
     // comparator comes from UTF-16 code units, which is not alphabetical
     // order for anything outside plain ASCII — the same reason the tiebreak
     // above uses it.
-    roleOptions: Array.from(new Set(rows.map((row) => row.role))).sort((a, b) =>
-      a.localeCompare(b),
-    ),
+    roleOptions: Array.from(new Map(rows.map((row) => [row.roleKey, row.roleLabel])).entries())
+      .map(([value, label]) => ({ value, label }))
+      .sort((a, b) => a.label.localeCompare(b.label)),
   };
 }
 

@@ -11,12 +11,21 @@ import type { AuthResponse } from './types';
  *   across concurrent requests) and retries the original request. A second
  *   401, or a failed refresh, surfaces as a session-expired event that the
  *   AuthContext turns into a logout.
+ * - On a 403 ACCESS_DENIED, announces that the signed-in user's permissions
+ *   may have changed, so the AuthContext can re-read them.
  */
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '/api/v1';
 
 /** Fired when the session cannot be recovered; AuthContext listens for it. */
 export const SESSION_EXPIRED_EVENT = 'talentpipe:session-expired';
+
+/**
+ * Fired when the server refuses something the screen offered. A role change
+ * takes effect on the server at once, while the UI's permissions were read at
+ * sign-in — this is the cue to read them again.
+ */
+export const ACCESS_DENIED_EVENT = 'talentpipe:access-denied';
 
 export const api = axios.create({ baseURL: BASE_URL });
 
@@ -77,6 +86,14 @@ api.interceptors.response.use(undefined, async (error: AxiosError) => {
       return api(original);
     }
     window.dispatchEvent(new Event(SESSION_EXPIRED_EVENT));
+  }
+
+  if (
+    error.response?.status === 403 &&
+    !isAuthAttempt &&
+    (error.response.data as { code?: string } | undefined)?.code === 'ACCESS_DENIED'
+  ) {
+    window.dispatchEvent(new Event(ACCESS_DENIED_EVENT));
   }
 
   // Throwing (rather than returning a rejected promise) preserves the

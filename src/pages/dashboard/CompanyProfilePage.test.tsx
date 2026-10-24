@@ -897,3 +897,32 @@ describe('permissions', () => {
     expect(screen.queryByRole('textbox')).toBeNull();
   });
 });
+
+describe('other industries', () => {
+  it('adds more besides the main one, never the main one again, and saves them', async () => {
+    const user = userEvent.setup();
+    await openEditor(user);
+
+    await user.click(screen.getByLabelText('Other industries'));
+    await user.click(await screen.findByTitle('Healthcare'));
+    // The main industry is not offered as an "other" one.
+    const offered = Array.from(document.querySelectorAll('.ant-select-dropdown .ant-select-item-option')).map(
+      (option) => option.getAttribute('title'),
+    );
+    expect(offered).toContain('Education');
+    expect(offered).not.toContain('Information Technology');
+    await user.click(screen.getByTitle('Education'));
+    await user.click(screen.getByRole('button', { name: /save changes/i }));
+
+    await waitFor(() => expect(update).toHaveBeenCalled());
+    expect(lastRequest().additionalIndustries).toEqual(['Healthcare', 'Education']);
+  });
+
+  it('shows them beside the main industry on the profile', async () => {
+    get.mockResolvedValue({ ...PROFILE, additionalIndustries: ['Healthcare'] });
+    renderPage();
+
+    expect(await screen.findByText('Healthcare')).toBeInTheDocument();
+    expect(screen.getByText('Information Technology')).toBeInTheDocument();
+  });
+});

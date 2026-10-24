@@ -6,15 +6,15 @@ import {
   SearchOutlined,
   SolutionOutlined,
 } from '@ant-design/icons';
-import { Checkbox, ConfigProvider, Dropdown, Input, Segmented, Select, Slider, type ThemeConfig } from 'antd';
+import { Checkbox, ConfigProvider, Dropdown, Input, Radio, Segmented, Select, Slider, type ThemeConfig } from 'antd';
 import { useEffect, useId, useRef, useState, type FormEvent, type KeyboardEvent, type ReactNode } from 'react';
-import type { EmploymentType, JobSummary, PayPeriod, WorkplaceType } from '../../api/types';
+import type { EmploymentType, JobFilterOptions, PayPeriod, SalaryRangeOption, WorkplaceType } from '../../api/types';
 import { EMPLOYMENT_TYPES, PAY_PERIODS, WORKPLACE_TYPES } from '../../dashboard/jobVacancy';
 import {
   EXPERIENCE_LEVELS,
   activeFilterCount,
-  hasSalary,
-  salaryBounds,
+  facetCount,
+  salaryBoundsFrom,
   type ExperienceLevel,
   type JobFilters,
 } from '../../jobs/jobFilters';
@@ -76,13 +76,13 @@ const Divider = () => (
  * currency, so until those hold the slider is shown disabled with the reason.
  */
 function SalaryRange({
-  jobs,
+  ranges,
   filters,
   onChange,
-}: Readonly<{ jobs: JobSummary[]; filters: JobFilters; onChange: (next: JobFilters) => void }>) {
+}: Readonly<{ ranges: SalaryRangeOption[] | undefined; filters: JobFilters; onChange: (next: JobFilters) => void }>) {
   const labelId = useId();
   const [draft, setDraft] = useState<[number, number] | null>(null);
-  const bounds = salaryBounds(jobs, filters.payPeriod);
+  const bounds = salaryBoundsFrom(ranges, filters.payPeriod, filters.currency);
 
   if (!bounds.available) {
     return (
@@ -100,11 +100,26 @@ function SalaryRange({
   const commit = ([low, high]: number[]) => {
     setDraft(null);
     const whole = low <= bounds.min && high >= bounds.max;
-    onChange({ ...filters, salaryRange: whole ? null : [low, high] });
+    // The currency travels with the range: an amount means nothing without it.
+    onChange({ ...filters, currency: whole ? null : bounds.currency, salaryRange: whole ? null : [low, high] });
   };
 
   return (
     <div>
+      {/* Pay in different currencies does not compare, so one is chosen at a
+          time; the most common is offered first. */}
+      {bounds.currencies.length > 1 && (
+        <div className="mb-3">
+          <p className="m-0 mb-2 text-small font-semibold text-slate-900">Currency</p>
+          <Segmented<string>
+            block
+            aria-label="Currency"
+            value={bounds.currency}
+            options={bounds.currencies}
+            onChange={(currency) => onChange({ ...filters, currency, salaryRange: null })}
+          />
+        </div>
+      )}
       <p className="m-0 flex items-baseline justify-between gap-2 text-small">
         <span id={labelId} className="font-semibold text-slate-900">
           Salary range
@@ -135,10 +150,10 @@ function SalaryRange({
  * focus back to the field.
  */
 function SalaryField({
-  jobs,
+  ranges,
   filters,
   onChange,
-}: Readonly<{ jobs: JobSummary[]; filters: JobFilters; onChange: (next: JobFilters) => void }>) {
+}: Readonly<{ ranges: SalaryRangeOption[] | undefined; filters: JobFilters; onChange: (next: JobFilters) => void }>) {
   const [open, setOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -153,7 +168,9 @@ function SalaryField({
 
   const summary = filters.payPeriod
     ? `${payLabel(filters.payPeriod)}${
-        filters.salaryRange ? ` · ${amount(filters.salaryRange[0])}–${amount(filters.salaryRange[1])}` : ''
+        filters.salaryRange
+          ? ` · ${filters.currency ? `${filters.currency} ` : ''}${amount(filters.salaryRange[0])}–${amount(filters.salaryRange[1])}`
+          : ''
       }`
     : 'Any pay';
 
@@ -190,12 +207,17 @@ function SalaryField({
               options={[{ value: 'any', label: 'Any' }, ...PAY_PERIODS.map(({ id }) => ({ value: id, label: PERIOD_TABS[id] }))]}
               // A range in one period means nothing in another, so it starts again.
               onChange={(period) =>
-                onChange({ ...filters, payPeriod: period === 'any' ? null : period, salaryRange: null })
+                onChange({ ...filters, payPeriod: period === 'any' ? null : period, currency: null, salaryRange: null })
               }
             />
           </div>
           {/* Keyed by period, so a new period drops a half-dragged range. */}
-          <SalaryRange key={filters.payPeriod ?? 'any'} jobs={jobs} filters={filters} onChange={onChange} />
+          <SalaryRange
+            key={`${filters.payPeriod ?? 'any'}|${filters.currency ?? ''}`}
+            ranges={ranges}
+            filters={filters}
+            onChange={onChange}
+          />
         </div>
       )}
     >
@@ -232,15 +254,15 @@ export function JobSearchBar({
   onSearch,
   filters,
   onChange,
-  jobs,
+  facets,
 }: Readonly<{
   keyword: string;
   location: string;
   onSearch: (keyword: string, location: string) => void;
   filters: JobFilters;
   onChange: (next: JobFilters) => void;
-  /** Every job loaded so far, for the salary range's bounds. */
-  jobs: JobSummary[];
+  /** What the board can be filtered by; the salary slider spans its pay ranges. */
+  facets: JobFilterOptions | null;
 }>) {
   const [keyword, setKeyword] = useState(appliedKeyword);
   const [location, setLocation] = useState(appliedLocation);
@@ -297,7 +319,7 @@ export function JobSearchBar({
         </Field>
         <Divider />
         <div className="min-w-0 lg:flex-1">
-          <SalaryField jobs={jobs} filters={filters} onChange={onChange} />
+          <SalaryField ranges={facets?.salaryRanges} filters={filters} onChange={onChange} />
         </div>
         <Button
           type="submit"
@@ -409,8 +431,7 @@ function FilterOption({
 const toggle = <T,>(list: T[], id: T, on: boolean) =>
   on ? (list.includes(id) ? list : [...list, id]) : list.filter((item) => item !== id);
 
-const countBy = <T,>(jobs: JobSummary[], pick: (job: JobSummary) => T | null | undefined, id: T) =>
-  jobs.filter((job) => pick(job) === id).length;
+const ANY_INDUSTRY = '';
 
 /**
  * The filters beside the results. Every choice is visible and ticked in
@@ -422,15 +443,15 @@ const countBy = <T,>(jobs: JobSummary[], pick: (job: JobSummary) => T | null | u
 export function JobFilterBar({
   filters,
   onChange,
-  jobs,
+  facets,
   canClear,
   onClear,
   collapsible = true,
 }: Readonly<{
   filters: JobFilters;
   onChange: (next: JobFilters) => void;
-  /** The jobs to count each choice against. Leave out while the counts would be partial. */
-  jobs?: JobSummary[];
+  /** Counts across every open job; without them the choices stand on their own. */
+  facets?: JobFilterOptions | null;
   /** Whether anything — a filter here, or the search above — is narrowing the list. */
   canClear: boolean;
   onClear: () => void;
@@ -477,12 +498,52 @@ export function JobFilterBar({
       </div>
 
       <div id={groupsId} hidden={!open}>
+        {/* One industry at a time, as the board searches by one. Offered once
+            the board knows which industries have open jobs, plus the one
+            chosen, so a choice never disappears from under the visitor. */}
+        {(facets?.industries?.length || filters.industry) && (
+          <FilterGroup label="Industry">
+            <Radio.Group
+              value={filters.industry ?? ANY_INDUSTRY}
+              onChange={(event) =>
+                onChange({ ...filters, industry: event.target.value === ANY_INDUSTRY ? null : event.target.value })
+              }
+              className="contents"
+            >
+              <Radio value={ANY_INDUSTRY} className="tp-jobs-filter-option">
+                <span>Any industry</span>
+              </Radio>
+              {[
+                ...(facets?.industries ?? []),
+                ...(filters.industry && !facets?.industries?.some((option) => option.value === filters.industry)
+                  ? [{ value: filters.industry, count: 0 }]
+                  : []),
+              ].map(({ value, count }) => (
+                <Radio
+                  key={value}
+                  value={value}
+                  className={
+                    count === 0 && filters.industry !== value
+                      ? 'tp-jobs-filter-option tp-jobs-filter-option-empty'
+                      : 'tp-jobs-filter-option'
+                  }
+                >
+                  <span>{value}</span>
+                  <span aria-hidden="true" className="tp-jobs-filter-option-count">
+                    {count}
+                  </span>
+                </Radio>
+              ))}
+            </Radio.Group>
+          </FilterGroup>
+        )}
+
         <FilterGroup label="Job type">
           {EMPLOYMENT_TYPES.map(({ id, label }) => (
             <FilterOption
               key={id}
               label={label}
-              count={jobs && countBy(jobs, (job) => job.employmentType, id)}
+              count={facets?.employmentTypes ? facetCount(facets.employmentTypes, id) : undefined}
               checked={filters.employmentTypes.includes(id)}
               onChange={(on) => onChange({ ...filters, employmentTypes: toggle(filters.employmentTypes, id, on) })}
             />
@@ -494,7 +555,7 @@ export function JobFilterBar({
             <FilterOption
               key={id}
               label={label}
-              count={jobs && countBy(jobs, (job) => job.workplaceType, id)}
+              count={facets?.workplaceTypes ? facetCount(facets.workplaceTypes, id) : undefined}
               checked={filters.workplaceTypes.includes(id)}
               onChange={(on) => onChange({ ...filters, workplaceTypes: toggle(filters.workplaceTypes, id, on) })}
             />
@@ -504,7 +565,7 @@ export function JobFilterBar({
         <FilterGroup label="Salary">
           <FilterOption
             label="Salary shown"
-            count={jobs && jobs.filter(hasSalary).length}
+            count={facets?.salaryRanges ? facets.salaryRanges.reduce((sum, range) => sum + range.count, 0) : undefined}
             checked={filters.salaryOnly}
             onChange={(salaryOnly) => onChange({ ...filters, salaryOnly })}
           />

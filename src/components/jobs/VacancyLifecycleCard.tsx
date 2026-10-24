@@ -1,6 +1,8 @@
 import { CheckOutlined } from '@ant-design/icons';
 import { Card, Typography } from 'antd';
 import type { JobVacancyResponse, VacancyStatus } from '../../api/types';
+import { useAuth } from '../../auth/AuthContext';
+import { useTeamSummary } from '../../dashboard/TeamSummaryContext';
 import { VACANCY_STATUS_LABEL } from '../../dashboard/jobVacancy';
 import { space } from '../../theme/tokens';
 import { formatDate, formatRelativeTime } from '../../utils/format';
@@ -54,6 +56,17 @@ function publishedOnCreate(vacancy: JobVacancyResponse): boolean {
  */
 export function VacancyLifecycleCard({ vacancy }: Readonly<{ vacancy: JobVacancyResponse }>) {
   const current = ORDER.indexOf(vacancy.status);
+  const { user } = useAuth();
+  const { members } = useTeamSummary();
+  // Named from the team list, which only some roles can read; without a name
+  // the row is left out rather than showing an id.
+  const creator = vacancy.createdBy ? members.find((member) => member.id === vacancy.createdBy) : undefined;
+  let createdBy: string | null = null;
+  if (vacancy.createdBy && vacancy.createdBy === user?.id) {
+    createdBy = 'You';
+  } else if (creator) {
+    createdBy = `${creator.firstName} ${creator.lastName}`.trim();
+  }
 
   return (
     <Card styles={{ body: { padding: space[3] } }}>
@@ -102,6 +115,7 @@ export function VacancyLifecycleCard({ vacancy }: Readonly<{ vacancy: JobVacancy
           <dt>Created</dt>
           <dd>
             <time dateTime={vacancy.createdAt}>{formatDate(vacancy.createdAt)}</time>
+            {createdBy && <span className="text-slate-500"> by {createdBy}</span>}
           </dd>
         </div>
         <div>

@@ -1,9 +1,10 @@
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { JobDetail, JobSummary, PageResponse } from '../api/types';
 import { JobList } from '../components/jobs/JobList';
+import { NO_FILTERS, boardFacets, filterJobs } from '../jobs/jobFilters';
 import { JobDetailPage } from './JobDetailPage';
 import { JobsPage } from './JobsPage';
 
@@ -13,8 +14,9 @@ vi.mock('../auth/AuthContext', async () => (await import('../test/authHarness'))
 vi.mock('../api/publicJobs', () => ({
   listPublicJobs: vi.fn(),
   getPublicJob: vi.fn(),
+  getPublicJobFilters: vi.fn(),
 }));
-const { listPublicJobs, getPublicJob } = vi.mocked(await import('../api/publicJobs'));
+const { listPublicJobs, getPublicJob, getPublicJobFilters } = vi.mocked(await import('../api/publicJobs'));
 
 const THREE_DAYS_AGO = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString();
 
@@ -67,9 +69,21 @@ function renderAt(path: string) {
   );
 }
 
+/**
+ * Stands in for the backend: every filter is answered by the same rules the
+ * mock board runs, over these jobs, and the counts describe all of them.
+ */
+function serveBoard(jobs: JobSummary[]) {
+  listPublicJobs.mockImplementation(async (_page, query) => page(filterJobs(jobs, { ...NO_FILTERS, ...query })));
+  getPublicJobFilters.mockResolvedValue(boardFacets(jobs));
+}
+
 beforeEach(() => {
   listPublicJobs.mockReset();
   getPublicJob.mockReset();
+  getPublicJobFilters.mockReset();
+  // No counts unless a test says what the board holds.
+  getPublicJobFilters.mockResolvedValue({ categories: [], locations: [] });
 });
 
 describe('JobsPage', () => {
@@ -153,7 +167,7 @@ describe('JobsPage', () => {
     listPublicJobs.mockResolvedValueOnce(page([FULL_JOB, MINIMAL_JOB], { pageNo: 1, total: 2, totalPages: 2 }));
     await user.click(screen.getByRole('button', { name: 'Load more jobs' }));
     expect(await screen.findByRole('article', { name: MINIMAL_JOB.title })).toBeInTheDocument();
-    expect(listPublicJobs).toHaveBeenLastCalledWith(1, { keyword: '', location: '' });
+    expect(listPublicJobs).toHaveBeenLastCalledWith(1, expect.objectContaining({ keyword: '', location: '' }));
     expect(screen.getAllByRole('article')).toHaveLength(2);
     expect(screen.getByText('2 jobs available')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Load more jobs' })).toBeNull();
@@ -178,25 +192,28 @@ describe('JobsPage', () => {
     expect(listPublicJobs).toHaveBeenCalledTimes(1);
     await user.click(search.getByRole('button', { name: 'Search' }));
     expect(await screen.findByText('1 job found')).toBeInTheDocument();
-    expect(listPublicJobs).toHaveBeenLastCalledWith(0, { keyword: 'typescript', location: '' });
+    expect(listPublicJobs).toHaveBeenLastCalledWith(0, expect.objectContaining({ keyword: 'typescript', location: '' }));
     expect(screen.getAllByRole('article')).toHaveLength(1);
 
     await user.type(search.getByRole('textbox', { name: 'Location' }), 'Kandy{Enter}');
     expect(await screen.findByText('No matching jobs found')).toBeInTheDocument();
-    expect(listPublicJobs).toHaveBeenLastCalledWith(0, { keyword: 'typescript', location: 'Kandy' });
+    expect(listPublicJobs).toHaveBeenLastCalledWith(
+      0,
+      expect.objectContaining({ keyword: 'typescript', location: 'Kandy' }),
+    );
     expect(screen.queryByRole('article')).toBeNull();
     expect(screen.getByText('0 jobs found')).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Clear all' }));
     expect(await screen.findByText('2 jobs available')).toBeInTheDocument();
-    expect(listPublicJobs).toHaveBeenLastCalledWith(0, { keyword: '', location: '' });
+    expect(listPublicJobs).toHaveBeenLastCalledWith(0, expect.objectContaining({ keyword: '', location: '' }));
     expect(screen.getByRole('textbox', { name: 'Location' })).toHaveValue('');
   });
 
   it('filters to jobs that state a salary, and sorts newest first', async () => {
     const user = userEvent.setup();
     const older = { ...MINIMAL_JOB, publishedAt: '2020-01-01T00:00:00Z' };
-    listPublicJobs.mockResolvedValue(page([older, FULL_JOB]));
+    serveBoard([older, FULL_JOB]);
     renderAt('/jobs');
     await screen.findByRole('article', { name: FULL_JOB.title });
     const titles = () => screen.getAllByRole('article').map((card) => within(card).getByRole('heading').textContent);
@@ -204,46 +221,51 @@ describe('JobsPage', () => {
 
     await user.click(screen.getByRole('combobox', { name: 'Sort jobs' }));
     await user.click(await screen.findByTitle('Newest'));
-    expect(titles()).toEqual([FULL_JOB.title, MINIMAL_JOB.title]);
+    await waitFor(() => expect(titles()).toEqual([FULL_JOB.title, MINIMAL_JOB.title]));
+    expect(listPublicJobs).toHaveBeenLastCalledWith(0, expect.objectContaining({ sort: 'newest' }));
 
     await user.click(screen.getByRole('checkbox', { name: 'Salary shown' }));
+    expect(await screen.findByText('1 matching job')).toBeInTheDocument();
     expect(titles()).toEqual([FULL_JOB.title]);
-    expect(screen.getByText('1 matching job')).toBeInTheDocument();
   });
 
   it('filters by job type and workplace with tick boxes that count their jobs', async () => {
     const user = userEvent.setup();
     const contract: JobSummary = { ...MINIMAL_JOB, employmentType: 'CONTRACT', workplaceType: 'REMOTE' };
-    listPublicJobs.mockResolvedValue(page([FULL_JOB, contract]));
+    serveBoard([FULL_JOB, contract]);
     renderAt('/jobs');
     await screen.findByRole('article', { name: FULL_JOB.title });
 
     const group = (name: string) => within(screen.getByRole('group', { name }));
-    // Every choice is in the open, each with how many loaded jobs it holds.
+    const articles = () => screen.queryAllByRole('article');
+    // Every choice is in the open, each with how many open jobs it holds.
     expect(group('Job type').getAllByRole('checkbox')).toHaveLength(5);
-    expect(group('Job type').getByText('Contract').parentElement).toHaveTextContent('Contract1');
+    await waitFor(() =>
+      expect(group('Job type').getByText('Contract').parentElement).toHaveTextContent('Contract1'),
+    );
     expect(group('Job type').getByText('Internship').parentElement).toHaveTextContent('Internship0');
 
     await user.click(group('Job type').getByRole('checkbox', { name: 'Contract' }));
-    expect(screen.getAllByRole('article')).toHaveLength(1);
+    await waitFor(() => expect(articles()).toHaveLength(1));
     expect(screen.getByRole('article', { name: MINIMAL_JOB.title })).toBeInTheDocument();
+    expect(listPublicJobs).toHaveBeenLastCalledWith(0, expect.objectContaining({ employmentTypes: ['CONTRACT'] }));
 
     // Within a group the choices widen; across groups they narrow.
     await user.click(group('Job type').getByRole('checkbox', { name: 'Full time' }));
-    expect(screen.getAllByRole('article')).toHaveLength(2);
+    await waitFor(() => expect(articles()).toHaveLength(2));
     await user.click(group('Workplace').getByRole('checkbox', { name: 'Hybrid' }));
-    expect(screen.getAllByRole('article')).toHaveLength(1);
+    await waitFor(() => expect(articles()).toHaveLength(1));
     expect(screen.getByRole('article', { name: FULL_JOB.title })).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Clear all' }));
-    expect(screen.getAllByRole('article')).toHaveLength(2);
+    await waitFor(() => expect(articles()).toHaveLength(2));
     expect(group('Job type').getByRole('checkbox', { name: 'Contract' })).not.toBeChecked();
   });
 
   it('quick filters under the search bar switch the same filters as the tick boxes', async () => {
     const user = userEvent.setup();
     const remote: JobSummary = { ...MINIMAL_JOB, workplaceType: 'REMOTE' };
-    listPublicJobs.mockResolvedValue(page([FULL_JOB, remote]));
+    serveBoard([FULL_JOB, remote]);
     renderAt('/jobs');
     await screen.findByRole('article', { name: FULL_JOB.title });
 
@@ -251,20 +273,72 @@ describe('JobsPage', () => {
     await user.click(quick.getByRole('button', { name: 'Remote' }));
     expect(quick.getByRole('button', { name: 'Remote' })).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByRole('checkbox', { name: 'Remote' })).toBeChecked();
-    expect(screen.getAllByRole('article')).toHaveLength(1);
+    await waitFor(() => expect(screen.getAllByRole('article')).toHaveLength(1));
     expect(screen.getByRole('article', { name: MINIMAL_JOB.title })).toBeInTheDocument();
 
     await user.click(screen.getByRole('checkbox', { name: 'Remote' }));
     expect(quick.getByRole('button', { name: 'Remote' })).toHaveAttribute('aria-pressed', 'false');
-    expect(screen.getAllByRole('article')).toHaveLength(2);
+    await waitFor(() => expect(screen.getAllByRole('article')).toHaveLength(2));
   });
 
-  it('leaves the counts off while there are more jobs to load', async () => {
+  it('counts across the whole board, not just the page loaded', async () => {
     listPublicJobs.mockResolvedValue(page([FULL_JOB], { total: 40, totalPages: 2 }));
+    getPublicJobFilters.mockResolvedValue({
+      categories: [],
+      locations: [],
+      employmentTypes: [{ value: 'FULL_TIME', count: 40 }],
+      workplaceTypes: [],
+    });
+    renderAt('/jobs');
+    await screen.findByRole('article', { name: FULL_JOB.title });
+    const fullTime = within(screen.getByRole('group', { name: 'Job type' })).getByText('Full time');
+    await waitFor(() => expect(fullTime.parentElement).toHaveTextContent('Full time40'));
+  });
+
+  it('leaves the counts off when the board cannot say what it holds', async () => {
+    listPublicJobs.mockResolvedValue(page([FULL_JOB]));
+    getPublicJobFilters.mockRejectedValue(new Error('network down'));
     renderAt('/jobs');
     await screen.findByRole('article', { name: FULL_JOB.title });
     const fullTime = within(screen.getByRole('group', { name: 'Job type' })).getByText('Full time');
     expect(fullTime.parentElement).toHaveTextContent(/^Full time$/);
+  });
+
+  it('narrows to one industry at a time, from the industries with open jobs', async () => {
+    const user = userEvent.setup();
+    const hospital: JobSummary = { ...MINIMAL_JOB, industry: 'Healthcare' };
+    serveBoard([{ ...FULL_JOB, industry: 'Information Technology' }, hospital]);
+    renderAt('/jobs');
+    await screen.findByRole('article', { name: FULL_JOB.title });
+
+    const industry = within(await screen.findByRole('group', { name: 'Industry' }));
+    expect(industry.getByRole('radio', { name: /any industry/i })).toBeChecked();
+    const healthcare = industry.getByRole('radio', { name: /healthcare/i });
+    await user.click(healthcare.closest('label') ?? healthcare);
+
+    await waitFor(() => expect(screen.getAllByRole('article')).toHaveLength(1));
+    expect(screen.getByRole('article', { name: MINIMAL_JOB.title })).toBeInTheDocument();
+    expect(listPublicJobs).toHaveBeenLastCalledWith(0, expect.objectContaining({ industry: 'Healthcare' }));
+    expect(screen.getByRole('button', { name: 'Clear all' })).toBeInTheDocument();
+  });
+
+  it('keeps the list on screen, dimmed, while a filter is being applied', async () => {
+    const user = userEvent.setup();
+    listPublicJobs.mockResolvedValueOnce(page([FULL_JOB, MINIMAL_JOB]));
+    let answer: (value: PageResponse<JobSummary>) => void = () => undefined;
+    listPublicJobs.mockImplementationOnce(() => new Promise((resolve) => (answer = resolve)));
+    renderAt('/jobs');
+    await screen.findByRole('article', { name: FULL_JOB.title });
+
+    await user.click(screen.getByRole('checkbox', { name: 'Salary shown' }));
+
+    expect(screen.getAllByRole('article')).toHaveLength(2);
+    expect(screen.getByText('Updating…')).toBeInTheDocument();
+    expect(screen.getAllByRole('article')[0].closest('[aria-busy="true"]')).not.toBeNull();
+
+    answer(page([FULL_JOB]));
+    expect(await screen.findByText('1 matching job')).toBeInTheDocument();
+    expect(screen.getAllByRole('article')).toHaveLength(1);
   });
 
   it('opens the matching vacancy from Details', async () => {

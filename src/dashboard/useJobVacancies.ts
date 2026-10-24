@@ -50,7 +50,7 @@ interface JobVacancyListController {
   replace: (vacancy: JobVacancyResponse) => void;
 }
 
-export function useJobVacancyList(): JobVacancyListController {
+export function useJobVacancyList(mine = false): JobVacancyListController {
   const { user } = useAuth();
   const begin = useLatest();
   const [vacancies, setVacancies] = useState<JobVacancyResponse[]>([]);
@@ -60,7 +60,7 @@ export function useJobVacancyList(): JobVacancyListController {
   const refresh = useCallback(async () => {
     const current = begin();
     try {
-      const list = await jobsApi.list();
+      const list = await jobsApi.list(mine ? { assignedTo: 'me' } : {});
       if (current()) {
         setVacancies(list);
         setError(null);
@@ -74,7 +74,7 @@ export function useJobVacancyList(): JobVacancyListController {
         setLoading(false);
       }
     }
-  }, [begin]);
+  }, [begin, mine]);
 
   useEffect(() => {
     void refresh();
