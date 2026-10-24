@@ -38,7 +38,7 @@ import { PageLoader } from '../components/PageLoader';
 import { ProfileTrigger } from '../components/ProfileTrigger';
 import { pageContainer, popoverShell } from '../components/ui/classes';
 import type { UserResponse } from '../api/types';
-import type { Permission } from '../auth/permissions';
+import { roleLabelFor, type Permission } from '../auth/permissions';
 import { useCan } from '../auth/useCan';
 import { Avatar } from '../components/dashboard/Avatar';
 import { CompanyLogo } from '../components/dashboard/CompanyLogo';
@@ -46,7 +46,6 @@ import { RoleBadge } from '../components/dashboard/RoleBadge';
 import { CompanyProfileProvider, useCompanyIdentity } from '../dashboard/CompanyProfileContext';
 import { TeamSummaryProvider } from '../dashboard/TeamSummaryContext';
 import { activeTenant } from '../tenant/activeTenant';
-import { formatRole } from '../utils/format';
 import { tenantStorage } from '../utils/tenantStorage';
 import type { IconComponent } from '../components/ui/icon';
 import { primary, slate, surface } from '../theme/tokens';
@@ -480,7 +479,8 @@ function DashboardChrome() {
                 firstName={user?.firstName ?? '?'}
                 lastName={user?.lastName}
                 name={fullName}
-                role={user ? formatRole(user.role) : ''}
+                // The company's own name for the role ("Hiring Coordinator"), not the fixed one underneath.
+                role={user ? roleLabelFor(user) : ''}
                 aria-label={`Account menu for ${fullName}`}
               />
             </Dropdown>

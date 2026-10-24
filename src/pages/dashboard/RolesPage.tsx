@@ -199,7 +199,11 @@ export function RolesPage() {
     <>
       <PageHeader
         title="Roles & permissions"
-        subtitle="Decide what each person in your workspace can see and do. Changes apply as soon as they are saved."
+        subtitle={
+          canManage
+            ? 'Decide what each person in your workspace can see and do. Changes apply as soon as they are saved.'
+            : 'What each person in your workspace can see and do, by role.'
+        }
       >
         {newRole}
       </PageHeader>

@@ -112,8 +112,8 @@ export function CompanySettingsPage() {
                     className="mb-0"
                   />
                   <Typography.Text type="secondary" className="text-caption">
-                    {seatsLeft} {seatsLeft === 1 ? 'seat' : 'seats'} left — invite HR managers and
-                    interviewers anytime.
+                    {seatsLeft} {seatsLeft === 1 ? 'seat' : 'seats'} left — invite teammates with any of
+                    your roles, anytime.
                   </Typography.Text>
                 </div>
                 <Button

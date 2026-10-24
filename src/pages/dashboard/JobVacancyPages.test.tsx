@@ -530,6 +530,14 @@ describe('the industry a vacancy is filed under', () => {
     expect(api.create).toHaveBeenCalledWith(expect.objectContaining({ industry: 'Financial Services' }));
   });
 
+  it('is shown among the basic information of the vacancy', async () => {
+    api.get.mockResolvedValue(makeVacancy({ id: 'v-1', status: 'PUBLISHED', industry: 'Information Technology' }));
+    render(<VacancyRoutes path="/dashboard/jobs/v-1" />);
+
+    const term = await screen.findByText('Industry', { selector: 'dt' });
+    expect(term.nextElementSibling).toHaveTextContent('Information Technology');
+  });
+
   it('leaves the choice to the server when nothing is picked, and has no field without industries', async () => {
     api.create.mockResolvedValue(makeVacancy({ id: 'v-9', status: 'DRAFT' }));
     api.get.mockResolvedValue(makeVacancy({ id: 'v-9', status: 'DRAFT' }));

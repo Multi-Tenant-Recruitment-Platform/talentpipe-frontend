@@ -27,7 +27,7 @@ export function PermissionCoverage({
   return (
     <dl className={`m-0 grid ${compact ? 'gap-1.5' : 'gap-2.5'}`}>
       {rows.map(({ group, held, total }) => (
-        <div key={group.key} className="grid grid-cols-[minmax(0,7.5rem)_minmax(0,1fr)] items-center gap-3">
+        <div key={group.key} className="grid grid-cols-[minmax(0,10rem)_minmax(0,1fr)] items-center gap-3">
           <dt className="truncate text-caption font-medium text-slate-600">{group.label}</dt>
           <dd className="m-0 flex items-center gap-2">
             <span aria-hidden="true" className="flex flex-1 gap-0.5">
