@@ -12,7 +12,7 @@ export default defineConfig({
     // same-origin during development (no CORS friction in the browser).
     proxy: {
       '/api': {
-        target: 'http://localhost:8080',
+        target: 'http://localhost:8081',
         changeOrigin: true,
       },
     },

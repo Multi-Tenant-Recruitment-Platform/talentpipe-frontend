@@ -1,5 +1,5 @@
 import { ArrowRightOutlined } from '@ant-design/icons';
-import { Flex, Input, Typography, type InputRef } from 'antd';
+import { Flex, Input, type InputRef } from 'antd';
 import axios from 'axios';
 import { useId, useState, type FormEvent, type Ref } from 'react';
 import { Link, useLocation } from 'react-router-dom';
@@ -128,10 +128,6 @@ export function LoginForm({
 
   return (
     <>
-      <Typography.Paragraph className="m-0 text-center text-slate-600">
-        Sign in to your TalentPipe account.
-      </Typography.Paragraph>
-
       <LoginNotices
         sessionEndReason={sessionEndReason}
         registered={intent.registered}
@@ -146,7 +142,7 @@ export function LoginForm({
 
           <div>
             <label htmlFor={emailId} className="mb-1.5 block text-small font-semibold text-slate-800">
-              Email
+              Email address
             </label>
             <Input
               ref={emailRef}
@@ -175,14 +171,25 @@ export function LoginForm({
         </Flex>
       </form>
 
-      {/* Swaps this popup for the registration one, over the same page. It
-          opens on the job seeker / company choice, so one link serves everyone. */}
-      <Typography.Paragraph className="mt-6 mb-0 border-t border-slate-100 pt-5 text-center text-slate-600">
-        New to TalentPipe?{' '}
-        <Link to={here} replace state={{ register: { step: 'choose' } }} className="font-semibold">
-          Create an account
-        </Link>
-      </Typography.Paragraph>
+      {/* Divider + auxiliary links matching wireframe */}
+      <div className="mt-5 flex items-center gap-3">
+        <span className="h-px flex-1 bg-slate-100" aria-hidden="true" />
+        <span className="text-caption text-slate-400">or</span>
+        <span className="h-px flex-1 bg-slate-100" aria-hidden="true" />
+      </div>
+      <div className="mt-4 space-y-2 text-center">
+        <p className="m-0">
+          <Link to="/forgot-password" className="text-sm font-semibold">
+            Forgot password?
+          </Link>
+        </p>
+        <p className="m-0 text-slate-600">
+          {/* Swaps this popup for the registration one, over the same page. */}
+          <Link to={here} replace state={{ register: { step: 'choose' } }} className="text-sm font-semibold">
+            Create an account
+          </Link>
+        </p>
+      </div>
     </>
   );
 }

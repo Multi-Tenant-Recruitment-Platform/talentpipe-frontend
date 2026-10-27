@@ -1,10 +1,10 @@
+import { MailOutlined } from '@ant-design/icons';
 import { Flex, Input } from 'antd';
 import { useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api/client';
 import { AuthShell } from '../components/AuthShell';
 import { AuthField } from '../components/auth/AuthField';
-import { AuthHeading } from '../components/auth/AuthHeading';
 import { Alert } from '../components/ui/Alert';
 import { Button } from '../components/ui/Button';
 
@@ -37,39 +37,51 @@ export function ForgotPasswordPage() {
 
   return (
     <AuthShell>
-      <AuthHeading title="Reset your password">
-        Enter your account email and we&apos;ll send you a reset link.
-      </AuthHeading>
+      {/* Envelope icon — matches wireframe */}
+      <div className="mb-6 flex justify-center">
+        <span className="flex size-14 items-center justify-center rounded-full bg-primary-50 text-primary-600">
+          <MailOutlined aria-hidden className="text-[26px]" />
+        </span>
+      </div>
+
+      <h1 className="m-0 text-center text-[1.5rem] font-bold text-slate-900">
+        Reset Your Password
+      </h1>
+      <p className="mb-0 mt-2 text-center text-sm text-slate-500">
+        Enter your registered email to receive a secure recovery link.
+      </p>
 
       {sent ? (
         <Flex vertical gap={20} className="mt-6">
           <Alert tone="success">
-            If an account exists for {email}, a password reset link is on its way.
+            A password reset link has been dispatched to your email address.
           </Alert>
-          <Link to="/login" className="text-center font-semibold">
-            Back to log in
+          <Link to="/login" className="text-center font-semibold text-sm">
+            ← Back to Sign In
           </Link>
         </Flex>
       ) : (
         <form onSubmit={(e) => void handleSubmit(e)} className="mt-6">
           <Flex vertical gap={20}>
-            <AuthField id="email" label="Email">
+            <AuthField id="email" label="Email address">
               <Input
                 id="email"
                 type="email"
                 required
+                size="large"
                 value={email}
+                placeholder="candidate@example.com"
                 onChange={(e) => setEmail(e.target.value)}
                 autoComplete="email"
               />
             </AuthField>
 
             <Button type="submit" variant="primary" loading={submitting} className="w-full">
-              {submitting ? 'Sending…' : 'Send reset link'}
+              {submitting ? 'Sending…' : 'Send Reset Link'}
             </Button>
 
-            <Link to="/login" className="text-center font-medium">
-              Back to log in
+            <Link to="/login" className="text-center text-sm font-medium text-primary-600">
+              ← Back to Sign In
             </Link>
           </Flex>
         </form>

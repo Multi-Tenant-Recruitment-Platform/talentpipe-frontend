@@ -8,17 +8,14 @@ import { readLoginIntent } from '../../auth/loginIntent';
 import { homeRouteFor } from '../../auth/permissions';
 import { LoginForm } from './LoginForm';
 import { BrandLogo } from '../BrandLogo';
+import interviewImage from '../../assets/interview.jpg';
 
 /**
  * The login popup, rendered once by the public layout.
  *
- * <p>It is open while the current history entry carries a login intent (see
- * `auth/loginIntent.ts`) and nobody is signed in. Closing it replaces that
- * entry without the intent, so the page underneath is left exactly as it was.</p>
- *
- * <p>A light, centred header — the brand mark over the greeting — above the
- * form. The dialog's name is exactly its heading: the brand row above it is
- * decoration, hidden from the name.</p>
+ * <p>Wide split-panel design matching the wireframe: brand/image panel on the
+ * left, form on the right. Open while the current history entry carries a
+ * login intent and nobody is signed in.</p>
  */
 export function LoginModal() {
   const { user, initializing, clearSessionEndReason } = useAuth();
@@ -40,12 +37,6 @@ export function LoginModal() {
   const hasIntent = intent !== null;
 
   // A restored session makes a leftover intent meaningless; drop it.
-  //
-  // Not after a sign-in here: handleSuccess has already sent the person on.
-  // The session update renders first — React Router 7 runs that navigation as
-  // a transition — so this effect would otherwise see a signed-in user with
-  // the intent still set, "close" the popup by replacing the entry with the
-  // page underneath, and pull a company admin back off the dashboard.
   useEffect(() => {
     if (hasIntent && user && !initializing && !signedInHere.current) {
       navigate({ pathname, search, hash }, { replace: true, state: null });
@@ -53,8 +44,6 @@ export function LoginModal() {
   }, [hasIntent, user, initializing, navigate, pathname, search, hash]);
 
   function close() {
-    // Shown once: the next time the popup opens it should not still explain
-    // a session that ended long ago.
     clearSessionEndReason();
     navigate(here, { replace: true, state: null });
   }
@@ -63,10 +52,8 @@ export function LoginModal() {
     signedInHere.current = true;
     const home = homeRouteFor(signedIn.role);
     if (intent?.from) {
-      // Back to the protected page that sent them here.
       navigate(intent.from, { replace: true });
     } else if (home === '/') {
-      // A candidate who signed in from a job page stays on it, to apply.
       navigate(here, { replace: true, state: null });
     } else {
       navigate(home, { replace: true });
@@ -77,38 +64,111 @@ export function LoginModal() {
     <Modal
       open={open}
       onCancel={close}
-      width={460}
+      width={900}
       footer={null}
-      // Mounted fresh on every open, so each one starts from a clean form.
       destroyOnHidden
-      // Ignored mid-flight — the sign-in may already have succeeded.
       keyboard={!busy}
       mask={{ closable: !busy }}
+      styles={{
+        mask: {
+          backdropFilter: 'blur(8px)',
+          WebkitBackdropFilter: 'blur(8px)',
+          backgroundColor: 'rgba(15, 23, 42, 0.45)',
+        },
+      }}
       closable={{
         disabled: busy,
         'aria-label': 'Close',
-        closeIcon: <CloseOutlined aria-hidden className="text-[16px] text-slate-500" />,
+        closeIcon: <CloseOutlined aria-hidden className="text-[16px] text-slate-400" />,
       }}
-      // A centred header — brand over greeting — flowing straight into the form.
       classNames={{
-        container: 'overflow-hidden p-0',
-        header: 'm-0 px-8 pt-8 pb-1 text-center',
-        body: 'px-8 pt-2 pb-7',
+        container: 'overflow-hidden !p-0',
+        header: '!hidden',
+        body: '!p-0',
       }}
       afterOpenChange={(opened) => opened && emailRef.current?.focus()}
-      title={
-        <>
-          <div aria-hidden="true" className="mb-4 flex justify-center">
-            <BrandLogo tone="light" markClassName="h-9 w-auto" />
-          </div>
-          <Typography.Title level={2} className="m-0 text-heading tracking-heading text-slate-900">
-            Welcome back
-          </Typography.Title>
-        </>
-      }
+      title="Welcome back"
     >
       {intent && (
-        <LoginForm intent={intent} emailRef={emailRef} onBusyChange={setBusy} onSuccess={handleSuccess} />
+        <div className="flex min-h-[560px]">
+          {/* ── Left brand panel ── */}
+          <div className="relative hidden overflow-hidden bg-primary-900 lg:flex lg:w-[44%] lg:shrink-0 lg:flex-col">
+            <img
+              src={interviewImage}
+              alt="A recruiter reviewing a CV during a video interview"
+              className="absolute inset-0 size-full object-cover object-center"
+            />
+            {/* Layered colour / scrim treatments */}
+            <div aria-hidden="true" className="absolute inset-0 bg-primary-600/32 mix-blend-multiply" />
+            <div aria-hidden="true" className="tp-brand-scrim" />
+            <div aria-hidden="true" className="tp-brand-scrim-top" />
+            <div aria-hidden="true" className="tp-brand-dots" />
+
+            <div className="relative flex flex-1 flex-col justify-between p-8 xl:p-10">
+              <BrandLogo tone="dark" markClassName="h-8 w-auto" />
+
+              <div>
+                <p className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-white/90">
+                  A brighter way to hire
+                </p>
+                <Typography.Title
+                  level={2}
+                  className="!m-0 !text-[1.65rem] !font-extrabold !leading-snug !text-white"
+                >
+                  Great people<br />build great teams
+                </Typography.Title>
+                <Typography.Paragraph className="!mb-0 !mt-3 !text-sm !leading-relaxed text-primary-100">
+                  TalentPipe helps companies find, engage, and hire top talent faster
+                  with a modern, human approach to recruitment.
+                </Typography.Paragraph>
+
+                <ul className="m-0 mt-6 list-none space-y-3.5 p-0">
+                  {[
+                    { icon: '👥', label: 'Attract top talent', sub: 'Reach qualified candidates where they are' },
+                    { icon: '⚡', label: 'Streamline hiring', sub: 'Automate and simplify your workflow' },
+                    { icon: '📊', label: 'Build stronger teams', sub: 'Make data-informed hiring decisions' },
+                  ].map((f) => (
+                    <li key={f.label} className="flex items-start gap-3">
+                      <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-white/15 text-base leading-none">
+                        {f.icon}
+                      </span>
+                      <span>
+                        <span className="block text-sm font-semibold text-white">{f.label}</span>
+                        <span className="block text-[12px] text-slate-300">{f.sub}</span>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          {/* ── Right form panel ── */}
+          <div className="flex flex-1 flex-col justify-center px-8 py-10 sm:px-10 lg:py-12">
+            <div className="mx-auto w-full max-w-[400px]">
+              {/* Brand mark — visible only on mobile where the left panel is hidden */}
+              <div className="mb-6 flex justify-center lg:hidden" aria-hidden="true">
+                <BrandLogo tone="light" markClassName="h-8 w-auto" />
+              </div>
+
+              <Typography.Title level={2} className="!m-0 !text-[1.5rem] !font-bold text-slate-900">
+                Welcome back
+              </Typography.Title>
+              <p className="mb-0 mt-1 text-sm text-slate-500">
+                Sign in to your TalentPipe account
+              </p>
+
+              <div className="mt-7">
+                <LoginForm
+                  intent={intent}
+                  emailRef={emailRef}
+                  onBusyChange={setBusy}
+                  onSuccess={handleSuccess}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </Modal>
   );

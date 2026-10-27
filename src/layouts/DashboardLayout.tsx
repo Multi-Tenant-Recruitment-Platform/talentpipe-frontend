@@ -3,7 +3,6 @@ import {
   ArrowLeftOutlined,
   BankOutlined,
   BellOutlined,
-  CalendarOutlined,
   FunnelPlotOutlined,
   LogoutOutlined,
   MenuOutlined,
@@ -11,7 +10,6 @@ import {
   SettingOutlined,
   SolutionOutlined,
   TeamOutlined,
-  UserAddOutlined,
 } from '@ant-design/icons';
 import {
   Badge,
@@ -96,12 +94,13 @@ const NAV_ITEMS: {
 /** Notification dismissals are per-workspace, like everything else cached. */
 const NOTIFICATIONS_SEEN = 'notifications.seen';
 
-/** Mock notification list — TODO(sprint2): wire to the notification module. */
-const NOTIFICATIONS = [
-  { id: 'n-1', icon: CalendarOutlined, text: 'Interview with Malith Jayasuriya starts in 30 minutes', time: 'Just now' },
-  { id: 'n-2', icon: UserAddOutlined, text: 'Kasun Silva accepted your invitation', time: '1 hour ago' },
-  { id: 'n-3', icon: SolutionOutlined, text: '5 new applications for UX Designer', time: '3 hours ago' },
-];
+/**
+ * Workspace notifications. Empty until the notification module exists —
+ * TODO(sprint2): replace with the API feed. The panel used to show three
+ * invented events (a named candidate, a named teammate); in a pre-launch
+ * product that reads as real activity, so it now tells the truth instead.
+ */
+const NOTIFICATIONS: { id: string; icon: IconComponent; text: string; time: string }[] = [];
 
 /**
  * Which nav row the current URL selects.
@@ -131,24 +130,40 @@ function NotificationsPanel() {
       <Typography.Text strong className="block border-b border-slate-100 px-4 py-3">
         Notifications
       </Typography.Text>
-      <ul className="m-0 max-h-90 list-none overflow-y-auto p-0">
-        {NOTIFICATIONS.map((n) => (
-          <li
-            key={n.id}
-            className="flex gap-3 border-t border-slate-100 px-4 py-3 transition-[background] duration-(--tp-motion-base) ease-standard first:border-t-0 hover:bg-canvas"
-          >
-            <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-[9px] bg-primary-50 text-primary-600">
-              <n.icon aria-hidden className="text-[16px]" />
-            </span>
-            <div>
-              <Typography.Text className="block">{n.text}</Typography.Text>
-              <Typography.Text type="secondary" className="text-caption">
-                {n.time}
-              </Typography.Text>
-            </div>
-          </li>
-        ))}
-      </ul>
+      {NOTIFICATIONS.length === 0 ? (
+        // role="status" so a screen reader announces the empty state when the
+        // panel opens, rather than a silent, apparently blank popover.
+        <Flex vertical align="center" gap={8} role="status" className="px-6 py-8 text-center">
+          <span className="flex size-11 items-center justify-center rounded-full bg-primary-50 text-primary-600">
+            <BellOutlined aria-hidden className="text-[20px]" />
+          </span>
+          <Typography.Text strong className="block">
+            You&apos;re all caught up
+          </Typography.Text>
+          <Typography.Text type="secondary" className="block text-caption">
+            New applications, interview reminders and team updates will show up here.
+          </Typography.Text>
+        </Flex>
+      ) : (
+        <ul className="m-0 max-h-90 list-none overflow-y-auto p-0">
+          {NOTIFICATIONS.map((n) => (
+            <li
+              key={n.id}
+              className="flex gap-3 border-t border-slate-100 px-4 py-3 transition-[background] duration-(--tp-motion-base) ease-standard first:border-t-0 hover:bg-canvas"
+            >
+              <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-[9px] bg-primary-50 text-primary-600">
+                <n.icon aria-hidden className="text-[16px]" />
+              </span>
+              <div>
+                <Typography.Text className="block">{n.text}</Typography.Text>
+                <Typography.Text type="secondary" className="text-caption">
+                  {n.time}
+                </Typography.Text>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }
@@ -331,7 +346,10 @@ function DashboardChrome() {
   // Scoped to the workspace: dismissing these as one company must not mark
   // them read for the next company signed into on this device.
   const store = useMemo(() => tenantStorage(activeTenant.get()), []);
-  const [unread, setUnread] = useState(() => store.get(NOTIFICATIONS_SEEN) !== 'true');
+  // No dot for an empty list: an unread badge on nothing is a false alarm.
+  const [unread, setUnread] = useState(
+    () => NOTIFICATIONS.length > 0 && store.get(NOTIFICATIONS_SEEN) !== 'true',
+  );
 
   function openNotifications(open: boolean) {
     if (open) {

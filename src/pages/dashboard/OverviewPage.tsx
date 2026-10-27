@@ -13,7 +13,7 @@ import {
 } from '@ant-design/icons';
 import { Col, Flex, List, Row, Timeline, Typography } from 'antd';
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { jobsApi } from '../../api/jobs';
 import { teamApi } from '../../api/team';
 import { useAuth } from '../../auth/AuthContext';
@@ -76,6 +76,7 @@ function greeting(): string {
 export function OverviewPage() {
   const { user } = useAuth();
   const allow = useCan();
+  const navigate = useNavigate();
   const { pendingInvites, loading: teamLoading, refresh: refreshTeam } = useTeamSummary();
   const [inviteOpen, setInviteOpen] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
@@ -134,24 +135,27 @@ export function OverviewPage() {
     }
   }
 
+  // Hints describe what each metric measures. They deliberately make no
+  // comparison ("faster than last quarter"): the figures are fixtures, and a
+  // trend against a fixture is an invented trend.
   const healthMetrics: { icon: IconComponent; label: string; value: string; hint: string }[] = [
     {
       icon: ClockCircleOutlined,
       label: 'Avg. time-to-hire',
       value: `${recruitmentHealth.avgTimeToHireDays} days`,
-      hint: '2 days faster than last quarter',
+      hint: 'From application to accepted offer',
     },
     {
       icon: CheckOutlined,
       label: 'Offer acceptance',
       value: `${recruitmentHealth.offerAcceptanceRate}%`,
-      hint: '11 of 13 offers accepted',
+      hint: 'Offers accepted out of offers made',
     },
     {
       icon: StarOutlined,
       label: 'Hired this month',
       value: String(recruitmentHealth.hiredThisMonth),
-      hint: 'Across 3 departments',
+      hint: 'Candidates moved to Hired',
     },
   ];
 
@@ -161,13 +165,16 @@ export function OverviewPage() {
         title={`${greeting()}, ${user?.firstName ?? 'there'}`}
         subtitle={`Here's what's happening with your hiring — ${today}`}
       >
-        <Button
-          variant="secondary"
-          onClick={() => setNotice('Job posting arrives with the Job module — for now, invite your hiring team and shape your pipeline.')}
-          icon={<SolutionOutlined aria-hidden className="text-[16px]" />}
-        >
-          Post a job
-        </Button>
+        {/* The create form is gated on jobs.manage, so is the way into it. */}
+        {allow('jobs.manage') && (
+          <Button
+            variant="secondary"
+            onClick={() => navigate('/dashboard/jobs/new')}
+            icon={<SolutionOutlined aria-hidden className="text-[16px]" />}
+          >
+            Post a job
+          </Button>
+        )}
         {/* Inviting is a COMPANY_ADMIN action; anyone else would only get a
             403 from the API, so they never see the button. */}
         {allow('team.invite') && (
@@ -204,12 +211,14 @@ export function OverviewPage() {
             icon={SolutionOutlined}
           />
         </Col>
+        {/* Fixture-backed until the Candidate / Interview modules land: tagged
+            as sample data, and no trend delta — there is no history to compare. */}
         <Col xs={12} xl={6}>
           <StatCard
             label="Candidates in pipeline"
             value={overviewStats.candidatesInPipeline.toLocaleString()}
             icon={TeamOutlined}
-            delta={{ value: '+18%', direction: 'up', hint: 'vs last week' }}
+            sample
           />
         </Col>
         <Col xs={12} xl={6}>
@@ -217,7 +226,7 @@ export function OverviewPage() {
             label="Interviews this week"
             value={String(overviewStats.interviewsThisWeek)}
             icon={CalendarOutlined}
-            delta={{ value: '+4', direction: 'up', hint: 'vs last week' }}
+            sample
           />
         </Col>
         {/* The only KPI on this row with a real backend behind it — the rest
@@ -237,6 +246,7 @@ export function OverviewPage() {
           <Card
             title="Hiring funnel"
             subtitle="All open jobs · last 90 days"
+            sample
             action={
               <Link to="/dashboard/pipeline" className="inline-flex items-center gap-1 font-semibold">
                 View pipeline
@@ -249,7 +259,7 @@ export function OverviewPage() {
         </Col>
 
         <Col xs={24} lg={8}>
-          <Card title="Recruitment health" subtitle="Key efficiency signals">
+          <Card title="Recruitment health" subtitle="Key efficiency signals" sample>
             <Flex vertical gap={20}>
               {healthMetrics.map((metric) => (
                 <Flex align="center" gap={16} key={metric.label}>
@@ -278,7 +288,7 @@ export function OverviewPage() {
       <Row gutter={[24, 24]} className="mt-6">
         <Col xs={24} lg={16}>
           {/* A List that sits flush inside a Card, with its own inner padding. */}
-          <Card title="Upcoming interviews" subtitle="Next on the schedule" bodyClassName="tp-flush-list p-0">
+          <Card title="Upcoming interviews" subtitle="Next on the schedule" bodyClassName="tp-flush-list p-0" sample>
             <List
               dataSource={upcomingInterviews}
               renderItem={(interview) => {
@@ -319,7 +329,7 @@ export function OverviewPage() {
         </Col>
 
         <Col xs={24} lg={8}>
-          <Card title="Recent activity" subtitle="Latest workspace events">
+          <Card title="Recent activity" subtitle="Latest workspace events" sample>
             {/* A Timeline rather than a list: these are events in order, and the
                 connecting rail is what says so. */}
             <Timeline

@@ -1,8 +1,6 @@
 import { lazy, Suspense } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { AuthProvider } from './auth/AuthContext';
-import { LoginRedirect } from './components/auth/LoginRedirect';
-import { RegisterRedirect } from './components/auth/RegisterRedirect';
 import { Layout } from './components/Layout';
 import { PageLoader } from './components/PageLoader';
 import { ProtectedRoute } from './components/ProtectedRoute';
@@ -11,6 +9,8 @@ import { ForbiddenPage } from './pages/ForbiddenPage';
 import { JobDetailPage } from './pages/JobDetailPage';
 import { JobsPage } from './pages/JobsPage';
 import { NotFoundPage } from './pages/NotFoundPage';
+import { LoginPage } from './pages/LoginPage';
+import { RegisterPage } from './pages/RegisterPage';
 
 /** The board moved to `/`; old links and bookmarks to `/jobs` still land there. */
 export function JobsRedirect() {
@@ -41,6 +41,11 @@ export default function App() {
   return (
     <AuthProvider>
       <Routes>
+        {/* ── Full-screen auth pages — outside the nav chrome ── */}
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+        <Route path="/register-candidate" element={<RegisterPage />} />
+
         {/* Public + auth pages share the marketing chrome. */}
         <Route element={<Layout />}>
           {/* The job board is the home page. */}
@@ -48,18 +53,11 @@ export default function App() {
           <Route path="/jobs" element={<JobsRedirect />} />
           <Route path="/jobs/:jobKey" element={<JobDetailPage />} />
           <Route path="/jobs/:jobKey/apply" element={<ApplyPage />} />
-          {/* Registration is a popup too; these open it at the matching form. */}
-          <Route path="/register" element={<RegisterRedirect step="company" />} />
-          <Route path="/register-candidate" element={<RegisterRedirect step="candidate" />} />
-          {/* Login is a popup now; this opens it over the job board. */}
-          <Route path="/login" element={<LoginRedirect />} />
-          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           {/* Landing pages for emailed links — the token arrives in the query string. */}
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/verify-email" element={<VerifyEmailPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/accept-invite" element={<AcceptInvitePage />} />
-          {/* The candidate's own profile. A company user who lands here is
-              sent to their dashboard instead. */}
           <Route
             path="/profile"
             element={

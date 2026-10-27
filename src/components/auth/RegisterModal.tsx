@@ -5,22 +5,23 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthContext';
 import { readRegisterIntent, type RegisterStep } from '../../auth/registerIntent';
 import { BrandLogo } from '../BrandLogo';
+import interviewImage from '../../assets/interview.jpg';
 import type { IconComponent } from '../ui/icon';
 import { CandidateRegisterForm } from './CandidateRegisterForm';
 import { CompanyRegisterForm } from './CompanyRegisterForm';
 
 /** Each step's heading, lede and width — the candidate form needs room for its paired rows. */
 const STEPS: Record<RegisterStep, { title: string; subtitle: string; width: number }> = {
-  choose: { title: 'Create your account', subtitle: 'How will you use TalentPipe?', width: 560 },
+  choose: { title: 'Create your TalentPipe account', subtitle: 'Join a growing community of candidates and employers.', width: 960 },
   candidate: {
     title: 'Create your candidate account',
     subtitle: 'One account for every company hiring on TalentPipe — apply once, get discovered again.',
-    width: 600,
+    width: 960,
   },
   company: {
     title: 'Register your company',
     subtitle: 'Creates your company workspace and its first administrator account.',
-    width: 520,
+    width: 960,
   },
 };
 
@@ -28,16 +29,17 @@ const CHOICES: { step: Exclude<RegisterStep, 'choose'>; icon: IconComponent; tit
   {
     step: 'candidate',
     icon: UserOutlined,
-    title: "I'm looking for a job",
-    text: 'Apply once, get discovered by every company on TalentPipe.',
+    title: 'Candidate',
+    text: 'Find a job and grow your career',
   },
   {
     step: 'company',
     icon: BankOutlined,
-    title: "I'm hiring",
-    text: 'Set up your company workspace and invite your hiring team.',
+    title: 'Employer',
+    text: 'Hire talent and build your team',
   },
 ];
+
 
 /** Enters from a few pixels to the right as each step appears; still under reduced motion. */
 const stepMotion =
@@ -115,10 +117,8 @@ function RegisterSteps({
  * The registration popup, rendered once by the public layout next to the
  * login popup and built to match it.
  *
- * <p>It opens on a choice — job seeker or company — because the two sign-ups
- * ask for different things; picking one moves straight to its form. Open
- * while the current history entry carries a register intent (see
- * `auth/registerIntent.ts`) and nobody is signed in.</p>
+ * <p>Wide split-panel design matching the wireframe: brand panel on the left,
+ * form steps on the right. Opens on the account-type choice.</p>
  */
 export function RegisterModal() {
   const { user, initializing } = useAuth();
@@ -148,8 +148,6 @@ export function RegisterModal() {
     target?.focus();
   }
 
-  // A new step moves focus with it — to the heading on the choice, to the
-  // first field on a form — so keyboard and screen-reader users land in it.
   useEffect(() => {
     if (!open) {
       return;
@@ -170,76 +168,135 @@ export function RegisterModal() {
     <Modal
       open={open}
       onCancel={close}
-      width={copy.width}
+      width={960}
       footer={null}
-      // Mounted fresh on every open, so each one starts from a clean form.
       destroyOnHidden
-      // Ignored mid-flight — the account may already have been created.
       keyboard={!busy}
       mask={{ closable: !busy }}
+      styles={{
+        mask: {
+          backdropFilter: 'blur(8px)',
+          WebkitBackdropFilter: 'blur(8px)',
+          backgroundColor: 'rgba(15, 23, 42, 0.45)',
+        },
+      }}
       closable={{
         disabled: busy,
         'aria-label': 'Close',
-        closeIcon: <CloseOutlined aria-hidden className="text-[16px] text-slate-500" />,
+        closeIcon: <CloseOutlined aria-hidden className="text-[16px] text-slate-400" />,
       }}
-      // The same centred header as the login popup; the body scrolls on its
-      // own so a long form never pushes the heading or the close button away.
       classNames={{
-        container: 'relative overflow-hidden p-0',
-        header: 'm-0 px-8 pt-8 pb-1 text-center',
-        body: 'max-h-[calc(100dvh-16rem)] overflow-y-auto px-8 pt-2 pb-7',
+        container: 'overflow-hidden !p-0',
+        header: '!hidden',
+        body: '!p-0',
       }}
       afterOpenChange={(opened) => opened && focusStep()}
-      title={
-        <>
-          <div aria-hidden="true" className="mb-4 flex justify-center">
-            <BrandLogo tone="light" markClassName="h-9 w-auto" />
-          </div>
-          <Typography.Title
-            ref={headingRef}
-            tabIndex={-1}
-            level={2}
-            className="m-0 text-heading tracking-heading text-slate-900 focus:outline-none"
-          >
-            {copy.title}
-          </Typography.Title>
-        </>
-      }
+      title={copy.title}
     >
-      {/* Outside the header on purpose: inside it, "Back" would become part
-          of the dialog's name. Positioned against the panel, so it sits in
-          the top-left corner and does not scroll away with the form. */}
-      {step !== 'choose' && (
-        <button
-          type="button"
-          onClick={() => goTo('choose')}
-          disabled={busy}
-          className="absolute top-5 left-5 inline-flex cursor-pointer items-center gap-1.5 rounded-md border-0 bg-transparent px-2 py-1 text-small font-medium text-slate-600 transition-colors duration-(--tp-motion-base) hover:bg-slate-100 hover:text-slate-900 focus-visible:shadow-focus focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          <ArrowLeftOutlined aria-hidden className="text-[13px]" />
-          Back
-        </button>
-      )}
-
-      <Typography.Paragraph className="m-0 mb-6 text-center text-slate-600">{copy.subtitle}</Typography.Paragraph>
-
       {intent && (
-        <RegisterSteps
-          step={step}
-          onChoose={goTo}
-          candidateRef={candidateRef}
-          companyRef={companyRef}
-          onBusyChange={setBusy}
-        />
-      )}
+        <div className="flex min-h-[560px]">
+          {/* ── Left brand panel ── */}
+          <div className="relative hidden overflow-hidden bg-primary-900 lg:flex lg:w-[42%] lg:shrink-0 lg:flex-col">
+            <img
+              src={interviewImage}
+              alt="People collaborating in a modern recruitment setting"
+              className="absolute inset-0 size-full object-cover object-center"
+            />
+            <div aria-hidden="true" className="absolute inset-0 bg-primary-600/32 mix-blend-multiply" />
+            <div aria-hidden="true" className="tp-brand-scrim" />
+            <div aria-hidden="true" className="tp-brand-scrim-top" />
+            <div aria-hidden="true" className="tp-brand-dots" />
 
-      {/* Swaps this popup for the login one, over the same page. */}
-      <Typography.Paragraph className="mt-6 mb-0 border-t border-slate-100 pt-5 text-center text-slate-600">
-        Already have an account?{' '}
-        <Link to={here} replace state={{ login: {} }} className="font-semibold">
-          Log in
-        </Link>
-      </Typography.Paragraph>
+            <div className="relative flex flex-1 flex-col justify-between p-8 xl:p-10">
+              <BrandLogo tone="dark" markClassName="h-8 w-auto" />
+
+              <div>
+                <Typography.Title
+                  level={2}
+                  className="!m-0 !text-[2rem] !font-extrabold !leading-tight !text-white"
+                >
+                  People<br />drive progress.<br />
+                  <span className="text-primary-300">We make hiring<br />happen.</span>
+                </Typography.Title>
+                <Typography.Paragraph className="!mb-0 !mt-3 !text-sm !leading-relaxed text-primary-100">
+                  TalentPipe connects great people with great opportunities. A modern recruitment
+                  platform built for what's next.
+                </Typography.Paragraph>
+
+                <ul className="m-0 mt-6 list-none space-y-3.5 p-0">
+                  {[
+                    { icon: '🔍', label: 'Find the right talent', sub: 'Smarter matching, faster hiring' },
+                    { icon: '🚀', label: 'Grow your career', sub: 'Opportunities that fit your goals' },
+                    { icon: '📈', label: 'Built for the future', sub: 'A recruitment platform that works for everyone' },
+                  ].map((f) => (
+                    <li key={f.label} className="flex items-start gap-3">
+                      <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-white/15 text-base leading-none">
+                        {f.icon}
+                      </span>
+                      <span>
+                        <span className="block text-sm font-semibold text-white">{f.label}</span>
+                        <span className="block text-[12px] text-primary-200">{f.sub}</span>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          {/* ── Right form panel ── */}
+          <div className="relative flex flex-1 flex-col">
+            {/* Back button — outside the heading so it isn't part of the dialog's name */}
+            {step !== 'choose' && (
+              <button
+                type="button"
+                onClick={() => goTo('choose')}
+                disabled={busy}
+                className="absolute top-5 left-5 inline-flex cursor-pointer items-center gap-1.5 rounded-md border-0 bg-transparent px-2 py-1 text-small font-medium text-slate-600 transition-colors duration-(--tp-motion-base) hover:bg-slate-100 hover:text-slate-900 focus-visible:shadow-focus focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <ArrowLeftOutlined aria-hidden className="text-[13px]" />
+                Back
+              </button>
+            )}
+
+            {/* Scrollable form area */}
+            <div className="flex flex-1 flex-col justify-center overflow-y-auto px-8 py-10 sm:px-10">
+              <div className="mx-auto w-full max-w-[460px]">
+                {/* Brand mark — mobile only */}
+                <div className="mb-5 flex justify-center lg:hidden" aria-hidden="true">
+                  <BrandLogo tone="light" markClassName="h-8 w-auto" />
+                </div>
+
+                <Typography.Title
+                  ref={headingRef}
+                  tabIndex={-1}
+                  level={2}
+                  className="!m-0 !text-[1.4rem] !font-bold text-slate-900 focus:outline-none"
+                >
+                  {copy.title}
+                </Typography.Title>
+                <p className="mb-6 mt-1 text-sm text-slate-500">{copy.subtitle}</p>
+
+                <RegisterSteps
+                  step={step}
+                  onChoose={goTo}
+                  candidateRef={candidateRef}
+                  companyRef={companyRef}
+                  onBusyChange={setBusy}
+                />
+
+                {/* Swap to login popup */}
+                <p className="mb-0 mt-6 border-t border-slate-100 pt-5 text-center text-sm text-slate-600">
+                  Already have an account?{' '}
+                  <Link to={here} replace state={{ login: {} }} className="font-semibold">
+                    Sign in
+                  </Link>
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </Modal>
   );
 }

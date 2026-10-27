@@ -1,5 +1,6 @@
-import { Card as AntCard, Typography } from 'antd';
+import { Card as AntCard, Flex, Typography } from 'antd';
 import type { ReactNode } from 'react';
+import { SampleDataTag } from './SampleDataTag';
 
 /**
  * Section card shell shared by every dashboard surface: optional header row
@@ -15,11 +16,14 @@ export function Card({
   action,
   children,
   bodyClassName = '',
+  sample = false,
 }: Readonly<{
   title?: string;
   subtitle?: string;
   action?: ReactNode;
   children: ReactNode;
+  /** The body shows fixture data, not API data — labels it as such. */
+  sample?: boolean;
   /**
    * For bodies that must break the card's own padding — a table that bleeds to
    * the edges, a list with its own inner rhythm. Layout only; a caller reaching
@@ -31,9 +35,12 @@ export function Card({
     title || subtitle ? (
       <div className="min-w-0 py-1">
         {title && (
-          <Typography.Title level={2} className="m-0 text-title tracking-heading">
-            {title}
-          </Typography.Title>
+          <Flex align="center" gap={8} wrap>
+            <Typography.Title level={2} className="m-0 text-title tracking-heading">
+              {title}
+            </Typography.Title>
+            {sample && <SampleDataTag />}
+          </Flex>
         )}
         {subtitle && (
           <Typography.Text type="secondary" className="mt-0.5 block text-caption">

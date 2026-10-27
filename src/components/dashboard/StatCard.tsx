@@ -2,6 +2,7 @@ import { FallOutlined, RiseOutlined } from '@ant-design/icons';
 import { Card, Flex, Statistic, Typography } from 'antd';
 import { fontSize, fontWeight, slate, space } from '../../theme/tokens';
 import type { IconComponent } from '../ui/icon';
+import { SampleDataTag } from './SampleDataTag';
 
 /**
  * KPI tile: an icon tile, the value, its label, and an optional trend delta.
@@ -19,11 +20,14 @@ export function StatCard({
   value,
   icon: Glyph,
   delta,
+  sample = false,
 }: Readonly<{
   label: string;
   value: string;
   icon: IconComponent;
   delta?: { value: string; direction: 'up' | 'down'; hint?: string };
+  /** The value is fixture data, not API data — labels it as such. */
+  sample?: boolean;
 }>) {
   // The only colour on the tile, and it is genuinely semantic: which way the
   // number moved. Contrast-checked against its own tint in tokens.test.ts.
@@ -48,6 +52,7 @@ export function StatCard({
             {delta.value}
           </span>
         )}
+        {sample && !delta && <SampleDataTag />}
       </Flex>
 
       <Statistic

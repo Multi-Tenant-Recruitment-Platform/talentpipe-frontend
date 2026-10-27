@@ -261,3 +261,46 @@
     font-variant-numeric: tabular-nums;
   }
 }
+
+/* ─── Auth page entrance transitions ─────────────────────────────────────────
+   .tp-auth-page        : root wrapper — whole page fades in
+   .tp-auth-brand-panel : left photo panel — slides in from the left
+   .tp-auth-form-panel  : right form panel — fades up with a slight delay
+   All three respect prefers-reduced-motion. */
+
+@keyframes tp-page-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes tp-slide-in-left {
+  from { opacity: 0; transform: translateX(-32px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes tp-slide-in-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@layer utilities {
+  .tp-auth-page {
+    animation: tp-page-fade-in 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .tp-auth-brand-panel {
+    animation: tp-slide-in-left 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .tp-auth-form-panel {
+    animation: tp-slide-in-up 0.5s 0.12s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .tp-auth-page,
+    .tp-auth-brand-panel,
+    .tp-auth-form-panel {
+      animation: none;
+    }
+  }
+}
