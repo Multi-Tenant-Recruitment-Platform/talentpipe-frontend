@@ -12,6 +12,8 @@ import { RoleBadge } from '../components/dashboard/RoleBadge';
 const REASONS: Partial<Record<Permission, string>> = {
   'team.view': 'Only a Company Admin can manage teammates and invitations.',
   'team.invite': 'Only a Company Admin can invite teammates.',
+  'roles.view': "Your role doesn't include seeing the team, so its roles aren't shown either.",
+  'roles.manage': "Changing roles isn't part of your role. A workspace Owner can add it, or make the change for you.",
   'settings.view': 'Company settings are limited to admins and HR managers.',
   'settings.edit': 'Only a Company Admin can change company settings.',
   'billing.view': 'Plan and billing are visible to Company Admins only.',
@@ -27,7 +29,7 @@ const REASONS: Partial<Record<Permission, string>> = {
  */
 export function ForbiddenPage({ requires }: Readonly<{ requires?: Permission }>) {
   const { user } = useAuth();
-  const home = homeRouteFor(user?.role);
+  const home = homeRouteFor(user);
 
   return (
     <Result
@@ -60,7 +62,7 @@ export function ForbiddenPage({ requires }: Readonly<{ requires?: Permission }>)
               <Typography.Text type="secondary" className="text-caption">
                 Signed in as
               </Typography.Text>
-              <RoleBadge role={user.role} />
+              <RoleBadge role={user.role} roleName={user.roleName} />
             </Flex>
           )}
           {/* An anchor, not a Button: this navigates, and nesting one in the

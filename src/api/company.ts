@@ -3,6 +3,8 @@ import type {
   CompanyImageKind,
   CompanyProfileResponse,
   PublicCompanyProfileResponse,
+  TenantSettings,
+  TenantSettingsUpdate,
   UpdateCompanyProfileRequest,
 } from './types';
 
@@ -41,6 +43,18 @@ export const companyApi = {
    */
   async update(request: UpdateCompanyProfileRequest): Promise<CompanyProfileResponse> {
     const { data } = await api.patch<CompanyProfileResponse>('/tenant', request);
+    return data;
+  },
+
+  /** The company's switches (PB-015). Any member may read them. */
+  async settings(): Promise<TenantSettings> {
+    const { data } = await api.get<TenantSettings>('/tenant/settings');
+    return data;
+  },
+
+  /** Turns switches on or off; one left out keeps its value. Needs settings.edit; 422 while suspended. */
+  async updateSettings(request: TenantSettingsUpdate): Promise<TenantSettings> {
+    const { data } = await api.patch<TenantSettings>('/tenant/settings', request);
     return data;
   },
 

@@ -40,6 +40,8 @@ export function CompanyInformation({
         ) : (
           <Typography.Text type="secondary">Industry not set</Typography.Text>
         )}
+        {values.industry &&
+          (values.additionalIndustries ?? []).map((industry) => <Badge key={industry}>{industry}</Badge>)}
         {values.size ? <Badge>{values.size}</Badge> : null}
       </Flex>
     </>

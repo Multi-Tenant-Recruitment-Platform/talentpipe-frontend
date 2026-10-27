@@ -1,7 +1,6 @@
 import { SearchOutlined } from '@ant-design/icons';
 import { Flex, Input, Radio, Select, Typography } from 'antd';
 import type { Segment } from '../../dashboard/teamRoster';
-import { formatRole } from '../../utils/format';
 import { Button } from '../ui/Button';
 
 const SEGMENTS: { id: Segment; label: string }[] = [
@@ -42,7 +41,7 @@ export function TeamToolbar({
   onSegmentChange: (segment: Segment) => void;
   segmentCounts: Record<Segment, number>;
   roleFilter: string;
-  roleOptions: string[];
+  roleOptions: { value: string; label: string }[];
   onRoleFilterChange: (role: string) => void;
   query: string;
   onQueryChange: (query: string) => void;
@@ -90,7 +89,7 @@ export function TeamToolbar({
               className="min-w-40"
               options={[
                 { value: 'ALL', label: 'All roles' },
-                ...roleOptions.map((role) => ({ value: role, label: formatRole(role) })),
+                ...roleOptions,
               ]}
             />
           </div>

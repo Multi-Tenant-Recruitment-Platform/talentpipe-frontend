@@ -1,7 +1,6 @@
 import { FilterOutlined, SlidersOutlined } from '@ant-design/icons';
 import { Drawer, Flex, Select } from 'antd';
 import { useMemo, useState } from 'react';
-import type { PublicJobSearch } from '../api/publicJobs';
 import { HeroBand } from '../components/jobs/HeroBand';
 import { JobList } from '../components/jobs/JobList';
 import { JobPromoCard } from '../components/jobs/JobPromoCard';
@@ -9,15 +8,8 @@ import { JobFilterBar, JobSearchBar, QuickFilters } from '../components/jobs/Job
 import { Alert } from '../components/ui/Alert';
 import { Button } from '../components/ui/Button';
 import { pageContainer } from '../components/ui/classes';
-import {
-  NO_FILTERS,
-  activeFilterCount,
-  filterJobs,
-  hasActiveFilters,
-  type JobFilters,
-  type JobSort,
-} from '../jobs/jobFilters';
-import { usePublicJobs } from '../jobs/usePublicJobs';
+import { NO_FILTERS, activeFilterCount, hasActiveFilters, type JobFilters, type JobSort } from '../jobs/jobFilters';
+import { usePublicJobFacets, usePublicJobs } from '../jobs/usePublicJobs';
 import { space } from '../theme/tokens';
 
 const SORT_OPTIONS: { label: string; value: JobSort }[] = [
@@ -25,14 +17,15 @@ const SORT_OPTIONS: { label: string; value: JobSort }[] = [
   { label: 'Newest', value: 'newest' },
 ];
 
-const NO_SEARCH: Required<PublicJobSearch> = { keyword: '', location: '' };
+/** What was typed into the search bar, applied when it is submitted. */
+const NO_SEARCH = { keyword: '', location: '' };
 
 const jobsNoun = (count: number) => (count === 1 ? 'job' : 'jobs');
 
 /** The total comes from the API, not from how many rows happen to be loaded. */
-function resultLabel(matching: number, loaded: number, total: number, searching: boolean, refining: boolean) {
-  if (refining) return `${matching} matching ${jobsNoun(matching)}`;
+function resultLabel(loaded: number, total: number, searching: boolean, refining: boolean) {
   if (loaded < total) return `Showing ${loaded} of ${total} jobs`;
+  if (refining) return `${total} matching ${jobsNoun(total)}`;
   return `${total} ${jobsNoun(total)} ${searching ? 'found' : 'available'}`;
 }
 
@@ -44,11 +37,12 @@ function resultLabel(matching: number, loaded: number, total: number, searching:
  * compact cards to scan. Reading a job, and applying for it, happen on the
  * job's own page behind "Details".</p>
  *
- * <p>Two kinds of narrowing, kept apart because they run in different places.
- * The search — what and where — goes to the backend and covers every
- * published vacancy. The selects, the salary range, the tick boxes and the
- * sort have no backend parameter yet, so they work over the vacancies loaded
- * so far, and the page says so when there are more to load.</p>
+ * <p>Everything that narrows the list — what and where, the industry, the tick
+ * boxes, experience, the salary range — and the sort go to the backend, which
+ * searches every published vacancy. The search bar's words apply when it is
+ * submitted; every other choice applies as it is made, and the list on screen
+ * stays put, dimmed, until the new answer lands. The filter counts come from
+ * `/public/jobs/filters` and describe the whole board.</p>
  *
  * <p>The page owns its full width (see Layout), so the hero can run edge to
  * edge — continuous with the dark header above it — while its contents sit on
@@ -60,9 +54,12 @@ export function JobsPage() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   // Bumped by "Clear all" to remount the search bar, which owns the text being typed.
   const [searchKey, setSearchKey] = useState(0);
-  const { status, error, jobs, total, hasMore, loadingMore, loadMoreError, loadMore, retry } = usePublicJobs(search);
+  // One object per change, so the hook fetches once per change and not per render.
+  const query = useMemo(() => ({ ...filters, ...search }), [filters, search]);
+  const { status, refreshing, error, jobs, total, hasMore, loadingMore, loadMoreError, loadMore, retry } =
+    usePublicJobs(query);
+  const facets = usePublicJobFacets();
 
-  const visible = useMemo(() => filterJobs(jobs, filters), [jobs, filters]);
   const searching = Boolean(search.keyword || search.location);
   const refining = hasActiveFilters(filters);
   const ready = status === 'ready';
@@ -70,7 +67,7 @@ export function JobsPage() {
   // An empty board has nothing to filter; an empty search result still needs its "Clear all".
   const showFilters = status !== 'error' && !(ready && jobs.length === 0 && !searching);
   const activeCount = activeFilterCount(filters);
-  const shownTotal = refining ? visible.length : (total ?? jobs.length);
+  const shownTotal = total ?? jobs.length;
 
   const clearAll = () => {
     setSearch(NO_SEARCH);
@@ -82,8 +79,7 @@ export function JobsPage() {
     <JobFilterBar
       filters={filters}
       onChange={setFilters}
-      // Counts over a partly loaded list would understate every choice.
-      jobs={ready && !hasMore ? jobs : undefined}
+      facets={facets}
       canClear={searching || refining}
       onClear={clearAll}
       collapsible={collapsible}
@@ -107,7 +103,7 @@ export function JobsPage() {
             onSearch={(keyword, location) => setSearch({ keyword, location })}
             filters={filters}
             onChange={setFilters}
-            jobs={jobs}
+            facets={facets}
           />
         </div>
         <QuickFilters filters={filters} onChange={setFilters} className="mt-4 justify-center" />
@@ -142,13 +138,8 @@ export function JobsPage() {
                 {hasResults && (
                   <>
                     <p role="status" className="m-0 mt-1 text-small text-slate-500">
-                      {resultLabel(visible.length, jobs.length, total ?? jobs.length, searching, refining)}
+                      {refreshing ? 'Updating…' : resultLabel(jobs.length, total ?? jobs.length, searching, refining)}
                     </p>
-                    {refining && hasMore && (
-                      <p className="m-0 mt-0.5 text-small text-slate-500">
-                        Filters cover the {jobs.length} jobs loaded so far. Load more to check the rest.
-                      </p>
-                    )}
                   </>
                 )}
               </div>
@@ -184,16 +175,24 @@ export function JobsPage() {
               </div>
             </div>
 
-            <JobList
-              status={status}
-              jobs={visible}
-              error={error}
-              onRetry={retry}
-              {...((searching || refining) && {
-                emptyTitle: 'No matching jobs found',
-                emptyDescription: 'Try different keywords, or remove a filter.',
-              })}
-            />
+            {/* The previous answer stays while the next is on its way, dimmed
+                rather than replaced by skeletons, so a tick box never makes
+                the page jump. */}
+            <div
+              aria-busy={refreshing || undefined}
+              className={`transition-opacity duration-(--tp-motion-base) ${refreshing ? 'opacity-55' : ''}`}
+            >
+              <JobList
+                status={status}
+                jobs={jobs}
+                error={error}
+                onRetry={retry}
+                {...((searching || refining) && {
+                  emptyTitle: 'No matching jobs found',
+                  emptyDescription: 'Try different keywords, or remove a filter.',
+                })}
+              />
+            </div>
 
             {ready && hasMore && (
               <Flex vertical align="center" gap={space[1.5]} className="mt-8">

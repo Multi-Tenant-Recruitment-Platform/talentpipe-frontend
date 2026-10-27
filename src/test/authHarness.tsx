@@ -36,6 +36,7 @@ export const authContextMock = {
   useAuth: () => ({
     ...authState,
     login: vi.fn(),
+    selectWorkspace: vi.fn(),
     register: vi.fn(),
     logout: vi.fn(),
     sessionEndReason: null,

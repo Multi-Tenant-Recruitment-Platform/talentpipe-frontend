@@ -1,4 +1,4 @@
-import { formatRole } from '../../utils/format';
+import { roleLabelFor } from '../../auth/permissions';
 import { Badge, type BadgeTone } from './Badge';
 
 /**
@@ -14,7 +14,14 @@ const ROLE_BADGE_TONE: Record<string, BadgeTone> = {
   CANDIDATE: 'neutral',
 };
 
-/** The one place a role is rendered as a pill — sidebar, team table and 403. */
-export function RoleBadge({ role }: Readonly<{ role: string }>) {
-  return <Badge tone={ROLE_BADGE_TONE[role] ?? 'neutral'}>{formatRole(role)}</Badge>;
+/**
+ * The one place a role is rendered as a pill — sidebar, team table and 403.
+ *
+ * <p>Labelled with the company's own name for the role when there is one
+ * ("Hiring Coordinator"), and toned by the fixed role underneath it: the Owner
+ * (COMPANY_ADMIN) keeps the accent, every other role is neutral, a custom one
+ * included.</p>
+ */
+export function RoleBadge({ role, roleName }: Readonly<{ role: string; roleName?: string | null }>) {
+  return <Badge tone={ROLE_BADGE_TONE[role] ?? 'neutral'}>{roleLabelFor({ role, roleName })}</Badge>;
 }

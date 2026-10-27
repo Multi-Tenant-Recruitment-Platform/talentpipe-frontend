@@ -6,7 +6,7 @@ import type { UserResponse } from '../../api/types';
 import { useAuth } from '../../auth/AuthContext';
 import { readLoginIntent } from '../../auth/loginIntent';
 import { homeRouteFor } from '../../auth/permissions';
-import { LoginForm } from './LoginForm';
+import { LoginForm, type LoginStep } from './LoginForm';
 import { BrandLogo } from '../BrandLogo';
 
 /**
@@ -26,6 +26,9 @@ export function LoginModal() {
   const navigate = useNavigate();
   const intent = readLoginIntent(location.state);
   const [busy, setBusy] = useState(false);
+  // The heading follows the form: a sign-in that fits several accounts turns
+  // into a choice between them, and the dialog's name should say so.
+  const [step, setStep] = useState<LoginStep>('credentials');
   const emailRef = useRef<InputRef>(null);
   // Set the moment someone signs in through this popup, so the clean-up below
   // can tell that apart from a session restored on load.
@@ -61,7 +64,7 @@ export function LoginModal() {
 
   function handleSuccess(signedIn: UserResponse) {
     signedInHere.current = true;
-    const home = homeRouteFor(signedIn.role);
+    const home = homeRouteFor(signedIn);
     if (intent?.from) {
       // Back to the protected page that sent them here.
       navigate(intent.from, { replace: true });
@@ -102,13 +105,19 @@ export function LoginModal() {
             <BrandLogo tone="light" markClassName="h-9 w-auto" />
           </div>
           <Typography.Title level={2} className="m-0 text-heading tracking-heading text-slate-900">
-            Welcome back
+            {step === 'choose' ? 'Choose an account' : 'Welcome back'}
           </Typography.Title>
         </>
       }
     >
       {intent && (
-        <LoginForm intent={intent} emailRef={emailRef} onBusyChange={setBusy} onSuccess={handleSuccess} />
+        <LoginForm
+          intent={intent}
+          emailRef={emailRef}
+          onBusyChange={setBusy}
+          onStepChange={setStep}
+          onSuccess={handleSuccess}
+        />
       )}
     </Modal>
   );

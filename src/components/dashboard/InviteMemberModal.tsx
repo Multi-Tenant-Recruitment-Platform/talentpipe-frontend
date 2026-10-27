@@ -10,7 +10,24 @@ export interface InviteFormValues {
   firstName: string;
   lastName: string;
   email: string;
-  role: InvitableRole;
+  /** The company role chosen, when the workspace's roles are known. */
+  roleId?: string;
+  /** The fixed role, for a server older than company roles. */
+  role?: InvitableRole;
+  /** What the chosen role is called, for the confirmation. */
+  roleLabel: string;
+}
+
+/** One of the workspace's roles, as the invitation offers it. */
+export interface InviteRoleOption {
+  id: string;
+  name: string;
+  description: string | null;
+  permissionCount: number;
+  /** Why it cannot be chosen; absent when it can. */
+  unavailable?: string;
+  /** The role to start on: the default Recruiter. */
+  suggested?: boolean;
 }
 
 const ROLE_OPTIONS: { id: InvitableRole; label: string; description: string; icon: IconComponent }[] = [
@@ -46,6 +63,7 @@ const ROLE_OPTIONS: { id: InvitableRole; label: string; description: string; ico
  */
 export function InviteMemberModal({
   open,
+  roles = [],
   onClose,
   onInvite,
   submitting = false,
@@ -54,6 +72,11 @@ export function InviteMemberModal({
   focusField = null,
 }: Readonly<{
   open: boolean;
+  /**
+   * The workspace's roles, Owner left out (nobody is invited as Owner). Empty
+   * on a server older than company roles, which still takes the two fixed ones.
+   */
+  roles?: InviteRoleOption[];
   onClose: () => void;
   onInvite: (values: InviteFormValues) => void;
   submitting?: boolean;
@@ -66,6 +89,12 @@ export function InviteMemberModal({
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<InvitableRole>('HR_MANAGER');
+  const available = roles.filter((option) => !option.unavailable);
+  const [roleId, setRoleId] = useState<string | undefined>(
+    () => (available.find((option) => option.suggested) ?? available[0])?.id,
+  );
+  const useCompanyRoles = roles.length > 0;
+  const chosen = roles.find((option) => option.id === roleId);
 
   const firstFieldRef = useRef<InputRef>(null);
   const emailRef = useRef<InputRef>(null);
@@ -87,12 +116,15 @@ export function InviteMemberModal({
 
   function handleSubmit(event: FormEvent) {
     event.preventDefault();
-    onInvite({
-      firstName: firstName.trim(),
-      lastName: lastName.trim(),
-      email: email.trim(),
-      role,
-    });
+    const person = { firstName: firstName.trim(), lastName: lastName.trim(), email: email.trim() };
+    if (useCompanyRoles) {
+      if (chosen) {
+        onInvite({ ...person, roleId: chosen.id, roleLabel: chosen.name });
+      }
+      return;
+    }
+    const legacy = ROLE_OPTIONS.find((option) => option.id === role);
+    onInvite({ ...person, role, roleLabel: legacy?.label ?? role });
   }
 
   return (
@@ -174,6 +206,48 @@ export function InviteMemberModal({
             />
           </div>
 
+          {useCompanyRoles ? (
+            <fieldset disabled={submitting} className="m-0 min-w-0 border-0 p-0">
+              <legend className="text-body font-medium">Role</legend>
+              <Radio.Group
+                value={roleId}
+                onChange={(e) => setRoleId(e.target.value as string)}
+                disabled={submitting}
+                className="mt-2 block w-full"
+              >
+                <ul className="m-0 flex max-h-72 list-none flex-col gap-2 overflow-y-auto p-0 pe-1">
+                  {roles.map((option) => (
+                    <li key={option.id}>
+                      <Radio
+                        value={option.id}
+                        disabled={Boolean(option.unavailable)}
+                        className={`flex w-full items-start rounded-xl border px-3.5 py-3 transition-colors duration-(--tp-motion-base) [&>span:last-child]:min-w-0 [&>span:last-child]:flex-1 ${
+                          roleId === option.id ? 'border-primary-200 bg-primary-50' : 'border-slate-200'
+                        }`}
+                      >
+                        <span className="flex items-baseline justify-between gap-3">
+                          <Typography.Text strong>{option.name}</Typography.Text>
+                          <span className="shrink-0 text-caption text-slate-500">
+                            {option.unavailable ??
+                              (option.permissionCount === 1 ? '1 permission' : `${option.permissionCount} permissions`)}
+                          </span>
+                        </span>
+                        {option.description && (
+                          <Typography.Text type="secondary" className="block text-caption">
+                            {option.description}
+                          </Typography.Text>
+                        )}
+                      </Radio>
+                    </li>
+                  ))}
+                </ul>
+              </Radio.Group>
+              <Typography.Text type="secondary" className="mt-2 block text-caption">
+                Owners can&apos;t be invited directly — invite them with another role, then make them an Owner once
+                they&apos;ve joined.
+              </Typography.Text>
+            </fieldset>
+          ) : (
           <fieldset disabled={submitting} className="m-0 border-0 p-0">
             <legend className="text-body font-medium">Role</legend>
             <Radio.Group
@@ -199,6 +273,7 @@ export function InviteMemberModal({
               </Row>
             </Radio.Group>
           </fieldset>
+          )}
 
           <Flex align="center" justify="flex-end" gap={12}>
             <Button type="button" variant="ghost" onClick={onClose} disabled={submitting}>
@@ -207,7 +282,7 @@ export function InviteMemberModal({
             <Button
               type="submit"
               variant="primary"
-              disabled={submitting}
+              disabled={submitting || (useCompanyRoles && !chosen)}
               icon={<SendOutlined aria-hidden className="text-[16px]" />}
             >
               {submitting ? 'Sending…' : 'Send invitation'}

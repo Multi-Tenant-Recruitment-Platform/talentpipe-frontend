@@ -668,8 +668,9 @@
   margin-inline: calc(-1 * var(--tp-space-1));
 }
 
-/* The whole row is the target: tick box, name, and the count pushed right. */
-.tp-jobs-filter-option.ant-checkbox-wrapper {
+/* The whole row is the target: tick box (or radio), name, and the count pushed right. */
+.tp-jobs-filter-option.ant-checkbox-wrapper,
+.tp-jobs-filter-option.ant-radio-wrapper {
   display: flex;
   align-items: center;
   min-height: 36px;
@@ -683,12 +684,15 @@
     color var(--tp-motion-fast) var(--tp-motion-ease);
 }
 
-.tp-jobs-filter-option.ant-checkbox-wrapper:hover {
+.tp-jobs-filter-option.ant-checkbox-wrapper:hover,
+.tp-jobs-filter-option.ant-radio-wrapper:hover {
   background: var(--tp-slate-50);
 }
 
 .tp-jobs-filter-option.ant-checkbox-wrapper-checked,
-.tp-jobs-filter-option.ant-checkbox-wrapper-checked:hover {
+.tp-jobs-filter-option.ant-checkbox-wrapper-checked:hover,
+.tp-jobs-filter-option.ant-radio-wrapper-checked,
+.tp-jobs-filter-option.ant-radio-wrapper-checked:hover {
   background: var(--tp-primary-50);
   color: var(--tp-primary-900);
   font-weight: var(--tp-weight-semibold);
@@ -711,12 +715,14 @@
   font-variant-numeric: tabular-nums;
 }
 
-.tp-jobs-filter-option.ant-checkbox-wrapper-checked .tp-jobs-filter-option-count {
+.tp-jobs-filter-option.ant-checkbox-wrapper-checked .tp-jobs-filter-option-count,
+.tp-jobs-filter-option.ant-radio-wrapper-checked .tp-jobs-filter-option-count {
   color: var(--tp-primary-700);
 }
 
 /* Nothing to find here right now — still tickable, just quieter. */
-.tp-jobs-filter-option-empty.ant-checkbox-wrapper {
+.tp-jobs-filter-option-empty.ant-checkbox-wrapper,
+.tp-jobs-filter-option-empty.ant-radio-wrapper {
   color: var(--tp-slate-400);
 }
 

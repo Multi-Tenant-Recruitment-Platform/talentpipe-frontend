@@ -38,7 +38,7 @@ import { PageLoader } from '../components/PageLoader';
 import { ProfileTrigger } from '../components/ProfileTrigger';
 import { pageContainer, popoverShell } from '../components/ui/classes';
 import type { UserResponse } from '../api/types';
-import type { Permission } from '../auth/permissions';
+import { roleLabelFor, type Permission } from '../auth/permissions';
 import { useCan } from '../auth/useCan';
 import { Avatar } from '../components/dashboard/Avatar';
 import { CompanyLogo } from '../components/dashboard/CompanyLogo';
@@ -46,7 +46,6 @@ import { RoleBadge } from '../components/dashboard/RoleBadge';
 import { CompanyProfileProvider, useCompanyIdentity } from '../dashboard/CompanyProfileContext';
 import { TeamSummaryProvider } from '../dashboard/TeamSummaryContext';
 import { activeTenant } from '../tenant/activeTenant';
-import { formatRole } from '../utils/format';
 import { tenantStorage } from '../utils/tenantStorage';
 import type { IconComponent } from '../components/ui/icon';
 import { primary, slate, surface } from '../theme/tokens';
@@ -82,7 +81,9 @@ const NAV_ITEMS: {
   { to: '/dashboard', label: 'Overview', icon: AppstoreOutlined, end: true, permission: 'overview.view' },
   // Vacancies sit above Pipeline because that is the order the work happens
   // in: a role is opened, then its candidates move through it.
-  { to: '/dashboard/jobs', label: 'Job Vacancies', icon: SolutionOutlined, permission: 'jobs.manage' },
+  // Every member may open it: the backend lists only the vacancies they work
+  // on unless their role sees them all.
+  { to: '/dashboard/jobs', label: 'Job Vacancies', icon: SolutionOutlined, permission: 'jobs.view' },
   // Templates sit beside vacancies: a job is opened from one.
   {
     to: '/dashboard/pipeline-templates',
@@ -189,7 +190,7 @@ function AccountPanel() {
           </Typography.Text>
           {user && (
             <div className="mt-1.5">
-              <RoleBadge role={user.role} />
+              <RoleBadge role={user.role} roleName={user.roleName} />
             </div>
           )}
         </div>
@@ -478,7 +479,8 @@ function DashboardChrome() {
                 firstName={user?.firstName ?? '?'}
                 lastName={user?.lastName}
                 name={fullName}
-                role={user ? formatRole(user.role) : ''}
+                // The company's own name for the role ("Hiring Coordinator"), not the fixed one underneath.
+                role={user ? roleLabelFor(user) : ''}
                 aria-label={`Account menu for ${fullName}`}
               />
             </Dropdown>

@@ -85,6 +85,7 @@ export function VacancyDetailsBody({ vacancy }: Readonly<{ vacancy: JobVacancyRe
       <Block title="Basic information">
         <dl className={detailGrid}>
           <Fact label="Department" value={vacancy.department} />
+          <Fact label="Industry" value={vacancy.industry ?? ''} />
           <Fact label="Openings" value={String(vacancy.openings)} />
           <Fact
             label="Employment type"

@@ -1,11 +1,11 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthContext';
-import { can } from '../../auth/permissions';
+import { can, type PermissionSubject } from '../../auth/permissions';
 
 /** One message per audience, each pointing at a page that exists. */
-function promoFor(role: string | null | undefined) {
-  if (!role) return { title: 'Get your next role with TalentPipe', cta: 'Create account', to: '/register-candidate' };
-  if (can(role, 'dashboard.view')) return { title: 'Hiring? Publish a vacancy', cta: 'Go to dashboard', to: '/dashboard' };
+function promoFor(subject: PermissionSubject) {
+  if (!subject) return { title: 'Get your next role with TalentPipe', cta: 'Create account', to: '/register-candidate' };
+  if (can(subject, 'dashboard.view')) return { title: 'Hiring? Publish a vacancy', cta: 'Go to dashboard', to: '/dashboard' };
   return { title: 'Make your profile stand out', cta: 'Edit profile', to: '/profile' };
 }
 

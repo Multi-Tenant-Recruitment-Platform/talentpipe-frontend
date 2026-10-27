@@ -4,8 +4,7 @@ import { useEffect, useRef, useState, type FocusEvent, type KeyboardEvent, type 
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import type { UserResponse } from '../api/types';
 import { useAuth } from '../auth/AuthContext';
-import { can, type Permission } from '../auth/permissions';
-import { formatRole } from '../utils/format';
+import { can, roleLabelFor, type Permission } from '../auth/permissions';
 import { Avatar } from './dashboard/Avatar';
 import { RoleBadge } from './dashboard/RoleBadge';
 import { ProfileTrigger } from './ProfileTrigger';
@@ -65,7 +64,7 @@ function AccountPanel({
   const { logout } = useAuth();
   const navigate = useNavigate();
   const panelRef = useRef<HTMLDivElement>(null);
-  const items = ITEMS.filter((item) => can(user.role, item.permission));
+  const items = ITEMS.filter((item) => can(user, item.permission));
 
   // Everything the arrow keys step through: the page links, then Log out.
   const links = () => Array.from(panelRef.current?.querySelectorAll<HTMLElement>('a[href], button') ?? []);
@@ -124,7 +123,7 @@ function AccountPanel({
           <p className="m-0 truncate font-semibold text-slate-900">{fullNameOf(user)}</p>
           <p className="m-0 truncate text-caption text-slate-500">{user.email}</p>
           <div className="mt-1.5">
-            <RoleBadge role={user.role} />
+            <RoleBadge role={user.role} roleName={user.roleName} />
           </div>
         </div>
       </div>
@@ -217,7 +216,7 @@ export function AccountMenu({ user, tone = 'light' }: Readonly<{ user: UserRespo
         firstName={user.firstName || user.email}
         lastName={user.lastName}
         name={name}
-        role={formatRole(user.role)}
+        role={roleLabelFor(user)}
         tone={tone}
         aria-label={`Account menu for ${name}`}
         aria-expanded={open}

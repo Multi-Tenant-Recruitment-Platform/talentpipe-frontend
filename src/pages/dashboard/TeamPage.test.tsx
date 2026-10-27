@@ -1,9 +1,11 @@
 import { cleanup, render, screen, within } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { UserResponse } from '../../api/types';
 import { authContextMock, makeUser, setAuth } from '../../test/authHarness';
 import { axiosError } from '../../test/http';
+import { ALL_KEYS, CATALOGUE, COORDINATOR, INTERVIEWER, OWNER, RECRUITER } from '../../test/roleFixtures';
 
 /**
  * Notes for anyone extending this file:
@@ -26,7 +28,12 @@ const list = vi.fn<() => Promise<UserResponse[]>>();
 const invite = vi.fn();
 const resend = vi.fn();
 const revoke = vi.fn();
-vi.mock('../../api/team', () => ({ teamApi: { list, invite, resend, revoke } }));
+const changeRole = vi.fn();
+vi.mock('../../api/team', () => ({ teamApi: { list, invite, resend, revoke, changeRole } }));
+
+const listRoles = vi.fn();
+const permissions = vi.fn();
+vi.mock('../../api/roles', () => ({ rolesApi: { list: listRoles, permissions } }));
 
 const { TeamPage } = await import('./TeamPage');
 const { TeamSummaryProvider } = await import('../../dashboard/TeamSummaryContext');
@@ -57,9 +64,11 @@ const UNVERIFIED = makeUser({
 
 function renderTeam() {
   return render(
-    <TeamSummaryProvider>
-      <TeamPage />
-    </TeamSummaryProvider>,
+    <MemoryRouter initialEntries={['/dashboard/team']}>
+      <TeamSummaryProvider>
+        <TeamPage />
+      </TeamSummaryProvider>
+    </MemoryRouter>,
   );
 }
 
@@ -106,6 +115,8 @@ beforeEach(() => {
   invite.mockResolvedValue(makeUser({ id: 'u-9', status: 'INVITED' }));
   resend.mockResolvedValue(undefined);
   revoke.mockResolvedValue(undefined);
+  listRoles.mockResolvedValue([OWNER, RECRUITER, INTERVIEWER, COORDINATOR]);
+  permissions.mockResolvedValue(CATALOGUE);
 });
 
 describe('every status stays visible', () => {
@@ -381,8 +392,9 @@ describe('load failures and permissions', () => {
     renderTeam();
     await screen.findByText('Kasun Silva');
 
-    // No role-change or remove affordance exists anywhere — those endpoints
-    // do not exist, so promising them would be a lie.
+    // Without company roles (an older server, as here) there is nothing to
+    // change a role to, and removing a member still has no endpoint — so
+    // neither is offered.
     expect(within(rowFor(/Kasun Silva/)).queryByRole('button')).toBeNull();
     expect(within(rowFor(/Nimal Perera/)).queryByRole('button')).toBeNull();
     expect(screen.queryByRole('button', { name: /remove|deactivate|change role/i })).toBeNull();
@@ -401,5 +413,96 @@ describe('load failures and permissions', () => {
     // Rows persist through the refetch rather than blinking into skeletons.
     expect(screen.queryAllByTestId('roster-skeleton')).toHaveLength(0);
     expect(screen.getByText('Kasun Silva')).toBeInTheDocument();
+  });
+});
+
+describe('company roles', () => {
+  const OWNER_SELF = makeUser({ ...SELF, roleId: 'r-owner', roleName: 'Owner', permissions: ALL_KEYS });
+  const RECRUITER_KASUN = makeUser({ ...ACTIVE, roleId: 'r-recruiter', roleName: 'Recruiter' });
+
+  beforeEach(() => {
+    setAuth({ user: OWNER_SELF, initializing: false });
+    list.mockResolvedValue([OWNER_SELF, RECRUITER_KASUN, INVITED]);
+    changeRole.mockResolvedValue(RECRUITER_KASUN);
+  });
+
+  it('counts roles rather than fixed roles, and links to them', async () => {
+    renderTeam();
+    expect(await screen.findByText('Custom roles')).toBeInTheDocument();
+    expect(screen.queryByText('HR Managers')).toBeNull();
+    const nav = screen.getByRole('navigation', { name: 'Team' });
+    expect(within(nav).getByRole('link', { name: /members/i })).toHaveAttribute('aria-current', 'page');
+    expect(within(nav).getByRole('link', { name: /roles & permissions/i })).toHaveAttribute('href', '/dashboard/team/roles');
+  });
+
+  it('invites with one of the workspace roles, never Owner', async () => {
+    const user = userEvent.setup();
+    renderTeam();
+    await screen.findByText('Custom roles');
+
+    await user.click(screen.getAllByRole('button', { name: /invite member/i })[0]);
+    const dialog = await screen.findByRole('dialog');
+    expect(within(dialog).getByRole('radio', { name: /recruiter/i })).toBeChecked();
+    expect(within(dialog).queryByRole('radio', { name: /^owner/i })).toBeNull();
+
+    await user.type(within(dialog).getByLabelText(/first name/i), 'Nimali');
+    await user.type(within(dialog).getByLabelText(/last name/i), 'Perera');
+    await user.type(within(dialog).getByLabelText(/work email/i), 'nimali@acme.test');
+    const coordinator = within(dialog).getByRole('radio', { name: /hiring coordinator/i });
+    await user.click(coordinator.closest('label') ?? coordinator);
+    await user.click(within(dialog).getByRole('button', { name: /send invitation/i }));
+
+    expect(invite).toHaveBeenCalledWith({
+      firstName: 'Nimali',
+      lastName: 'Perera',
+      email: 'nimali@acme.test',
+      roleId: 'r-custom',
+    });
+    expect(await screen.findByText(/join as Hiring Coordinator/)).toBeInTheDocument();
+  });
+
+  it('moves a member to another role after showing what they gain and lose', async () => {
+    const user = userEvent.setup();
+    renderTeam();
+    await screen.findByText('Custom roles');
+
+    await user.click(within(rowFor(/Kasun Silva/)).getByRole('button', { name: 'Change role for Kasun Silva' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Change role' });
+    await chooseOption(user, /new role/i, 'Interviewer');
+
+    const changes = within(dialog).getByRole('region', { name: 'What changes' });
+    expect(changes).toHaveTextContent('Publish vacancies');
+    expect(within(changes).queryByText('Gains')).toBeNull();
+
+    await user.click(within(dialog).getByRole('button', { name: 'Change role' }));
+
+    expect(changeRole).toHaveBeenCalledWith('u-2', 'r-interviewer');
+    expect(await screen.findByText(/Kasun Silva is now Interviewer/)).toBeInTheDocument();
+  });
+
+  it('keeps a refused change in the dialog, in the server words', async () => {
+    changeRole.mockRejectedValue({
+      isAxiosError: true,
+      response: {
+        status: 422,
+        data: { code: 'BUSINESS_RULE', message: 'Every workspace needs at least one Owner.' },
+      },
+    });
+    const user = userEvent.setup();
+    renderTeam();
+    await screen.findByText('Custom roles');
+
+    await user.click(within(rowFor(/Kasun Silva/)).getByRole('button', { name: 'Change role for Kasun Silva' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Change role' });
+    await chooseOption(user, /new role/i, 'Hiring Coordinator');
+    await user.click(within(dialog).getByRole('button', { name: 'Change role' }));
+
+    expect(await within(dialog).findByText('Every workspace needs at least one Owner.')).toBeInTheDocument();
+  });
+
+  it('does not offer to change your own role', async () => {
+    renderTeam();
+    await screen.findByText('Custom roles');
+    expect(within(rowFor(/Ada Lovelace/)).queryByRole('button', { name: /change role/i })).toBeNull();
   });
 });

@@ -15,6 +15,7 @@ import { can, type Permission } from './permissions';
  */
 export function useCan(): (permission: Permission) => boolean {
   const { user } = useAuth();
-  const role = user?.role ?? null;
-  return useCallback((permission: Permission) => can(role, permission), [role]);
+  // The whole user, not just the role: a company member's permissions come
+  // from their role's permission list, which a custom role's name says nothing about.
+  return useCallback((permission: Permission) => can(user, permission), [user]);
 }

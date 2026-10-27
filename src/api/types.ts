@@ -91,6 +91,13 @@ export interface CompanyProfileResponse {
    */
   departments: string[];
 
+  /**
+   * Industries besides the main {@link industry}, at most three, from the same
+   * list. A vacancy is filed under one of these or the main one. Absent from
+   * servers older than this field.
+   */
+  additionalIndustries?: string[];
+
   planTier: string;
   status: string;
   /** Null until the profile has been edited at least once. */
@@ -139,6 +146,8 @@ export interface UpdateCompanyProfileRequest {
   country: string | null;
   officeLocations: string[];
   departments: string[];
+  /** Up to three more industries besides `industry`; the main one and repeats are dropped. */
+  additionalIndustries: string[];
 }
 
 /**
@@ -175,12 +184,52 @@ export interface UserResponse {
   id: string;
   tenantId: string | null;
   tenantName: string | null;
+  /**
+   * The fixed role the API has always sent: COMPANY_ADMIN, HR_MANAGER,
+   * INTERVIEWER, CANDIDATE or SUPER_ADMIN — or CUSTOM for a member of a role
+   * the company defined. Kept for older screens; decide what to show from
+   * {@link permissions}, and what to call the role from {@link roleName}.
+   */
   role: string;
+  /** The company role's id; absent for candidates and platform operators. */
+  roleId?: string | null;
+  /** What the company calls the role, e.g. "Owner" or "Hiring Coordinator". */
+  roleName?: string | null;
+  /**
+   * Permission keys the role grants (`jobs.manage`, `team.invite`, …), in
+   * catalogue order. Present on login, refresh and `/auth/me`; absent on a
+   * user embedded in another response.
+   */
+  permissions?: string[];
   email: string;
   firstName: string;
   lastName: string;
   status: string;
   createdAt: string;
+}
+
+/**
+ * One account a sign-in could mean, offered when an email and password fit
+ * more than one (`409 WORKSPACE_SELECTION_REQUIRED`).
+ */
+export interface WorkspaceChoice {
+  accountId: string;
+  type: 'COMPANY' | 'PLATFORM' | 'CANDIDATE';
+  /** Company name; absent for platform and candidate accounts. */
+  workspaceName?: string | null;
+  subdomain?: string | null;
+  logoUrl?: string | null;
+  /** The person's role there, e.g. "Recruiter" or "Candidate". */
+  roleName?: string | null;
+}
+
+/** The `details` of a `WORKSPACE_SELECTION_REQUIRED` error. */
+export interface WorkspaceSelection {
+  /** Single use; sent back with the chosen account to `POST /auth/login/select`. */
+  selectionToken: string;
+  expiresInSeconds: number;
+  /** Companies by name, then the platform account, then the candidate one. */
+  accounts: WorkspaceChoice[];
 }
 
 export interface AuthResponse {
@@ -289,7 +338,154 @@ export interface InviteUserRequest {
   firstName: string;
   lastName: string;
   email: string;
-  role: InvitableRole;
+  /**
+   * The company role to invite into — any role but Owner. Takes precedence
+   * over {@link role}, which servers older than company roles still need.
+   */
+  roleId?: string;
+  role?: InvitableRole;
+}
+
+/* --- Company roles (ADR-9) ------------------------------------------------ *
+ * A role is a named set of permissions. Every workspace starts with Owner,
+ * Recruiter and Interviewer and can add its own. Mirrors of the backend's
+ * RoleResponse / RoleRequest / PermissionGroupResponse / RoleAuditEventResponse.
+ */
+
+/** One permission in the catalogue, as a role editor lists it. */
+export interface PermissionDefinition {
+  /** Stable key, e.g. `jobs.manage`. */
+  key: string;
+  label: string;
+  description: string;
+  /** Keys this one needs; granting it grants these too. */
+  requires: string[];
+}
+
+export interface PermissionGroup {
+  key: 'TEAM' | 'COMPANY' | 'VACANCIES' | 'HIRING' | 'INTERVIEWS' | string;
+  label: string;
+  permissions: PermissionDefinition[];
+}
+
+/** The three roles every workspace starts with; absent on a custom role. */
+export type SystemRoleKey = 'OWNER' | 'RECRUITER' | 'INTERVIEWER';
+
+export interface RoleResponse {
+  id: string;
+  name: string;
+  description: string | null;
+  systemRole: SystemRoleKey | null;
+  /** True for the Owner role: it always holds every permission and cannot be edited. */
+  locked: boolean;
+  /** False for the three default roles. */
+  deletable: boolean;
+  permissions: string[];
+  memberCount: number;
+  /** Optimistic-lock counter; send it back on PUT. */
+  version: number;
+  createdAt: string;
+  updatedAt: string | null;
+}
+
+export interface RoleRequest {
+  name: string;
+  description: string | null;
+  permissions: string[];
+  /** Required on PUT; ignored on create. */
+  version?: number;
+}
+
+export type RoleAuditAction = 'ROLE_CREATED' | 'ROLE_UPDATED' | 'ROLE_DELETED' | 'MEMBER_ROLE_CHANGED';
+
+export interface RoleAuditEvent {
+  id: string;
+  action: RoleAuditAction;
+  actorUserId: string | null;
+  roleId: string | null;
+  roleName: string | null;
+  /** The member a MEMBER_ROLE_CHANGED event is about. */
+  targetUserId: string | null;
+  previousValue: string | null;
+  newValue: string | null;
+  occurredAt: string;
+}
+
+/**
+ * A row of the team screen: a member or a pending invitation. A superset of
+ * {@link UserResponse} without the permission list.
+ */
+export interface TeamMemberResponse extends UserResponse {
+  /** When the open invitation was sent; null once accepted. */
+  invitationSentAt?: string | null;
+  invitationExpiresAt?: string | null;
+}
+
+/* --- Vacancy hiring team (ADR-11) ----------------------------------------- */
+
+/** A workspace member as another screen shows them. */
+export interface MemberSummary {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  roleName: string | null;
+  /** ACTIVE, INVITED, PENDING_VERIFICATION or DISABLED. */
+  status: string;
+}
+
+/** Everyone who works on a vacancy. */
+export interface HiringTeamResponse {
+  vacancyId: string;
+  recruiter: MemberSummary | null;
+  hiringManager: MemberSummary | null;
+  /** The rest of the hiring team, in the order they were added. */
+  members: MemberSummary[];
+}
+
+/* --- Feature switches (PB-015, ADR-13) ------------------------------------ */
+
+/** `PATCH /jobs/{id}/features`; a switch left out keeps its value. */
+export interface VacancyFeaturesRequest {
+  aiScreeningEnabled?: boolean;
+  candidateMatchingEnabled?: boolean;
+}
+
+/** The company's switches (`/tenant/settings`). */
+export interface TenantSettings {
+  blindScreeningEnabled: boolean;
+  aiScreeningDefault: boolean;
+  candidateMatchingDefault: boolean;
+  updatedAt: string | null;
+}
+
+export type TenantSettingsUpdate = Partial<Omit<TenantSettings, 'updatedAt'>>;
+
+/* --- Public board facets --------------------------------------------------- */
+
+export interface JobFilterOption {
+  value: string;
+  count: number;
+}
+
+/** The span of pay published vacancies state for one pay period and currency. */
+export interface SalaryRangeOption {
+  payPeriod: PayPeriod;
+  /** Three-letter code, e.g. LKR. */
+  currency: string;
+  min: number;
+  max: number;
+  count: number;
+}
+
+/** `GET /public/jobs/filters`. The newer lists are absent on older servers. */
+export interface JobFilterOptions {
+  categories: JobFilterOption[];
+  locations: JobFilterOption[];
+  industries?: JobFilterOption[];
+  employmentTypes?: JobFilterOption[];
+  workplaceTypes?: JobFilterOption[];
+  salaryRanges?: SalaryRangeOption[];
 }
 
 /** Uniform pagination envelope returned by every list endpoint. */
@@ -339,6 +535,8 @@ export interface JobSummary {
   publishedAt?: string | null;
   /** False once the deadline has passed: the advert still shows, but an application would be refused. */
   acceptingApplications?: boolean | null;
+  /** One of the company's industries, e.g. "Finance & Banking". */
+  industry?: string | null;
 }
 
 /**
@@ -425,6 +623,11 @@ export interface JobVacancyRequest {
    */
   title: string;
   department: string;
+  /**
+   * One of the company's industries (its profile lists them). Null asks for
+   * the default: the main industry on a new vacancy, the current one on an edit.
+   */
+  industry?: string | null;
   openings: number;
   employmentType: EmploymentType | null;
   workplaceType: WorkplaceType | null;
@@ -462,6 +665,13 @@ export interface JobVacancyRequest {
   screeningQuestions: string[];
 
   /**
+   * PB-015 switches. Left out, a new vacancy takes the company's defaults
+   * (`/tenant/settings`) and an edit keeps what the vacancy has.
+   */
+  aiScreeningEnabled?: boolean | null;
+  candidateMatchingEnabled?: boolean | null;
+
+  /**
    * Only DRAFT or PUBLISHED on create. Every later move goes through its own
    * lifecycle endpoint, never through a field edit.
    */
@@ -486,6 +696,8 @@ export interface JobVacancyResponse extends JobVacancyRequest {
   id: string;
   /** Optimistic-lock counter; echoed back on PUT. */
   version: number;
+  /** Who filed it; null for vacancies filed before this was recorded. */
+  createdBy?: string | null;
   createdAt: string;
   updatedAt: string;
   /** Set on the transition into each state; null until then. */
@@ -499,13 +711,55 @@ export interface JobVacancyResponse extends JobVacancyRequest {
   applicantCount: number | null;
 }
 
+/**
+ * The stable reason the backend gives for a failure. Branch on this, never on
+ * `message`: the message is a sentence for people and may be reworded, the
+ * code is the contract and is only ever added to.
+ */
+export type ApiErrorCode =
+  | 'VALIDATION_FAILED'
+  | 'INVALID_REQUEST'
+  | 'MALFORMED_REQUEST'
+  | 'INVALID_PARAMETER'
+  | 'MISSING_HEADER'
+  | 'INVALID_CREDENTIALS'
+  | 'AUTHENTICATION_REQUIRED'
+  | 'INVALID_TOKEN'
+  | 'ACCESS_DENIED'
+  | 'ACCOUNT_NOT_VERIFIED'
+  | 'INVITATION_NOT_ACCEPTED'
+  | 'ACCOUNT_LOCKED'
+  | 'NOT_FOUND'
+  | 'METHOD_NOT_ALLOWED'
+  | 'CONFLICT'
+  | 'CONCURRENT_UPDATE'
+  | 'WORKSPACE_SELECTION_REQUIRED'
+  | 'PAYLOAD_TOO_LARGE'
+  | 'UNSUPPORTED_MEDIA_TYPE'
+  | 'BUSINESS_RULE'
+  | 'RATE_LIMITED'
+  | 'INTERNAL_ERROR';
+
+/** One invalid request field, so a form can show the message next to its input. */
+export interface FieldErrorDetail {
+  /** The field's path in the request body, e.g. `admin.password`. */
+  field: string;
+  message: string;
+}
+
 /** Uniform error envelope returned by the backend on every failure. */
 export interface ApiError {
   timestamp: string;
   status: number;
   error: string;
+  /** Absent only from servers older than the error codes. */
+  code?: ApiErrorCode;
   message: string;
   path: string;
+  /** Present on `VALIDATION_FAILED` only. */
+  fieldErrors?: FieldErrorDetail[];
+  /** Present for codes that carry a payload, e.g. `WORKSPACE_SELECTION_REQUIRED`. */
+  details?: unknown;
 }
 
 /* --- Pipeline templates --------------------------------------------------- *

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { api } from './client';
-import { getPublicJob, listPublicJobs } from './publicJobs';
+import { getPublicJob, getPublicJobFilters, listPublicJobs } from './publicJobs';
 
 vi.mock('./client', () => ({ api: { get: vi.fn() } }));
 const get = vi.mocked(api.get);
@@ -26,6 +26,35 @@ describe('publicJobs (live API)', () => {
     expect(get).toHaveBeenLastCalledWith('/public/jobs', { params: { page: 0, size: 20, q: 'react', location: 'Colombo' } });
     await listPublicJobs(1, { keyword: '', location: 'Kandy' });
     expect(get).toHaveBeenLastCalledWith('/public/jobs', { params: { page: 1, size: 20, location: 'Kandy' } });
+  });
+
+  it('sends every filter as the backend names it', async () => {
+    get.mockResolvedValue({ data: { content: [], page: 0, size: 20, totalElements: 0, totalPages: 0 } });
+    await listPublicJobs(0, {
+      keyword: 'react',
+      industry: 'Information Technology',
+      workplaceTypes: ['REMOTE', 'HYBRID'],
+      experience: 'fivePlus',
+      sort: 'newest',
+    });
+    expect(get).toHaveBeenLastCalledWith('/public/jobs', {
+      params: {
+        page: 0,
+        size: 20,
+        q: 'react',
+        industry: 'Information Technology',
+        workplaceType: 'REMOTE,HYBRID',
+        minExperience: 5,
+        sort: 'newest',
+      },
+    });
+  });
+
+  it('reads what the board can be filtered by', async () => {
+    const facets = { categories: [], locations: [], industries: [{ value: 'Healthcare', count: 2 }] };
+    get.mockResolvedValue({ data: facets });
+    await expect(getPublicJobFilters()).resolves.toEqual(facets);
+    expect(get).toHaveBeenCalledWith('/public/jobs/filters');
   });
 
   it('treats a 404 as "not available"', async () => {

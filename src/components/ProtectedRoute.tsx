@@ -43,11 +43,11 @@ export function ProtectedRoute({
     return <Navigate to="/login" replace state={{ from: location.pathname + location.search }} />;
   }
 
-  if (requires && !can(user.role, requires)) {
+  if (requires && !can(user, requires)) {
     // A role with no business in this area at all — a candidate typing
     // /dashboard — is sent somewhere that is theirs; a 403 with a button they
     // cannot use would be worse. Anyone else falls through to a real 403.
-    const home = redirectTo ?? homeRouteFor(user.role);
+    const home = redirectTo ?? homeRouteFor(user);
     if (home !== location.pathname) {
       return <Navigate to={home} replace />;
     }

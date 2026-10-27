@@ -27,6 +27,11 @@ const EXPECTED: Record<Permission, Record<Role, boolean>> = {
     INTERVIEWER: false,
     CANDIDATE: false,
   },
+  // Moving people between roles and editing roles exist only on servers that
+  // send a permission list, so the fixed-role fallback never offers them.
+  'team.manage': { COMPANY_ADMIN: false, HR_MANAGER: false, INTERVIEWER: false, CANDIDATE: false },
+  'roles.view': { COMPANY_ADMIN: false, HR_MANAGER: false, INTERVIEWER: false, CANDIDATE: false },
+  'roles.manage': { COMPANY_ADMIN: false, HR_MANAGER: false, INTERVIEWER: false, CANDIDATE: false },
   'pipeline.view': { COMPANY_ADMIN: true, HR_MANAGER: true, INTERVIEWER: true, CANDIDATE: false },
   'pipeline.manage': {
     COMPANY_ADMIN: true,
@@ -50,7 +55,11 @@ const EXPECTED: Record<Permission, Record<Role, boolean>> = {
   // Opening a role is the HR manager's day job, so it sits with pipeline.manage
   // rather than with the admin-only cells. An interviewer reads the pipeline;
   // they do not decide what the company hires for.
+  // Servers without a permission list refused GET /jobs to interviewers.
+  'jobs.view': { COMPANY_ADMIN: true, HR_MANAGER: true, INTERVIEWER: false, CANDIDATE: false },
+  'jobs.viewAll': { COMPANY_ADMIN: true, HR_MANAGER: true, INTERVIEWER: false, CANDIDATE: false },
   'jobs.manage': { COMPANY_ADMIN: true, HR_MANAGER: true, INTERVIEWER: false, CANDIDATE: false },
+  'jobs.publish': { COMPANY_ADMIN: true, HR_MANAGER: true, INTERVIEWER: false, CANDIDATE: false },
   // Templates are read by whoever opens roles and changed only by the admin.
   // An interviewer never picks a pipeline, so the list would only be noise.
   'templates.view': { COMPANY_ADMIN: true, HR_MANAGER: true, INTERVIEWER: false, CANDIDATE: false },
@@ -85,6 +94,56 @@ describe('permission matrix', () => {
 
   it('covers every declared permission', () => {
     expect(Object.keys(EXPECTED).sort()).toEqual([...PERMISSIONS].sort());
+  });
+});
+
+describe('a company member with a permission list', () => {
+  const member = (role: string, permissions: string[]) => ({ role, permissions, tenantId: 't-1' });
+
+  it('gets the screens their permissions open, whatever the role is called', () => {
+    // A custom role: team and interview scheduling, nothing about vacancies.
+    const coordinator = member('CUSTOM', ['team.view', 'team.invite', 'applications.view.all', 'interviews.schedule']);
+
+    for (const granted of ['dashboard.view', 'team.view', 'roles.view', 'team.invite', 'team.invite.manage'] as const) {
+      expect(can(coordinator, granted), granted).toBe(true);
+    }
+    for (const denied of ['jobs.manage', 'jobs.publish', 'roles.manage', 'settings.edit', 'team.manage'] as const) {
+      expect(can(coordinator, denied), denied).toBe(false);
+    }
+  });
+
+  it('lets every member list the vacancies they work on, and only some see them all', () => {
+    const interviewer = member('INTERVIEWER', ['interviews.conduct']);
+    const recruiter = member('HR_MANAGER', ['jobs.view.all', 'jobs.manage', 'jobs.publish']);
+
+    expect(can(interviewer, 'jobs.view')).toBe(true);
+    expect(can(interviewer, 'jobs.viewAll')).toBe(false);
+    expect(can(recruiter, 'jobs.viewAll')).toBe(true);
+    expect(can(recruiter, 'jobs.publish')).toBe(true);
+  });
+
+  it('keeps pipeline templates on the fixed role, which is what the backend still checks', () => {
+    const owner = member('COMPANY_ADMIN', ['pipeline.templates.manage', 'roles.manage', 'team.manage']);
+    const customWithTemplates = member('CUSTOM', ['pipeline.templates.manage']);
+
+    expect(can(owner, 'templates.manage')).toBe(true);
+    expect(can(owner, 'roles.manage')).toBe(true);
+    expect(can(customWithTemplates, 'templates.view')).toBe(false);
+  });
+
+  it('ignores a permission key it does not know', () => {
+    expect([...permissionsFor(member('CUSTOM', ['reports.export']))].sort()).toEqual(
+      [...permissionsFor(member('CUSTOM', []))].sort(),
+    );
+  });
+
+  it('treats an empty list on a candidate as no company role, not as an empty one', () => {
+    const candidate = { role: 'CANDIDATE', permissions: [], tenantId: null };
+
+    expect(can(candidate, 'profile.manageOwn')).toBe(true);
+    expect(can(candidate, 'dashboard.view')).toBe(false);
+    expect(homeRouteFor(candidate)).toBe('/');
+    expect(homeRouteFor(member('CUSTOM', []))).toBe('/dashboard');
   });
 });
 
