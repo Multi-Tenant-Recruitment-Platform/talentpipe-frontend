@@ -227,6 +227,7 @@ function SalaryField({
  * loaded jobs at once. Remount it (change its `key`) to clear what was typed.
  */
 export function JobSearchBar({
+  compact = false,
   keyword: appliedKeyword,
   location: appliedLocation,
   onSearch,
@@ -234,6 +235,7 @@ export function JobSearchBar({
   onChange,
   jobs,
 }: Readonly<{
+  compact?: boolean;
   keyword: string;
   location: string;
   onSearch: (keyword: string, location: string) => void;
@@ -250,6 +252,20 @@ export function JobSearchBar({
     onSearch(keyword.trim(), location.trim());
   };
 
+  if (compact) return (
+    <form className="board-search-form" role="search" aria-label="Search jobs" onSubmit={submit}>
+      <label className="board-search-field">
+        <SearchOutlined aria-hidden />
+        <input aria-label="Job title, skill or company" placeholder="Job title, keywords" value={keyword} onChange={event => setKeyword(event.target.value)} />
+      </label>
+      <label className="board-search-field">
+        <EnvironmentOutlined aria-hidden />
+        <input aria-label="Location" placeholder="Location" value={location} onChange={event => setLocation(event.target.value)} />
+      </label>
+      <button type="submit">Search Jobs</button>
+    </form>
+  );
+
   return (
     <ConfigProvider theme={BAR_THEME}>
       <form
@@ -264,7 +280,7 @@ export function JobSearchBar({
             allowClear
             value={keyword}
             onChange={(event) => setKeyword(event.target.value)}
-            placeholder="Job title, skill or company"
+            placeholder="Job title, keywords"
             aria-label="Job title, skill or company"
             enterKeyHint="search"
             className="p-0 text-body text-slate-900"
@@ -277,7 +293,7 @@ export function JobSearchBar({
             allowClear
             value={location}
             onChange={(event) => setLocation(event.target.value)}
-            placeholder="City or country"
+            placeholder="Location"
             aria-label="Location"
             enterKeyHint="search"
             className="p-0 text-body text-slate-900"

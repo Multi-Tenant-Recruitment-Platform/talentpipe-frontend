@@ -5,6 +5,7 @@ import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 import './index.css';
+import './styles/job-board.css';
 import { antdTheme } from './theme/antdTheme';
 
 // `layer` puts every antd rule in `@layer antd`, slotted between our base reset

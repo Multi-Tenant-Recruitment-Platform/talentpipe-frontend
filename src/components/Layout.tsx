@@ -36,7 +36,7 @@ export function Layout() {
   // under `/jobs/…`, which a router match on `/` cannot express — and a plain
   // prefix test on `/` would light the link up on every page.
   const links = [
-    { to: '/', label: 'Find jobs', current: isJobPage(pathname) },
+    { to: '/', label: pathname === '/' ? 'Browse Jobs' : 'Find jobs', current: isJobPage(pathname) },
     // The dashboard is the company workspace; candidates have no tenant, so it
     // isn't shown to them. Asks the permission map rather than naming a role,
     // so this and the route guard can never drift apart.
@@ -47,7 +47,7 @@ export function Layout() {
   const fullBleed = isFullBleed(pathname);
 
   return (
-    <AntLayout className="min-h-screen">
+    <AntLayout className={`min-h-screen ${pathname === "/" ? "board-layout" : ""}`}>
       {/* The container below owns the gutters, so the header lines up with
           the page content edge for edge. */}
       <AntLayout.Header
@@ -58,7 +58,7 @@ export function Layout() {
             <Link to="/" aria-label="TalentPipe home" className="flex flex-none items-center no-underline">
               {/* On a phone the mark alone carries the brand, so the actions
                   beside it keep their full labels instead of overflowing. */}
-              <BrandLogo tone="dark" showName={Boolean(screens.sm)} />
+              <BrandLogo tone={pathname === "/" ? "light" : "dark"} showName={Boolean(screens.sm)} />
             </Link>
 
             {/* Two short links fit at every width, so there is nothing to fold
@@ -81,20 +81,20 @@ export function Layout() {
             {user ? (
               // The person's own pages — and Log out — live behind their name,
               // as in the dashboard, not in the site navigation beside Find jobs.
-              <AccountMenu user={user} tone="dark" />
+              <AccountMenu user={user} tone={pathname === "/" ? "light" : "dark"} />
             ) : (
               <>
                 {/* Navigate to full-screen auth pages */}
                 <Button
                   variant="ghost"
                   size={screens.sm ? 'md' : 'sm'}
-                  className="text-white hover:bg-slate-800 hover:text-white"
+                  className={pathname === "/" ? "board-sign-in" : "text-white hover:bg-slate-800 hover:text-white"}
                   onClick={() => navigate('/login')}
                 >
-                  Log in
+                  {pathname === "/" ? "Sign In" : "Log in"}
                 </Button>
-                <Button variant="primary" size={screens.sm ? 'md' : 'sm'} onClick={() => navigate('/register')}>
-                  Get started
+                <Button className={pathname === "/" ? "board-register" : undefined} variant="primary" size={screens.sm ? 'md' : 'sm'} onClick={() => navigate('/register')}>
+                  {pathname === "/" ? "Register" : "Get started"}
                 </Button>
               </>
             )}

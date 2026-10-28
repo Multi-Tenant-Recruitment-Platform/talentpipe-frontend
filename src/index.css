@@ -20,6 +20,7 @@
 
 @import './styles/tokens.css' layer(theme);
 @import './styles/overrides.css' layer(components);
+@import './styles/job-board.css' layer(components);
 
 /*
  * Tailwind's theme, projected from the --tp-* tokens so a utility class and the

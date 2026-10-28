@@ -2,10 +2,8 @@ import { FilterOutlined, SlidersOutlined } from '@ant-design/icons';
 import { Drawer, Flex, Select } from 'antd';
 import { useMemo, useState } from 'react';
 import type { PublicJobSearch } from '../api/publicJobs';
-import { HeroBand } from '../components/jobs/HeroBand';
 import { JobList } from '../components/jobs/JobList';
-import { JobPromoCard } from '../components/jobs/JobPromoCard';
-import { JobFilterBar, JobSearchBar, QuickFilters } from '../components/jobs/JobSearch';
+import { JobFilterBar, JobSearchBar } from '../components/jobs/JobSearch';
 import { Alert } from '../components/ui/Alert';
 import { Button } from '../components/ui/Button';
 import { pageContainer } from '../components/ui/classes';
@@ -22,7 +20,7 @@ import { space } from '../theme/tokens';
 
 const SORT_OPTIONS: { label: string; value: JobSort }[] = [
   { label: 'Most relevant', value: 'relevant' },
-  { label: 'Newest', value: 'newest' },
+  { label: 'Most recent', value: 'newest' },
 ];
 
 const NO_SEARCH: Required<PublicJobSearch> = { keyword: '', location: '' };
@@ -56,7 +54,7 @@ function resultLabel(matching: number, loaded: number, total: number, searching:
  */
 export function JobsPage() {
   const [search, setSearch] = useState(NO_SEARCH);
-  const [filters, setFilters] = useState<JobFilters>(NO_FILTERS);
+  const [filters, setFilters] = useState<JobFilters>({ ...NO_FILTERS, sort: 'newest' });
   const [drawerOpen, setDrawerOpen] = useState(false);
   // Bumped by "Clear all" to remount the search bar, which owns the text being typed.
   const [searchKey, setSearchKey] = useState(0);
@@ -91,16 +89,18 @@ export function JobsPage() {
   );
 
   return (
-    <section>
-      {/* A compact search strip: no headline, just the bar and its chips, so
-          the first jobs stay above the fold. */}
-      <HeroBand className="py-6 lg:py-8">
-        {/* The page's one h1, for screen readers and the document outline;
-            the search bar itself says what this page is for. */}
-        <h1 className="sr-only">Find jobs</h1>
+    <section className="public-job-board">
+      <div className="board-hero"><div className={`${pageContainer} board-hero-inner`}>
+        <img className="board-illustration" src="/hero-illustration.jpg" alt="" aria-hidden="true" />
+        <div className="board-hero-copy">
+          <p className="board-eyebrow">Find your next opportunity</p>
+          <h1>Great jobs. Amazing companies.</h1>
+          <p className="board-intro">Discover career opportunities at forward-thinking companies<br className="hidden sm:block" /> and take the next step in your journey.</p>
+        </div>
 
-        <div className="mx-auto max-w-6xl">
+        <div className="board-search">
           <JobSearchBar
+            compact
             key={searchKey}
             keyword={search.keyword}
             location={search.location}
@@ -110,34 +110,19 @@ export function JobsPage() {
             jobs={jobs}
           />
         </div>
-        <QuickFilters filters={filters} onChange={setFilters} className="mt-4 justify-center" />
-      </HeroBand>
+      </div></div>
 
-      <div className={`${pageContainer} py-8 lg:py-10`}>
-        <div className={showFilters ? 'grid gap-8 lg:grid-cols-[16rem_minmax(0,1fr)] lg:items-start' : ''}>
-          {showFilters && (
-            <aside className="hidden min-w-0 flex-col gap-6 lg:flex">
-              <JobPromoCard />
-              {filterBar(true)}
-            </aside>
-          )}
+      <div className={`${pageContainer} board-results`}>
+        <div>
 
           <div className="min-w-0">
             <div className="mb-6 flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
               <div className="min-w-0">
                 <div className="flex items-center gap-3">
                   <h2 className="m-0 text-heading leading-tight font-bold tracking-heading text-slate-900">
-                    {searching || refining ? 'Matching jobs' : 'Open jobs'}
+                    {hasResults ? `${shownTotal} open position${shownTotal === 1 ? '' : 's'}` : 'Open positions'}
                   </h2>
-                  {hasResults && (
-                    <span
-                      aria-hidden="true"
-                      data-numeric
-                      className="rounded-pill border border-slate-200 bg-surface px-3 py-0.5 text-small font-semibold text-slate-700"
-                    >
-                      {shownTotal}
-                    </span>
-                  )}
+
                 </div>
                 {hasResults && (
                   <>
@@ -157,7 +142,7 @@ export function JobsPage() {
                 {showFilters && (
                   <Button
                     size="sm"
-                    className="lg:hidden"
+                    className="board-filter-button"
                     icon={<FilterOutlined aria-hidden />}
                     onClick={() => setDrawerOpen(true)}
                   >
@@ -204,7 +189,6 @@ export function JobsPage() {
               </Flex>
             )}
 
-            {showFilters && <JobPromoCard className="mt-8 lg:hidden" />}
           </div>
         </div>
       </div>

@@ -10,7 +10,7 @@ import { JobCard } from './JobCard';
 const SKELETON_COUNT = 6;
 
 /** The board's grid. Grid items default to min-width: auto, so `min-w-0` keeps one long title from widening its column. */
-const grid = 'm-0 grid list-none gap-4 p-0 md:grid-cols-2 xl:grid-cols-3 [&>*]:min-w-0';
+const grid = 'board-job-list m-0 grid list-none gap-2 p-0 [&>*]:min-w-0';
 
 /** Shaped like the card it stands in for — a tinted panel, then a footer — so the list does not jump when the jobs land. */
 function JobCardSkeleton() {
