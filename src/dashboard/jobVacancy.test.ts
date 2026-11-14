@@ -12,17 +12,22 @@ import {
   firstInvalidField,
   formatSalary,
   formatWorkingDays,
+  formProgress,
   isVacancyDirty,
+  PIPELINE_MESSAGES,
+  pipelineShape,
+  runsOnPipeline,
   sectionProgress,
   sectionsWithErrors,
   todayIso,
   toVacancyRequest,
   VACANCY_SECTIONS,
+  validatePipeline,
   validateVacancy,
   type JobVacancyFormValues,
 } from './jobVacancy';
 import type { JobVacancyResponse } from '../api/types';
-import { makeVacancy } from '../test/vacancyFixtures';
+import { makeVacancy, makeVacancyWithoutPipeline } from '../test/vacancyFixtures';
 
 /**
  * The vacancy rules, tested without a render.
@@ -47,6 +52,11 @@ function completeValues(overrides: Partial<JobVacancyFormValues> = {}): JobVacan
     jobDescription: 'A longer description of the role and the team it joins.',
     keyResponsibilities: ['Own the matching service'],
     requiredSkills: ['Java'],
+    pipelineTemplateId: 'tpl-1',
+    pipelineTemplateName: 'Engineering hiring',
+    autoThreshold: 80,
+    manualThreshold: 70,
+    blindModeEnabled: false,
     ...overrides,
   };
 }
@@ -182,6 +192,125 @@ describe('toVacancyRequest', () => {
   });
 });
 
+describe('the pipeline', () => {
+  it('sends the chosen template and its screening settings when creating', () => {
+    const request = toVacancyRequest(
+      completeValues({ autoThreshold: 85, manualThreshold: 65, blindModeEnabled: true }),
+      'DRAFT',
+    );
+    expect(request.pipelineTemplateId).toBe('tpl-1');
+    expect(request).toMatchObject({ autoThreshold: 85, manualThreshold: 65, blindModeEnabled: true });
+  });
+
+  it('sends the screening settings on an edit, and never the template', () => {
+    const update = toVacancyUpdate(completeValues({ autoThreshold: 85, manualThreshold: 65 }), 3);
+    expect(update).toMatchObject({ autoThreshold: 85, manualThreshold: 65, blindModeEnabled: false, version: 3 });
+    expect(update).not.toHaveProperty('pipelineTemplateId');
+  });
+
+  it('sends no settings for a vacancy created before pipeline templates', () => {
+    const values = toFormValues(makeVacancyWithoutPipeline());
+    expect(runsOnPipeline(values)).toBe(false);
+    expect(toVacancyUpdate(values, 0)).toMatchObject({
+      autoThreshold: null,
+      manualThreshold: null,
+      blindModeEnabled: null,
+    });
+  });
+
+  it('still counts a vacancy whose template was deleted as on its pipeline', () => {
+    const values = toFormValues(makeVacancy({ pipelineTemplateId: null }));
+    expect(runsOnPipeline(values)).toBe(true);
+    expect(toVacancyUpdate(values, 0).autoThreshold).toBe(80);
+  });
+
+  it('reads the stored pipeline back into the form', () => {
+    const values = toFormValues(makeVacancy({ autoThreshold: 90, manualThreshold: 60, blindModeEnabled: true }));
+    expect(values).toMatchObject({
+      pipelineTemplateId: 'tpl-1',
+      pipelineTemplateName: 'Engineering hiring',
+      autoThreshold: 90,
+      manualThreshold: 60,
+      blindModeEnabled: true,
+    });
+  });
+
+  it('copies the template and settings into a duplicate, but not the stored name', () => {
+    const values = duplicateValues(makeVacancy({ autoThreshold: 90, manualThreshold: 60 }));
+    expect(values).toMatchObject({ pipelineTemplateId: 'tpl-1', autoThreshold: 90, manualThreshold: 60 });
+    expect(values.pipelineTemplateName).toBe('');
+  });
+
+  it.each([101, -1, 1.5])('refuses a threshold of %s', (score) => {
+    expect(validateVacancy(completeValues({ autoThreshold: score })).autoThreshold).toBe(
+      PIPELINE_MESSAGES.thresholdRange,
+    );
+    expect(validateVacancy(completeValues({ manualThreshold: score })).manualThreshold).toBe(
+      PIPELINE_MESSAGES.thresholdRange,
+    );
+  });
+
+  it.each([
+    [70, 80],
+    [70, 70],
+  ])('refuses auto %s with manual %s, with the server’s own sentence', (auto, manual) => {
+    const errors = validateVacancy(completeValues({ autoThreshold: auto, manualThreshold: manual }));
+    expect(errors.manualThreshold).toBe('The manual threshold must be lower than the auto threshold.');
+    expect(errors.autoThreshold).toBeUndefined();
+  });
+
+  it('asks for both thresholds on a vacancy that runs on a pipeline', () => {
+    const errors = validateVacancy(completeValues({ autoThreshold: null, manualThreshold: null }));
+    expect(errors.autoThreshold).toBe(PIPELINE_MESSAGES.autoRequired);
+    expect(errors.manualThreshold).toBe(PIPELINE_MESSAGES.manualRequired);
+  });
+
+  it('asks nothing of a vacancy without a pipeline', () => {
+    const values = toFormValues(makeVacancyWithoutPipeline());
+    expect(validateVacancy(values).autoThreshold).toBeUndefined();
+    expect(validateVacancy(values).manualThreshold).toBeUndefined();
+  });
+
+  it('requires a template to create a vacancy, a draft included, and never on an edit', () => {
+    const none = completeValues({ pipelineTemplateId: '', pipelineTemplateName: '' });
+    expect(validatePipeline(none, 'create')).toEqual({
+      pipelineTemplateId: 'Pipeline template is required.',
+    });
+    expect(validatePipeline(none, 'duplicate').pipelineTemplateId).toBe(PIPELINE_MESSAGES.templateRequired);
+    expect(validatePipeline(none, 'edit-draft')).toEqual({});
+    expect(validatePipeline(none, 'edit-published')).toEqual({});
+    expect(validatePipeline(completeValues(), 'create')).toEqual({});
+  });
+
+  it('holds a draft to the threshold rules the server applies to every save', () => {
+    expect(validatePipeline(completeValues({ manualThreshold: 85 }), 'edit-draft')).toEqual({
+      manualThreshold: PIPELINE_MESSAGES.thresholdOrder,
+    });
+    // Empty would not clear on the server — null keeps the stored value — so it is asked for.
+    expect(validatePipeline(completeValues({ autoThreshold: null }), 'edit-draft')).toEqual({
+      autoThreshold: PIPELINE_MESSAGES.autoRequired,
+    });
+    expect(validatePipeline(toFormValues(makeVacancyWithoutPipeline()), 'edit-draft')).toEqual({});
+  });
+
+  it('counts the template among the required fields only when the form creates the vacancy', () => {
+    const chosen = formProgress(completeValues(), 'create');
+    const missing = formProgress(completeValues({ pipelineTemplateId: '' }), 'create');
+    const editing = formProgress(completeValues({ pipelineTemplateId: '' }), 'edit-published');
+
+    expect(chosen.total).toBe(editing.total + 1);
+    expect(chosen.filled).toBe(chosen.total);
+    expect(missing.filled).toBe(missing.total - 1);
+    expect(editing.filled).toBe(editing.total);
+  });
+
+  it('describes a pipeline’s shape in one line', () => {
+    expect(pipelineShape({ stageCount: 4, interviewRoundCount: 1 })).toBe('4 stages · 1 interview round');
+    expect(pipelineShape({ stageCount: 5, interviewRoundCount: 2 })).toBe('5 stages · 2 interview rounds');
+    expect(pipelineShape({ stageCount: null, interviewRoundCount: null })).toBe('');
+  });
+});
+
 describe('reading a vacancy back', () => {
   const vacancy = (overrides: Partial<JobVacancyResponse>): JobVacancyResponse =>
     makeVacancy(overrides);
@@ -242,7 +371,8 @@ describe('the lifecycle', () => {
 describe('editing and duplicating', () => {
   it('reads a stored vacancy back into the form it was written from', () => {
     const values = completeValues({ education: 'Diploma', screeningQuestions: ['Right to work?'] });
-    const stored = makeVacancy({ ...toVacancyRequest(values, 'DRAFT') });
+    const request = toVacancyRequest(values, 'DRAFT');
+    const stored = makeVacancy({ ...request, blindModeEnabled: request.blindModeEnabled ?? false });
     expect(toFormValues(stored)).toEqual(values);
   });
 

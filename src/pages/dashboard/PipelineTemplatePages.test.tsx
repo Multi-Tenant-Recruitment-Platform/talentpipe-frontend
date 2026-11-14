@@ -52,6 +52,7 @@ function makeSummary(overrides: Partial<PipelineTemplateSummary> = {}): Pipeline
     defaultAutoThreshold: 80,
     defaultManualThreshold: 70,
     idealMatchingEnabled: false,
+    blindModeEnabled: false,
     status: 'ACTIVE',
     stageCount: 4,
     interviewRoundCount: 1,

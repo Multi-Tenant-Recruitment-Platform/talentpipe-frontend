@@ -80,17 +80,23 @@ export function describeVacancyError(err: unknown, kind: VacancyRequestKind): Va
     case 404:
       // On the list itself, a 404 can only mean the route is missing — the
       // server has no jobs module — not that some vacancy vanished.
-      return kind === 'list'
-        ? plan(
-            'error',
-            "Vacancies couldn't be loaded — this server doesn't offer the jobs API yet.",
-          )
-        : plan(
-            'warning',
-            'This vacancy no longer exists. It may have been removed in another session.',
-            true,
-            true,
-          );
+      if (kind === 'list') {
+        return plan('error', "Vacancies couldn't be loaded — this server doesn't offer the jobs API yet.");
+      }
+      // Creating stores nothing yet, so the only thing that can be missing is
+      // the template it was created from — deleted since the form loaded.
+      if (kind === 'create') {
+        return plan(
+          'error',
+          'The pipeline template you chose no longer exists. Reload the page and choose another.',
+        );
+      }
+      return plan(
+        'warning',
+        'This vacancy no longer exists. It may have been removed in another session.',
+        true,
+        true,
+      );
 
     case 409:
       return kind === 'save'

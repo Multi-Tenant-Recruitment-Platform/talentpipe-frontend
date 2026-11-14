@@ -1,10 +1,9 @@
-import { Flex, Select, Tag, Typography } from 'antd';
+import { Select } from 'antd';
 import type { UserResponse } from '../../api/types';
 import { roleLabelFor } from '../../auth/permissions';
 import { useCan } from '../../auth/useCan';
-import { MAX_SCREENING_QUESTIONS, PIPELINE_TEMPLATES } from '../../dashboard/jobVacancy';
+import { MAX_SCREENING_QUESTIONS } from '../../dashboard/jobVacancy';
 import { useTeamSummary } from '../../dashboard/TeamSummaryContext';
-import { space } from '../../theme/tokens';
 import { BulletListEditor } from './BulletListEditor';
 import type { VacancySectionProps } from './sectionProps';
 import { VacancyField } from './VacancyField';
@@ -37,10 +36,6 @@ export function RecruitmentSettingsSection({
   // "Talent Partner" is as likely a recruiter as the default Recruiter — so
   // the list is everyone, labelled with the role they hold.
   const recruiters = activeMembers;
-
-  const pipeline = PIPELINE_TEMPLATES.find(
-    (template) => template.id === values.recruitmentPipelineId,
-  );
 
   return (
     <>
@@ -84,40 +79,6 @@ export function RecruitmentSettingsSection({
           className="w-full"
           onChange={(next: string | undefined) => set('hiringManagerId', next ?? '')}
         />
-      </VacancyField>
-
-      <VacancyField
-        field="recruitmentPipelineId"
-        span={24}
-        error={errors.recruitmentPipelineId}
-        hint="The stages applicants move through. Defaults to your standard pipeline if left blank."
-      >
-        <Select
-          {...fieldAria('recruitmentPipelineId', errors.recruitmentPipelineId)}
-          value={values.recruitmentPipelineId === '' ? undefined : values.recruitmentPipelineId}
-          options={PIPELINE_TEMPLATES.map((template) => ({
-            value: template.id,
-            label: template.label,
-          }))}
-          placeholder="Choose a pipeline"
-          allowClear
-          className="w-full"
-          onChange={(next: string | undefined) => set('recruitmentPipelineId', next ?? '')}
-        />
-        {pipeline && (
-          <Flex align="center" gap={space[0.5]} wrap className="mt-2">
-            {pipeline.stages.map((stage, index) => (
-              <Flex key={stage} align="center" gap={space[0.5]}>
-                {index > 0 && (
-                  <Typography.Text type="secondary" aria-hidden="true" className="text-caption">
-                    →
-                  </Typography.Text>
-                )}
-                <Tag className="m-0">{stage}</Tag>
-              </Flex>
-            ))}
-          </Flex>
-        )}
       </VacancyField>
 
       <VacancyField
