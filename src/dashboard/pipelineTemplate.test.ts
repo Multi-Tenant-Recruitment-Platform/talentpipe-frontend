@@ -280,6 +280,7 @@ describe('opening a saved template', () => {
     defaultAutoThreshold: 75,
     defaultManualThreshold: 60,
     idealMatchingEnabled: true,
+    blindModeEnabled: false,
     status: 'ACTIVE',
     // Deliberately out of order: the server's list order is not trusted.
     stageCount: 4,

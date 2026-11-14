@@ -1,4 +1,4 @@
-import type { JobVacancyResponse } from '../api/types';
+import type { JobVacancyResponse, PipelineTemplateSummary } from '../api/types';
 
 /**
  * A stored vacancy that satisfies every publish rule, as the API returns it.
@@ -41,6 +41,14 @@ export function makeVacancy(overrides: Partial<JobVacancyResponse> = {}): JobVac
     hiringManagerId: null,
     recruitmentPipelineId: null,
     screeningQuestions: [],
+    // On a pipeline, as every vacancy created since templates is.
+    pipelineTemplateId: 'tpl-1',
+    pipelineTemplateName: 'Engineering hiring',
+    stageCount: 4,
+    interviewRoundCount: 1,
+    autoThreshold: 80,
+    manualThreshold: 70,
+    blindModeEnabled: false,
     status: 'PUBLISHED',
     createdAt: '2026-09-01T09:00:00Z',
     updatedAt: '2026-09-01T09:00:00Z',
@@ -48,6 +56,40 @@ export function makeVacancy(overrides: Partial<JobVacancyResponse> = {}): JobVac
     closedAt: null,
     archivedAt: null,
     applicantCount: null,
+    ...overrides,
+  };
+}
+
+/** A vacancy created before pipeline templates: no template, no screening settings. */
+export function makeVacancyWithoutPipeline(overrides: Partial<JobVacancyResponse> = {}): JobVacancyResponse {
+  return makeVacancy({
+    pipelineTemplateId: null,
+    pipelineTemplateName: null,
+    stageCount: null,
+    interviewRoundCount: null,
+    autoThreshold: null,
+    manualThreshold: null,
+    blindModeEnabled: false,
+    ...overrides,
+  });
+}
+
+/** One row of `GET /pipeline-templates`, as the template picker receives it. */
+export function makeTemplateSummary(overrides: Partial<PipelineTemplateSummary> = {}): PipelineTemplateSummary {
+  return {
+    id: 'tpl-1',
+    name: 'Engineering hiring',
+    description: null,
+    defaultAutoThreshold: 80,
+    defaultManualThreshold: 70,
+    idealMatchingEnabled: false,
+    blindModeEnabled: false,
+    status: 'ACTIVE',
+    stageCount: 4,
+    interviewRoundCount: 1,
+    createdAt: '2026-10-01T00:00:00Z',
+    updatedAt: '2026-10-01T00:00:00Z',
+    archivedAt: null,
     ...overrides,
   };
 }

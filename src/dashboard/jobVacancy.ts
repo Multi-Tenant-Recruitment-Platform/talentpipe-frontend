@@ -76,9 +76,25 @@ export interface JobVacancyFormValues {
   hiringManagerId: string;
   recruitmentPipelineId: string;
   screeningQuestions: string[];
+
+  /** The template the vacancy runs on; `''` until one is chosen. Fixed once the vacancy exists. */
+  pipelineTemplateId: string;
+  /** Display only: the template's name as the vacancy stored it. Never sent. */
+  pipelineTemplateName: string;
+  /** Screening settings, 0–100 with manual below auto. */
+  autoThreshold: number | null;
+  manualThreshold: number | null;
+  blindModeEnabled: boolean;
 }
 
 export type JobVacancyField = keyof JobVacancyFormValues;
+
+/** Every way the vacancy form is opened. */
+export type VacancyFormMode = 'create' | 'duplicate' | 'edit-draft' | 'edit-published';
+
+/** A form that will create a vacancy, rather than change a stored one. */
+export const createsVacancy = (mode: VacancyFormMode): boolean =>
+  mode === 'create' || mode === 'duplicate';
 export type JobVacancyFieldErrors = Partial<Record<JobVacancyField, string>>;
 
 export const EMPTY_VACANCY_VALUES: JobVacancyFormValues = {
@@ -117,6 +133,11 @@ export const EMPTY_VACANCY_VALUES: JobVacancyFormValues = {
   hiringManagerId: '',
   recruitmentPipelineId: '',
   screeningQuestions: [],
+  pipelineTemplateId: '',
+  pipelineTemplateName: '',
+  autoThreshold: null,
+  manualThreshold: null,
+  blindModeEnabled: false,
 };
 
 export const FIELD_LABELS: Record<JobVacancyField, string> = {
@@ -151,6 +172,11 @@ export const FIELD_LABELS: Record<JobVacancyField, string> = {
   hiringManagerId: 'Hiring manager',
   recruitmentPipelineId: 'Recruitment pipeline',
   screeningQuestions: 'Screening questions',
+  pipelineTemplateId: 'Pipeline template',
+  pipelineTemplateName: 'Pipeline template',
+  autoThreshold: 'Auto-advance threshold',
+  manualThreshold: 'Manual-review threshold',
+  blindModeEnabled: 'Blind screening',
 };
 
 /* --- Catalogues ---------------------------------------------------------- */
@@ -207,33 +233,6 @@ export const EDUCATION_LEVELS = [
   'Master’s degree',
   'Doctorate',
   'Professional qualification',
-];
-
-/**
- * Stage templates for the hiring funnel, in the product's own vocabulary
- * (Applied → Screening → Interview → Offer → Hired).
- *
- * <p>A fixed list rather than a per-company builder: the pipeline module does
- * not exist yet, and offering an editor for something the backend cannot store
- * would be a control that only fails later. These are choices the form records,
- * not analytics it claims to run.</p>
- */
-export const PIPELINE_TEMPLATES: { id: string; label: string; stages: string[] }[] = [
-  {
-    id: 'STANDARD',
-    label: 'Standard hiring pipeline',
-    stages: ['Applied', 'Screening', 'Interview', 'Offer', 'Hired'],
-  },
-  {
-    id: 'TECHNICAL',
-    label: 'Technical hiring pipeline',
-    stages: ['Applied', 'Screening', 'Technical interview', 'Panel interview', 'Offer', 'Hired'],
-  },
-  {
-    id: 'EXECUTIVE',
-    label: 'Executive hiring pipeline',
-    stages: ['Applied', 'Screening', 'First interview', 'Final interview', 'Offer', 'Hired'],
-  },
 ];
 
 /** Beyond this a screening step has become the interview. */
@@ -327,6 +326,18 @@ export const VACANCY_SECTIONS: VacancySection[] = [
     title: 'Work schedule',
     summary: 'The working week this role is expected to keep.',
     fields: ['workingDays', 'workingHours', 'shiftType', 'expectedHoursPerWeek'],
+    required: [],
+  },
+  {
+    id: 'pipeline',
+    index: '06',
+    title: 'Pipeline & screening',
+    summary: 'The stages applicants move through, and how AI screening sorts them.',
+    fields: ['pipelineTemplateId', 'autoThreshold', 'manualThreshold', 'blindModeEnabled'],
+    // Empty on purpose. The template is required to create a vacancy, which
+    // validatePipelineChoice enforces in the two modes that create one; listing
+    // it here would also demand it of vacancies older than templates, which
+    // could then never be published.
     required: [],
   },
   // Hidden from the form: every field in it is optional, and the pipeline and
@@ -444,9 +455,85 @@ export function validateVacancy(values: JobVacancyFormValues): JobVacancyFieldEr
   checkSalary(n, errors);
   checkSchedule(n, errors);
   checkRecruitment(n, errors);
+  checkPipeline(n, errors);
 
   return errors;
 }
+
+/** The sentences the backend answers with, so the form and the server say the same thing. */
+export const PIPELINE_MESSAGES = {
+  templateRequired: 'Pipeline template is required.',
+  autoRequired: 'Enter the auto-advance threshold.',
+  manualRequired: 'Enter the manual-review threshold.',
+  thresholdRange: 'Set the threshold between 0 and 100.',
+  thresholdOrder: 'The manual threshold must be lower than the auto threshold.',
+} as const;
+
+/**
+ * Whether the vacancy in the form runs on a pipeline: a template is chosen, or
+ * it already has one. Only a vacancy created before pipeline templates has
+ * none of these, and it then has no screening settings to show or send. Read
+ * from the values rather than the template id, because deleting a template
+ * clears the id while the vacancy keeps its name and thresholds.
+ */
+export function runsOnPipeline(values: JobVacancyFormValues): boolean {
+  return (
+    values.pipelineTemplateId !== '' ||
+    values.pipelineTemplateName !== '' ||
+    values.autoThreshold !== null ||
+    values.manualThreshold !== null
+  );
+}
+
+function checkThreshold(value: number | null, missing: string): string | undefined {
+  if (value === null) {
+    return missing;
+  }
+  return Number.isInteger(value) && value >= 0 && value <= 100 ? undefined : PIPELINE_MESSAGES.thresholdRange;
+}
+
+function checkPipeline(n: JobVacancyFormValues, errors: JobVacancyFieldErrors): void {
+  if (!runsOnPipeline(n)) {
+    return;
+  }
+  const auto = checkThreshold(n.autoThreshold, PIPELINE_MESSAGES.autoRequired);
+  const manual = checkThreshold(n.manualThreshold, PIPELINE_MESSAGES.manualRequired);
+  if (auto) {
+    errors.autoThreshold = auto;
+  }
+  if (manual) {
+    errors.manualThreshold = manual;
+  } else if (!auto && n.manualThreshold !== null && n.autoThreshold !== null && n.manualThreshold >= n.autoThreshold) {
+    errors.manualThreshold = PIPELINE_MESSAGES.thresholdOrder;
+  }
+}
+
+/**
+ * The pipeline rules, which a draft is held to as well. The server applies
+ * them to every save: a new vacancy needs a template, because its stages are
+ * copied the moment the vacancy is stored, and the thresholds must be whole
+ * scores with manual below auto. A threshold left empty would not clear on
+ * the server either — on an edit `null` keeps the stored value — so the form
+ * asks for both rather than show a value the vacancy does not have.
+ * A stored vacancy's template is fixed, so an edit never asks for one.
+ */
+export function validatePipeline(values: JobVacancyFormValues, mode: VacancyFormMode): JobVacancyFieldErrors {
+  const errors: JobVacancyFieldErrors = {};
+  if (createsVacancy(mode) && values.pipelineTemplateId === '') {
+    errors.pipelineTemplateId = PIPELINE_MESSAGES.templateRequired;
+  }
+  checkPipeline(values, errors);
+  return errors;
+}
+
+/** Required fields of a section in this form: the template too, when the form creates the vacancy. */
+export function requiredFieldsOf(section: VacancySection, mode: VacancyFormMode): JobVacancyField[] {
+  return section.id === 'pipeline' && createsVacancy(mode) ? ['pipelineTemplateId'] : section.required;
+}
+
+/** Whether this form asks for the field before it can be saved or published. */
+export const isRequiredIn = (field: JobVacancyField, mode: VacancyFormMode): boolean =>
+  isRequired(field) || (field === 'pipelineTemplateId' && createsVacancy(mode));
 
 function checkBasics(n: JobVacancyFormValues, errors: JobVacancyFieldErrors): void {
   if (n.title === '') {
@@ -625,15 +712,16 @@ export interface SectionProgress {
 export function sectionProgress(
   values: JobVacancyFormValues,
   section: VacancySection,
+  required: JobVacancyField[] = section.required,
 ): SectionProgress {
-  const filled = section.required.filter((field) => hasValue(values, field)).length;
+  const filled = required.filter((field) => hasValue(values, field)).length;
   const optionalFilled = section.fields.filter(
-    (field) => !section.required.includes(field) && hasValue(values, field),
+    (field) => !required.includes(field) && hasValue(values, field),
   ).length;
   return {
     filled,
-    total: section.required.length,
-    complete: filled === section.required.length,
+    total: required.length,
+    complete: filled === required.length,
     optionalFilled,
   };
 }
@@ -649,6 +737,17 @@ export function requiredFilled(values: JobVacancyFormValues): number {
   return VACANCY_SECTIONS.reduce(
     (count, section) => count + sectionProgress(values, section).filled,
     0,
+  );
+}
+
+/** {@link REQUIRED_TOTAL} and {@link requiredFilled} for one form: a new vacancy also needs its template. */
+export function formProgress(values: JobVacancyFormValues, mode: VacancyFormMode): { filled: number; total: number } {
+  return VACANCY_SECTIONS.reduce(
+    (sum, section) => {
+      const progress = sectionProgress(values, section, requiredFieldsOf(section, mode));
+      return { filled: sum.filled + progress.filled, total: sum.total + progress.total };
+    },
+    { filled: 0, total: 0 },
   );
 }
 
@@ -684,7 +783,12 @@ export function toVacancyRequest(
   values: JobVacancyFormValues,
   status: VacancyStatus,
 ): JobVacancyRequest {
-  return { ...toVacancyContent(values), status };
+  return {
+    ...toVacancyContent(values),
+    pipelineTemplateId: values.pipelineTemplateId,
+    ...toScreeningSettings(values),
+    status,
+  };
 }
 
 /**
@@ -696,11 +800,32 @@ export function toVacancyUpdate(
   values: JobVacancyFormValues,
   version: number,
 ): JobVacancyUpdateRequest {
-  return { ...toVacancyContent(values), version };
+  // No template id: it is fixed when the vacancy is created.
+  return { ...toVacancyContent(values), ...toScreeningSettings(values), version };
 }
 
+type ScreeningSettings = Pick<JobVacancyRequest, 'autoThreshold' | 'manualThreshold' | 'blindModeEnabled'>;
+
+/**
+ * The thresholds and blind mode as they are sent. A vacancy without a pipeline
+ * sends none of them: the server refuses screening settings for it (422),
+ * and `null` keeps what is stored.
+ */
+function toScreeningSettings(values: JobVacancyFormValues): ScreeningSettings {
+  if (!runsOnPipeline(values)) {
+    return { autoThreshold: null, manualThreshold: null, blindModeEnabled: null };
+  }
+  return {
+    autoThreshold: values.autoThreshold,
+    manualThreshold: values.manualThreshold,
+    blindModeEnabled: values.blindModeEnabled,
+  };
+}
+
+type VacancyContent = Omit<JobVacancyRequest, 'status' | 'pipelineTemplateId' | keyof ScreeningSettings>;
+
 /** The content fields both a create and an edit carry. */
-function toVacancyContent(values: JobVacancyFormValues): Omit<JobVacancyRequest, 'status'> {
+function toVacancyContent(values: JobVacancyFormValues): VacancyContent {
   const n = normalizeVacancy(values);
   const orNull = (value: string) => (value === '' ? null : value);
 
@@ -788,6 +913,11 @@ export function toFormValues(vacancy: JobVacancyResponse): JobVacancyFormValues 
     hiringManagerId: vacancy.hiringManagerId ?? '',
     recruitmentPipelineId: vacancy.recruitmentPipelineId ?? '',
     screeningQuestions: [...(vacancy.screeningQuestions ?? [])],
+    pipelineTemplateId: vacancy.pipelineTemplateId ?? '',
+    pipelineTemplateName: vacancy.pipelineTemplateName ?? '',
+    autoThreshold: vacancy.autoThreshold ?? null,
+    manualThreshold: vacancy.manualThreshold ?? null,
+    blindModeEnabled: vacancy.blindModeEnabled ?? false,
   };
 }
 
@@ -806,6 +936,10 @@ export function duplicateValues(vacancy: JobVacancyResponse): JobVacancyFormValu
     ...values,
     title: values.title.trim() === '' ? '' : `${values.title.trim()} (copy)`,
     applicationDeadline: '',
+    // The copy chooses its template like any new vacancy: the original's is
+    // preselected (and dropped if it is no longer active), and its stored name
+    // describes the original, not the copy.
+    pipelineTemplateName: '',
   };
 }
 
@@ -819,10 +953,24 @@ export const workplaceTypeLabel = (id: WorkplaceType | null) => labelFrom(WORKPL
 export const payPeriodLabel = (id: PayPeriod | null) => labelFrom(PAY_PERIODS, id);
 export const shiftTypeLabel = (id: ShiftType | null) => labelFrom(SHIFT_TYPES, id);
 
-export const pipelineLabel = (id: string | null) =>
-  PIPELINE_TEMPLATES.find((template) => template.id === id)?.label ?? null;
-
 export { currencyCode };
+
+const counted = (count: number, one: string, many: string) => `${count} ${count === 1 ? one : many}`;
+
+/**
+ * "4 stages · 1 interview round" — a pipeline's shape in one line, for the
+ * template picker and a vacancy's page alike. Empty when the counts are unknown.
+ */
+export function pipelineShape(counts: { stageCount: number | null; interviewRoundCount: number | null }): string {
+  if (counts.stageCount === null || counts.interviewRoundCount === null) {
+    return '';
+  }
+  return `${counted(counts.stageCount, 'stage', 'stages')} · ${counted(
+    counts.interviewRoundCount,
+    'interview round',
+    'interview rounds',
+  )}`;
+}
 
 /**
  * 'Mon–Fri' where the selection is a run, 'Mon, Wed, Fri' where it is not.

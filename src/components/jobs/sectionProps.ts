@@ -2,6 +2,7 @@ import type {
   JobVacancyField,
   JobVacancyFieldErrors,
   JobVacancyFormValues,
+  VacancyFormMode,
 } from '../../dashboard/jobVacancy';
 
 /**
@@ -15,4 +16,6 @@ export interface VacancySectionProps {
   values: JobVacancyFormValues;
   errors: JobVacancyFieldErrors;
   set: <K extends JobVacancyField>(field: K, value: JobVacancyFormValues[K]) => void;
+  /** How the form was opened; most sections read the same in every mode. */
+  mode: VacancyFormMode;
 }

@@ -29,6 +29,7 @@ export function VacancyField({
   hint,
   span = 12,
   group = false,
+  required: requiredOverride,
   children,
 }: Readonly<{
   field: JobVacancyField;
@@ -38,10 +39,12 @@ export function VacancyField({
   span?: number;
   /** For several controls under one name — checkbox rows, chip lists. */
   group?: boolean;
+  /** Overrides the static rule, for a field required only in some modes (the template, on create). */
+  required?: boolean;
   children: ReactNode;
 }>) {
   const label = FIELD_LABELS[field];
-  const required = isRequired(field);
+  const required = requiredOverride ?? isRequired(field);
 
   const name = (
     <>
