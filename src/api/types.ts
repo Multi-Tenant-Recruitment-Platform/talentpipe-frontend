@@ -709,8 +709,15 @@ export type JobVacancyUpdateRequest = Omit<JobVacancyRequest, 'status' | 'pipeli
 /** The pipeline fields, as a stored vacancy reports them. */
 type StoredPipelineFields = 'pipelineTemplateId' | 'autoThreshold' | 'manualThreshold' | 'blindModeEnabled';
 
+/** A vacancy-owned stage copied from the selected template. */
+export interface JobStageResponse extends PipelineStage {
+  jobId: string;
+}
+
 /** A stored vacancy: everything submitted, plus what only the server knows. */
 export interface JobVacancyResponse extends Omit<JobVacancyRequest, StoredPipelineFields> {
+  /** Vacancy-owned snapshots, independent of later template edits. */
+  stages?: JobStageResponse[];
   /**
    * The template the vacancy was created from. Null for vacancies older than
    * templates, and once the template is deleted — the vacancy keeps its own

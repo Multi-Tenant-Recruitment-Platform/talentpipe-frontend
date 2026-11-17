@@ -50,6 +50,7 @@ const api = vi.hoisted(() => ({
   hiringTeam: vi.fn(),
   replaceHiringTeam: vi.fn(),
   switchFeatures: vi.fn(),
+  stages: vi.fn(),
 }));
 vi.mock('../../api/jobs', () => ({ jobsApi: api }));
 
@@ -129,6 +130,7 @@ beforeEach(() => {
     fn.mockReset();
   }
   api.list.mockResolvedValue([]);
+  api.stages.mockResolvedValue([]);
   templatesApi.list.mockReset();
   templatesApi.list.mockResolvedValue([engineering, sales]);
   api.hiringTeam.mockResolvedValue({ vacancyId: 'v-1', recruiter: null, hiringManager: null, members: [] });

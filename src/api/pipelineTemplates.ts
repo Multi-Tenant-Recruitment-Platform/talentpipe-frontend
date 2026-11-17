@@ -57,7 +57,7 @@ export const pipelineTemplatesApi = {
       const { data } = await api.get<PageResponse<PipelineTemplateSummary>>('/pipeline-templates', {
         params: {
           search: search?.trim() || undefined,
-          includeArchived: includeArchived ? true : undefined,
+          includeArchived: includeArchived ?? false,
           page,
           size: PAGE_SIZE,
         },

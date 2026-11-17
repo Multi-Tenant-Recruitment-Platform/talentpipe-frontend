@@ -78,7 +78,11 @@ export function StageTitle({ children, aside }: Readonly<{ children: ReactNode; 
  * A saved template's stages, read-only — the same drawing as the builder,
  * without the controls, so what the admin built is what everyone else reads.
  */
-export function StageTrack({ stages }: Readonly<{ stages: PipelineStage[] }>) {
+export function StageTrack({ stages, useStageNames = false }: Readonly<{
+  stages: PipelineStage[];
+  /** Vacancy snapshots retain their saved names, including non-interview stages. */
+  useStageNames?: boolean;
+}>) {
   const ordered = orderedStages(stages);
   const interviewKeys = ordered.filter((stage) => stage.stageType === 'INTERVIEW');
 
@@ -111,7 +115,7 @@ export function StageTrack({ stages }: Readonly<{ stages: PipelineStage[] }>) {
                 fixed ? <FixedTag>{stage.stageType === 'ONBOARD' ? 'Always last' : 'Always first'}</FixedTag> : undefined
               }
             >
-              {STAGE_LABEL[stage.stageType]}
+              {useStageNames ? stage.name : STAGE_LABEL[stage.stageType]}
             </StageTitle>
             <p className="m-0 mt-0.5 text-small text-slate-600">{STAGE_HELP[stage.stageType]}</p>
           </StageNode>

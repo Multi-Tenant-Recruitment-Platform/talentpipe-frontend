@@ -1,6 +1,7 @@
 import { api } from './client';
 import type {
   HiringTeamResponse,
+  JobStageResponse,
   JobVacancyRequest,
   JobVacancyResponse,
   JobVacancyUpdateRequest,
@@ -48,6 +49,11 @@ const PAGE_SIZE = 100;
 const MAX_PAGES = 50;
 
 export const jobsApi = {
+  /** The vacancy's stage snapshots, in pipeline order. */
+  async stages(id: string): Promise<JobStageResponse[]> {
+    const { data } = await api.get<JobStageResponse[]>(`/jobs/${encodeURIComponent(id)}/stages`);
+    return data;
+  },
   /**
    * Every vacancy in the workspace, archived included, newest first.
    *
