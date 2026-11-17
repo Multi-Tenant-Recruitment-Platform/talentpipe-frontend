@@ -11,17 +11,18 @@ import {
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
   firstInvalidField,
+  formProgress,
   isVacancyDirty,
-  REQUIRED_TOTAL,
-  requiredFilled,
+  requiredFieldsOf,
   sectionProgress,
   sectionsWithErrors,
   VACANCY_SECTIONS,
+  validatePipeline,
   validateVacancy,
-  validatePipelineConfiguration,
   type JobVacancyField,
   type JobVacancyFieldErrors,
   type JobVacancyFormValues,
+  type VacancyFormMode,
 } from '../../dashboard/jobVacancy';
 import { describeVacancyError, type VacancyRequestKind } from '../../dashboard/vacancyErrors';
 import { space } from '../../theme/tokens';
@@ -33,7 +34,8 @@ import { ConfirmDialog } from '../ui/ConfirmDialog';
 import { BasicInformationSection } from './BasicInformationSection';
 import { CandidateRequirementsSection } from './CandidateRequirementsSection';
 import { JobDescriptionSection } from './JobDescriptionSection';
-import { RecruitmentSettingsSection } from './RecruitmentSettingsSection';
+import { PipelineScreeningSection } from './PipelineScreeningSection';
+// import { RecruitmentSettingsSection } from './RecruitmentSettingsSection';
 import { SalaryBenefitsSection } from './SalaryBenefitsSection';
 import type { VacancySectionProps } from './sectionProps';
 import { vacancyFieldId, vacancyGroupId } from './vacancyFieldIds';
@@ -63,21 +65,20 @@ import type { VacancyNoticeValue } from './VacancyNotice';
  * which is the moment the feedback helps.</p>
  */
 
-type VacancyFormMode = 'create' | 'duplicate' | 'edit-draft' | 'edit-published';
-
 const SECTION_BODIES: Record<string, ComponentType<VacancySectionProps>> = {
   basics: BasicInformationSection,
   description: JobDescriptionSection,
   requirements: CandidateRequirementsSection,
   salary: SalaryBenefitsSection,
   schedule: WorkScheduleSection,
-  recruitment: RecruitmentSettingsSection,
+  pipeline: PipelineScreeningSection,
+  // recruitment: RecruitmentSettingsSection,
 };
 
 const HEADINGS: Record<VacancyFormMode, { title: string; subtitle: string }> = {
   create: {
     title: 'Create vacancy',
-    subtitle: 'Choose a pipeline and complete the marked fields to publish — the rest can follow.',
+    subtitle: 'Six sections. Only the marked fields and a pipeline template are needed to publish — the rest can follow.',
   },
   duplicate: {
     title: 'Duplicate vacancy',
@@ -105,11 +106,8 @@ export function VacancyForm({
   onSaveDraft,
   onPublish,
   onSaveChanges,
-  requirePipeline = false,
 }: Readonly<{
   mode: VacancyFormMode;
-  /** A new vacancy must have a valid pipeline configuration, including on draft save. */
-  requirePipeline?: boolean;
   initialValues: JobVacancyFormValues;
   /** Context above the form — where a duplicate came from, that a vacancy is live. */
   banner?: ReactNode;
@@ -141,38 +139,46 @@ export function VacancyForm({
   const [confirmPublish, setConfirmPublish] = useState(false);
 
   const dirty = isVacancyDirty(values, baseline);
-  const pipelineErrors = validatePipelineConfiguration(values);
-  const pipelineBlocked = requirePipeline && Object.keys(pipelineErrors).length > 0;
-  const visibleErrors = values.recruitmentPipelineId
-    ? { ...errors, autoThreshold: pipelineErrors.autoThreshold, manualThreshold: pipelineErrors.manualThreshold }
-    : errors;
 
   const set = useCallback(
     <K extends JobVacancyField>(field: K, value: JobVacancyFormValues[K]) => {
       setNotice(null);
       setValues((current) => {
         const next = { ...current, [field]: value };
-        // Only a field already flagged re-checks as it is typed; everything
-        // else waits for Publish.
-        setErrors((flagged) =>
-          flagged[field] ? { ...flagged, [field]: validateVacancy(next)[field] } : flagged,
-        );
+        // Only fields already flagged re-check as the form changes; nothing new
+        // is flagged before Publish. Every flagged field, not just this one:
+        // some rules span two fields (manual below auto, a salary's minimum
+        // below its maximum), and fixing either side must clear the message.
+        setErrors((flagged) => {
+          const keys = Object.keys(flagged) as JobVacancyField[];
+          if (keys.length === 0) {
+            return flagged;
+          }
+          const found = { ...validateVacancy(next), ...validatePipeline(next, mode) };
+          const still: JobVacancyFieldErrors = {};
+          for (const key of keys) {
+            if (flagged[key] && found[key]) {
+              still[key] = found[key];
+            }
+          }
+          return still;
+        });
         return next;
       });
     },
-    [],
+    [mode],
   );
 
   const progressFor = useCallback(
     (sectionId: string) => {
-      const section = VACANCY_SECTIONS.find((entry) => entry.id === sectionId);
-      return sectionProgress(values, section ?? VACANCY_SECTIONS[0]);
+      const section = VACANCY_SECTIONS.find((entry) => entry.id === sectionId) ?? VACANCY_SECTIONS[0];
+      return sectionProgress(values, section, requiredFieldsOf(section, mode));
     },
-    [values],
+    [values, mode],
   );
 
-  const filled = useMemo(() => requiredFilled(values), [values]);
-  const errorSections = sectionsWithErrors(visibleErrors);
+  const { filled, total } = useMemo(() => formProgress(values, mode), [values, mode]);
+  const errorSections = useMemo(() => sectionsWithErrors(errors), [errors]);
 
   /* --- Wayfinding -------------------------------------------------------- */
 
@@ -246,7 +252,7 @@ export function VacancyForm({
 
   /** Runs every rule; on failure flags the fields and lands on the first one. */
   function validates(): boolean {
-    const found = validateVacancy(values);
+    const found = { ...validateVacancy(values), ...validatePipeline(values, mode) };
     setErrors(found);
     const first = firstInvalidField(found);
     if (first) {
@@ -280,12 +286,27 @@ export function VacancyForm({
   }
 
   async function saveDraft() {
-    if (!onSaveDraft || pipelineBlocked) {
+    if (!onSaveDraft) {
       return;
     }
     // Deliberately unvalidated. A draft is a partial vacancy by definition,
     // and refusing to keep it because it is incomplete would defeat the point
-    // of the button.
+    // of the button. The exception is the pipeline, which the server checks
+    // on every save: a new draft cannot exist without a template, and its
+    // thresholds must already make sense.
+    const pipelineErrors = validatePipeline(values, mode);
+    const firstPipelineError = firstInvalidField(pipelineErrors);
+    if (firstPipelineError) {
+      setErrors((flagged) => ({ ...flagged, ...pipelineErrors }));
+      setNotice({
+        tone: 'error',
+        text: pipelineErrors.pipelineTemplateId
+          ? 'Choose a pipeline template before saving this draft.'
+          : 'Fix the screening thresholds before saving this draft.',
+      });
+      focusField(firstPipelineError);
+      return;
+    }
     const snapshot = values;
     const saved = await run('draft', fresh ? 'create' : 'save', () => onSaveDraft(snapshot));
     if (saved && editing) {
@@ -295,13 +316,13 @@ export function VacancyForm({
   }
 
   function requestPublish() {
-    if (!pipelineBlocked && validates()) {
+    if (validates()) {
       setConfirmPublish(true);
     }
   }
 
   async function publish() {
-    if (!onPublish || pipelineBlocked) {
+    if (!onPublish) {
       return;
     }
     const ok = await run('publish', fresh ? 'create' : 'publish', () => onPublish(values));
@@ -381,10 +402,10 @@ export function VacancyForm({
                 <VacancySectionCard
                   key={section.id}
                   section={section}
-                  progress={sectionProgress(values, section)}
+                  progress={sectionProgress(values, section, requiredFieldsOf(section, mode))}
                   hasError={errorSections.has(section.id)}
                 >
-                  <Body values={values} errors={visibleErrors} set={set} />
+                  <Body values={values} errors={errors} set={set} mode={mode} />
                 </VacancySectionCard>
               );
             })}
@@ -401,7 +422,7 @@ export function VacancyForm({
           <div className="sticky bottom-0 z-15 mt-5 flex flex-wrap items-center gap-2 rounded-lg border border-slate-200 bg-white/92 px-4 py-3 shadow-md backdrop-blur-[10px]">
             {/* The progress line takes its own row so the three controls stay together. */}
             <Typography.Text type="secondary" className="text-small max-sm:basis-full">
-              {filled} of {REQUIRED_TOTAL} required fields complete
+              {filled} of {total} required fields complete
             </Typography.Text>
             {/* One group pushed right by an auto margin, not a flex spacer — a
                 spacer is itself a flex item, and at phone width it claimed the
@@ -420,11 +441,11 @@ export function VacancyForm({
                     variant="secondary"
                     onClick={() => void saveDraft()}
                     loading={submitting === 'draft'}
-                    disabled={busy || pipelineBlocked}
+                    disabled={busy}
                   >
                     Save draft
                   </Button>
-                  <Button type="submit" variant="primary" disabled={busy || pipelineBlocked}>
+                  <Button type="submit" variant="primary" disabled={busy}>
                     Publish vacancy
                   </Button>
                 </>

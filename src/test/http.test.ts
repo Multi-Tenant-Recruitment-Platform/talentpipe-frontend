@@ -8,9 +8,9 @@ describe('job creation MSW harness', () => {
     const templates = await pipelineTemplatesApi.list();
     expect(templates).toHaveLength(1);
     const template = await pipelineTemplatesApi.get(templates[0].id);
-    const job = await jobsApi.create(makeVacancy({
-      recruitmentPipelineId: template.id, status: 'DRAFT',
-    }));
+    const job = await jobsApi.create({ ...makeVacancy(),
+      pipelineTemplateId: template.id, status: 'DRAFT',
+    });
     expect(job.id).not.toBe('v-1');
     expect(job.publishedAt).toBeNull();
     expect(job.autoThreshold).toBe(template.defaultAutoThreshold);
@@ -23,16 +23,16 @@ describe('job creation MSW harness', () => {
 
   it('honours overrides and template search and pagination', async () => {
     expect(await pipelineTemplatesApi.list({ search: 'missing' })).toEqual([]);
-    const job = await jobsApi.create(makeVacancy({
-      recruitmentPipelineId: 'pipeline-standard', autoThreshold: 90,
-      manualThreshold: 75, idealMatchingEnabled: true,
-    }));
-    expect(job).toMatchObject({ autoThreshold: 90, manualThreshold: 75, idealMatchingEnabled: true });
+    const job = await jobsApi.create({ ...makeVacancy(),
+      pipelineTemplateId: 'pipeline-standard', autoThreshold: 90,
+      manualThreshold: 75, blindModeEnabled: true,
+    });
+    expect(job).toMatchObject({ autoThreshold: 90, manualThreshold: 75, blindModeEnabled: true });
     expect(job.publishedAt).not.toBeNull();
   });
 
   it('returns 404 for unknown templates and jobs', async () => {
-    await expect(jobsApi.create(makeVacancy({ recruitmentPipelineId: 'missing' })))
+    await expect(jobsApi.create({ ...makeVacancy(), pipelineTemplateId: 'missing' }))
       .rejects.toMatchObject({ response: { status: 404 } });
     await expect(jobsApi.stages('missing/id'))
       .rejects.toMatchObject({ response: { status: 404 } });

@@ -50,7 +50,7 @@ export function JobPipelinePanel({ vacancy }: Readonly<{ vacancy: JobVacancyResp
       <Card styles={{ body: { padding: space[3] } }}>
         <h2 className="m-0 text-title font-semibold text-slate-900">Hiring pipeline</h2>
         <p className="m-0 mt-1 mb-6 text-small text-slate-600">
-          {vacancy.recruitmentPipelineName && <strong>{vacancy.recruitmentPipelineName}. </strong>}
+          {vacancy.pipelineTemplateName && <strong>{vacancy.pipelineTemplateName}. </strong>}
           Saved for this vacancy. Later template edits do not change these stages.
         </p>
         <div className="grid items-start gap-6 *:min-w-0 lg:grid-cols-2 lg:gap-8">

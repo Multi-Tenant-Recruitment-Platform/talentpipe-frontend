@@ -50,20 +50,21 @@ export const handlers = [
     params.id === template.id ? HttpResponse.json(template) : notFound(new URL(request.url).pathname)),
   http.post('*/api/v1/jobs', async ({ request }) => {
     const body = await request.json() as JobVacancyRequest;
-    if (body.recruitmentPipelineId && body.recruitmentPipelineId !== template.id) {
+    if (body.pipelineTemplateId && body.pipelineTemplateId !== template.id) {
       return notFound(new URL(request.url).pathname);
     }
-    const selected = body.recruitmentPipelineId ? template : null;
+    const selected = body.pipelineTemplateId ? template : null;
     const id = crypto.randomUUID();
     const now = new Date().toISOString();
     const job: JobVacancyResponse = {
       ...body, id, version: 0, createdAt: now, updatedAt: now,
       publishedAt: body.status === 'PUBLISHED' ? now : null,
       closedAt: null, archivedAt: null, applicantCount: 0,
-      recruitmentPipelineName: selected?.name ?? null,
+      pipelineTemplateName: selected?.name ?? null,
       autoThreshold: body.autoThreshold ?? selected?.defaultAutoThreshold ?? null,
       manualThreshold: body.manualThreshold ?? selected?.defaultManualThreshold ?? null,
-      idealMatchingEnabled: body.idealMatchingEnabled ?? selected?.idealMatchingEnabled ?? false,
+      stageCount: selected?.stageCount ?? null,
+      interviewRoundCount: selected?.interviewRoundCount ?? null,
       blindModeEnabled: body.blindModeEnabled ?? selected?.blindModeEnabled ?? false,
       stages: selected?.stages.map((stage) => ({ ...stage, id: crypto.randomUUID(), jobId: id })) ?? [],
     };

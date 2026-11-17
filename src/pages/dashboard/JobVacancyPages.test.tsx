@@ -5,7 +5,7 @@ import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { JobVacancyResponse } from '../../api/types';
 import { authContextMock, makeUser, setAuth } from '../../test/authHarness';
-import { makeVacancy } from '../../test/vacancyFixtures';
+import { makeTemplateSummary, makeVacancy, makeVacancyWithoutPipeline } from '../../test/vacancyFixtures';
 
 /**
  * Behaviour of the vacancy surfaces (PB-011, PB-018 → PB-022), against the
@@ -42,7 +42,6 @@ vi.mock('../../dashboard/TeamSummaryContext', () => ({
 const api = vi.hoisted(() => ({
   list: vi.fn(),
   get: vi.fn(),
-  stages: vi.fn(),
   create: vi.fn(),
   update: vi.fn(),
   publish: vi.fn(),
@@ -51,8 +50,27 @@ const api = vi.hoisted(() => ({
   hiringTeam: vi.fn(),
   replaceHiringTeam: vi.fn(),
   switchFeatures: vi.fn(),
+  stages: vi.fn(),
 }));
 vi.mock('../../api/jobs', () => ({ jobsApi: api }));
+
+/** The company's active templates, as the job form's picker reads them. */
+const templatesApi = vi.hoisted(() => ({ list: vi.fn() }));
+vi.mock('../../api/pipelineTemplates', () => ({
+  pipelineTemplatesApi: templatesApi,
+  toSummary: <T,>(template: T) => template,
+}));
+
+const engineering = makeTemplateSummary();
+const sales = makeTemplateSummary({
+  id: 'tpl-2',
+  name: 'Sales hiring',
+  defaultAutoThreshold: 90,
+  defaultManualThreshold: 60,
+  blindModeEnabled: true,
+  stageCount: 5,
+  interviewRoundCount: 2,
+});
 
 const { CreateJobVacancyPage } = await import('./CreateJobVacancyPage');
 const { EditJobVacancyPage } = await import('./EditJobVacancyPage');
@@ -93,11 +111,17 @@ function VacancyRoutes({ path }: Readonly<{ path: string }>) {
 
 const location = () => screen.getByTestId('location');
 
-async function choosePipeline() {
-  const picker = screen.getByRole('combobox', { name: /recruitment pipeline/i });
-  await waitFor(() => expect(picker).toBeEnabled());
-  fireEvent.mouseDown(picker);
-  fireEvent.click(await screen.findByText('Standard Engineering', { selector: '.ant-select-item-option-content' }));
+/** The template picker, once the company's templates have arrived. */
+async function templatePicker() {
+  const picker = await screen.findByLabelText(/^pipeline template/i);
+  await waitFor(() => expect(picker).not.toBeDisabled());
+  return picker;
+}
+
+/** Opens the picker and chooses the template whose option starts with `name`. */
+async function chooseTemplate(user: ReturnType<typeof userEvent.setup>, name: string) {
+  await user.click(await templatePicker());
+  await user.click(await screen.findByTitle(new RegExp(`^${name}`)));
 }
 
 beforeEach(() => {
@@ -107,6 +131,8 @@ beforeEach(() => {
   }
   api.list.mockResolvedValue([]);
   api.stages.mockResolvedValue([]);
+  templatesApi.list.mockReset();
+  templatesApi.list.mockResolvedValue([engineering, sales]);
   api.hiringTeam.mockResolvedValue({ vacancyId: 'v-1', recruiter: null, hiringManager: null, members: [] });
   profileSaved.industry = '';
   profileSaved.additionalIndustries = [];
@@ -126,7 +152,7 @@ describe('creating a vacancy', () => {
       expect.stringContaining('Candidate requirements'),
       expect.stringContaining('Salary & benefits'),
       expect.stringContaining('Work schedule'),
-      expect.stringContaining('Recruitment settings'),
+      expect.stringContaining('Pipeline & screening'),
     ]);
     expect(screen.getByRole('group', { name: /basic information/i })).toHaveTextContent('01');
   });
@@ -142,7 +168,6 @@ describe('creating a vacancy', () => {
   it('refuses to publish an incomplete vacancy, says where to look, and sends nothing', async () => {
     const user = userEvent.setup();
     render(<VacancyRoutes path="/dashboard/jobs/new" />);
-    await choosePipeline();
 
     await user.click(screen.getByRole('button', { name: /publish vacancy/i }));
 
@@ -155,7 +180,6 @@ describe('creating a vacancy', () => {
   it('clears a field error as soon as that field is corrected', async () => {
     const user = userEvent.setup();
     render(<VacancyRoutes path="/dashboard/jobs/new" />);
-    await choosePipeline();
 
     await user.click(screen.getByRole('button', { name: /publish vacancy/i }));
     expect(await screen.findByText(/a job title is required/i)).toBeInTheDocument();
@@ -164,19 +188,24 @@ describe('creating a vacancy', () => {
     expect(screen.queryByText(/a job title is required/i)).not.toBeInTheDocument();
   });
 
-  it('files a draft with a pipeline but incomplete content, then continues on its edit page', async () => {
+  it('files a draft unvalidated, then continues on its edit page so the next save updates it', async () => {
     const user = userEvent.setup();
     const stored = makeVacancy({ id: 'v-9', status: 'DRAFT', title: 'Backend Engineer' });
     api.create.mockResolvedValue(stored);
     api.get.mockResolvedValue(stored);
     render(<VacancyRoutes path="/dashboard/jobs/new" />);
-    await choosePipeline();
 
     fill(/job title/i, 'Backend Engineer');
+    await chooseTemplate(user, 'Engineering hiring');
     await user.click(screen.getByRole('button', { name: /save draft/i }));
 
     expect(api.create).toHaveBeenCalledWith(
-      expect.objectContaining({ title: 'Backend Engineer', status: 'DRAFT', applicationDeadline: null }),
+      expect.objectContaining({
+        title: 'Backend Engineer',
+        status: 'DRAFT',
+        applicationDeadline: null,
+        pipelineTemplateId: 'tpl-1',
+      }),
     );
     await waitFor(() => expect(location()).toHaveTextContent('/dashboard/jobs/v-9/edit'));
     expect(await screen.findByText(/draft saved/i)).toBeInTheDocument();
@@ -186,9 +215,9 @@ describe('creating a vacancy', () => {
     const user = userEvent.setup();
     api.create.mockRejectedValue(new AxiosError('Network Error'));
     render(<VacancyRoutes path="/dashboard/jobs/new" />);
-    await choosePipeline();
 
     fill(/job title/i, 'Backend Engineer');
+    await chooseTemplate(user, 'Engineering hiring');
     await user.click(screen.getByRole('button', { name: /save draft/i }));
 
     expect(await screen.findByText(/couldn't reach the server/i)).toBeInTheDocument();
@@ -515,6 +544,281 @@ describe('a vacancy’s page', () => {
   });
 });
 
+/* --- Pipeline & screening ------------------------------------------------ */
+
+describe('choosing a pipeline for a new vacancy', () => {
+  it('offers the company’s active templates, and prefills the screening settings from the one chosen', async () => {
+    const user = userEvent.setup();
+    render(<VacancyRoutes path="/dashboard/jobs/new" />);
+
+    await user.click(await templatePicker());
+    expect(await screen.findByTitle('Engineering hiring · 4 stages · 1 interview round')).toBeInTheDocument();
+    await user.click(screen.getByTitle('Sales hiring · 5 stages · 2 interview rounds'));
+
+    expect(screen.getByLabelText(/auto-advance threshold/i)).toHaveValue('90');
+    expect(screen.getByLabelText(/manual-review threshold/i)).toHaveValue('60');
+    expect(screen.getByRole('switch', { name: /blind screening/i })).toBeChecked();
+    expect(screen.getByText(/defaults from sales hiring/i)).toBeInTheDocument();
+    expect(templatesApi.list).toHaveBeenCalledWith({ search: '', includeArchived: false });
+  });
+
+  it('refuses to save a draft without a template, says why, and sends nothing', async () => {
+    const user = userEvent.setup();
+    render(<VacancyRoutes path="/dashboard/jobs/new" />);
+    await templatePicker();
+
+    fill(/job title/i, 'Backend Engineer');
+    await user.click(screen.getByRole('button', { name: /save draft/i }));
+
+    expect(await screen.findByText(/choose a pipeline template before saving this draft/i)).toBeInTheDocument();
+    expect(screen.getByText('Pipeline template is required.')).toBeInTheDocument();
+    expect(api.create).not.toHaveBeenCalled();
+  });
+
+  it('refuses to publish without a template, on the server’s own sentence', async () => {
+    const user = userEvent.setup();
+    render(<VacancyRoutes path="/dashboard/jobs/new" />);
+    await templatePicker();
+
+    await user.click(screen.getByRole('button', { name: /publish vacancy/i }));
+
+    expect(await screen.findByText('Pipeline template is required.')).toBeInTheDocument();
+    expect(api.create).not.toHaveBeenCalled();
+  });
+
+  it('says so when the workspace has no templates, pointing an admin at the template editor', async () => {
+    templatesApi.list.mockResolvedValue([]);
+    render(<VacancyRoutes path="/dashboard/jobs/new" />);
+
+    expect(await screen.findByRole('link', { name: /create a pipeline template/i })).toHaveAttribute(
+      'href',
+      '/dashboard/pipeline-templates/new',
+    );
+  });
+
+  it('tells someone who cannot make templates who can', async () => {
+    setAuth({ user: makeUser({ role: 'HR_MANAGER' }), initializing: false });
+    templatesApi.list.mockResolvedValue([]);
+    render(<VacancyRoutes path="/dashboard/jobs/new" />);
+
+    expect(await screen.findByText(/ask a workspace admin to create a pipeline template/i)).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /create a pipeline template/i })).not.toBeInTheDocument();
+  });
+
+  it('files a duplicate on the original’s template, with the original’s settings', async () => {
+    const user = userEvent.setup();
+    api.get.mockResolvedValue(makeVacancy({ id: 'v-1', autoThreshold: 85, manualThreshold: 65 }));
+    api.create.mockResolvedValue(makeVacancy({ id: 'v-2', status: 'DRAFT' }));
+    render(<VacancyRoutes path="/dashboard/jobs/new?from=v-1" />);
+
+    await templatePicker();
+    expect(screen.getByLabelText(/auto-advance threshold/i)).toHaveValue('85');
+    await user.click(screen.getByRole('button', { name: /save draft/i }));
+
+    await waitFor(() =>
+      expect(api.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          pipelineTemplateId: 'tpl-1',
+          autoThreshold: 85,
+          manualThreshold: 65,
+          blindModeEnabled: false,
+          status: 'DRAFT',
+        }),
+      ),
+    );
+  });
+
+  it('drops a duplicate’s template once it is no longer available, and says so', async () => {
+    api.get.mockResolvedValue(makeVacancy({ id: 'v-1', pipelineTemplateId: 'tpl-archived' }));
+    render(<VacancyRoutes path="/dashboard/jobs/new?from=v-1" />);
+
+    expect(await screen.findByText(/original's pipeline template is no longer available/i)).toBeInTheDocument();
+    expect(screen.queryByLabelText(/auto-advance threshold/i)).not.toBeInTheDocument();
+  });
+});
+
+describe('the pipeline rules a form is held to', () => {
+  it('counts the template among the required fields of a new vacancy, and marks it required', async () => {
+    const user = userEvent.setup();
+    render(<VacancyRoutes path="/dashboard/jobs/new" />);
+
+    const counter = () => screen.getByText(/of \d+ required fields complete/i).textContent ?? '';
+    await templatePicker();
+    expect(counter()).toMatch(/of 12 required fields complete/);
+    const before = Number.parseInt(counter(), 10);
+    expect(screen.getByText('Pipeline template', { selector: 'label' })).toHaveTextContent('(required)');
+
+    await chooseTemplate(user, 'Engineering hiring');
+
+    expect(Number.parseInt(counter(), 10)).toBe(before + 1);
+  });
+
+  it('does not count a template on an edit, where it is already fixed', async () => {
+    api.get.mockResolvedValue(makeVacancy({ id: 'v-1', status: 'PUBLISHED' }));
+    render(<VacancyRoutes path="/dashboard/jobs/v-1/edit" />);
+
+    expect(await screen.findByText(/of 11 required fields complete/i)).toBeInTheDocument();
+  });
+
+  it('says the template is gone when creating answers 404, not that the vacancy is', async () => {
+    const user = userEvent.setup();
+    api.create.mockRejectedValue(httpError(404, 'Pipeline template not found'));
+    render(<VacancyRoutes path="/dashboard/jobs/new" />);
+
+    fill(/job title/i, 'Backend Engineer');
+    await chooseTemplate(user, 'Engineering hiring');
+    await user.click(screen.getByRole('button', { name: /save draft/i }));
+
+    expect(await screen.findByText(/pipeline template you chose no longer exists/i)).toBeInTheDocument();
+    expect(screen.queryByText(/this vacancy no longer exists/i)).not.toBeInTheDocument();
+  });
+
+  it('clears “manual below auto” when the auto threshold is raised, not only when manual changes', async () => {
+    const user = userEvent.setup();
+    api.get.mockResolvedValue(makeVacancy({ id: 'v-1', status: 'PUBLISHED' }));
+    render(<VacancyRoutes path="/dashboard/jobs/v-1/edit" />);
+
+    await screen.findByLabelText(/manual-review threshold/i);
+    fill(/manual-review threshold/i, '90');
+    await user.click(screen.getByRole('button', { name: /save changes/i }));
+    expect(
+      await screen.findByText('The manual threshold must be lower than the auto threshold.'),
+    ).toBeInTheDocument();
+
+    fill(/auto-advance threshold/i, '95');
+
+    await waitFor(() =>
+      expect(screen.queryByText('The manual threshold must be lower than the auto threshold.')).not.toBeInTheDocument(),
+    );
+  });
+
+  it('refuses a draft whose thresholds the server would refuse, before sending it', async () => {
+    const user = userEvent.setup();
+    api.get.mockResolvedValue(makeVacancy({ id: 'v-1', status: 'DRAFT' }));
+    render(<VacancyRoutes path="/dashboard/jobs/v-1/edit" />);
+
+    await screen.findByLabelText(/manual-review threshold/i);
+    fill(/manual-review threshold/i, '90');
+    await user.click(screen.getByRole('button', { name: /save draft/i }));
+
+    expect(await screen.findByText(/fix the screening thresholds before saving this draft/i)).toBeInTheDocument();
+    expect(screen.getByText('The manual threshold must be lower than the auto threshold.')).toBeInTheDocument();
+    expect(api.update).not.toHaveBeenCalled();
+  });
+});
+
+describe('the pipeline of a stored vacancy', () => {
+  it('shows the template as a fixed badge rather than a picker', async () => {
+    api.get.mockResolvedValue(makeVacancy({ id: 'v-1', status: 'DRAFT' }));
+    render(<VacancyRoutes path="/dashboard/jobs/v-1/edit" />);
+
+    const badge = await screen.findByRole('group', { name: /pipeline template/i });
+    expect(badge).toHaveTextContent('Engineering hiring');
+    expect(badge).toHaveTextContent(/fixed when the vacancy was created/i);
+    expect(screen.queryByRole('combobox', { name: /pipeline template/i })).not.toBeInTheDocument();
+    expect(templatesApi.list).not.toHaveBeenCalled();
+  });
+
+  it('saves new thresholds against the stored version, and never sends the template', async () => {
+    const user = userEvent.setup();
+    api.get.mockResolvedValue(makeVacancy({ id: 'v-1', status: 'PUBLISHED', version: 3 }));
+    api.update.mockResolvedValue(makeVacancy({ id: 'v-1', version: 4, autoThreshold: 85, manualThreshold: 65 }));
+    render(<VacancyRoutes path="/dashboard/jobs/v-1/edit" />);
+
+    await screen.findByLabelText(/auto-advance threshold/i);
+    fill(/auto-advance threshold/i, '85');
+    fill(/manual-review threshold/i, '65');
+    await user.click(screen.getByRole('switch', { name: /blind screening/i }));
+    await user.click(screen.getByRole('button', { name: /save changes/i }));
+
+    await waitFor(() =>
+      expect(api.update).toHaveBeenCalledWith(
+        'v-1',
+        expect.objectContaining({ autoThreshold: 85, manualThreshold: 65, blindModeEnabled: true, version: 3 }),
+      ),
+    );
+    expect(api.update.mock.calls[0][1]).not.toHaveProperty('pipelineTemplateId');
+  });
+
+  it('refuses a manual threshold that is not below the auto one, before sending anything', async () => {
+    const user = userEvent.setup();
+    api.get.mockResolvedValue(makeVacancy({ id: 'v-1', status: 'PUBLISHED' }));
+    render(<VacancyRoutes path="/dashboard/jobs/v-1/edit" />);
+
+    await screen.findByLabelText(/manual-review threshold/i);
+    fill(/manual-review threshold/i, '90');
+    await user.click(screen.getByRole('button', { name: /save changes/i }));
+
+    expect(
+      await screen.findByText('The manual threshold must be lower than the auto threshold.'),
+    ).toBeInTheDocument();
+    expect(api.update).not.toHaveBeenCalled();
+  });
+
+  it('shows the server’s refusal as written', async () => {
+    const user = userEvent.setup();
+    api.get.mockResolvedValue(makeVacancy({ id: 'v-1', status: 'PUBLISHED' }));
+    api.update.mockRejectedValue(httpError(422, 'The pipeline template cannot be changed after a job is created.'));
+    render(<VacancyRoutes path="/dashboard/jobs/v-1/edit" />);
+
+    await screen.findByLabelText(/auto-advance threshold/i);
+    await user.click(screen.getByRole('button', { name: /save changes/i }));
+
+    expect(
+      await screen.findByText('The pipeline template cannot be changed after a job is created.'),
+    ).toBeInTheDocument();
+  });
+
+  it('keeps a vacancy whose template was deleted on its own copy', async () => {
+    api.get.mockResolvedValue(
+      makeVacancy({ id: 'v-1', status: 'DRAFT', pipelineTemplateId: null, pipelineTemplateName: null }),
+    );
+    render(<VacancyRoutes path="/dashboard/jobs/v-1/edit" />);
+
+    expect(await screen.findByText(/template deleted — this vacancy keeps its own copy/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/auto-advance threshold/i)).toHaveValue('80');
+  });
+
+  it('explains a vacancy older than templates, and sends no screening settings for it', async () => {
+    const user = userEvent.setup();
+    api.get.mockResolvedValue(makeVacancyWithoutPipeline({ id: 'v-1', status: 'PUBLISHED' }));
+    api.update.mockResolvedValue(makeVacancyWithoutPipeline({ id: 'v-1', version: 1 }));
+    render(<VacancyRoutes path="/dashboard/jobs/v-1/edit" />);
+
+    expect(await screen.findByText(/created before pipeline templates/i)).toBeInTheDocument();
+    expect(screen.queryByLabelText(/auto-advance threshold/i)).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /save changes/i }));
+
+    await waitFor(() =>
+      expect(api.update).toHaveBeenCalledWith(
+        'v-1',
+        expect.objectContaining({ autoThreshold: null, manualThreshold: null, blindModeEnabled: null }),
+      ),
+    );
+  });
+
+  it('is described on the vacancy’s page', async () => {
+    api.get.mockResolvedValue(makeVacancy({ id: 'v-1', status: 'PUBLISHED', blindModeEnabled: true }));
+    render(<VacancyRoutes path="/dashboard/jobs/v-1" />);
+
+    const fact = async (term: string) =>
+      (await screen.findByText(term, { selector: 'dt' })).nextElementSibling?.textContent;
+    expect(await fact('Pipeline template')).toBe('Engineering hiring');
+    expect(await fact('Stages')).toBe('4 stages · 1 interview round');
+    expect(await fact('Auto-advance threshold')).toBe('80');
+    expect(await fact('Manual-review threshold')).toBe('70');
+    expect(await fact('Blind screening')).toBe('On');
+  });
+
+  it('is left off the page of a vacancy older than templates', async () => {
+    api.get.mockResolvedValue(makeVacancyWithoutPipeline({ id: 'v-1', status: 'PUBLISHED' }));
+    render(<VacancyRoutes path="/dashboard/jobs/v-1" />);
+
+    await screen.findByRole('heading', { level: 1, name: 'Senior Backend Engineer' });
+    expect(screen.queryByText('Pipeline & screening')).not.toBeInTheDocument();
+  });
+});
+
 /* --- Company roles, industries and AI switches --------------------------- */
 
 const person = (id: string, firstName: string, lastName: string, roleName: string) => ({
@@ -539,7 +843,7 @@ describe('the industry a vacancy is filed under', () => {
     expect(await screen.findByTitle('Information Technology · main')).toBeInTheDocument();
     await user.click(screen.getByTitle('Financial Services'));
     fill(/job title/i, 'Payments Engineer');
-    await choosePipeline();
+    await chooseTemplate(user, 'Engineering hiring');
     await user.click(screen.getByRole('button', { name: /save draft/i }));
 
     expect(api.create).toHaveBeenCalledWith(expect.objectContaining({ industry: 'Financial Services' }));
@@ -561,7 +865,7 @@ describe('the industry a vacancy is filed under', () => {
 
     expect(screen.queryByLabelText(/^industry/i)).toBeNull();
     fill(/job title/i, 'Payments Engineer');
-    await choosePipeline();
+    await chooseTemplate(user, 'Engineering hiring');
     await user.click(screen.getByRole('button', { name: /save draft/i }));
 
     expect(api.create).toHaveBeenCalledWith(expect.objectContaining({ industry: null }));

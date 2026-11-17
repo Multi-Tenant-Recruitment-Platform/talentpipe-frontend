@@ -7,7 +7,7 @@ import {
   formatSalary,
   formatWorkingDays,
   payPeriodLabel,
-  // pipelineLabel, — with the Recruitment settings block below
+  pipelineShape,
   shiftTypeLabel,
   workplaceTypeLabel,
 } from '../../dashboard/jobVacancy';
@@ -186,24 +186,25 @@ export function VacancyDetailsBody({ vacancy }: Readonly<{ vacancy: JobVacancyRe
         </dl>
       </Block>
 
-      {/* Hidden alongside the form's Recruitment settings section. Block always
-          renders its heading, so leaving it would print an empty one now that
-          nothing can fill these fields in. */}
-      {/* <Block title="Recruitment settings">
-        <Flex vertical gap={space[2]}>
+      {/* Only a vacancy created before pipeline templates has no thresholds;
+          it has no pipeline to describe, so the block stays away. */}
+      {vacancy.autoThreshold !== null && (
+        <Block title="Pipeline & screening">
           <dl className={detailGrid}>
-            <Fact label="Pipeline" value={pipelineLabel(vacancy.recruitmentPipelineId) ?? ''} />
+            <Fact
+              label="Pipeline template"
+              value={vacancy.pipelineTemplateName ?? 'Template deleted — this vacancy keeps its own copy'}
+            />
+            <Fact label="Stages" value={pipelineShape(vacancy)} />
+            <Fact label="Auto-advance threshold" value={`${vacancy.autoThreshold}`} />
+            <Fact
+              label="Manual-review threshold"
+              value={vacancy.manualThreshold === null ? '' : `${vacancy.manualThreshold}`}
+            />
+            <Fact label="Blind screening" value={vacancy.blindModeEnabled ? 'On' : 'Off'} />
           </dl>
-          {vacancy.screeningQuestions.length > 0 && (
-            <div>
-              <Typography.Text strong className="mb-2 block">
-                Screening questions
-              </Typography.Text>
-              <Lines values={vacancy.screeningQuestions} />
-            </div>
-          )}
-        </Flex>
-      </Block> */}
+        </Block>
+      )}
     </>
   );
 }

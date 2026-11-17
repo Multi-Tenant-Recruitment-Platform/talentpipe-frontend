@@ -53,6 +53,7 @@ If you split permissions (for example only admins may archive), tell the fronten
 | POST | `/jobs/{id}/publish` | — | `200 JobVacancyResponse` | `DRAFT → PUBLISHED` |
 | POST | `/jobs/{id}/close` | — | `200 JobVacancyResponse` | `PUBLISHED → CLOSED` |
 | POST | `/jobs/{id}/archive` | — | `200 JobVacancyResponse` | `CLOSED → ARCHIVED` |
+| GET | `/jobs/{id}/stages` | — | `200 JobStageResponse[]` | The stages copied from its template, by `position` ascending: `{ id, position, stageType, name, benchmark }`. |
 | GET | `/jobs/{id}/hiring-team` | — | `200 HiringTeamResponse` | Recruiter, hiring manager and the rest of the team. |
 | PUT | `/jobs/{id}/hiring-team` | `{ memberIds }` | `200 HiringTeamResponse` | Replace the team (not recruiter or manager). |
 | PATCH | `/jobs/{id}/features` | `{ aiScreeningEnabled?, candidateMatchingEnabled? }` | `200 JobVacancyResponse` | AI switches; 422 once closed. |
@@ -127,8 +128,11 @@ Types are JSON. "Draft" means what a `DRAFT` may hold. "Publish" means what is r
 | `expectedHoursPerWeek` | number \| null | | > 0 and ≤ 168 |
 | `assignedRecruiterId` | UUID \| null | | must be an **ACTIVE user in the same tenant**, otherwise 422 |
 | `hiringManagerId` | UUID \| null | | same rule |
-| `recruitmentPipelineId` | string \| null | | `STANDARD` `TECHNICAL` `EXECUTIVE` |
+| `recruitmentPipelineId` | string \| null | | Legacy free-text field; the form no longer sets it. The pipeline is `pipelineTemplateId`. |
 | `screeningQuestions` | string[] | | ≤ 10 entries |
+| `pipelineTemplateId` | UUID | ✓ (drafts too) | One of the company's **active** templates (`GET /pipeline-templates`). Missing → 400 "Pipeline template is required."; unknown or another company's → 404; archived → 422. Its stages are copied when the vacancy is stored. |
+| `autoThreshold` / `manualThreshold` | int \| null | | 0–100, manual below auto (422 "The manual threshold must be lower than the auto threshold."). `null` takes the template's default. |
+| `blindModeEnabled` | boolean \| null | | `null` takes the template's setting. |
 | `status` | enum | | **only `DRAFT` or `PUBLISHED`** on create, otherwise 400 |
 
 Shape rules (lengths, ranges, enum membership, salary pairing, tenant-member ids) apply in **every** state, drafts
@@ -139,13 +143,18 @@ Lists are always arrays, never null. Blank optionals arrive as `null`, never `""
 
 ### `JobVacancyUpdateRequest` (PUT body)
 
-Every `JobVacancyRequest` field **except `status`**, plus:
+Every `JobVacancyRequest` field **except `status` and `pipelineTemplateId`**, plus:
 
 | Field | Type | Notes |
 |---|---|---|
 | `version` | int | The `version` from the response being edited. Use JPA `@Version`. A stale value → **`409`** (`ObjectOptimisticLockingFailureException` → map it to 409). |
 
-PUT is a full replacement: `null` means "cleared".
+PUT is a full replacement: `null` means "cleared" — except the screening settings. `autoThreshold`,
+`manualThreshold` and `blindModeEnabled` may change on a DRAFT or PUBLISHED vacancy, and one left out (`null`) keeps
+its stored value; the order rule is checked against the stored value when only one is sent. The template is fixed at
+creation: the frontend never sends `pipelineTemplateId` on PUT, and the backend refuses any other id with 422 "The
+pipeline template cannot be changed after a job is created." A vacancy created before pipeline templates has no
+screening settings, so the frontend sends all three as `null` for it (the backend refuses them with 422 otherwise).
 
 ### `JobVacancyResponse`
 
@@ -158,6 +167,11 @@ Every `JobVacancyRequest` field (with the current `status`), plus:
 | `createdAt` / `updatedAt` | ISO-8601 instant | |
 | `publishedAt` / `closedAt` / `archivedAt` | ISO-8601 instant \| null | set on entering that state, never cleared |
 | `applicantCount` | int \| null | **Send `null` until the applications module exists.** The UI shows "Not connected yet". `0` would claim nobody applied. |
+| `pipelineTemplateId` | UUID \| null | `null` for vacancies older than templates, and once the template is deleted (the vacancy keeps its copy). |
+| `pipelineTemplateName` | string \| null | The template's name when the vacancy was created — frozen; the edit page shows it as a read-only badge. |
+| `stageCount` / `interviewRoundCount` | int \| null | The copied pipeline's shape. `null` with no pipeline. |
+| `autoThreshold` / `manualThreshold` | int \| null | `null` only on a vacancy older than templates. |
+| `blindModeEnabled` | boolean | |
 
 Do **not** include `tenantId`. The frontend's tenant guard (`src/api/tenantGuard.ts`) rejects any payload whose
 `tenantId` differs from the session's, so leaving it out keeps responses clean.
@@ -308,8 +322,12 @@ whole, and nothing else references them.
   "expectedHoursPerWeek": 40,
   "assignedRecruiterId": null,
   "hiringManagerId": null,
-  "recruitmentPipelineId": "TECHNICAL",
+  "recruitmentPipelineId": null,
   "screeningQuestions": ["Do you have the right to work in Sri Lanka?"],
+  "pipelineTemplateId": "3b1f6a0e-…",
+  "autoThreshold": 85,
+  "manualThreshold": 65,
+  "blindModeEnabled": false,
   "status": "DRAFT"
 }
 ```
@@ -326,7 +344,10 @@ whole, and nothing else references them.
   "publishedAt": null,
   "closedAt": null,
   "archivedAt": null,
-  "applicantCount": null
+  "applicantCount": null,
+  "pipelineTemplateName": "Engineering hiring",
+  "stageCount": 4,
+  "interviewRoundCount": 1
 }
 ```
 

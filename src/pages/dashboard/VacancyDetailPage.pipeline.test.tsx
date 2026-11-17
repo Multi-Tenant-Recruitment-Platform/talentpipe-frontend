@@ -30,8 +30,8 @@ beforeEach(() => {
 
 async function open(overrides: Partial<JobVacancyResponse> = {}) {
   api.get.mockResolvedValue(makeVacancy({
-    stages, recruitmentPipelineName: 'Original engineering pipeline',
-    autoThreshold: 88, manualThreshold: 65, ...overrides,
+    stages, pipelineTemplateName: 'Original engineering pipeline',
+    autoThreshold: 88, manualThreshold: 65, blindModeEnabled: true, ...overrides,
   }));
   render(<MemoryRouter initialEntries={['/dashboard/jobs/v-1']}>
     <Routes><Route path="/dashboard/jobs/:id" element={<VacancyDetailPage />} /></Routes>
@@ -59,8 +59,8 @@ describe('vacancy pipeline snapshot', () => {
     expect(stages[0].position).toBe(2);
   });
 
-  it('does not show Blind Mode when disabled, even if ideal matching is enabled', async () => {
-    await open({ blindModeEnabled: false, idealMatchingEnabled: true });
+  it('does not show Blind Mode when disabled', async () => {
+    await open({ blindModeEnabled: false });
     expect(screen.queryByText('Blind Mode')).not.toBeInTheDocument();
   });
 

@@ -1,4 +1,4 @@
-import { InputNumber, Select, Switch } from 'antd';
+import { Select } from 'antd';
 import type { UserResponse } from '../../api/types';
 import { roleLabelFor } from '../../auth/permissions';
 import { useCan } from '../../auth/useCan';
@@ -8,7 +8,6 @@ import { BulletListEditor } from './BulletListEditor';
 import type { VacancySectionProps } from './sectionProps';
 import { VacancyField } from './VacancyField';
 import { fieldAria, vacancyFieldId } from './vacancyFieldIds';
-import { PipelineTemplatePicker } from './PipelineTemplatePicker';
 
 const personOption = (member: UserResponse) => ({
   value: member.id,
@@ -79,58 +78,6 @@ export function RecruitmentSettingsSection({
           optionFilterProp="label"
           className="w-full"
           onChange={(next: string | undefined) => set('hiringManagerId', next ?? '')}
-        />
-      </VacancyField>
-
-      <VacancyField
-        field="recruitmentPipelineId"
-        span={24}
-        error={errors.recruitmentPipelineId}
-        hint="The stages applicants move through. Selecting a template applies its screening defaults."
-      >
-        <PipelineTemplatePicker
-          value={values.recruitmentPipelineId}
-          error={errors.recruitmentPipelineId}
-          onChange={(template) => {
-            set('recruitmentPipelineId', template?.id ?? '');
-            set('autoThreshold', template?.defaultAutoThreshold ?? null);
-            set('manualThreshold', template?.defaultManualThreshold ?? null);
-            set('blindModeEnabled', template?.blindModeEnabled ?? false);
-          }}
-        />
-      </VacancyField>
-
-      <VacancyField field="autoThreshold" span={12} error={errors.autoThreshold}>
-        <InputNumber
-          {...fieldAria('autoThreshold', errors.autoThreshold)}
-          status={errors.autoThreshold ? 'error' : undefined}
-          value={values.autoThreshold}
-          min={0}
-          max={100}
-          className="w-full"
-          addonAfter="/ 100"
-          onChange={(next) => set('autoThreshold', typeof next === 'number' ? next : null)}
-        />
-      </VacancyField>
-
-      <VacancyField field="manualThreshold" span={12} error={errors.manualThreshold}>
-        <InputNumber
-          {...fieldAria('manualThreshold', errors.manualThreshold)}
-          status={errors.manualThreshold ? 'error' : undefined}
-          value={values.manualThreshold}
-          min={0}
-          max={100}
-          className="w-full"
-          addonAfter="/ 100"
-          onChange={(next) => set('manualThreshold', typeof next === 'number' ? next : null)}
-        />
-      </VacancyField>
-
-      <VacancyField field="blindModeEnabled" span={24} hint="Hide candidate identity during screening.">
-        <Switch
-          id={vacancyFieldId('blindModeEnabled')}
-          checked={values.blindModeEnabled}
-          onChange={(checked) => set('blindModeEnabled', checked)}
         />
       </VacancyField>
 

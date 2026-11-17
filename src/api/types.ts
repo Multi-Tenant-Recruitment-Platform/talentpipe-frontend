@@ -602,14 +602,12 @@ export type WeekDay = 'MON' | 'TUE' | 'WED' | 'THU' | 'FRI' | 'SAT' | 'SUN';
 export type VacancyStatus = 'DRAFT' | 'PUBLISHED' | 'CLOSED' | 'ARCHIVED';
 
 /**
- * A vacancy as the creation form submits it.
+ * A vacancy as the creation form submits it — the body of `POST /jobs`
+ * (`JobVacancyRequest` in talentpipe-backend).
  *
- * <p>PROPOSED CONTRACT — no endpoint serves this yet, exactly like
- * {@link CompanyProfileResponse} before `/tenant` landed. It follows the same
- * conventions so that wiring `POST /jobs` is a change to `src/api/jobs.ts` and
- * the hook behind it, and nothing in the form: blank optionals travel as
- * `null`, lists are always arrays and never null, and every enumerated value is
- * a stable identifier rather than the words the UI happens to show.</p>
+ * <p>Conventions: blank optionals travel as `null`, lists are always arrays
+ * and never null, and every enumerated value is a stable identifier rather
+ * than the words the UI happens to show.</p>
  *
  * <p>Tenant scope is absent by design — the backend derives it from the access
  * token, as `team.ts` and `company.ts` already do, so there is no request shape
@@ -662,12 +660,6 @@ export interface JobVacancyRequest {
   assignedRecruiterId: string | null;
   hiringManagerId: string | null;
   recruitmentPipelineId: string | null;
-  /** Screening overrides; omitted or null uses the selected template's defaults. */
-  autoThreshold?: number | null;
-  manualThreshold?: number | null;
-  idealMatchingEnabled?: boolean | null;
-  /** Hide candidate identity during screening; independent of ideal matching. */
-  blindModeEnabled?: boolean | null;
   screeningQuestions: string[];
 
   /**
@@ -676,6 +668,21 @@ export interface JobVacancyRequest {
    */
   aiScreeningEnabled?: boolean | null;
   candidateMatchingEnabled?: boolean | null;
+
+  /**
+   * The template whose pipeline the vacancy runs on — required, a draft
+   * included. Its stages are copied to the vacancy when it is created, and the
+   * template cannot change afterwards. 404 for a template that does not exist
+   * or is another company's; 422 for an archived one.
+   */
+  pipelineTemplateId: string;
+  /**
+   * Screening settings, 0–100 with manual below auto. `null` takes the
+   * template's value on create, and keeps the stored one on an edit.
+   */
+  autoThreshold: number | null;
+  manualThreshold: number | null;
+  blindModeEnabled: boolean | null;
 
   /**
    * Only DRAFT or PUBLISHED on create. Every later move goes through its own
@@ -695,14 +702,36 @@ export interface JobVacancyRequest {
  * Two recruiters saving the same vacancy is a real case in a shared workspace;
  * the second save answers 409 rather than silently overwriting the first.</p>
  */
-export type JobVacancyUpdateRequest = Omit<JobVacancyRequest, 'status'> & { version: number };
+export type JobVacancyUpdateRequest = Omit<JobVacancyRequest, 'status' | 'pipelineTemplateId'> & {
+  version: number;
+};
+
+/** The pipeline fields, as a stored vacancy reports them. */
+type StoredPipelineFields = 'pipelineTemplateId' | 'autoThreshold' | 'manualThreshold' | 'blindModeEnabled';
+
+/** A vacancy-owned stage copied from the selected template. */
+export interface JobStageResponse extends PipelineStage {
+  jobId: string;
+}
 
 /** A stored vacancy: everything submitted, plus what only the server knows. */
-export interface JobVacancyResponse extends JobVacancyRequest {
-  /** Template name captured when the vacancy was created. */
-  recruitmentPipelineName?: string | null;
+export interface JobVacancyResponse extends Omit<JobVacancyRequest, StoredPipelineFields> {
   /** Vacancy-owned snapshots, independent of later template edits. */
   stages?: JobStageResponse[];
+  /**
+   * The template the vacancy was created from. Null for vacancies older than
+   * templates, and once the template is deleted — the vacancy keeps its own
+   * copy of the pipeline either way.
+   */
+  pipelineTemplateId: string | null;
+  /** The template's name when the vacancy was created; frozen. Null for vacancies older than templates. */
+  pipelineTemplateName: string | null;
+  stageCount: number | null;
+  interviewRoundCount: number | null;
+  /** Null only on a vacancy older than templates: it has no pipeline, so no screening settings. */
+  autoThreshold: number | null;
+  manualThreshold: number | null;
+  blindModeEnabled: boolean;
   id: string;
   /** Optimistic-lock counter; echoed back on PUT. */
   version: number;
@@ -798,11 +827,6 @@ export interface PipelineStage {
   benchmark: number | null;
 }
 
-/** A vacancy-owned stage returned by `GET /jobs/{id}/stages`, in position order. */
-export interface JobStageResponse extends PipelineStage {
-  jobId: string;
-}
-
 /** Fields the list and the full template share. */
 interface PipelineTemplateBase {
   id: string;
@@ -815,8 +839,8 @@ interface PipelineTemplateBase {
   defaultManualThreshold: number;
   /** Whether jobs using this template may add an ideal-candidate scorecard. */
   idealMatchingEnabled: boolean;
-  /** Default blind-screening setting. Absent on older servers. */
-  blindModeEnabled?: boolean;
+  /** Vacancies created from it start with blind screening on (they may turn it off). */
+  blindModeEnabled: boolean;
   status: PipelineTemplateStatus;
   stageCount: number;
   interviewRoundCount: number;
