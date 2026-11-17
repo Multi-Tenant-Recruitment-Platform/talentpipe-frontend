@@ -1,7 +1,15 @@
 /** Vitest global setup: adds the jest-dom matchers (toBeInTheDocument, …). */
 import '@testing-library/jest-dom/vitest';
 import { cleanup } from '@testing-library/react';
-import { afterEach } from 'vitest';
+import { afterAll, afterEach, beforeAll } from 'vitest';
+import { resetMockData, server } from './http';
+
+beforeAll(() => server.listen({ onUnhandledRequest: 'bypass' }));
+afterEach(() => {
+  server.resetHandlers();
+  resetMockData();
+});
+afterAll(() => server.close());
 
 /**
  * Node 22+ defines its own experimental global `localStorage`, which reads as
@@ -15,7 +23,7 @@ import { afterEach } from 'vitest';
  * <p>Stand a minimal in-memory Storage in its place. No-op on Node versions
  * that never shipped the global, so CI is unaffected either way.</p>
  */
-if (!globalThis.localStorage) {
+if (typeof globalThis.localStorage?.getItem !== 'function') {
   const entries = new Map<string, string>();
   const memoryStorage: Storage = {
     get length() {

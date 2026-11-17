@@ -42,6 +42,7 @@ vi.mock('../../dashboard/TeamSummaryContext', () => ({
 const api = vi.hoisted(() => ({
   list: vi.fn(),
   get: vi.fn(),
+  stages: vi.fn(),
   create: vi.fn(),
   update: vi.fn(),
   publish: vi.fn(),
@@ -92,12 +93,20 @@ function VacancyRoutes({ path }: Readonly<{ path: string }>) {
 
 const location = () => screen.getByTestId('location');
 
+async function choosePipeline() {
+  const picker = screen.getByRole('combobox', { name: /recruitment pipeline/i });
+  await waitFor(() => expect(picker).toBeEnabled());
+  fireEvent.mouseDown(picker);
+  fireEvent.click(await screen.findByText('Standard Engineering', { selector: '.ant-select-item-option-content' }));
+}
+
 beforeEach(() => {
   setAuth({ user: makeUser(), initializing: false });
   for (const fn of Object.values(api)) {
     fn.mockReset();
   }
   api.list.mockResolvedValue([]);
+  api.stages.mockResolvedValue([]);
   api.hiringTeam.mockResolvedValue({ vacancyId: 'v-1', recruiter: null, hiringManager: null, members: [] });
   profileSaved.industry = '';
   profileSaved.additionalIndustries = [];
@@ -107,7 +116,7 @@ beforeEach(() => {
 /* --- Create ------------------------------------------------------------- */
 
 describe('creating a vacancy', () => {
-  it('lays the five sections out in order, each numbered', () => {
+  it('lays the six sections out in order, each numbered', () => {
     render(<VacancyRoutes path="/dashboard/jobs/new" />);
 
     const nav = screen.getByRole('navigation', { name: /vacancy form sections/i });
@@ -117,6 +126,7 @@ describe('creating a vacancy', () => {
       expect.stringContaining('Candidate requirements'),
       expect.stringContaining('Salary & benefits'),
       expect.stringContaining('Work schedule'),
+      expect.stringContaining('Recruitment settings'),
     ]);
     expect(screen.getByRole('group', { name: /basic information/i })).toHaveTextContent('01');
   });
@@ -132,6 +142,7 @@ describe('creating a vacancy', () => {
   it('refuses to publish an incomplete vacancy, says where to look, and sends nothing', async () => {
     const user = userEvent.setup();
     render(<VacancyRoutes path="/dashboard/jobs/new" />);
+    await choosePipeline();
 
     await user.click(screen.getByRole('button', { name: /publish vacancy/i }));
 
@@ -144,6 +155,7 @@ describe('creating a vacancy', () => {
   it('clears a field error as soon as that field is corrected', async () => {
     const user = userEvent.setup();
     render(<VacancyRoutes path="/dashboard/jobs/new" />);
+    await choosePipeline();
 
     await user.click(screen.getByRole('button', { name: /publish vacancy/i }));
     expect(await screen.findByText(/a job title is required/i)).toBeInTheDocument();
@@ -152,12 +164,13 @@ describe('creating a vacancy', () => {
     expect(screen.queryByText(/a job title is required/i)).not.toBeInTheDocument();
   });
 
-  it('files a draft unvalidated, then continues on its edit page so the next save updates it', async () => {
+  it('files a draft with a pipeline but incomplete content, then continues on its edit page', async () => {
     const user = userEvent.setup();
     const stored = makeVacancy({ id: 'v-9', status: 'DRAFT', title: 'Backend Engineer' });
     api.create.mockResolvedValue(stored);
     api.get.mockResolvedValue(stored);
     render(<VacancyRoutes path="/dashboard/jobs/new" />);
+    await choosePipeline();
 
     fill(/job title/i, 'Backend Engineer');
     await user.click(screen.getByRole('button', { name: /save draft/i }));
@@ -173,6 +186,7 @@ describe('creating a vacancy', () => {
     const user = userEvent.setup();
     api.create.mockRejectedValue(new AxiosError('Network Error'));
     render(<VacancyRoutes path="/dashboard/jobs/new" />);
+    await choosePipeline();
 
     fill(/job title/i, 'Backend Engineer');
     await user.click(screen.getByRole('button', { name: /save draft/i }));
@@ -525,6 +539,7 @@ describe('the industry a vacancy is filed under', () => {
     expect(await screen.findByTitle('Information Technology · main')).toBeInTheDocument();
     await user.click(screen.getByTitle('Financial Services'));
     fill(/job title/i, 'Payments Engineer');
+    await choosePipeline();
     await user.click(screen.getByRole('button', { name: /save draft/i }));
 
     expect(api.create).toHaveBeenCalledWith(expect.objectContaining({ industry: 'Financial Services' }));
@@ -546,6 +561,7 @@ describe('the industry a vacancy is filed under', () => {
 
     expect(screen.queryByLabelText(/^industry/i)).toBeNull();
     fill(/job title/i, 'Payments Engineer');
+    await choosePipeline();
     await user.click(screen.getByRole('button', { name: /save draft/i }));
 
     expect(api.create).toHaveBeenCalledWith(expect.objectContaining({ industry: null }));

@@ -18,6 +18,7 @@ import {
   sectionsWithErrors,
   VACANCY_SECTIONS,
   validateVacancy,
+  validatePipelineConfiguration,
   type JobVacancyField,
   type JobVacancyFieldErrors,
   type JobVacancyFormValues,
@@ -32,7 +33,7 @@ import { ConfirmDialog } from '../ui/ConfirmDialog';
 import { BasicInformationSection } from './BasicInformationSection';
 import { CandidateRequirementsSection } from './CandidateRequirementsSection';
 import { JobDescriptionSection } from './JobDescriptionSection';
-// import { RecruitmentSettingsSection } from './RecruitmentSettingsSection';
+import { RecruitmentSettingsSection } from './RecruitmentSettingsSection';
 import { SalaryBenefitsSection } from './SalaryBenefitsSection';
 import type { VacancySectionProps } from './sectionProps';
 import { vacancyFieldId, vacancyGroupId } from './vacancyFieldIds';
@@ -70,13 +71,13 @@ const SECTION_BODIES: Record<string, ComponentType<VacancySectionProps>> = {
   requirements: CandidateRequirementsSection,
   salary: SalaryBenefitsSection,
   schedule: WorkScheduleSection,
-  // recruitment: RecruitmentSettingsSection,
+  recruitment: RecruitmentSettingsSection,
 };
 
 const HEADINGS: Record<VacancyFormMode, { title: string; subtitle: string }> = {
   create: {
     title: 'Create vacancy',
-    subtitle: 'Five sections. Only the marked fields are needed to publish — the rest can follow.',
+    subtitle: 'Choose a pipeline and complete the marked fields to publish — the rest can follow.',
   },
   duplicate: {
     title: 'Duplicate vacancy',
@@ -104,8 +105,11 @@ export function VacancyForm({
   onSaveDraft,
   onPublish,
   onSaveChanges,
+  requirePipeline = false,
 }: Readonly<{
   mode: VacancyFormMode;
+  /** A new vacancy must have a valid pipeline configuration, including on draft save. */
+  requirePipeline?: boolean;
   initialValues: JobVacancyFormValues;
   /** Context above the form — where a duplicate came from, that a vacancy is live. */
   banner?: ReactNode;
@@ -137,6 +141,11 @@ export function VacancyForm({
   const [confirmPublish, setConfirmPublish] = useState(false);
 
   const dirty = isVacancyDirty(values, baseline);
+  const pipelineErrors = validatePipelineConfiguration(values);
+  const pipelineBlocked = requirePipeline && Object.keys(pipelineErrors).length > 0;
+  const visibleErrors = values.recruitmentPipelineId
+    ? { ...errors, autoThreshold: pipelineErrors.autoThreshold, manualThreshold: pipelineErrors.manualThreshold }
+    : errors;
 
   const set = useCallback(
     <K extends JobVacancyField>(field: K, value: JobVacancyFormValues[K]) => {
@@ -163,7 +172,7 @@ export function VacancyForm({
   );
 
   const filled = useMemo(() => requiredFilled(values), [values]);
-  const errorSections = useMemo(() => sectionsWithErrors(errors), [errors]);
+  const errorSections = sectionsWithErrors(visibleErrors);
 
   /* --- Wayfinding -------------------------------------------------------- */
 
@@ -271,7 +280,7 @@ export function VacancyForm({
   }
 
   async function saveDraft() {
-    if (!onSaveDraft) {
+    if (!onSaveDraft || pipelineBlocked) {
       return;
     }
     // Deliberately unvalidated. A draft is a partial vacancy by definition,
@@ -286,13 +295,13 @@ export function VacancyForm({
   }
 
   function requestPublish() {
-    if (validates()) {
+    if (!pipelineBlocked && validates()) {
       setConfirmPublish(true);
     }
   }
 
   async function publish() {
-    if (!onPublish) {
+    if (!onPublish || pipelineBlocked) {
       return;
     }
     const ok = await run('publish', fresh ? 'create' : 'publish', () => onPublish(values));
@@ -375,7 +384,7 @@ export function VacancyForm({
                   progress={sectionProgress(values, section)}
                   hasError={errorSections.has(section.id)}
                 >
-                  <Body values={values} errors={errors} set={set} />
+                  <Body values={values} errors={visibleErrors} set={set} />
                 </VacancySectionCard>
               );
             })}
@@ -411,11 +420,11 @@ export function VacancyForm({
                     variant="secondary"
                     onClick={() => void saveDraft()}
                     loading={submitting === 'draft'}
-                    disabled={busy}
+                    disabled={busy || pipelineBlocked}
                   >
                     Save draft
                   </Button>
-                  <Button type="submit" variant="primary" disabled={busy}>
+                  <Button type="submit" variant="primary" disabled={busy || pipelineBlocked}>
                     Publish vacancy
                   </Button>
                 </>

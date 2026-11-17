@@ -19,6 +19,7 @@ import {
   toVacancyRequest,
   VACANCY_SECTIONS,
   validateVacancy,
+  validatePipelineConfiguration,
   type JobVacancyFormValues,
 } from './jobVacancy';
 import type { JobVacancyResponse } from '../api/types';
@@ -47,9 +48,26 @@ function completeValues(overrides: Partial<JobVacancyFormValues> = {}): JobVacan
     jobDescription: 'A longer description of the role and the team it joins.',
     keyResponsibilities: ['Own the matching service'],
     requiredSkills: ['Java'],
+    recruitmentPipelineId: 'pipeline-standard',
+    autoThreshold: 80,
+    manualThreshold: 70,
     ...overrides,
   };
 }
+
+describe('pipeline configuration', () => {
+  it.each([null, -1, 101, Number.NaN, Number.POSITIVE_INFINITY])('rejects invalid auto threshold %s', (value) => {
+    expect(validatePipelineConfiguration(completeValues({ autoThreshold: value })).autoThreshold).toBeDefined();
+  });
+  it.each([null, -1, 101, Number.NaN])('rejects invalid manual threshold %s', (value) => {
+    expect(validatePipelineConfiguration(completeValues({ manualThreshold: value })).manualThreshold).toBeDefined();
+  });
+  it('allows the endpoints of the range and rejects equality', () => {
+    expect(validatePipelineConfiguration(completeValues({ autoThreshold: 100, manualThreshold: 0 }))).toEqual({});
+    expect(validatePipelineConfiguration(completeValues({ autoThreshold: 80, manualThreshold: 80 })).manualThreshold)
+      .toBe('Manual threshold must be lower than auto threshold');
+  });
+});
 
 describe('validateVacancy', () => {
   it('passes a complete vacancy', () => {
@@ -63,6 +81,9 @@ describe('validateVacancy', () => {
     expect(Object.keys(errors).sort()).toEqual(
       [
         'applicationDeadline',
+        'recruitmentPipelineId',
+        'autoThreshold',
+        'manualThreshold',
         'department',
         'employmentType',
         'jobDescription',

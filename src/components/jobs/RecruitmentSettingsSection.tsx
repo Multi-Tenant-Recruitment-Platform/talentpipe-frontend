@@ -1,14 +1,14 @@
-import { Flex, Select, Tag, Typography } from 'antd';
+import { InputNumber, Select, Switch } from 'antd';
 import type { UserResponse } from '../../api/types';
 import { roleLabelFor } from '../../auth/permissions';
 import { useCan } from '../../auth/useCan';
-import { MAX_SCREENING_QUESTIONS, PIPELINE_TEMPLATES } from '../../dashboard/jobVacancy';
+import { MAX_SCREENING_QUESTIONS } from '../../dashboard/jobVacancy';
 import { useTeamSummary } from '../../dashboard/TeamSummaryContext';
-import { space } from '../../theme/tokens';
 import { BulletListEditor } from './BulletListEditor';
 import type { VacancySectionProps } from './sectionProps';
 import { VacancyField } from './VacancyField';
 import { fieldAria, vacancyFieldId } from './vacancyFieldIds';
+import { PipelineTemplatePicker } from './PipelineTemplatePicker';
 
 const personOption = (member: UserResponse) => ({
   value: member.id,
@@ -37,10 +37,6 @@ export function RecruitmentSettingsSection({
   // "Talent Partner" is as likely a recruiter as the default Recruiter — so
   // the list is everyone, labelled with the role they hold.
   const recruiters = activeMembers;
-
-  const pipeline = PIPELINE_TEMPLATES.find(
-    (template) => template.id === values.recruitmentPipelineId,
-  );
 
   return (
     <>
@@ -90,34 +86,52 @@ export function RecruitmentSettingsSection({
         field="recruitmentPipelineId"
         span={24}
         error={errors.recruitmentPipelineId}
-        hint="The stages applicants move through. Defaults to your standard pipeline if left blank."
+        hint="The stages applicants move through. Selecting a template applies its screening defaults."
       >
-        <Select
-          {...fieldAria('recruitmentPipelineId', errors.recruitmentPipelineId)}
-          value={values.recruitmentPipelineId === '' ? undefined : values.recruitmentPipelineId}
-          options={PIPELINE_TEMPLATES.map((template) => ({
-            value: template.id,
-            label: template.label,
-          }))}
-          placeholder="Choose a pipeline"
-          allowClear
-          className="w-full"
-          onChange={(next: string | undefined) => set('recruitmentPipelineId', next ?? '')}
+        <PipelineTemplatePicker
+          value={values.recruitmentPipelineId}
+          error={errors.recruitmentPipelineId}
+          onChange={(template) => {
+            set('recruitmentPipelineId', template?.id ?? '');
+            set('autoThreshold', template?.defaultAutoThreshold ?? null);
+            set('manualThreshold', template?.defaultManualThreshold ?? null);
+            set('blindModeEnabled', template?.blindModeEnabled ?? false);
+          }}
         />
-        {pipeline && (
-          <Flex align="center" gap={space[0.5]} wrap className="mt-2">
-            {pipeline.stages.map((stage, index) => (
-              <Flex key={stage} align="center" gap={space[0.5]}>
-                {index > 0 && (
-                  <Typography.Text type="secondary" aria-hidden="true" className="text-caption">
-                    →
-                  </Typography.Text>
-                )}
-                <Tag className="m-0">{stage}</Tag>
-              </Flex>
-            ))}
-          </Flex>
-        )}
+      </VacancyField>
+
+      <VacancyField field="autoThreshold" span={12} error={errors.autoThreshold}>
+        <InputNumber
+          {...fieldAria('autoThreshold', errors.autoThreshold)}
+          status={errors.autoThreshold ? 'error' : undefined}
+          value={values.autoThreshold}
+          min={0}
+          max={100}
+          className="w-full"
+          addonAfter="/ 100"
+          onChange={(next) => set('autoThreshold', typeof next === 'number' ? next : null)}
+        />
+      </VacancyField>
+
+      <VacancyField field="manualThreshold" span={12} error={errors.manualThreshold}>
+        <InputNumber
+          {...fieldAria('manualThreshold', errors.manualThreshold)}
+          status={errors.manualThreshold ? 'error' : undefined}
+          value={values.manualThreshold}
+          min={0}
+          max={100}
+          className="w-full"
+          addonAfter="/ 100"
+          onChange={(next) => set('manualThreshold', typeof next === 'number' ? next : null)}
+        />
+      </VacancyField>
+
+      <VacancyField field="blindModeEnabled" span={24} hint="Hide candidate identity during screening.">
+        <Switch
+          id={vacancyFieldId('blindModeEnabled')}
+          checked={values.blindModeEnabled}
+          onChange={(checked) => set('blindModeEnabled', checked)}
+        />
       </VacancyField>
 
       <VacancyField

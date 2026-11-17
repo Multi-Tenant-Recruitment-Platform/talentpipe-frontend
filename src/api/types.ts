@@ -662,6 +662,12 @@ export interface JobVacancyRequest {
   assignedRecruiterId: string | null;
   hiringManagerId: string | null;
   recruitmentPipelineId: string | null;
+  /** Screening overrides; omitted or null uses the selected template's defaults. */
+  autoThreshold?: number | null;
+  manualThreshold?: number | null;
+  idealMatchingEnabled?: boolean | null;
+  /** Hide candidate identity during screening; independent of ideal matching. */
+  blindModeEnabled?: boolean | null;
   screeningQuestions: string[];
 
   /**
@@ -693,6 +699,10 @@ export type JobVacancyUpdateRequest = Omit<JobVacancyRequest, 'status'> & { vers
 
 /** A stored vacancy: everything submitted, plus what only the server knows. */
 export interface JobVacancyResponse extends JobVacancyRequest {
+  /** Template name captured when the vacancy was created. */
+  recruitmentPipelineName?: string | null;
+  /** Vacancy-owned snapshots, independent of later template edits. */
+  stages?: JobStageResponse[];
   id: string;
   /** Optimistic-lock counter; echoed back on PUT. */
   version: number;
@@ -788,6 +798,11 @@ export interface PipelineStage {
   benchmark: number | null;
 }
 
+/** A vacancy-owned stage returned by `GET /jobs/{id}/stages`, in position order. */
+export interface JobStageResponse extends PipelineStage {
+  jobId: string;
+}
+
 /** Fields the list and the full template share. */
 interface PipelineTemplateBase {
   id: string;
@@ -800,6 +815,8 @@ interface PipelineTemplateBase {
   defaultManualThreshold: number;
   /** Whether jobs using this template may add an ideal-candidate scorecard. */
   idealMatchingEnabled: boolean;
+  /** Default blind-screening setting. Absent on older servers. */
+  blindModeEnabled?: boolean;
   status: PipelineTemplateStatus;
   stageCount: number;
   interviewRoundCount: number;

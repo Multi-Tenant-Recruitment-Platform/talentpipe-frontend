@@ -62,6 +62,7 @@ export function CreateJobVacancyPage() {
     return (
       <VacancyForm
         mode="create"
+        requirePipeline
         initialValues={EMPTY_VACANCY_VALUES}
         exitTo="/dashboard/jobs"
         exitLabel="Back to vacancies"
@@ -110,6 +111,7 @@ export function CreateJobVacancyPage() {
       // Keyed by the source, so copying a different vacancy starts a fresh form.
       key={original.id}
       mode="duplicate"
+      requirePipeline
       initialValues={duplicateValues(original)}
       banner={
         <Alert tone="info" className="mb-5">

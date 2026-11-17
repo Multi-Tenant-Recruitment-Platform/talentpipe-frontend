@@ -75,6 +75,9 @@ export interface JobVacancyFormValues {
   assignedRecruiterId: string;
   hiringManagerId: string;
   recruitmentPipelineId: string;
+  autoThreshold: number | null;
+  manualThreshold: number | null;
+  blindModeEnabled: boolean;
   screeningQuestions: string[];
 }
 
@@ -116,6 +119,9 @@ export const EMPTY_VACANCY_VALUES: JobVacancyFormValues = {
   assignedRecruiterId: '',
   hiringManagerId: '',
   recruitmentPipelineId: '',
+  autoThreshold: null,
+  manualThreshold: null,
+  blindModeEnabled: false,
   screeningQuestions: [],
 };
 
@@ -150,6 +156,9 @@ export const FIELD_LABELS: Record<JobVacancyField, string> = {
   assignedRecruiterId: 'Assigned recruiter',
   hiringManagerId: 'Hiring manager',
   recruitmentPipelineId: 'Recruitment pipeline',
+  autoThreshold: 'Auto threshold',
+  manualThreshold: 'Manual threshold',
+  blindModeEnabled: 'Blind mode',
   screeningQuestions: 'Screening questions',
 };
 
@@ -329,23 +338,22 @@ export const VACANCY_SECTIONS: VacancySection[] = [
     fields: ['workingDays', 'workingHours', 'shiftType', 'expectedHoursPerWeek'],
     required: [],
   },
-  // Hidden from the form: every field in it is optional, and the pipeline and
-  // recruiter modules it points at are not built yet. The fields stay in
-  // JobVacancyFormValues and on the wire, so restoring the section is putting
-  // this entry back — nothing stored is lost in the meantime.
-  // {
-  //   id: 'recruitment',
-  //   index: '06',
-  //   title: 'Recruitment settings',
-  //   summary: 'Who runs this hire, and what every applicant is asked.',
-  //   fields: [
-  //     'assignedRecruiterId',
-  //     'hiringManagerId',
-  //     'recruitmentPipelineId',
-  //     'screeningQuestions',
-  //   ],
-  //   required: [],
-  // },
+  {
+    id: 'recruitment',
+    index: '06',
+    title: 'Recruitment settings',
+    summary: 'Choose a pipeline template and configure candidate screening.',
+    fields: [
+      'assignedRecruiterId',
+      'hiringManagerId',
+      'recruitmentPipelineId',
+      'autoThreshold',
+      'manualThreshold',
+      'blindModeEnabled',
+      'screeningQuestions',
+    ],
+    required: ['recruitmentPipelineId'],
+  },
 ];
 
 /** Every field in reading order — the order a failed submit walks. */
@@ -570,9 +578,34 @@ function checkSchedule(n: JobVacancyFormValues, errors: JobVacancyFieldErrors): 
 }
 
 function checkRecruitment(n: JobVacancyFormValues, errors: JobVacancyFieldErrors): void {
+  Object.assign(errors, validatePipelineConfiguration(n));
   if (n.screeningQuestions.length > MAX_SCREENING_QUESTIONS) {
     errors.screeningQuestions = `Ask at most ${MAX_SCREENING_QUESTIONS} screening questions — past that it is an interview.`;
   }
+}
+
+/** Pipeline rules also apply to draft saves, and update as configuration changes. */
+export function validatePipelineConfiguration(
+  n: Pick<JobVacancyFormValues, 'recruitmentPipelineId' | 'autoThreshold' | 'manualThreshold'>,
+): JobVacancyFieldErrors {
+  const errors: JobVacancyFieldErrors = {};
+  if (n.recruitmentPipelineId === '') {
+    errors.recruitmentPipelineId = 'Choose a pipeline template before saving this vacancy.';
+  }
+  for (const field of ['autoThreshold', 'manualThreshold'] as const) {
+    const value = n[field];
+    if (value === null || !Number.isFinite(value) || value < 0 || value > 100) {
+      errors[field] = 'Enter a value between 0 and 100.';
+    }
+  }
+  if (
+    n.autoThreshold !== null &&
+    n.manualThreshold !== null &&
+    n.manualThreshold >= n.autoThreshold
+  ) {
+    errors.manualThreshold = 'Manual threshold must be lower than auto threshold';
+  }
+  return errors;
 }
 
 /** The first invalid field in reading order, so a failed submit lands there. */
@@ -744,6 +777,9 @@ function toVacancyContent(values: JobVacancyFormValues): Omit<JobVacancyRequest,
     assignedRecruiterId: orNull(n.assignedRecruiterId),
     hiringManagerId: orNull(n.hiringManagerId),
     recruitmentPipelineId: orNull(n.recruitmentPipelineId),
+    autoThreshold: n.autoThreshold,
+    manualThreshold: n.manualThreshold,
+    blindModeEnabled: n.blindModeEnabled,
     screeningQuestions: n.screeningQuestions,
   };
 }
@@ -787,6 +823,9 @@ export function toFormValues(vacancy: JobVacancyResponse): JobVacancyFormValues 
     assignedRecruiterId: vacancy.assignedRecruiterId ?? '',
     hiringManagerId: vacancy.hiringManagerId ?? '',
     recruitmentPipelineId: vacancy.recruitmentPipelineId ?? '',
+    autoThreshold: vacancy.autoThreshold ?? null,
+    manualThreshold: vacancy.manualThreshold ?? null,
+    blindModeEnabled: vacancy.blindModeEnabled ?? false,
     screeningQuestions: [...(vacancy.screeningQuestions ?? [])],
   };
 }
