@@ -50,11 +50,14 @@ const api = vi.hoisted(() => ({
   hiringTeam: vi.fn(),
   replaceHiringTeam: vi.fn(),
   switchFeatures: vi.fn(),
+  interviewPanels: vi.fn(),
+  replaceInterviewPanels: vi.fn(),
+  searchAssignableMembers: vi.fn(),
 }));
 vi.mock('../../api/jobs', () => ({ jobsApi: api }));
 
 /** The company's active templates, as the job form's picker reads them. */
-const templatesApi = vi.hoisted(() => ({ list: vi.fn() }));
+const templatesApi = vi.hoisted(() => ({ list: vi.fn(), get: vi.fn() }));
 vi.mock('../../api/pipelineTemplates', () => ({
   pipelineTemplatesApi: templatesApi,
   toSummary: <T,>(template: T) => template,
@@ -131,6 +134,11 @@ beforeEach(() => {
   api.list.mockResolvedValue([]);
   templatesApi.list.mockReset();
   templatesApi.list.mockResolvedValue([engineering, sales]);
+  // No interview rounds unless a test gives the template some, so nothing needs staffing.
+  templatesApi.get.mockReset();
+  templatesApi.get.mockImplementation(async (id: string) => ({ ...engineering, id, stages: [] }));
+  api.interviewPanels.mockResolvedValue([]);
+  api.searchAssignableMembers.mockResolvedValue([]);
   api.hiringTeam.mockResolvedValue({ vacancyId: 'v-1', recruiter: null, hiringManager: null, members: [] });
   profileSaved.industry = '';
   profileSaved.additionalIndustries = [];
@@ -983,6 +991,122 @@ describe('who created a vacancy', () => {
     render(<VacancyRoutes path="/dashboard/jobs/v-1" />);
     await screen.findByRole('heading', { level: 1 });
     expect(screen.queryByText(/^by /)).toBeNull();
+  });
+});
+
+describe('interview panels', () => {
+  const ada = { id: 'u-ada', firstName: 'Ada', lastName: 'Lovelace', email: 'ada@acme.test', roleName: 'Interviewer', status: 'ACTIVE' };
+  const grace = { id: 'u-grace', firstName: 'Grace', lastName: 'Hopper', email: 'grace@acme.test', roleName: 'Owner', status: 'ACTIVE' };
+  const round = (interviewerCount: number | null, interviewers: (typeof ada)[]) => ({
+    stageId: 's-2',
+    position: 2,
+    name: 'Technical interview',
+    benchmark: 70,
+    interviewerCount,
+    interviewers,
+  });
+
+  it('holds Publish until every round has exactly its interviewers, and names the round', async () => {
+    const user = userEvent.setup();
+    api.get.mockResolvedValue(makeVacancy({ id: 'v-1', status: 'DRAFT', version: 1 }));
+    api.interviewPanels.mockResolvedValue([round(2, [ada])]);
+    render(<VacancyRoutes path="/dashboard/jobs/v-1/edit" />);
+
+    await screen.findByLabelText(/job title/i);
+    await user.click(screen.getByRole('button', { name: /publish vacancy/i }));
+
+    expect(await screen.findByText('Technical interview needs 2 interviewers, 1 chosen.')).toBeInTheDocument();
+    expect(screen.queryByRole('alertdialog', { name: /publish this vacancy/i })).not.toBeInTheDocument();
+    expect(api.update).not.toHaveBeenCalled();
+  });
+
+  it('saves a draft with a round still short, sending the panel as it stands', async () => {
+    const user = userEvent.setup();
+    const draft = makeVacancy({ id: 'v-1', status: 'DRAFT', version: 1 });
+    api.get.mockResolvedValue(draft);
+    api.update.mockResolvedValue({ ...draft, version: 2 });
+    api.interviewPanels.mockResolvedValue([round(2, [ada])]);
+    render(<VacancyRoutes path="/dashboard/jobs/v-1/edit" />);
+
+    await screen.findByLabelText(/job title/i);
+    await user.click(screen.getByRole('button', { name: /save draft/i }));
+
+    await waitFor(() =>
+      expect(api.update).toHaveBeenCalledWith(
+        'v-1',
+        expect.objectContaining({
+          interviewPanels: [{ stagePosition: 2, interviewerCount: 2, interviewerIds: ['u-ada'] }],
+        }),
+      ),
+    );
+  });
+
+  it('asks for the number first, then searches the company from the first letter typed', async () => {
+    const user = userEvent.setup();
+    const draft = makeVacancy({ id: 'v-1', status: 'DRAFT', version: 1 });
+    api.get.mockResolvedValue(draft);
+    api.update.mockResolvedValue({ ...draft, version: 2 });
+    api.interviewPanels.mockResolvedValue([round(null, [])]);
+    api.searchAssignableMembers.mockResolvedValue([grace]);
+    render(<VacancyRoutes path="/dashboard/jobs/v-1/edit" />);
+
+    const picker = await screen.findByLabelText('Interviewers for Technical interview');
+    expect(picker).toBeDisabled();
+
+    fireEvent.change(screen.getByLabelText('Number of interviewers'), { target: { value: '1' } });
+    await waitFor(() => expect(screen.getByLabelText('Interviewers for Technical interview')).not.toBeDisabled());
+
+    await user.click(screen.getByLabelText('Interviewers for Technical interview'));
+    await user.keyboard('g');
+    await waitFor(() => expect(api.searchAssignableMembers).toHaveBeenCalledWith('g'));
+    await user.click(await screen.findByText('Grace Hopper'));
+
+    await user.click(screen.getByRole('button', { name: /save draft/i }));
+    await waitFor(() =>
+      expect(api.update).toHaveBeenCalledWith(
+        'v-1',
+        expect.objectContaining({
+          interviewPanels: [{ stagePosition: 2, interviewerCount: 1, interviewerIds: ['u-grace'] }],
+        }),
+      ),
+    );
+  });
+
+  it('never fills a panel past its number: lowering it shows what to take off', async () => {
+    api.get.mockResolvedValue(makeVacancy({ id: 'v-1', status: 'DRAFT', version: 1 }));
+    api.interviewPanels.mockResolvedValue([round(2, [ada, grace])]);
+    render(<VacancyRoutes path="/dashboard/jobs/v-1/edit" />);
+
+    fireEvent.change(await screen.findByLabelText('Number of interviewers'), { target: { value: '1' } });
+
+    expect(
+      await screen.findByText(
+        'Technical interview has 2 interviewers but needs only 1. Remove some or raise the number.',
+      ),
+    ).toBeInTheDocument();
+    // Both stay chosen until someone decides which one goes.
+    expect(screen.getByText('Ada Lovelace')).toBeInTheDocument();
+    expect(screen.getByText('Grace Hopper')).toBeInTheDocument();
+  });
+
+  it('reads a new vacancy’s rounds from the template it is created on', async () => {
+    const user = userEvent.setup();
+    templatesApi.get.mockImplementation(async (id: string) => ({
+      ...engineering,
+      id,
+      stages: [
+        { id: 's-0', position: 0, stageType: 'POST_APPLICATION', name: 'Applied', benchmark: null },
+        { id: 's-2', position: 2, stageType: 'INTERVIEW', name: 'Technical interview', benchmark: 70 },
+        { id: 's-3', position: 3, stageType: 'ONBOARD', name: 'Onboard', benchmark: null },
+      ],
+    }));
+    render(<VacancyRoutes path="/dashboard/jobs/new" />);
+
+    await chooseTemplate(user, 'Engineering hiring');
+
+    expect(await screen.findByLabelText('Interviewers for Technical interview')).toBeDisabled();
+    expect(templatesApi.get).toHaveBeenCalledWith(engineering.id);
+    expect(screen.getByText('Not staffed yet')).toBeInTheDocument();
   });
 });
 

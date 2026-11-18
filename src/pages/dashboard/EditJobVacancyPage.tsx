@@ -13,10 +13,12 @@ import {
   canEditVacancy,
   creatorLabel,
   toFormValues,
+  toPanelDrafts,
   toVacancyUpdate,
   VACANCY_STATUS_LABEL,
   type JobVacancyFormValues,
 } from '../../dashboard/jobVacancy';
+import { useInterviewPanels } from '../../dashboard/useInterviewPanels';
 import { useJobVacancy } from '../../dashboard/useJobVacancies';
 
 /**
@@ -30,12 +32,17 @@ import { useJobVacancy } from '../../dashboard/useJobVacancies';
  * answer becomes the new one. Without that, two recruiters editing the same
  * vacancy would each silently overwrite the other; with it, the second save is
  * refused and told why.</p>
+ *
+ * <p>The interview panels are read before the form opens and saved with the
+ * content, so what Cancel calls "unsaved" includes them and a published
+ * vacancy's panels are checked as strictly as its advert.</p>
  */
 export function EditJobVacancyPage() {
   const { id = '' } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
   const { vacancy, loading, error, notFound, refresh } = useJobVacancy(id);
+  const panels = useInterviewPanels(id);
   const { user } = useAuth();
 
   // The version the next save is made against. A ref, not state: it moves on
@@ -48,7 +55,13 @@ export function EditJobVacancyPage() {
     }
   }, [vacancy]);
 
-  const initialValues = useMemo(() => (vacancy ? toFormValues(vacancy) : null), [vacancy]);
+  const initialValues = useMemo(
+    () =>
+      vacancy && panels.panels
+        ? { ...toFormValues(vacancy), interviewPanels: toPanelDrafts(panels.panels) }
+        : null,
+    [vacancy, panels.panels],
+  );
   const initialNotice = (location.state as { notice?: VacancyNoticeValue } | null)?.notice ?? null;
   const detailPath = `/dashboard/jobs/${id}`;
 
@@ -88,10 +101,22 @@ export function EditJobVacancyPage() {
     });
   }
 
-  if (loading) {
+  if (loading || (vacancy && panels.loading)) {
     return (
       <Card>
         <RowsSkeleton rows={5} label="Loading vacancy…" />
+      </Card>
+    );
+  }
+
+  if (vacancy && !notFound && !error && panels.error) {
+    return (
+      <Card>
+        <ErrorState
+          title="We couldn't load this vacancy's interview panels"
+          description={panels.error}
+          onRetry={() => void panels.refresh()}
+        />
       </Card>
     );
   }
