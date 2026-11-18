@@ -1108,6 +1108,17 @@ describe('interview panels', () => {
     expect(templatesApi.get).toHaveBeenCalledWith(engineering.id);
     expect(screen.getByText('Not staffed yet')).toBeInTheDocument();
   });
+
+  it('lists each round and who runs it on the vacancy’s page', async () => {
+    api.get.mockResolvedValue(makeVacancy({ id: 'v-1', status: 'PUBLISHED' }));
+    api.interviewPanels.mockResolvedValue([round(1, [ada])]);
+    render(<VacancyRoutes path="/dashboard/jobs/v-1" />);
+
+    expect(await screen.findByRole('heading', { name: 'Interview panels' })).toBeInTheDocument();
+    expect(await screen.findByText('Technical interview')).toBeInTheDocument();
+    expect(screen.getByText('Ada Lovelace')).toBeInTheDocument();
+    expect(screen.getByText('1 of 1')).toBeInTheDocument();
+  });
 });
 
 describe('the AI switches', () => {
