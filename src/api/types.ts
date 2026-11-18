@@ -443,6 +443,36 @@ export interface HiringTeamResponse {
   members: MemberSummary[];
 }
 
+/* --- Interview panels (V25) ---------------------------------------------- */
+
+/**
+ * The panel of one interview round, as a create, an edit or
+ * `PUT /jobs/{id}/interview-panels` sends it. The round is named by its
+ * position in the pipeline: a new vacancy's stages have no ids yet.
+ *
+ * <p>No count and nobody chosen means no panel yet, which a draft may have.
+ * People need a count first, and never more people than it.</p>
+ */
+export interface InterviewPanelRequest {
+  stagePosition: number;
+  /** 1–10; null while undecided. */
+  interviewerCount: number | null;
+  /** Active company members, any role. */
+  interviewerIds: string[];
+}
+
+/** One interview round of a vacancy and who runs it. Company-side only — never on the public board. */
+export interface InterviewPanelResponse {
+  stageId: string;
+  position: number;
+  name: string;
+  benchmark: number | null;
+  /** Null until someone decides how many interviewers the round needs. */
+  interviewerCount: number | null;
+  /** In the order they were added; a since-disabled member keeps their place until taken off. */
+  interviewers: MemberSummary[];
+}
+
 /* --- Feature switches (PB-015, ADR-13) ------------------------------------ */
 
 /** `PATCH /jobs/{id}/features`; a switch left out keeps its value. */
@@ -689,6 +719,14 @@ export interface JobVacancyRequest {
    * lifecycle endpoint, never through a field edit.
    */
   status: VacancyStatus;
+
+  /**
+   * Who interviews in each interview round. Left out (or null), a new vacancy
+   * starts without panels and an edit keeps the stored ones; sent, the list
+   * replaces them all. Publishing needs every round to have exactly as many
+   * interviewers as its count.
+   */
+  interviewPanels?: InterviewPanelRequest[] | null;
 }
 
 /**
@@ -709,8 +747,8 @@ export type JobVacancyUpdateRequest = Omit<JobVacancyRequest, 'status' | 'pipeli
 /** The pipeline fields, as a stored vacancy reports them. */
 type StoredPipelineFields = 'pipelineTemplateId' | 'autoThreshold' | 'manualThreshold' | 'blindModeEnabled';
 
-/** A stored vacancy: everything submitted, plus what only the server knows. */
-export interface JobVacancyResponse extends Omit<JobVacancyRequest, StoredPipelineFields> {
+/** A stored vacancy: everything submitted, plus what only the server knows. Panels are read separately. */
+export interface JobVacancyResponse extends Omit<JobVacancyRequest, StoredPipelineFields | 'interviewPanels'> {
   /**
    * The template the vacancy was created from. Null for vacancies older than
    * templates, and once the template is deleted — the vacancy keeps its own
@@ -730,6 +768,8 @@ export interface JobVacancyResponse extends Omit<JobVacancyRequest, StoredPipeli
   version: number;
   /** Who filed it; null for vacancies filed before this was recorded. */
   createdBy?: string | null;
+  /** Their name, so no screen needs the team roster to say who filed it. Null when unknown. */
+  createdByName?: string | null;
   createdAt: string;
   updatedAt: string;
   /** Set on the transition into each state; null until then. */
