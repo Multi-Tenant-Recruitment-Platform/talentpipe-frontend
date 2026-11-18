@@ -945,6 +945,21 @@ export function duplicateValues(vacancy: JobVacancyResponse): JobVacancyFormValu
 
 /* --- Labels for reading back --------------------------------------------- */
 
+/**
+ * Who filed a vacancy, as a screen says it: "You" for the reader, otherwise
+ * the name the server sent. `null` when nobody is recorded — vacancies older
+ * than the record, or a creator who has since been removed.
+ */
+export function creatorLabel(
+  vacancy: Pick<JobVacancyResponse, 'createdBy' | 'createdByName'>,
+  viewerId: string | undefined,
+): string | null {
+  if (vacancy.createdBy && vacancy.createdBy === viewerId) {
+    return 'You';
+  }
+  return vacancy.createdByName?.trim() || null;
+}
+
 const labelFrom = <T extends string>(catalogue: { id: T; label: string }[], id: T | null) =>
   catalogue.find((entry) => entry.id === id)?.label ?? null;
 

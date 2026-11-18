@@ -8,8 +8,10 @@ import { ErrorState, RowsSkeleton } from '../../components/dashboard/ErrorState'
 import { VacancyForm } from '../../components/jobs/VacancyForm';
 import type { VacancyNoticeValue } from '../../components/jobs/VacancyNotice';
 import { Alert } from '../../components/ui/Alert';
+import { useAuth } from '../../auth/AuthContext';
 import {
   canEditVacancy,
+  creatorLabel,
   toFormValues,
   toVacancyUpdate,
   VACANCY_STATUS_LABEL,
@@ -34,6 +36,7 @@ export function EditJobVacancyPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { vacancy, loading, error, notFound, refresh } = useJobVacancy(id);
+  const { user } = useAuth();
 
   // The version the next save is made against. A ref, not state: it moves on
   // after every save, and re-rendering the form for it would reset nothing
@@ -153,6 +156,7 @@ export function EditJobVacancyPage() {
       }
       exitTo={detailPath}
       exitLabel="Back to vacancy"
+      creator={creatorLabel(vacancy, user?.id)}
       onSaveDraft={live ? undefined : saveDraft}
       onPublish={live ? undefined : publish}
       onSaveChanges={live ? saveChanges : undefined}

@@ -6,6 +6,7 @@ import { EmptyState } from '../../components/dashboard/EmptyState';
 import { ErrorState, RowsSkeleton } from '../../components/dashboard/ErrorState';
 import { VacancyForm } from '../../components/jobs/VacancyForm';
 import { Alert } from '../../components/ui/Alert';
+import { useAuth } from '../../auth/AuthContext';
 import {
   duplicateValues,
   EMPTY_VACANCY_VALUES,
@@ -31,6 +32,9 @@ export function CreateJobVacancyPage() {
   const [params] = useSearchParams();
   const fromId = params.get('from');
   const source = useJobVacancy(fromId);
+  const { user } = useAuth();
+  // Whoever files it is recorded as its creator.
+  const creator = user ? `${`${user.firstName} ${user.lastName}`.trim()} (you)` : null;
 
   async function saveDraft(values: JobVacancyFormValues) {
     const created = await jobsApi.create(toVacancyRequest(values, 'DRAFT'));
@@ -65,6 +69,7 @@ export function CreateJobVacancyPage() {
         initialValues={EMPTY_VACANCY_VALUES}
         exitTo="/dashboard/jobs"
         exitLabel="Back to vacancies"
+        creator={creator}
         onSaveDraft={saveDraft}
         onPublish={publish}
       />
@@ -119,6 +124,7 @@ export function CreateJobVacancyPage() {
       }
       exitTo={`/dashboard/jobs/${original.id}`}
       exitLabel="Back to original"
+      creator={creator}
       onSaveDraft={saveDraft}
       onPublish={publish}
     />

@@ -1,3 +1,4 @@
+import { UserOutlined } from '@ant-design/icons';
 import { Flex, Typography } from 'antd';
 import {
   useCallback,
@@ -103,6 +104,7 @@ export function VacancyForm({
   initialNotice = null,
   exitTo,
   exitLabel,
+  creator = null,
   onSaveDraft,
   onPublish,
   onSaveChanges,
@@ -116,6 +118,8 @@ export function VacancyForm({
   /** Where Cancel and Back go. */
   exitTo: string;
   exitLabel: string;
+  /** Who filed the vacancy ("You", or a name); for a new one, the person filling it in. */
+  creator?: string | null;
   /** Unvalidated save. Offered in every mode but edit-published. */
   onSaveDraft?: (values: JobVacancyFormValues) => Promise<void>;
   /** Called after validation and confirmation. */
@@ -357,6 +361,13 @@ export function VacancyForm({
           {exitLabel}
         </Button>
       </PageHeader>
+
+      {creator && (
+        <p className="-mt-2 mb-5 flex items-center gap-1.5 text-small text-slate-500">
+          <UserOutlined aria-hidden className="text-[14px]" />
+          Created by <span className="font-medium text-slate-700">{creator}</span>
+        </p>
+      )}
 
       {/* Job vacancy form — the long form and its rail.
           The form is one scrollable page rather than a wizard, so the reader needs a

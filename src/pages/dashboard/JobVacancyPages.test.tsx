@@ -942,14 +942,35 @@ describe('who works on a vacancy', () => {
 });
 
 describe('who created a vacancy', () => {
-  it('is named on its page when the team list knows them', async () => {
-    team.activeMembers = [
-      { ...person('u-3', 'Amaya', 'Perera', 'Recruiter'), role: 'HR_MANAGER', tenantId: 't-1', createdAt: '' },
-    ];
-    api.get.mockResolvedValue(makeVacancy({ id: 'v-1', status: 'PUBLISHED', createdBy: 'u-3' }));
+  it('is named on its page by the server, even for a role that cannot read the team list', async () => {
+    // No team roster at all, as for an HR manager without team.view.
+    team.activeMembers = [];
+    api.get.mockResolvedValue(
+      makeVacancy({ id: 'v-1', status: 'PUBLISHED', createdBy: 'u-3', createdByName: 'Amaya Perera' }),
+    );
     render(<VacancyRoutes path="/dashboard/jobs/v-1" />);
 
     expect(await screen.findByText('by Amaya Perera', { exact: false })).toBeInTheDocument();
+  });
+
+  it('is named in the vacancy list and on the edit page', async () => {
+    const vacancy = makeVacancy({ id: 'v-1', status: 'DRAFT', createdBy: 'u-3', createdByName: 'Amaya Perera' });
+    api.list.mockResolvedValue([vacancy]);
+    const { unmount } = render(<VacancyRoutes path="/dashboard/jobs" />);
+    expect(await screen.findByText(/Created by Amaya Perera/)).toBeInTheDocument();
+    unmount();
+
+    api.get.mockResolvedValue(vacancy);
+    render(<VacancyRoutes path="/dashboard/jobs/v-1/edit" />);
+    expect(await screen.findByText('Amaya Perera')).toBeInTheDocument();
+    expect(screen.getByText(/Created by/)).toBeInTheDocument();
+  });
+
+  it('names the person filling in a new vacancy as its creator', async () => {
+    setAuth({ user: makeUser({ firstName: 'Nimal', lastName: 'Silva' }), initializing: false });
+    render(<VacancyRoutes path="/dashboard/jobs/new" />);
+
+    expect(await screen.findByText('Nimal Silva (you)')).toBeInTheDocument();
   });
 
   it('says "You" for the signed-in member, and nothing for someone unknown', async () => {
