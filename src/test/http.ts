@@ -1,6 +1,6 @@
 import { http, HttpResponse } from 'msw';
 import { setupServer } from 'msw/node';
-import type { JobVacancyRequest, JobVacancyResponse, PipelineTemplate } from '../api/types';
+import type { FieldErrorDetail, JobVacancyRequest, JobVacancyResponse, PipelineTemplate } from '../api/types';
 
 /** A rejection in the plain `{ isAxiosError: true, response }` shape that `axios.isAxiosError` checks. */
 export const axiosError = (status: number, message = 'boom') => ({
@@ -33,6 +33,53 @@ const notFound = (path: string) => HttpResponse.json({
   code: 'NOT_FOUND', message: 'Resource not found', path,
 }, { status: 404 });
 
+/** 400 as the backend's validation answers it: `field: message` pairs, sorted, plus the structured list. */
+const validationFailed = (path: string, fieldErrors: FieldErrorDetail[]) => {
+  const sorted = [...fieldErrors].sort((a, b) => a.field.localeCompare(b.field) || a.message.localeCompare(b.message));
+  return HttpResponse.json({
+    timestamp: new Date().toISOString(), status: 400, error: 'Bad Request', code: 'VALIDATION_FAILED',
+    message: sorted.map((error) => `${error.field}: ${error.message}`).join('; '), path, fieldErrors: sorted,
+  }, { status: 400 });
+};
+
+/** 422: a business rule, refused with the backend's own sentence. */
+const businessRule = (path: string, message: string) => HttpResponse.json({
+  timestamp: new Date().toISOString(), status: 422, error: 'Unprocessable Entity',
+  code: 'BUSINESS_RULE', message, path,
+}, { status: 422 });
+
+/**
+ * The checks `POST /jobs` makes before anything is stored, in the backend's
+ * order: request validation (400), then the template lookup (404), then the
+ * threshold rule on the values the template fills in (422). The mock must
+ * refuse what the server refuses, or a test passes against a contract that
+ * fails in production (BUG-03).
+ */
+function refuseNewJob(body: Partial<JobVacancyRequest>, path: string) {
+  const fieldErrors: FieldErrorDetail[] = [];
+  if (!body.pipelineTemplateId) {
+    fieldErrors.push({ field: 'pipelineTemplateId', message: 'Pipeline template is required.' });
+  }
+  for (const [field, word] of [['autoThreshold', 'auto'], ['manualThreshold', 'manual']] as const) {
+    const value = body[field];
+    if (value !== null && value !== undefined && (value < 0 || value > 100)) {
+      fieldErrors.push({ field, message: `Set the ${word} threshold between 0 and 100.` });
+    }
+  }
+  if (fieldErrors.length > 0) {
+    return validationFailed(path, fieldErrors);
+  }
+  if (body.pipelineTemplateId !== template.id) {
+    return notFound(path);
+  }
+  const auto = body.autoThreshold ?? template.defaultAutoThreshold;
+  const manual = body.manualThreshold ?? template.defaultManualThreshold;
+  if (manual >= auto) {
+    return businessRule(path, 'The manual threshold must be lower than the auto threshold.');
+  }
+  return null;
+}
+
 /** Shared handlers for the local test harness; individual tests may override them. */
 export const handlers = [
   http.get('*/api/v1/pipeline-templates', ({ request }) => {
@@ -50,23 +97,24 @@ export const handlers = [
     params.id === template.id ? HttpResponse.json(template) : notFound(new URL(request.url).pathname)),
   http.post('*/api/v1/jobs', async ({ request }) => {
     const body = await request.json() as JobVacancyRequest;
-    if (body.pipelineTemplateId && body.pipelineTemplateId !== template.id) {
-      return notFound(new URL(request.url).pathname);
+    const refused = refuseNewJob(body, new URL(request.url).pathname);
+    if (refused) {
+      return refused;
     }
-    const selected = body.pipelineTemplateId ? template : null;
+    const selected = template;
     const id = crypto.randomUUID();
     const now = new Date().toISOString();
     const job: JobVacancyResponse = {
       ...body, id, version: 0, createdAt: now, updatedAt: now,
       publishedAt: body.status === 'PUBLISHED' ? now : null,
       closedAt: null, archivedAt: null, applicantCount: 0,
-      pipelineTemplateName: selected?.name ?? null,
-      autoThreshold: body.autoThreshold ?? selected?.defaultAutoThreshold ?? null,
-      manualThreshold: body.manualThreshold ?? selected?.defaultManualThreshold ?? null,
-      stageCount: selected?.stageCount ?? null,
-      interviewRoundCount: selected?.interviewRoundCount ?? null,
-      blindModeEnabled: body.blindModeEnabled ?? selected?.blindModeEnabled ?? false,
-      stages: selected?.stages.map((stage) => ({ ...stage, id: crypto.randomUUID(), jobId: id })) ?? [],
+      pipelineTemplateName: selected.name,
+      autoThreshold: body.autoThreshold ?? selected.defaultAutoThreshold,
+      manualThreshold: body.manualThreshold ?? selected.defaultManualThreshold,
+      stageCount: selected.stageCount,
+      interviewRoundCount: selected.interviewRoundCount,
+      blindModeEnabled: body.blindModeEnabled ?? selected.blindModeEnabled,
+      stages: selected.stages.map((stage) => ({ ...stage, id: crypto.randomUUID(), jobId: id })),
     };
     vacancies.set(id, job);
     return HttpResponse.json(job, { status: 201 });
