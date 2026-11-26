@@ -7,6 +7,7 @@ import { EmptyState } from '../../components/dashboard/EmptyState';
 import { bannerActions, pageBanner } from '../../components/dashboard/PageHeader';
 import { HeroBackdrop } from '../../components/jobs/HeroBand';
 import { HiringTeamCard } from '../../components/jobs/HiringTeamCard';
+import { InterviewPanelsCard } from '../../components/jobs/InterviewPanelsCard';
 import { JobPipelinePanel } from '../../components/jobs/JobPipelinePanel';
 import { ErrorState, RowsSkeleton } from '../../components/dashboard/ErrorState';
 import { useVacancyLifecycle } from '../../components/jobs/useVacancyLifecycle';
@@ -248,6 +249,7 @@ export function VacancyDetailPage() {
         >
           <VacancyLifecycleCard vacancy={vacancy} />
           <HiringTeamCard vacancy={vacancy} />
+          <InterviewPanelsCard vacancy={vacancy} />
           <VacancyFeaturesCard vacancy={vacancy} onChanged={replace} />
           {/* TODO(applications): the Candidates and Pipeline views for this
               role attach here once the applications module exists. No empty

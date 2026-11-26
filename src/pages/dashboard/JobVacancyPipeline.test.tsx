@@ -146,6 +146,7 @@ describe('detail page pipeline track', () => {
     server.use(
       http.get('*/api/v1/jobs/v-1', () => HttpResponse.json(makeVacancy({ stages, autoThreshold: 100, manualThreshold: 0 }))),
       http.get('*/api/v1/jobs/v-1/hiring-team', () => HttpResponse.json({ vacancyId: 'v-1', recruiter: null, hiringManager: null, members: [] })),
+      http.get('*/api/v1/jobs/v-1/interview-panels', () => HttpResponse.json([])),
     );
     render(<MemoryRouter initialEntries={['/dashboard/jobs/v-1']}>
       <Routes><Route path="/dashboard/jobs/:id" element={<VacancyDetailPage />} /></Routes>
