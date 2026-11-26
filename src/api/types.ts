@@ -599,6 +599,8 @@ export interface JobDetail extends JobSummary {
   jobDescription?: string | null;
   keyResponsibilities?: string[] | null;
   preferredSkills?: string[] | null;
+  /** Tools, technologies and platforms the role uses. */
+  toolsAndTechnologies?: string[] | null;
   education?: string | null;
   certifications?: string[] | null;
   languageRequirements?: string[] | null;
@@ -669,6 +671,8 @@ export interface JobVacancyRequest {
 
   requiredSkills: string[];
   preferredSkills: string[];
+  /** Tools, technologies and platforms the person will use — Docker, Git, AWS. */
+  toolsAndTechnologies?: string[];
   minimumExperienceYears: number | null;
   education: string | null;
   certifications: string[];

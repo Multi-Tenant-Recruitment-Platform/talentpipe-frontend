@@ -58,6 +58,8 @@ export interface JobVacancyFormValues {
 
   requiredSkills: string[];
   preferredSkills: string[];
+  /** Tools, technologies and platforms the person will use — Docker, Git, AWS. */
+  toolsAndTechnologies: string[];
   minimumExperienceYears: number | null;
   education: string;
   certifications: string[];
@@ -141,6 +143,7 @@ export const EMPTY_VACANCY_VALUES: JobVacancyFormValues = {
   keyResponsibilities: [],
   requiredSkills: [],
   preferredSkills: [],
+  toolsAndTechnologies: [],
   minimumExperienceYears: null,
   education: '',
   certifications: [],
@@ -181,6 +184,7 @@ export const FIELD_LABELS: Record<JobVacancyField, string> = {
   keyResponsibilities: 'Key responsibilities',
   requiredSkills: 'Required skills',
   preferredSkills: 'Preferred skills',
+  toolsAndTechnologies: 'Tools & technologies',
   minimumExperienceYears: 'Minimum experience',
   education: 'Education / qualification',
   certifications: 'Certifications',
@@ -332,6 +336,7 @@ export const VACANCY_SECTIONS: VacancySection[] = [
     fields: [
       'requiredSkills',
       'preferredSkills',
+      'toolsAndTechnologies',
       'minimumExperienceYears',
       'education',
       'certifications',
@@ -428,6 +433,7 @@ const LIST_FIELDS = [
   'keyResponsibilities',
   'requiredSkills',
   'preferredSkills',
+  'toolsAndTechnologies',
   'certifications',
   'languageRequirements',
   'screeningQuestions',
@@ -998,6 +1004,7 @@ function toVacancyContent(values: JobVacancyFormValues): VacancyContent {
 
     requiredSkills: n.requiredSkills,
     preferredSkills: n.preferredSkills,
+    toolsAndTechnologies: n.toolsAndTechnologies,
     minimumExperienceYears: n.minimumExperienceYears,
     education: orNull(n.education),
     certifications: n.certifications,
@@ -1044,6 +1051,7 @@ export function toFormValues(vacancy: JobVacancyResponse): JobVacancyFormValues 
     keyResponsibilities: [...(vacancy.keyResponsibilities ?? [])],
     requiredSkills: [...(vacancy.requiredSkills ?? [])],
     preferredSkills: [...(vacancy.preferredSkills ?? [])],
+    toolsAndTechnologies: [...(vacancy.toolsAndTechnologies ?? [])],
     minimumExperienceYears: vacancy.minimumExperienceYears ?? null,
     education: vacancy.education ?? '',
     certifications: [...(vacancy.certifications ?? [])],
