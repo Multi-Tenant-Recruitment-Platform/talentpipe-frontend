@@ -53,6 +53,7 @@ const api = vi.hoisted(() => ({
   interviewPanels: vi.fn(),
   replaceInterviewPanels: vi.fn(),
   searchAssignableMembers: vi.fn(),
+  stages: vi.fn(),
 }));
 vi.mock('../../api/jobs', () => ({ jobsApi: api }));
 
@@ -132,6 +133,7 @@ beforeEach(() => {
     fn.mockReset();
   }
   api.list.mockResolvedValue([]);
+  api.stages.mockResolvedValue([]);
   templatesApi.list.mockReset();
   templatesApi.list.mockResolvedValue([engineering, sales]);
   // No interview rounds unless a test gives the template some, so nothing needs staffing.

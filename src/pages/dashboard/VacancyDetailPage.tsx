@@ -1,5 +1,5 @@
-import { ArrowLeftOutlined, SolutionOutlined } from '@ant-design/icons';
-import { Card, Typography } from 'antd';
+import { ArrowLeftOutlined, EyeInvisibleOutlined, SolutionOutlined } from '@ant-design/icons';
+import { Card, Tag, Typography } from 'antd';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useCan } from '../../auth/useCan';
@@ -8,6 +8,7 @@ import { bannerActions, pageBanner } from '../../components/dashboard/PageHeader
 import { HeroBackdrop } from '../../components/jobs/HeroBand';
 import { HiringTeamCard } from '../../components/jobs/HiringTeamCard';
 import { InterviewPanelsCard } from '../../components/jobs/InterviewPanelsCard';
+import { JobPipelinePanel } from '../../components/jobs/JobPipelinePanel';
 import { ErrorState, RowsSkeleton } from '../../components/dashboard/ErrorState';
 import { useVacancyLifecycle } from '../../components/jobs/useVacancyLifecycle';
 import { VacancyActions } from '../../components/jobs/VacancyActions';
@@ -177,6 +178,9 @@ export function VacancyDetailPage() {
                 {vacancy.title || 'Untitled vacancy'}
               </Typography.Title>
               <VacancyStatusTag value={vacancy.status} />
+              {vacancy.blindModeEnabled && (
+                <Tag color="purple" icon={<EyeInvisibleOutlined aria-hidden />}>Blind Mode</Tag>
+              )}
             </div>
             {meta.length > 0 && <p className="m-0 mt-1 truncate text-small text-slate-300">{meta.join(' · ')}</p>}
             {vacancy.applicationDeadline && (
@@ -230,6 +234,8 @@ export function VacancyDetailPage() {
           .
         </Alert>
       )}
+
+      <JobPipelinePanel key={vacancy.id} vacancy={vacancy} />
 
       <div className="grid items-start gap-6 *:min-w-0 lg:grid-cols-[minmax(0,1fr)_320px]">
         <Card styles={{ body: { padding: space[3] } }}>

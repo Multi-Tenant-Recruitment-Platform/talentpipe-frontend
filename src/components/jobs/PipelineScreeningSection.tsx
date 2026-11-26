@@ -32,7 +32,8 @@ export function PipelineScreeningSection(props: Readonly<VacancySectionProps>) {
 
 function ChooseTemplate({ values, errors, set, mode }: Readonly<VacancySectionProps>) {
   const allow = useCan();
-  const { templates, loading, error, refresh } = usePipelineTemplateList('', false);
+  const { templates: listedTemplates, loading, error, refresh } = usePipelineTemplateList('', false);
+  const templates = listedTemplates.filter((template) => template.status === 'ACTIVE');
 
   // A duplicate arrives with the original's template preselected. Once the
   // list is in, a template that is no longer active cannot be used, so the
