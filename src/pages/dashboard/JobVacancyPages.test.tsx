@@ -1260,6 +1260,34 @@ describe('ideal candidate matching', () => {
     expect(await screen.findByText(/doesn’t offer ideal candidate matching/i)).toBeInTheDocument();
     expect(screen.queryByRole('switch', { name: 'Use ideal candidate matching' })).not.toBeInTheDocument();
   });
+
+  it('summarises the profile on the vacancy’s page', async () => {
+    api.get.mockResolvedValue(makeVacancy({ id: 'v-1', status: 'PUBLISHED' }));
+    api.idealMatching.mockResolvedValue({
+      ...offered,
+      enabled: true,
+      criteria: [
+        { id: 'c1', category: 'TECHNICAL_SKILL', name: 'Java', weightPercent: 60, requirement: 'MUST_HAVE', position: 0 },
+        { id: 'c2', category: 'TOOL', name: 'Docker', weightPercent: 40, requirement: 'PREFERRED', position: 1 },
+      ],
+      totalWeightPercent: 100,
+      degreeTypes: ['Computer Science'],
+    });
+    render(<VacancyRoutes path="/dashboard/jobs/v-1" />);
+
+    expect(await screen.findByRole('heading', { name: 'Ideal candidate' })).toBeInTheDocument();
+    expect(await screen.findByText('60%')).toBeInTheDocument();
+    expect(screen.getByText('Must-have')).toBeInTheDocument();
+    expect(screen.getByText(/Computer Science/)).toBeInTheDocument();
+  });
+
+  it('shows the tools among the vacancy’s requirements', async () => {
+    api.get.mockResolvedValue(makeVacancy({ id: 'v-1', status: 'PUBLISHED', toolsAndTechnologies: ['Docker', 'Git'] }));
+    render(<VacancyRoutes path="/dashboard/jobs/v-1" />);
+
+    expect(await screen.findByText('Tools & technologies')).toBeInTheDocument();
+    expect(screen.getByText('Docker')).toBeInTheDocument();
+  });
 });
 
 describe('the AI switches', () => {
