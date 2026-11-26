@@ -1,0 +1,114 @@
+# Deploys the app to S3 + CloudFront.
+#
+# Runs on every push to master, or by hand with a commit, tag or branch (pick
+# an older commit to roll back). Builds and tests the commit, uploads it to the
+# SPA bucket and invalidates index.html. The AWS setup is in talentpipe-backend
+# (infra/terraform, docs/DEPLOYMENT.md).
+#
+# It doesn't hang off frontend-ci (workflow_run) on purpose: CI also runs for
+# pull requests from forks, and this should only ever run code from this repo.
+#
+# AWS access is through OIDC, no keys in GitHub. The role only trusts this
+# repo's `production` environment.
+#
+# Repository variables (from `terraform output` in talentpipe-backend):
+# AWS_REGION, AWS_DEPLOY_ROLE_ARN, SPA_BUCKET, CLOUDFRONT_DISTRIBUTION_ID and
+# SITE_URL (for the smoke test).
+name: frontend-deploy
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Commit, tag or branch to deploy. An older commit is a rollback.
+        required: true
+        default: master
+
+permissions:
+  contents: read
+
+concurrency:
+  group: frontend-deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy to production
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      id-token: write # to ask GitHub for the OIDC token AWS exchanges for the role
+    env:
+      SPA_BUCKET: ${{ vars.SPA_BUCKET }}
+      CLOUDFRONT_DISTRIBUTION_ID: ${{ vars.CLOUDFRONT_DISTRIBUTION_ID }}
+      SITE_URL: ${{ vars.SITE_URL }}
+
+    steps:
+      - name: Check out the commit to deploy
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ inputs.ref || github.sha }}
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      # Same build as the Docker image: relative API path (CloudFront serves
+      # the app and the API on one origin) and the real API, not mock data.
+      # Nothing gets uploaded unless this passes. --ignore-scripts: see ci.yml.
+      - name: Build and test
+        env:
+          VITE_API_BASE_URL: /api/v1
+          VITE_PUBLIC_JOBS_SOURCE: ''
+        run: |
+          npm ci --ignore-scripts
+          npm run build
+          npm test
+
+      - name: Get AWS credentials
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      # Hashed assets first, cached for a year and never deleted, so someone
+      # still on the old index.html can load its chunks. Then the rest,
+      # index.html included, with no-cache; files no longer in the build go.
+      - name: Upload
+        run: |
+          aws s3 sync dist/assets "s3://$SPA_BUCKET/assets" \
+            --cache-control "public, max-age=31536000, immutable"
+          aws s3 sync dist "s3://$SPA_BUCKET" --exclude "assets/*" --delete \
+            --cache-control "no-cache"
+
+      # Every app route is served as /index.html (spa-router function), so
+      # that's the only path to invalidate.
+      - name: Refresh CloudFront
+        run: |
+          id=$(aws cloudfront create-invalidation --distribution-id "$CLOUDFRONT_DISTRIBUTION_ID" \
+                 --paths "/index.html" --query Invalidation.Id --output text)
+          aws cloudfront wait invalidation-completed --distribution-id "$CLOUDFRONT_DISTRIBUTION_ID" --id "$id"
+
+      - name: Smoke test through CloudFront
+        if: env.SITE_URL != ''
+        run: |
+          curl -fsS --retry 5 --retry-all-errors --retry-delay 5 "$SITE_URL/dashboard" | grep -q '<div id="root">'
+          echo "A deep link returns the app."
+
+      - name: Summary
+        run: |
+          {
+            echo "### Frontend deployed"
+            echo ""
+            echo "| | |"
+            echo "|---|---|"
+            echo "| Commit | \`$(git rev-parse HEAD)\` |"
+            echo "| Site | ${SITE_URL:-not set} |"
+          } >> "$GITHUB_STEP_SUMMARY"
