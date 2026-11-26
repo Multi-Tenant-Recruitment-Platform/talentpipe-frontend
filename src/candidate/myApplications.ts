@@ -102,7 +102,7 @@ const STATUS_META: Record<ApplicationStatus, StatusMeta> = {
   },
 };
 
-const isKnownStatus = (status: string): status is ApplicationStatus => Object.hasOwn(STATUS_META, status);
+const isKnownStatus = (status: string): status is ApplicationStatus => Object.prototype.hasOwnProperty.call(STATUS_META, status);
 
 /** "ON_HOLD" → "On hold": a status the page does not know yet is still shown by name. */
 function humanize(status: string): string {
