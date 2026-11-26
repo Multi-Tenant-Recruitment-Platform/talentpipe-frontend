@@ -373,7 +373,8 @@ describe('editing and duplicating', () => {
     const values = completeValues({ education: 'Diploma', screeningQuestions: ['Right to work?'] });
     const request = toVacancyRequest(values, 'DRAFT');
     const stored = makeVacancy({ ...request, blindModeEnabled: request.blindModeEnabled ?? false });
-    expect(toFormValues(stored)).toEqual(values);
+    // The ideal candidate is read separately (GET /jobs/{id}/ideal-matching), as the panels are.
+    expect(toFormValues(stored)).toEqual({ ...values, idealMatching: null });
   });
 
   it('turns a blank choice back into an empty control, not a default', () => {

@@ -14,6 +14,8 @@ import {
   toVacancyRequest,
   type JobVacancyFormValues,
 } from '../../dashboard/jobVacancy';
+import { EMPTY_MATCHING, toMatchingDraft } from '../../dashboard/idealMatching';
+import { useIdealMatching } from '../../dashboard/useIdealMatching';
 import { useInterviewPanels } from '../../dashboard/useInterviewPanels';
 import { useJobVacancy } from '../../dashboard/useJobVacancies';
 
@@ -39,6 +41,7 @@ export function CreateJobVacancyPage() {
   const fromId = params.get('from');
   const source = useJobVacancy(fromId);
   const sourcePanels = useInterviewPanels(fromId);
+  const sourceMatching = useIdealMatching(fromId);
   const { user } = useAuth();
   // Whoever files it is recorded as its creator.
   const creator = user ? `${`${user.firstName} ${user.lastName}`.trim()} (you)` : null;
@@ -83,7 +86,7 @@ export function CreateJobVacancyPage() {
     );
   }
 
-  if (source.loading || sourcePanels.loading) {
+  if (source.loading || sourcePanels.loading || sourceMatching.loading) {
     return (
       <Card>
         <RowsSkeleton rows={4} label="Loading the vacancy to copy…" />
@@ -125,6 +128,8 @@ export function CreateJobVacancyPage() {
       initialValues={{
         ...duplicateValues(original),
         interviewPanels: sourcePanels.panels ? duplicatePanels(sourcePanels.panels) : null,
+        // The original's ideal candidate comes along; unreadable, the copy starts without one.
+        idealMatching: sourceMatching.profile ? toMatchingDraft(sourceMatching.profile) : EMPTY_MATCHING,
       }}
       banner={
         <Alert tone="info" className="mb-5">

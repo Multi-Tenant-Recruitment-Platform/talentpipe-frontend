@@ -13,6 +13,12 @@ import type {
   WorkplaceType,
 } from '../api/types';
 import { currencyCode } from '../utils/format';
+import {
+  matchingKey,
+  matchingProblems,
+  toMatchingRequest,
+  type IdealMatchingDraft,
+} from './idealMatching';
 import { cleanValues } from './companyProfile';
 
 /**
@@ -97,6 +103,15 @@ export interface JobVacancyFormValues {
    * read — and then nothing is checked or sent, so the server keeps what it has.
    */
   interviewPanels: InterviewPanelDraft[] | null;
+
+  /** Display only: whether the vacancy's pipeline template offers ideal candidate matching. Never sent. */
+  idealMatchingAvailable: boolean;
+  /**
+   * The ideal candidate: weighted skills, tools and experience sharing 100%,
+   * and the unweighted degree types and certifications. `null` until the
+   * stored profile is read; nothing is then checked or sent.
+   */
+  idealMatching: IdealMatchingDraft | null;
 }
 
 /**
@@ -168,6 +183,13 @@ export const EMPTY_VACANCY_VALUES: JobVacancyFormValues = {
   manualThreshold: null,
   blindModeEnabled: false,
   interviewPanels: null,
+  idealMatchingAvailable: false,
+  idealMatching: {
+    enabled: false,
+    items: [],
+    degreeTypes: [],
+    niceToHaveCertifications: [],
+  },
 };
 
 export const FIELD_LABELS: Record<JobVacancyField, string> = {
@@ -209,6 +231,8 @@ export const FIELD_LABELS: Record<JobVacancyField, string> = {
   manualThreshold: 'Manual-review threshold',
   blindModeEnabled: 'Blind screening',
   interviewPanels: 'Interview panels',
+  idealMatchingAvailable: 'Ideal candidate matching',
+  idealMatching: 'Ideal candidate matching',
 };
 
 /* --- Catalogues ---------------------------------------------------------- */
@@ -373,6 +397,14 @@ export const VACANCY_SECTIONS: VacancySection[] = [
     // could then never be published.
     required: [],
   },
+  {
+    id: 'matching',
+    index: '07',
+    title: 'Ideal candidate matching',
+    summary: 'Who the best applicant is, and how much each skill, tool and experience counts in AI screening.',
+    fields: ['idealMatching'],
+    required: [],
+  },
   // Hidden from the form: every field in it is optional, and the pipeline and
   // recruiter modules it points at are not built yet. The fields stay in
   // JobVacancyFormValues and on the wire, so restoring the section is putting
@@ -491,6 +523,7 @@ export function validateVacancy(values: JobVacancyFormValues): JobVacancyFieldEr
   checkRecruitment(n, errors);
   checkPipeline(n, errors);
   checkPanels(n, errors, true);
+  checkMatching(n, errors, true);
 
   return errors;
 }
@@ -636,6 +669,20 @@ function toPanelRequests(panels: InterviewPanelDraft[] | null): InterviewPanelRe
       }));
 }
 
+/**
+ * The ideal candidate's problems as one sentence. Some block every save; the
+ * 100% rule waits for Publish, and only applies with matching switched on.
+ */
+function checkMatching(n: JobVacancyFormValues, errors: JobVacancyFieldErrors, forPublish: boolean): void {
+  if (n.idealMatching === null) {
+    return;
+  }
+  const { summary } = matchingProblems(n.idealMatching, forPublish);
+  if (summary) {
+    errors.idealMatching = summary;
+  }
+}
+
 /** A comparable fingerprint of the panels, for the unsaved-changes check. */
 function panelsKey(panels: InterviewPanelDraft[] | null): string {
   if (panels === null) {
@@ -663,6 +710,7 @@ export function validatePipeline(values: JobVacancyFormValues, mode: VacancyForm
   checkPipeline(values, errors);
   // Only what is wrong in every state; a short panel waits for Publish.
   checkPanels(values, errors, false);
+  checkMatching(values, errors, false);
   return errors;
 }
 
@@ -831,6 +879,9 @@ function hasValue(values: JobVacancyFormValues, field: JobVacancyField): boolean
   if (field === 'interviewPanels') {
     return (values.interviewPanels ?? []).some((panel) => panel.interviewerCount !== null);
   }
+  if (field === 'idealMatching') {
+    return Boolean(values.idealMatching?.enabled && values.idealMatching.items.some((item) => item.weight !== null));
+  }
   const value = values[field];
   if (Array.isArray(value)) {
     return value.some((entry) => entry.trim() !== '');
@@ -913,6 +964,9 @@ export function isVacancyDirty(
     if (field === 'interviewPanels') {
       return panelsKey(n.interviewPanels) !== panelsKey(start.interviewPanels);
     }
+    if (field === 'idealMatching') {
+      return matchingKey(n.idealMatching) !== matchingKey(start.idealMatching);
+    }
     const current = n[field];
     const before = start[field];
     if (Array.isArray(current) && Array.isArray(before)) {
@@ -935,6 +989,7 @@ export function toVacancyRequest(
     ...toScreeningSettings(values),
     status,
     interviewPanels: toPanelRequests(values.interviewPanels),
+    idealMatching: values.idealMatching ? toMatchingRequest(values.idealMatching) : null,
   };
 }
 
@@ -953,6 +1008,7 @@ export function toVacancyUpdate(
     ...toScreeningSettings(values),
     version,
     interviewPanels: toPanelRequests(values.interviewPanels),
+    idealMatching: values.idealMatching ? toMatchingRequest(values.idealMatching) : null,
   };
 }
 
@@ -976,7 +1032,7 @@ function toScreeningSettings(values: JobVacancyFormValues): ScreeningSettings {
 
 type VacancyContent = Omit<
   JobVacancyRequest,
-  'status' | 'pipelineTemplateId' | 'interviewPanels' | keyof ScreeningSettings
+  'status' | 'pipelineTemplateId' | 'interviewPanels' | 'idealMatching' | keyof ScreeningSettings
 >;
 
 /** The content fields both a create and an edit carry. */
@@ -1077,6 +1133,9 @@ export function toFormValues(vacancy: JobVacancyResponse): JobVacancyFormValues 
     blindModeEnabled: vacancy.blindModeEnabled ?? false,
     // Read separately (`GET /jobs/{id}/interview-panels`); the page fills them in.
     interviewPanels: null,
+    idealMatchingAvailable: vacancy.idealMatchingAvailable ?? false,
+    // Read separately (`GET /jobs/{id}/ideal-matching`); the page fills it in.
+    idealMatching: null,
   };
 }
 

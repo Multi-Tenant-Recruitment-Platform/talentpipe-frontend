@@ -35,6 +35,7 @@ import { ConfirmDialog } from '../ui/ConfirmDialog';
 import { BasicInformationSection } from './BasicInformationSection';
 import { CandidateRequirementsSection } from './CandidateRequirementsSection';
 import { JobDescriptionSection } from './JobDescriptionSection';
+import { IdealMatchingSection } from './IdealMatchingSection';
 import { PipelineScreeningSection } from './PipelineScreeningSection';
 // import { RecruitmentSettingsSection } from './RecruitmentSettingsSection';
 import { SalaryBenefitsSection } from './SalaryBenefitsSection';
@@ -73,13 +74,14 @@ const SECTION_BODIES: Record<string, ComponentType<VacancySectionProps>> = {
   salary: SalaryBenefitsSection,
   schedule: WorkScheduleSection,
   pipeline: PipelineScreeningSection,
+  matching: IdealMatchingSection,
   // recruitment: RecruitmentSettingsSection,
 };
 
 const HEADINGS: Record<VacancyFormMode, { title: string; subtitle: string }> = {
   create: {
     title: 'Create vacancy',
-    subtitle: 'Six sections. Only the marked fields and a pipeline template are needed to publish — the rest can follow.',
+    subtitle: 'Seven sections. Only the marked fields and a pipeline template are needed to publish — the rest can follow.',
   },
   duplicate: {
     title: 'Duplicate vacancy',

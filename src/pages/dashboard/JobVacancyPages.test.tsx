@@ -54,6 +54,8 @@ const api = vi.hoisted(() => ({
   interviewPanels: vi.fn(),
   replaceInterviewPanels: vi.fn(),
   searchAssignableMembers: vi.fn(),
+  idealMatching: vi.fn(),
+  replaceIdealMatching: vi.fn(),
 }));
 vi.mock('../../api/jobs', () => ({ jobsApi: api }));
 
@@ -65,6 +67,16 @@ vi.mock('../../api/pipelineTemplates', () => ({
 }));
 
 const engineering = makeTemplateSummary();
+
+/** The profile of a vacancy whose template does not offer matching. */
+const noMatching = {
+  available: false,
+  enabled: false,
+  criteria: [],
+  totalWeightPercent: 0,
+  degreeTypes: [],
+  niceToHaveCertifications: [],
+};
 const sales = makeTemplateSummary({
   id: 'tpl-2',
   name: 'Sales hiring',
@@ -141,6 +153,8 @@ beforeEach(() => {
   templatesApi.get.mockImplementation(async (id: string) => ({ ...engineering, id, stages: [] }));
   api.interviewPanels.mockResolvedValue([]);
   api.searchAssignableMembers.mockResolvedValue([]);
+  // No ideal candidate matching unless a test offers it.
+  api.idealMatching.mockResolvedValue(noMatching);
   api.hiringTeam.mockResolvedValue({ vacancyId: 'v-1', recruiter: null, hiringManager: null, members: [] });
   profileSaved.industry = '';
   profileSaved.additionalIndustries = [];
@@ -150,7 +164,7 @@ beforeEach(() => {
 /* --- Create ------------------------------------------------------------- */
 
 describe('creating a vacancy', () => {
-  it('lays the six sections out in order, each numbered', () => {
+  it('lays the seven sections out in order, each numbered', () => {
     render(<VacancyRoutes path="/dashboard/jobs/new" />);
 
     const nav = screen.getByRole('navigation', { name: /vacancy form sections/i });
@@ -161,6 +175,7 @@ describe('creating a vacancy', () => {
       expect.stringContaining('Salary & benefits'),
       expect.stringContaining('Work schedule'),
       expect.stringContaining('Pipeline & screening'),
+      expect.stringContaining('Ideal candidate matching'),
     ]);
     expect(screen.getByRole('group', { name: /basic information/i })).toHaveTextContent('01');
   });
@@ -1120,6 +1135,130 @@ describe('interview panels', () => {
     expect(await screen.findByText('Technical interview')).toBeInTheDocument();
     expect(screen.getByText('Ada Lovelace')).toBeInTheDocument();
     expect(screen.getByText('1 of 1')).toBeInTheDocument();
+  });
+});
+
+describe('ideal candidate matching', () => {
+  const offered = { ...noMatching, available: true };
+  const draftWith = (overrides: Partial<JobVacancyResponse> = {}) =>
+    makeVacancy({
+      id: 'v-1',
+      status: 'DRAFT',
+      version: 1,
+      requiredSkills: ['Java'],
+      preferredSkills: ['Kafka'],
+      toolsAndTechnologies: ['Docker'],
+      minimumExperienceYears: 3,
+      education: 'Bachelor’s degree',
+      certifications: ['AWS Solutions Architect'],
+      idealMatchingAvailable: true,
+      ...overrides,
+    });
+
+  it('switching it on loads the skills, tools and experience from candidate requirements', async () => {
+    const user = userEvent.setup();
+    api.get.mockResolvedValue(draftWith());
+    api.idealMatching.mockResolvedValue(offered);
+    render(<VacancyRoutes path="/dashboard/jobs/v-1/edit" />);
+
+    await user.click(await screen.findByRole('switch', { name: 'Use ideal candidate matching' }));
+
+    expect(screen.getByLabelText('Weight for Java')).toBeInTheDocument();
+    expect(screen.getByLabelText('Weight for Kafka')).toBeInTheDocument();
+    expect(screen.getByLabelText('Weight for Docker')).toBeInTheDocument();
+    expect(screen.getByLabelText('Weight for Relevant experience')).toBeInTheDocument();
+    expect(screen.getByText('Minimum 3 years (from Candidate requirements).')).toBeInTheDocument();
+    // Certifications come along as nice-to-haves, outside the 100%.
+    expect(screen.getByText('Not part of the 100%')).toBeInTheDocument();
+  });
+
+  it('evens the weights out to 100% and saves the profile with the draft', async () => {
+    const user = userEvent.setup();
+    const draft = draftWith();
+    api.get.mockResolvedValue(draft);
+    api.update.mockResolvedValue({ ...draft, version: 2 });
+    api.idealMatching.mockResolvedValue(offered);
+    render(<VacancyRoutes path="/dashboard/jobs/v-1/edit" />);
+
+    await user.click(await screen.findByRole('switch', { name: 'Use ideal candidate matching' }));
+    await user.click(screen.getByRole('button', { name: 'Even out weights' }));
+    expect(screen.getByText('The weights total 100%.')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /save draft/i }));
+    await waitFor(() => expect(api.update).toHaveBeenCalled());
+    const sent = api.update.mock.calls[0][1].idealMatching;
+    expect(sent.enabled).toBe(true);
+    expect(sent.criteria.map((c: { name: string; weightPercent: number }) => [c.name, c.weightPercent])).toEqual([
+      ['Java', 25],
+      ['Kafka', 25],
+      ['Docker', 25],
+      ['Relevant experience', 25],
+    ]);
+    expect(sent.niceToHaveCertifications).toEqual(['AWS Solutions Architect']);
+  });
+
+  it('holds Publish until the weights total exactly 100%, and says so', async () => {
+    const user = userEvent.setup();
+    api.get.mockResolvedValue(draftWith());
+    api.idealMatching.mockResolvedValue({
+      ...offered,
+      enabled: true,
+      criteria: [{ id: 'c1', category: 'TECHNICAL_SKILL', name: 'Java', weightPercent: 60, requirement: 'MUST_HAVE', position: 0 }],
+      totalWeightPercent: 60,
+    });
+    render(<VacancyRoutes path="/dashboard/jobs/v-1/edit" />);
+
+    await screen.findByLabelText('Weight for Java');
+    await user.click(screen.getByRole('button', { name: /publish vacancy/i }));
+
+    expect(
+      await screen.findByText('The ideal candidate weights add up to 60%; they need to total 100%.'),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('alertdialog', { name: /publish this vacancy/i })).not.toBeInTheDocument();
+    expect(api.update).not.toHaveBeenCalled();
+  });
+
+  it('adds and removes rows, and refuses a name already weighted', async () => {
+    const user = userEvent.setup();
+    api.get.mockResolvedValue(draftWith());
+    api.idealMatching.mockResolvedValue(offered);
+    render(<VacancyRoutes path="/dashboard/jobs/v-1/edit" />);
+    await user.click(await screen.findByRole('switch', { name: 'Use ideal candidate matching' }));
+
+    await user.click(screen.getByRole('button', { name: 'Remove Kafka' }));
+    expect(screen.queryByLabelText('Weight for Kafka')).not.toBeInTheDocument();
+    // Removed, it is offered again rather than coming back by itself.
+    expect(screen.getByRole('button', { name: 'Add Kafka' })).toBeInTheDocument();
+
+    await user.type(screen.getByLabelText('Add a tool'), 'Jenkins{Enter}');
+    expect(screen.getByLabelText('Weight for Jenkins')).toBeInTheDocument();
+
+    await user.type(screen.getByLabelText('Add a tool'), 'docker{Enter}');
+    expect(screen.getByText('docker is already weighted.')).toBeInTheDocument();
+  });
+
+  it('asks for degree types only when the education asked for is a degree', async () => {
+    const user = userEvent.setup();
+    api.get.mockResolvedValue(draftWith({ education: 'Higher secondary (A/L)' }));
+    api.idealMatching.mockResolvedValue(offered);
+    const { unmount } = render(<VacancyRoutes path="/dashboard/jobs/v-1/edit" />);
+    await user.click(await screen.findByRole('switch', { name: 'Use ideal candidate matching' }));
+    expect(screen.queryByLabelText(/accepted degree types/i)).not.toBeInTheDocument();
+    expect(screen.getByText(/choose a degree \(diploma or higher\)/i)).toBeInTheDocument();
+    unmount();
+
+    api.get.mockResolvedValue(draftWith());
+    render(<VacancyRoutes path="/dashboard/jobs/v-1/edit" />);
+    await user.click(await screen.findByRole('switch', { name: 'Use ideal candidate matching' }));
+    expect(screen.getByLabelText(/accepted degree types/i)).toBeInTheDocument();
+  });
+
+  it('explains when the pipeline template does not offer it', async () => {
+    api.get.mockResolvedValue(draftWith({ idealMatchingAvailable: false }));
+    render(<VacancyRoutes path="/dashboard/jobs/v-1/edit" />);
+
+    expect(await screen.findByText(/doesn’t offer ideal candidate matching/i)).toBeInTheDocument();
+    expect(screen.queryByRole('switch', { name: 'Use ideal candidate matching' })).not.toBeInTheDocument();
   });
 });
 

@@ -72,6 +72,12 @@ function ChooseTemplate({ values, errors, set, mode }: Readonly<VacancySectionPr
     set('autoThreshold', template.defaultAutoThreshold);
     set('manualThreshold', template.defaultManualThreshold);
     set('blindModeEnabled', template.blindModeEnabled);
+    // Whether the ideal candidate section opens; a template without it switches
+    // matching off, and the weights wait in case another template is chosen.
+    set('idealMatchingAvailable', template.idealMatchingEnabled);
+    if (!template.idealMatchingEnabled && values.idealMatching?.enabled) {
+      set('idealMatching', { ...values.idealMatching, enabled: false });
+    }
   }
 
   if (error) {

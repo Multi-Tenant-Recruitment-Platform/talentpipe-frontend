@@ -18,6 +18,8 @@ import {
   VACANCY_STATUS_LABEL,
   type JobVacancyFormValues,
 } from '../../dashboard/jobVacancy';
+import { toMatchingDraft } from '../../dashboard/idealMatching';
+import { useIdealMatching } from '../../dashboard/useIdealMatching';
 import { useInterviewPanels } from '../../dashboard/useInterviewPanels';
 import { useJobVacancy } from '../../dashboard/useJobVacancies';
 
@@ -35,7 +37,8 @@ import { useJobVacancy } from '../../dashboard/useJobVacancies';
  *
  * <p>The interview panels are read before the form opens and saved with the
  * content, so what Cancel calls "unsaved" includes them and a published
- * vacancy's panels are checked as strictly as its advert.</p>
+ * vacancy's panels are checked as strictly as its advert. The ideal candidate
+ * is read the same way.</p>
  */
 export function EditJobVacancyPage() {
   const { id = '' } = useParams();
@@ -43,6 +46,7 @@ export function EditJobVacancyPage() {
   const location = useLocation();
   const { vacancy, loading, error, notFound, refresh } = useJobVacancy(id);
   const panels = useInterviewPanels(id);
+  const matching = useIdealMatching(id);
   const { user } = useAuth();
 
   // The version the next save is made against. A ref, not state: it moves on
@@ -57,10 +61,15 @@ export function EditJobVacancyPage() {
 
   const initialValues = useMemo(
     () =>
-      vacancy && panels.panels
-        ? { ...toFormValues(vacancy), interviewPanels: toPanelDrafts(panels.panels) }
+      vacancy && panels.panels && matching.profile
+        ? {
+            ...toFormValues(vacancy),
+            interviewPanels: toPanelDrafts(panels.panels),
+            idealMatchingAvailable: matching.profile.available,
+            idealMatching: toMatchingDraft(matching.profile),
+          }
         : null,
-    [vacancy, panels.panels],
+    [vacancy, panels.panels, matching.profile],
   );
   const initialNotice = (location.state as { notice?: VacancyNoticeValue } | null)?.notice ?? null;
   const detailPath = `/dashboard/jobs/${id}`;
@@ -101,7 +110,7 @@ export function EditJobVacancyPage() {
     });
   }
 
-  if (loading || (vacancy && panels.loading)) {
+  if (loading || (vacancy && (panels.loading || matching.loading))) {
     return (
       <Card>
         <RowsSkeleton rows={5} label="Loading vacancy…" />
@@ -116,6 +125,18 @@ export function EditJobVacancyPage() {
           title="We couldn't load this vacancy's interview panels"
           description={panels.error}
           onRetry={() => void panels.refresh()}
+        />
+      </Card>
+    );
+  }
+
+  if (vacancy && !notFound && !error && matching.error) {
+    return (
+      <Card>
+        <ErrorState
+          title="We couldn't load this vacancy's ideal candidate"
+          description={matching.error}
+          onRetry={() => void matching.refresh()}
         />
       </Card>
     );
