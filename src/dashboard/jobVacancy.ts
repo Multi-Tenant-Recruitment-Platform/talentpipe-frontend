@@ -1,8 +1,11 @@
 import type {
   EmploymentType,
+  InterviewPanelRequest,
+  InterviewPanelResponse,
   JobVacancyRequest,
   JobVacancyResponse,
   JobVacancyUpdateRequest,
+  MemberSummary,
   PayPeriod,
   ShiftType,
   VacancyStatus,
@@ -85,7 +88,30 @@ export interface JobVacancyFormValues {
   autoThreshold: number | null;
   manualThreshold: number | null;
   blindModeEnabled: boolean;
+
+  /**
+   * Who interviews in each interview round, in pipeline order. `null` until
+   * the rounds are known — no template chosen yet, or the stored panels not
+   * read — and then nothing is checked or sent, so the server keeps what it has.
+   */
+  interviewPanels: InterviewPanelDraft[] | null;
 }
+
+/**
+ * One interview round's panel as the form holds it. The people are kept
+ * whole, not as ids, so a chosen person stays named on screen after the
+ * search that found them has moved on.
+ */
+export interface InterviewPanelDraft {
+  stagePosition: number;
+  stageName: string;
+  /** 1–{@link MAX_INTERVIEWERS}; `null` until decided. */
+  interviewerCount: number | null;
+  interviewers: MemberSummary[];
+}
+
+/** The most interviewers one round may have; the server and the database say the same. */
+export const MAX_INTERVIEWERS = 10;
 
 export type JobVacancyField = keyof JobVacancyFormValues;
 
@@ -138,6 +164,7 @@ export const EMPTY_VACANCY_VALUES: JobVacancyFormValues = {
   autoThreshold: null,
   manualThreshold: null,
   blindModeEnabled: false,
+  interviewPanels: null,
 };
 
 export const FIELD_LABELS: Record<JobVacancyField, string> = {
@@ -177,6 +204,7 @@ export const FIELD_LABELS: Record<JobVacancyField, string> = {
   autoThreshold: 'Auto-advance threshold',
   manualThreshold: 'Manual-review threshold',
   blindModeEnabled: 'Blind screening',
+  interviewPanels: 'Interview panels',
 };
 
 /* --- Catalogues ---------------------------------------------------------- */
@@ -333,7 +361,7 @@ export const VACANCY_SECTIONS: VacancySection[] = [
     index: '06',
     title: 'Pipeline & screening',
     summary: 'The stages applicants move through, and how AI screening sorts them.',
-    fields: ['pipelineTemplateId', 'autoThreshold', 'manualThreshold', 'blindModeEnabled'],
+    fields: ['pipelineTemplateId', 'autoThreshold', 'manualThreshold', 'blindModeEnabled', 'interviewPanels'],
     // Empty on purpose. The template is required to create a vacancy, which
     // validatePipelineChoice enforces in the two modes that create one; listing
     // it here would also demand it of vacancies older than templates, which
@@ -456,6 +484,7 @@ export function validateVacancy(values: JobVacancyFormValues): JobVacancyFieldEr
   checkSchedule(n, errors);
   checkRecruitment(n, errors);
   checkPipeline(n, errors);
+  checkPanels(n, errors, true);
 
   return errors;
 }
@@ -508,6 +537,109 @@ function checkPipeline(n: JobVacancyFormValues, errors: JobVacancyFieldErrors): 
   }
 }
 
+/* --- Interview panels ---------------------------------------------------- */
+
+const interviewers = (count: number) => (count === 1 ? 'interviewer' : 'interviewers');
+
+/**
+ * What is wrong with one round's panel, in the server's own words, or `null`.
+ *
+ * <p>Some problems are refused in every state — more people than the count
+ * asks for, or people before a count — because no vacancy could ever be
+ * right that way. Being short is only a problem for publishing: a draft is
+ * where a panel gets put together.</p>
+ */
+export function panelProblem(panel: InterviewPanelDraft, forPublish: boolean): string | null {
+  const chosen = panel.interviewers.length;
+  if (panel.interviewerCount === null) {
+    if (chosen > 0) {
+      return `Set how many interviewers ${panel.stageName} needs before choosing them.`;
+    }
+    return forPublish ? `${panel.stageName} needs its interviewers` : null;
+  }
+  if (chosen > panel.interviewerCount) {
+    return `${panel.stageName} has ${chosen} ${interviewers(chosen)} but needs only ${panel.interviewerCount}. Remove some or raise the number.`;
+  }
+  if (forPublish && chosen < panel.interviewerCount) {
+    return `${panel.stageName} needs ${panel.interviewerCount} ${interviewers(panel.interviewerCount)}, ${chosen} chosen`;
+  }
+  return null;
+}
+
+/** Every round's problems as one sentence, the way the server reports them. */
+function checkPanels(n: JobVacancyFormValues, errors: JobVacancyFieldErrors, forPublish: boolean): void {
+  if (n.interviewPanels === null) {
+    return;
+  }
+  const problems = n.interviewPanels
+    .map((panel) => panelProblem(panel, forPublish))
+    .filter((problem): problem is string => problem !== null)
+    .map((problem) => problem.replace(/\.$/, ''));
+  if (problems.length > 0) {
+    errors.interviewPanels = `${problems.join('; ')}.`;
+  }
+}
+
+/** The rounds of a freshly chosen pipeline, with nobody on them yet — keeping any panel already put together for the same round. */
+export function panelDraftsFor(
+  stages: { position: number; stageType: string; name: string }[],
+  existing: InterviewPanelDraft[] | null,
+): InterviewPanelDraft[] {
+  return stages
+    .filter((stage) => stage.stageType === 'INTERVIEW')
+    .sort((a, b) => a.position - b.position)
+    .map((stage) => {
+      const kept = existing?.find((panel) => panel.stagePosition === stage.position);
+      return kept
+        ? { ...kept, stageName: stage.name }
+        : { stagePosition: stage.position, stageName: stage.name, interviewerCount: null, interviewers: [] };
+    });
+}
+
+/** A vacancy's stored panels → form state. */
+export function toPanelDrafts(panels: InterviewPanelResponse[]): InterviewPanelDraft[] {
+  return [...panels]
+    .sort((a, b) => a.position - b.position)
+    .map((panel) => ({
+      stagePosition: panel.position,
+      stageName: panel.name,
+      interviewerCount: panel.interviewerCount,
+      interviewers: panel.interviewers.map((person) => ({ ...person })),
+    }));
+}
+
+/**
+ * The panels a duplicate starts from: the original's, minus anyone who can no
+ * longer sit on one — the same people the server would refuse to add.
+ */
+export function duplicatePanels(panels: InterviewPanelResponse[]): InterviewPanelDraft[] {
+  return toPanelDrafts(panels).map((panel) => ({
+    ...panel,
+    interviewers: panel.interviewers.filter((person) => person.status === 'ACTIVE'),
+  }));
+}
+
+/** Form panels → the request body; `null` sends nothing, so the server keeps what it has. */
+function toPanelRequests(panels: InterviewPanelDraft[] | null): InterviewPanelRequest[] | null {
+  return panels === null
+    ? null
+    : panels.map((panel) => ({
+        stagePosition: panel.stagePosition,
+        interviewerCount: panel.interviewerCount,
+        interviewerIds: panel.interviewers.map((person) => person.id),
+      }));
+}
+
+/** A comparable fingerprint of the panels, for the unsaved-changes check. */
+function panelsKey(panels: InterviewPanelDraft[] | null): string {
+  if (panels === null) {
+    return 'none';
+  }
+  return panels
+    .map((panel) => `${panel.stagePosition}:${panel.interviewerCount ?? '-'}:${panel.interviewers.map((person) => person.id).join(',')}`)
+    .join('|');
+}
+
 /**
  * The pipeline rules, which a draft is held to as well. The server applies
  * them to every save: a new vacancy needs a template, because its stages are
@@ -523,6 +655,8 @@ export function validatePipeline(values: JobVacancyFormValues, mode: VacancyForm
     errors.pipelineTemplateId = PIPELINE_MESSAGES.templateRequired;
   }
   checkPipeline(values, errors);
+  // Only what is wrong in every state; a short panel waits for Publish.
+  checkPanels(values, errors, false);
   return errors;
 }
 
@@ -688,6 +822,9 @@ export function sectionsWithErrors(errors: JobVacancyFieldErrors): Set<string> {
  * someone pressed Add.</p>
  */
 function hasValue(values: JobVacancyFormValues, field: JobVacancyField): boolean {
+  if (field === 'interviewPanels') {
+    return (values.interviewPanels ?? []).some((panel) => panel.interviewerCount !== null);
+  }
   const value = values[field];
   if (Array.isArray(value)) {
     return value.some((entry) => entry.trim() !== '');
@@ -767,6 +904,9 @@ export function isVacancyDirty(
   const n = normalizeVacancy(values);
   const start = normalizeVacancy(initial);
   return VACANCY_FIELD_ORDER.some((field) => {
+    if (field === 'interviewPanels') {
+      return panelsKey(n.interviewPanels) !== panelsKey(start.interviewPanels);
+    }
     const current = n[field];
     const before = start[field];
     if (Array.isArray(current) && Array.isArray(before)) {
@@ -788,6 +928,7 @@ export function toVacancyRequest(
     pipelineTemplateId: values.pipelineTemplateId,
     ...toScreeningSettings(values),
     status,
+    interviewPanels: toPanelRequests(values.interviewPanels),
   };
 }
 
@@ -801,7 +942,12 @@ export function toVacancyUpdate(
   version: number,
 ): JobVacancyUpdateRequest {
   // No template id: it is fixed when the vacancy is created.
-  return { ...toVacancyContent(values), ...toScreeningSettings(values), version };
+  return {
+    ...toVacancyContent(values),
+    ...toScreeningSettings(values),
+    version,
+    interviewPanels: toPanelRequests(values.interviewPanels),
+  };
 }
 
 type ScreeningSettings = Pick<JobVacancyRequest, 'autoThreshold' | 'manualThreshold' | 'blindModeEnabled'>;
@@ -822,7 +968,10 @@ function toScreeningSettings(values: JobVacancyFormValues): ScreeningSettings {
   };
 }
 
-type VacancyContent = Omit<JobVacancyRequest, 'status' | 'pipelineTemplateId' | keyof ScreeningSettings>;
+type VacancyContent = Omit<
+  JobVacancyRequest,
+  'status' | 'pipelineTemplateId' | 'interviewPanels' | keyof ScreeningSettings
+>;
 
 /** The content fields both a create and an edit carry. */
 function toVacancyContent(values: JobVacancyFormValues): VacancyContent {
@@ -918,6 +1067,8 @@ export function toFormValues(vacancy: JobVacancyResponse): JobVacancyFormValues 
     autoThreshold: vacancy.autoThreshold ?? null,
     manualThreshold: vacancy.manualThreshold ?? null,
     blindModeEnabled: vacancy.blindModeEnabled ?? false,
+    // Read separately (`GET /jobs/{id}/interview-panels`); the page fills them in.
+    interviewPanels: null,
   };
 }
 
@@ -944,6 +1095,21 @@ export function duplicateValues(vacancy: JobVacancyResponse): JobVacancyFormValu
 }
 
 /* --- Labels for reading back --------------------------------------------- */
+
+/**
+ * Who filed a vacancy, as a screen says it: "You" for the reader, otherwise
+ * the name the server sent. `null` when nobody is recorded — vacancies older
+ * than the record, or a creator who has since been removed.
+ */
+export function creatorLabel(
+  vacancy: Pick<JobVacancyResponse, 'createdBy' | 'createdByName'>,
+  viewerId: string | undefined,
+): string | null {
+  if (vacancy.createdBy && vacancy.createdBy === viewerId) {
+    return 'You';
+  }
+  return vacancy.createdByName?.trim() || null;
+}
 
 const labelFrom = <T extends string>(catalogue: { id: T; label: string }[], id: T | null) =>
   catalogue.find((entry) => entry.id === id)?.label ?? null;

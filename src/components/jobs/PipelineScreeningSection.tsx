@@ -7,6 +7,8 @@ import { createsVacancy, pipelineShape, runsOnPipeline } from '../../dashboard/j
 import { usePipelineTemplateList } from '../../dashboard/usePipelineTemplates';
 import { Alert } from '../ui/Alert';
 import { Button } from '../ui/Button';
+import { ConfirmDialog } from '../ui/ConfirmDialog';
+import { InterviewPanelsField } from './InterviewPanelsField';
 import type { VacancySectionProps } from './sectionProps';
 import { VacancyField } from './VacancyField';
 import { fieldAria } from './vacancyFieldIds';
@@ -53,8 +55,18 @@ function ChooseTemplate({ values, errors, set, mode }: Readonly<VacancySectionPr
 
   const chosen = templates.find((template) => template.id === values.pipelineTemplateId) ?? null;
   const unavailable = copiedIsGone && !chosen;
+  // A template change asked for while panels are filled in, waiting on a yes.
+  const [pending, setPending] = useState<PipelineTemplateSummary | null>(null);
+  const panelsStarted = (values.interviewPanels ?? []).some(
+    (panel) => panel.interviewerCount !== null || panel.interviewers.length > 0,
+  );
 
   function choose(template: PipelineTemplateSummary) {
+    setPending(null);
+    if (template.id !== values.pipelineTemplateId) {
+      // Panels belong to the old template's rounds; the new one's are read afresh.
+      set('interviewPanels', null);
+    }
     set('pipelineTemplateId', template.id);
     // Choosing is when the template's defaults apply; the recruiter adjusts from there.
     set('autoThreshold', template.defaultAutoThreshold);
@@ -121,13 +133,30 @@ function ChooseTemplate({ values, errors, set, mode }: Readonly<VacancySectionPr
           }))}
           onChange={(id: string) => {
             const template = templates.find((entry) => entry.id === id);
-            if (template) {
+            if (!template) {
+              return;
+            }
+            if (panelsStarted && values.pipelineTemplateId !== '' && template.id !== values.pipelineTemplateId) {
+              setPending(template);
+            } else {
               choose(template);
             }
           }}
         />
       </VacancyField>
       {chosen && <ScreeningSettings values={values} errors={errors} set={set} mode={mode} />}
+      {chosen && <InterviewPanelsField values={values} errors={errors} set={set} mode={mode} />}
+      <ConfirmDialog
+        open={pending !== null}
+        tone="warning"
+        title="Change the pipeline template?"
+        description="The interview panels you set up belong to this template's rounds. Choosing another template clears them."
+        confirmLabel="Change template"
+        cancelLabel="Keep this template"
+        fallbackFocusId="vacancy-pipelineTemplateId"
+        onConfirm={() => pending && choose(pending)}
+        onCancel={() => setPending(null)}
+      />
     </>
   );
 }
@@ -157,6 +186,7 @@ function StoredPipeline({ values, errors, set, mode }: Readonly<VacancySectionPr
         </Tag>
       </VacancyField>
       <ScreeningSettings values={values} errors={errors} set={set} mode={mode} />
+      <InterviewPanelsField values={values} errors={errors} set={set} mode={mode} />
     </>
   );
 }

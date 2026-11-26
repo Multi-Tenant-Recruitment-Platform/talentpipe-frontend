@@ -6,12 +6,15 @@ import { EmptyState } from '../../components/dashboard/EmptyState';
 import { ErrorState, RowsSkeleton } from '../../components/dashboard/ErrorState';
 import { VacancyForm } from '../../components/jobs/VacancyForm';
 import { Alert } from '../../components/ui/Alert';
+import { useAuth } from '../../auth/AuthContext';
 import {
+  duplicatePanels,
   duplicateValues,
   EMPTY_VACANCY_VALUES,
   toVacancyRequest,
   type JobVacancyFormValues,
 } from '../../dashboard/jobVacancy';
+import { useInterviewPanels } from '../../dashboard/useInterviewPanels';
 import { useJobVacancy } from '../../dashboard/useJobVacancies';
 
 /**
@@ -25,12 +28,20 @@ import { useJobVacancy } from '../../dashboard/useJobVacancies';
  * <p>Both outcomes leave this page. A saved draft continues on its own edit
  * page, so the next save updates it instead of filing a second one; a published
  * vacancy lands on its detail page, which is the proof it went live.</p>
+ *
+ * <p>A duplicate also starts with the original's interview panels, minus
+ * anyone who can no longer sit on one. If they can't be read, the copy simply
+ * starts without them.</p>
  */
 export function CreateJobVacancyPage() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const fromId = params.get('from');
   const source = useJobVacancy(fromId);
+  const sourcePanels = useInterviewPanels(fromId);
+  const { user } = useAuth();
+  // Whoever files it is recorded as its creator.
+  const creator = user ? `${`${user.firstName} ${user.lastName}`.trim()} (you)` : null;
 
   async function saveDraft(values: JobVacancyFormValues) {
     const created = await jobsApi.create(toVacancyRequest(values, 'DRAFT'));
@@ -65,13 +76,14 @@ export function CreateJobVacancyPage() {
         initialValues={EMPTY_VACANCY_VALUES}
         exitTo="/dashboard/jobs"
         exitLabel="Back to vacancies"
+        creator={creator}
         onSaveDraft={saveDraft}
         onPublish={publish}
       />
     );
   }
 
-  if (source.loading) {
+  if (source.loading || sourcePanels.loading) {
     return (
       <Card>
         <RowsSkeleton rows={4} label="Loading the vacancy to copy…" />
@@ -110,7 +122,10 @@ export function CreateJobVacancyPage() {
       // Keyed by the source, so copying a different vacancy starts a fresh form.
       key={original.id}
       mode="duplicate"
-      initialValues={duplicateValues(original)}
+      initialValues={{
+        ...duplicateValues(original),
+        interviewPanels: sourcePanels.panels ? duplicatePanels(sourcePanels.panels) : null,
+      }}
       banner={
         <Alert tone="info" className="mb-5">
           Copied from <strong>{original.title || 'Untitled vacancy'}</strong>. Set a new deadline
@@ -119,6 +134,7 @@ export function CreateJobVacancyPage() {
       }
       exitTo={`/dashboard/jobs/${original.id}`}
       exitLabel="Back to original"
+      creator={creator}
       onSaveDraft={saveDraft}
       onPublish={publish}
     />
