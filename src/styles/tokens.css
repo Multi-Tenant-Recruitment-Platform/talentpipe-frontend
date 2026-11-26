@@ -52,6 +52,8 @@
   --tp-error: #dc2626;
   --tp-error-bg: #fee2e2;
   --tp-error-text: #b91c1c;
+  --tp-highlight-bg: #f3e8ff;
+  --tp-highlight-text: #6d28d9;
 
   /* --- Surfaces --------------------------------------------------------- */
   --tp-surface: #ffffff;
