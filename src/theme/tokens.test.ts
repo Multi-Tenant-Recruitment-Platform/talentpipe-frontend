@@ -77,6 +77,8 @@ describe('tokens.css mirrors tokens.ts', () => {
     expect(cssVar('--tp-error')).toBe(status.error);
     expect(cssVar('--tp-error-bg')).toBe(status.errorBg);
     expect(cssVar('--tp-error-text')).toBe(status.errorText);
+    expect(cssVar('--tp-highlight-bg')).toBe(status.highlightBg);
+    expect(cssVar('--tp-highlight-text')).toBe(status.highlightText);
   });
 
   it('surfaces', () => {
@@ -195,6 +197,7 @@ describe('contrast', () => {
     ['success', status.successText, status.successBg],
     ['warning', status.warningText, status.warningBg],
     ['error', status.errorText, status.errorBg],
+    ['highlight', status.highlightText, status.highlightBg],
   ])('%s text is legible on every surface and on its own tint', (_name, text, tint) => {
     for (const ground of [...GROUNDS, tint]) {
       expect(ratio(text, ground)).toBeGreaterThanOrEqual(BODY_TEXT_FLOOR);

@@ -118,6 +118,14 @@ export const status = {
   errorBg: '#fee2e2',
   /** 5.91:1 worst case, 5.30:1 on its own tint. */
   errorText: '#b91c1c',
+
+  /**
+   * A fourth state hue for a fifth stage: where a status list needs one more
+   * step than success, warning and error can name (an application that has
+   * been shortlisted). Tint and text only — there is no base fill.
+   */
+  highlightBg: '#f3e8ff',
+  highlightText: '#6d28d9',
 } as const;
 
 /* --- Surfaces ------------------------------------------------------------ */

@@ -1,5 +1,15 @@
 import { api } from './client';
-import type { JobApplicationRequest, JobApplicationResponse } from './types';
+import type { CandidateApplicationResponse, JobApplicationRequest, JobApplicationResponse } from './types';
+
+/**
+ * The signed-in candidate's own applications with their current status.
+ * Endpoint: GET /api/v1/applications (CANDIDATE only). Always the live API:
+ * the mock board's jobs are never stored, so there is nothing to list for them.
+ */
+export async function listMyApplications(): Promise<CandidateApplicationResponse[]> {
+  const { data } = await api.get<CandidateApplicationResponse[]>('/applications');
+  return data;
+}
 
 /** Follows the public job board: mock jobs can only be applied to in mock mode. */
 const USE_MOCK = import.meta.env.VITE_PUBLIC_JOBS_SOURCE === 'mock';
