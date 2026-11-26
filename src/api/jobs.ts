@@ -1,10 +1,13 @@
 import { api } from './client';
 import type {
   HiringTeamResponse,
+  InterviewPanelRequest,
+  InterviewPanelResponse,
   JobStageResponse,
   JobVacancyRequest,
   JobVacancyResponse,
   JobVacancyUpdateRequest,
+  MemberSummary,
   PageResponse,
   VacancyFeaturesRequest,
   VacancyStatus,
@@ -138,6 +141,34 @@ export const jobsApi = {
   async replaceHiringTeam(id: string, memberIds: string[]): Promise<HiringTeamResponse> {
     const { data } = await api.put<HiringTeamResponse>(`/jobs/${encodeURIComponent(id)}/hiring-team`, {
       memberIds,
+    });
+    return data;
+  },
+
+  /**
+   * Active company members whose first name, last name, full name or email
+   * starts with `query` — who can sit on an interview panel. Any role; never
+   * another company's people, invitees or candidates. Needs `jobs.manage`.
+   */
+  async searchAssignableMembers(query: string, limit = 20): Promise<MemberSummary[]> {
+    const { data } = await api.get<MemberSummary[]>('/jobs/assignable-members', { params: { q: query, limit } });
+    return data;
+  },
+
+  /** The vacancy's interview rounds in pipeline order, each with its panel. */
+  async interviewPanels(id: string): Promise<InterviewPanelResponse[]> {
+    const { data } = await api.get<InterviewPanelResponse[]>(`/jobs/${encodeURIComponent(id)}/interview-panels`);
+    return data;
+  },
+
+  /**
+   * Replaces every interview panel. 422 when the vacancy is archived, a panel
+   * chooses more people than its count, someone added is not an active
+   * member, or a live vacancy would be left with a round short.
+   */
+  async replaceInterviewPanels(id: string, panels: InterviewPanelRequest[]): Promise<InterviewPanelResponse[]> {
+    const { data } = await api.put<InterviewPanelResponse[]>(`/jobs/${encodeURIComponent(id)}/interview-panels`, {
+      panels,
     });
     return data;
   },

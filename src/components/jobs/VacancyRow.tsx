@@ -1,6 +1,8 @@
 import { Link } from 'react-router-dom';
 import type { JobVacancyResponse } from '../../api/types';
+import { useAuth } from '../../auth/AuthContext';
 import {
+  creatorLabel,
   deadlineSignal,
   employmentTypeLabel,
   vacancyCompleteness,
@@ -41,7 +43,9 @@ export function VacancyRow({
   listSearch: string;
   onAction: (action: VacancyAction) => void;
 }>) {
+  const { user } = useAuth();
   const titleId = `vacancy-${vacancy.id}-title`;
+  const creator = creatorLabel(vacancy, user?.id);
   const meta = [
     vacancy.department,
     vacancy.location,
@@ -65,6 +69,7 @@ export function VacancyRow({
           </p>
           <p className="m-0 mt-0.5 text-caption text-slate-500">
             Updated <time dateTime={vacancy.updatedAt}>{formatRelativeTime(vacancy.updatedAt)}</time>
+            {creator && <> · Created by {creator}</>}
           </p>
         </div>
 

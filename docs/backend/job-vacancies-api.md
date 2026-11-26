@@ -57,6 +57,9 @@ If you split permissions (for example only admins may archive), tell the fronten
 | GET | `/jobs/{id}/hiring-team` | — | `200 HiringTeamResponse` | Recruiter, hiring manager and the rest of the team. |
 | PUT | `/jobs/{id}/hiring-team` | `{ memberIds }` | `200 HiringTeamResponse` | Replace the team (not recruiter or manager). |
 | PATCH | `/jobs/{id}/features` | `{ aiScreeningEnabled?, candidateMatchingEnabled? }` | `200 JobVacancyResponse` | AI switches; 422 once closed. |
+| GET | `/jobs/{id}/interview-panels` | — | `200 InterviewPanelResponse[]` | Each interview round in pipeline order with its panel: `{ stageId, position, name, benchmark, interviewerCount, interviewers: MemberSummary[] }`. Any company member who can see the vacancy. |
+| PUT | `/jobs/{id}/interview-panels` | `{ panels: InterviewPanelRequest[] }` | `200 InterviewPanelResponse[]` | Replace every panel (`jobs.manage`). A round left out loses its panel. 422 when archived, or on a panel rule (§6a). |
+| GET | `/jobs/assignable-members?q=&limit=20` | — | `200 MemberSummary[]` | Active company members whose first name, last name, full name or email **starts with** `q` (any case), sorted by name. Any role; never other companies, invitees, disabled accounts or candidates. `jobs.manage`, not `team.view`. Blank `q` → 400; `limit` capped at 50. |
 
 Every write returns the vacancy **as now stored**. The frontend renders that response and does not guess.
 
@@ -134,6 +137,7 @@ Types are JSON. "Draft" means what a `DRAFT` may hold. "Publish" means what is r
 | `autoThreshold` / `manualThreshold` | int \| null | | 0–100, manual below auto (422 "The manual threshold must be lower than the auto threshold."). `null` takes the template's default. |
 | `blindModeEnabled` | boolean \| null | | `null` takes the template's setting. |
 | `status` | enum | | **only `DRAFT` or `PUBLISHED`** on create, otherwise 400 |
+| `interviewPanels` | `InterviewPanelRequest[]` \| null | may be short | Who interviews in each interview round: `{ stagePosition, interviewerCount (1–10 \| null), interviewerIds }`, keyed by the round's `position` (a new vacancy's stages have no ids yet). `null` on create starts without panels; on PUT keeps the stored ones; a list replaces them all. See §6a. |
 
 Shape rules (lengths, ranges, enum membership, salary pairing, tenant-member ids) apply in **every** state, drafts
 included. Only the *required-ness* in §6 depends on state.
@@ -172,6 +176,10 @@ Every `JobVacancyRequest` field (with the current `status`), plus:
 | `stageCount` / `interviewRoundCount` | int \| null | The copied pipeline's shape. `null` with no pipeline. |
 | `autoThreshold` / `manualThreshold` | int \| null | `null` only on a vacancy older than templates. |
 | `blindModeEnabled` | boolean | |
+| `createdBy` | UUID \| null | who filed it |
+| `createdByName` | string \| null | their name, so every role can see who filed it without the team roster (`team.view`). `null` when unknown. |
+
+Panels are **not** part of `JobVacancyResponse`; read them from `GET /jobs/{id}/interview-panels`.
 
 Do **not** include `tenantId`. The frontend's tenant guard (`src/api/tenantGuard.ts`) rejects any payload whose
 `tenantId` differs from the session's, so leaving it out keeps responses clean.
@@ -192,6 +200,19 @@ Required and non-blank:
 
 On failure return `422` with **one** human sentence naming what is missing, for example
 *"This vacancy can't be published yet: add an application deadline, a job summary and at least one required skill."*
+
+### 6a. Interview panels (V25)
+
+- In **every** state: people need a count first (*"Set how many interviewers Technical interview needs before choosing
+  them."*), never more people than the count (*"… has 2 interviewers but needs only 1. Remove some or raise the
+  number."*), only the vacancy's interview rounds, each round once, and every person **added** must be an active
+  member of the company (someone already on a panel who has since been disabled stays until taken off).
+- **Publishing** (create as `PUBLISHED`, or `POST /publish`) needs every interview round to have exactly its count:
+  *"This vacancy can't be published yet: Technical interview needs 3 interviewers, 2 chosen; Final round needs its
+  interviewers."* A live vacancy whose panels are changed (PUT with panels, or `PUT /interview-panels`) must stay
+  complete. A vacancy without interview rounds passes.
+- Panels stay editable until the vacancy is **archived** (the hiring team's rule) — a closed vacancy still interviews.
+- Being on a panel lets someone see the vacancy, like the hiring team. None of it is ever on the public board.
 
 ## 7. Status codes
 
