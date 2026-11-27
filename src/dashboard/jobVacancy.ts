@@ -866,6 +866,52 @@ export function sectionsWithErrors(errors: JobVacancyFieldErrors): Set<string> {
   return ids;
 }
 
+/* --- Steps --------------------------------------------------------------- */
+
+/** The step after the seven sections, where the vacancy is read back before it goes out. */
+export const REVIEW_STEP = 'review';
+
+/** Every step of the form, in the order Next walks them: the sections, then the review. */
+export const VACANCY_STEP_IDS: string[] = [...VACANCY_SECTIONS.map((section) => section.id), REVIEW_STEP];
+
+/**
+ * Every rule the form is held to before it can go out: the publish rules and
+ * the pipeline rules this mode adds. What Publish checks, and what each Next
+ * checks a slice of.
+ */
+export function vacancyProblems(values: JobVacancyFormValues, mode: VacancyFormMode): JobVacancyFieldErrors {
+  return { ...validateVacancy(values), ...validatePipeline(values, mode) };
+}
+
+/** The problems that belong to one section — what stops Next on its step. */
+export function sectionProblems(errors: JobVacancyFieldErrors, sectionId: string): JobVacancyFieldErrors {
+  const section = VACANCY_SECTIONS.find((entry) => entry.id === sectionId);
+  const found: JobVacancyFieldErrors = {};
+  for (const field of section?.fields ?? []) {
+    if (errors[field]) {
+      found[field] = errors[field];
+    }
+  }
+  return found;
+}
+
+/**
+ * The furthest step someone may open, as an index into {@link VACANCY_STEP_IDS}.
+ *
+ * <p>Next refuses to leave a section with problems, so a step is reachable
+ * only when every section before it is in order. The first section that is
+ * not is as far as anyone gets; with none, the review is open.</p>
+ */
+export function furthestReachableStep(errors: JobVacancyFieldErrors): number {
+  const blocked = VACANCY_SECTIONS.findIndex((section) => Object.keys(sectionProblems(errors, section.id)).length > 0);
+  return blocked === -1 ? VACANCY_SECTIONS.length : blocked;
+}
+
+/** The section a field is asked in. */
+export function sectionOf(field: JobVacancyField): VacancySection | null {
+  return VACANCY_SECTIONS.find((section) => section.fields.includes(field)) ?? null;
+}
+
 /* --- Progress ------------------------------------------------------------ */
 
 /**

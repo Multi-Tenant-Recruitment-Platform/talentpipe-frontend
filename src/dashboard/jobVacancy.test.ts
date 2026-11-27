@@ -13,15 +13,21 @@ import {
   formatSalary,
   formatWorkingDays,
   formProgress,
+  furthestReachableStep,
   isVacancyDirty,
   PIPELINE_MESSAGES,
   pipelineShape,
   runsOnPipeline,
+  REVIEW_STEP,
+  sectionOf,
+  sectionProblems,
   sectionProgress,
   sectionsWithErrors,
   todayIso,
   toVacancyRequest,
   VACANCY_SECTIONS,
+  VACANCY_STEP_IDS,
+  vacancyProblems,
   validatePipeline,
   validateVacancy,
   type JobVacancyFormValues,
@@ -124,6 +130,41 @@ describe('validateVacancy', () => {
   it('reports which sections need attention', () => {
     const errors = validateVacancy(completeValues({ title: '', requiredSkills: [] }));
     expect(sectionsWithErrors(errors)).toEqual(new Set(['basics', 'requirements']));
+  });
+});
+
+describe('steps', () => {
+  it('walks the seven sections, then the review', () => {
+    expect(VACANCY_STEP_IDS).toEqual([...VACANCY_SECTIONS.map((section) => section.id), REVIEW_STEP]);
+  });
+
+  it('holds each step only to the rules of its own fields', () => {
+    const problems = vacancyProblems(completeValues({ title: '', requiredSkills: [] }), 'create');
+
+    expect(Object.keys(sectionProblems(problems, 'basics'))).toEqual(['title']);
+    expect(Object.keys(sectionProblems(problems, 'requirements'))).toEqual(['requiredSkills']);
+    expect(sectionProblems(problems, 'salary')).toEqual({});
+  });
+
+  it('asks a new vacancy for its template on the pipeline step', () => {
+    const problems = vacancyProblems(completeValues({ pipelineTemplateId: '' }), 'create');
+
+    expect(sectionProblems(problems, 'pipeline')).toEqual({ pipelineTemplateId: PIPELINE_MESSAGES.templateRequired });
+  });
+
+  it('lets no one past the first section with a problem', () => {
+    expect(furthestReachableStep(vacancyProblems(EMPTY_VACANCY_VALUES, 'create'))).toBe(0);
+    expect(furthestReachableStep(vacancyProblems(completeValues({ requiredSkills: [] }), 'create'))).toBe(2);
+    expect(furthestReachableStep(vacancyProblems(completeValues({ pipelineTemplateId: '' }), 'create'))).toBe(5);
+  });
+
+  it('opens the review once every section is in order', () => {
+    expect(VACANCY_STEP_IDS[furthestReachableStep(vacancyProblems(completeValues(), 'create'))]).toBe(REVIEW_STEP);
+  });
+
+  it('finds the section a field is asked in', () => {
+    expect(sectionOf('applicationDeadline')?.id).toBe('basics');
+    expect(sectionOf('autoThreshold')?.id).toBe('pipeline');
   });
 });
 
