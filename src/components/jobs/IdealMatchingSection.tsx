@@ -1,5 +1,5 @@
 import { DeleteOutlined, PlusOutlined } from '@ant-design/icons';
-import { Col, Input, InputNumber, Progress, Segmented, Switch, Tag, Typography } from 'antd';
+import { Col, Input, InputNumber, Progress, Segmented, Switch, Typography } from 'antd';
 import { useState } from 'react';
 import type { MatchingRequirement } from '../../api/types';
 import {
@@ -100,6 +100,8 @@ export function IdealMatchingSection({ values, errors, set, mode }: Readonly<Vac
             <Unweighted
               draft={draft}
               tools={values.toolsAndTechnologies}
+              toolsError={errors.toolsAndTechnologies}
+              onToolsChange={(next) => set('toolsAndTechnologies', next)}
               minimumYears={values.minimumExperienceYears}
               education={values.education}
               requirementCertifications={values.certifications}
@@ -336,6 +338,8 @@ function AddRow({ taken, onAdd }: Readonly<{ taken: string[]; onAdd: (name: stri
 function Unweighted({
   draft,
   tools,
+  toolsError,
+  onToolsChange,
   minimumYears,
   education,
   requirementCertifications,
@@ -343,12 +347,14 @@ function Unweighted({
 }: Readonly<{
   draft: IdealMatchingDraft;
   tools: string[];
+  toolsError?: string;
+  /** Tools are the vacancy's own list, the one Candidate requirements edits too. */
+  onToolsChange: (next: string[]) => void;
   minimumYears: number | null;
   education: string;
   requirementCertifications: string[];
   onChange: (next: IdealMatchingDraft) => void;
 }>) {
-  const listedTools = tools.filter((name) => name.trim() !== '');
   const degree = isDegreeLevel(education);
   const degreeSuggestions = DEGREE_TYPE_SUGGESTIONS.filter(
     (name) => !draft.degreeTypes.some((taken) => sameName(taken, name)),
@@ -363,24 +369,23 @@ function Unweighted({
         Not part of the 100%
       </h3>
       <Typography.Text type="secondary" className="mb-4 block text-small">
-        Tools, experience, education and certifications guide AI screening but are not weighted. Tools, experience
-        and education come from Candidate requirements — change them there.
+        Tools, experience, education and certifications guide AI screening but are not weighted. Tools added here are
+        the same list as in Candidate requirements; experience and education are set there.
       </Typography.Text>
 
       <div className="flex flex-col gap-4">
         <div>
-          <span className="block text-small font-medium text-slate-900">Tools &amp; technologies</span>
-          {listedTools.length > 0 ? (
-            <div className="mt-1.5 flex flex-wrap gap-1.5">
-              {listedTools.map((name) => (
-                <Tag key={name} className="m-0">
-                  {name}
-                </Tag>
-              ))}
-            </div>
-          ) : (
-            <span className="block text-small text-slate-600">None listed in Candidate requirements.</span>
-          )}
+          {/* Its own id: the same list is edited on the Candidate requirements step,
+              whose field already owns the vacancy-toolsAndTechnologies id. */}
+          <CompanyChipListEditor
+            id="matching-tools"
+            label="Tools & technologies"
+            placeholder="e.g. Docker"
+            hint="Tools, technologies and platforms the person will use. Press Enter after each. Not weighted."
+            values={tools}
+            error={toolsError}
+            onChange={onToolsChange}
+          />
         </div>
 
         <div>

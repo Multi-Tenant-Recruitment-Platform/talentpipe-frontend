@@ -1375,6 +1375,32 @@ describe('ideal candidate matching', () => {
     expect(within(outside).getByText('Bachelor’s degree')).toBeInTheDocument();
   });
 
+  it('adds a tool from the matching step to the vacancy’s own list, unweighted, and saves it', async () => {
+    const user = userEvent.setup();
+    const draft = draftWith();
+    api.get.mockResolvedValue(draft);
+    api.update.mockResolvedValue({ ...draft, version: 2 });
+    api.idealMatching.mockResolvedValue(offered);
+    render(<VacancyRoutes path="/dashboard/jobs/v-1/edit" />);
+
+    await openMatching();
+    await user.click(screen.getByRole('switch', { name: 'Use ideal candidate matching' }));
+    const outside = screen.getByRole('region', { name: 'Not part of the 100%' });
+    await user.type(within(outside).getByLabelText('Tools & technologies'), 'Kubernetes{Enter}');
+
+    expect(within(outside).getByText('Kubernetes')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Weight for Kubernetes')).not.toBeInTheDocument();
+
+    // The same list Candidate requirements shows.
+    openStep(/candidate requirements/i);
+    expect(screen.getByRole('group', { name: /candidate requirements/i })).toHaveTextContent('Kubernetes');
+
+    await waitFor(() => expect(api.update).toHaveBeenCalled());
+    const sent = api.update.mock.calls[0][1];
+    expect(sent.toolsAndTechnologies).toEqual(['Docker', 'Kubernetes']);
+    expect(sent.idealMatching.criteria.map((c: { name: string }) => c.name)).not.toContain('Kubernetes');
+  });
+
   it('evens the weights out to 100% and saves the profile with the draft', async () => {
     const user = userEvent.setup();
     const draft = draftWith();
