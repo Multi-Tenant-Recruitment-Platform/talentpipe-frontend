@@ -4,6 +4,7 @@ import {
   BankOutlined,
   BellOutlined,
   CalendarOutlined,
+  ContactsOutlined,
   FunnelPlotOutlined,
   LogoutOutlined,
   MenuOutlined,
@@ -84,6 +85,9 @@ const NAV_ITEMS: {
   // Every member may open it: the backend lists only the vacancies they work
   // on unless their role sees them all.
   { to: '/dashboard/jobs', label: 'Job Vacancies', icon: SolutionOutlined, permission: 'jobs.view' },
+  // The people who applied, beside the vacancies they applied to. Open to every
+  // member: the server lists only the vacancies whose applicants they may see.
+  { to: '/dashboard/applicants', label: 'Applicants', icon: ContactsOutlined, permission: 'jobs.view' },
   // Templates sit beside vacancies: a job is opened from one.
   {
     to: '/dashboard/pipeline-templates',

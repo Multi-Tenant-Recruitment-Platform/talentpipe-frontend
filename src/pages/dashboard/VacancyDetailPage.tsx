@@ -24,6 +24,7 @@ import {
   employmentTypeLabel,
   joinLabels,
   publishBlockers,
+  todayIso,
   workplaceTypeLabel,
   type VacancyAction,
 } from '../../dashboard/jobVacancy';
@@ -38,9 +39,8 @@ const NOTICE_ID = 'vacancy-detail-notice';
  *
  * <p>A page rather than the drawer it replaces: a vacancy now has a life —
  * published, closed, archived — and actions that change it, and a page has a
- * URL that can be shared, reloaded and returned to with Back. It is also where
- * the candidate pipeline for this role will attach when that module exists;
- * there are deliberately no empty Candidates or Pipeline tabs until then.</p>
+ * URL that can be shared, reloaded and returned to with Back. Its applicants
+ * have their own place — Applicants in the sidebar — reached from here too.</p>
  */
 export function VacancyDetailPage() {
   const { id = '' } = useParams();
@@ -155,6 +155,10 @@ export function VacancyDetailPage() {
   ].filter(Boolean);
   const signal = deadlineSignal(vacancy);
   const blockers = vacancy.status === 'DRAFT' ? publishBlockers(vacancy) : [];
+  // Live but past its deadline: the server already refuses new applications,
+  // and the recruiter should hear it in words, not only from an amber tag.
+  const deadlinePassed =
+    vacancy.status === 'PUBLISHED' && !!vacancy.applicationDeadline && vacancy.applicationDeadline < todayIso();
 
   return (
     <section>
@@ -184,6 +188,18 @@ export function VacancyDetailPage() {
               )}
             </div>
             {meta.length > 0 && <p className="m-0 mt-1 truncate text-small text-slate-300">{meta.join(' · ')}</p>}
+            {vacancy.publishedAt && (
+              <p className="m-0 mt-1 text-small tabular-nums text-slate-300">
+                Posted <time dateTime={vacancy.publishedAt}>{formatDate(vacancy.publishedAt)}</time>
+                {' · '}
+                <Link
+                  to={`/dashboard/applicants/${encodeURIComponent(vacancy.id)}`}
+                  className="font-medium text-white underline-offset-2 hover:underline"
+                >
+                  View applicants
+                </Link>
+              </p>
+            )}
             {vacancy.applicationDeadline && (
               <p className="tp-vacancy-detail-deadline m-0 mt-1 text-small tabular-nums text-slate-300">
                 Applications close{' '}
@@ -220,6 +236,13 @@ export function VacancyDetailPage() {
         />
       )}
 
+      {deadlinePassed && (
+        <Alert tone="warning" className="mb-6">
+          The application deadline has passed, so this vacancy no longer accepts applications.
+          {canManage && ' Close it, or move the deadline to reopen applications.'}
+        </Alert>
+      )}
+
       {blockers.length > 0 && canManage && (
         <Alert tone="info" className="mb-6">
           This draft needs a little more before it can be published:{' '}
@@ -253,9 +276,6 @@ export function VacancyDetailPage() {
           <InterviewPanelsCard vacancy={vacancy} />
           <IdealMatchingCard vacancy={vacancy} />
           <VacancyFeaturesCard vacancy={vacancy} onChanged={replace} />
-          {/* TODO(applications): the Candidates and Pipeline views for this
-              role attach here once the applications module exists. No empty
-              tabs before then — a tab with nothing behind it is a dead end. */}
         </aside>
       </div>
 

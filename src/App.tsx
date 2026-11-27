@@ -53,6 +53,15 @@ const RoleEditorPage = lazy(() => import('./pages/dashboard/RoleEditorPage').the
 const RoleActivityPage = lazy(() =>
   import('./pages/dashboard/RoleActivityPage').then((m) => ({ default: m.RoleActivityPage })),
 );
+const ApplicantVacanciesPage = lazy(() =>
+  import('./pages/dashboard/ApplicantVacanciesPage').then((m) => ({ default: m.ApplicantVacanciesPage })),
+);
+const VacancyApplicantsPage = lazy(() =>
+  import('./pages/dashboard/VacancyApplicantsPage').then((m) => ({ default: m.VacancyApplicantsPage })),
+);
+const ApplicantPanelRoute = lazy(() =>
+  import('./pages/dashboard/VacancyApplicantsPage').then((m) => ({ default: m.ApplicantPanelRoute })),
+);
 const VacancyDetailPage = lazy(() => import('./pages/dashboard/VacancyDetailPage').then((m) => ({ default: m.VacancyDetailPage })));
 
 export default function App() {
@@ -163,6 +172,29 @@ export default function App() {
               </RequirePermission>
             }
           />
+          {/* The applicants area: the vacancies to review, one vacancy's ranked
+              applicants, and — as a child route over that list — one
+              applicant's panel, so it has an address of its own. Every member
+              may enter; the server lists only the vacancies whose applicants
+              they may see. */}
+          <Route
+            path="applicants"
+            element={
+              <RequirePermission permission="jobs.view">
+                <ApplicantVacanciesPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="applicants/:jobId"
+            element={
+              <RequirePermission permission="jobs.view">
+                <VacancyApplicantsPage />
+              </RequirePermission>
+            }
+          >
+            <Route path=":applicationId" element={<ApplicantPanelRoute />} />
+          </Route>
           <Route
             path="pipeline"
             element={
