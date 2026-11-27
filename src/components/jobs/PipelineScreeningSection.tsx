@@ -55,6 +55,15 @@ function ChooseTemplate({ values, errors, set, mode }: Readonly<VacancySectionPr
 
   const chosen = templates.find((template) => template.id === values.pipelineTemplateId) ?? null;
   const unavailable = copiedIsGone && !chosen;
+
+  // The name rides along for the review step, which has no template list of its
+  // own. A duplicate arrives with only the id, so it is filled in once the list is in.
+  const chosenName = chosen?.name ?? null;
+  useEffect(() => {
+    if (chosenName !== null && values.pipelineTemplateName !== chosenName) {
+      set('pipelineTemplateName', chosenName);
+    }
+  }, [chosenName, values.pipelineTemplateName, set]);
   // A template change asked for while panels are filled in, waiting on a yes.
   const [pending, setPending] = useState<PipelineTemplateSummary | null>(null);
   const panelsStarted = (values.interviewPanels ?? []).some(

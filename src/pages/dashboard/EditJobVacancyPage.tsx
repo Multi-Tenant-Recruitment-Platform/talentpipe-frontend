@@ -26,9 +26,10 @@ import { useJobVacancy } from '../../dashboard/useJobVacancies';
 /**
  * Change a vacancy's content (PB-019).
  *
- * <p>A draft keeps the create form's two exits — save it, or publish it. A live
- * vacancy has one, Save changes, validated in full: a published advert must
- * never be saved into a state it could not have been published in.</p>
+ * <p>A draft auto-saves as it is edited and ends in Publish. A live vacancy is
+ * never auto-saved — its saves reach the candidate portal at once — and has one
+ * exit, Save changes, validated in full: a published advert must never be
+ * saved into a state it could not have been published in.</p>
  *
  * <p>Every save sends the `version` it was made against, and the server's
  * answer becomes the new one. Without that, two recruiters editing the same
@@ -80,8 +81,9 @@ export function EditJobVacancyPage() {
     return saved;
   }
 
+  // What auto-save calls on a draft; the form keeps the answer.
   async function saveDraft(values: JobVacancyFormValues) {
-    await save(values);
+    return save(values);
   }
 
   async function publish(values: JobVacancyFormValues) {
@@ -192,6 +194,7 @@ export function EditJobVacancyPage() {
       key={vacancy.id}
       mode={live ? 'edit-published' : 'edit-draft'}
       initialValues={initialValues}
+      storageKey={vacancy.id}
       initialNotice={initialNotice}
       banner={
         live ? (

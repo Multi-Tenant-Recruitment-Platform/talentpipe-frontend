@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { AxiosError, type AxiosResponse } from 'axios';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
@@ -6,6 +6,17 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { JobVacancyResponse } from '../../api/types';
 import { authContextMock, makeUser, setAuth } from '../../test/authHarness';
 import { makeTemplateSummary, makeVacancy, makeVacancyWithoutPipeline } from '../../test/vacancyFixtures';
+import {
+  enterDraftWorkspace,
+  leaveWork,
+  openStep,
+  openStepHeading,
+  pressNext,
+  resumeWork,
+  stepButton,
+  stepper,
+} from '../../test/vacancyFormHarness';
+import { NEW_VACANCY_DRAFT, vacancyDraftStore } from '../../dashboard/vacancyDraftStore';
 
 /**
  * Behaviour of the vacancy surfaces (PB-011, PB-018 → PB-022), against the
@@ -159,16 +170,16 @@ beforeEach(() => {
   profileSaved.industry = '';
   profileSaved.additionalIndustries = [];
   team.activeMembers = [];
+  enterDraftWorkspace();
 });
 
 /* --- Create ------------------------------------------------------------- */
 
 describe('creating a vacancy', () => {
-  it('lays the seven sections out in order, each numbered', () => {
+  it('walks eight numbered steps, from basic information to the review', () => {
     render(<VacancyRoutes path="/dashboard/jobs/new" />);
 
-    const nav = screen.getByRole('navigation', { name: /vacancy form sections/i });
-    expect(within(nav).getAllByRole('button').map((step) => step.textContent)).toEqual([
+    expect(within(stepper()).getAllByRole('button').map((step) => step.textContent)).toEqual([
       expect.stringContaining('Basic information'),
       expect.stringContaining('Job description'),
       expect.stringContaining('Candidate requirements'),
@@ -176,27 +187,32 @@ describe('creating a vacancy', () => {
       expect.stringContaining('Work schedule'),
       expect.stringContaining('Pipeline & screening'),
       expect.stringContaining('Ideal candidate matching'),
+      expect.stringContaining('Review & publish'),
     ]);
+    expect(screen.getByText('Step 1 of 8')).toBeInTheDocument();
     expect(screen.getByRole('group', { name: /basic information/i })).toHaveTextContent('01');
+    // Steps ahead of an unfinished one wait for it.
+    expect(stepButton(/job description/i)).toBeDisabled();
   });
 
-  it('says plainly that the main action publishes', () => {
+  it('offers Next until the review, and no Save draft to remember', () => {
     render(<VacancyRoutes path="/dashboard/jobs/new" />);
 
     expect(screen.getByRole('button', { name: /^cancel$/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /save draft/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /publish vacancy/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^next/i })).toHaveAccessibleName(/job description/i);
+    expect(screen.queryByRole('button', { name: /^back$/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /save draft/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /publish vacancy/i })).not.toBeInTheDocument();
   });
 
-  it('refuses to publish an incomplete vacancy, says where to look, and sends nothing', async () => {
-    const user = userEvent.setup();
+  it('will not move on from an unfinished step, says what to fill, and sends nothing', async () => {
     render(<VacancyRoutes path="/dashboard/jobs/new" />);
 
-    await user.click(screen.getByRole('button', { name: /publish vacancy/i }));
+    pressNext();
 
-    expect(await screen.findByText(/still missing/i)).toBeInTheDocument();
+    expect(await screen.findByText(/fill in the marked fields to continue/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/job title/i)).toHaveFocus();
-    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+    expect(openStepHeading()).toHaveTextContent('Basic information');
     expect(api.create).not.toHaveBeenCalled();
   });
 
@@ -204,62 +220,178 @@ describe('creating a vacancy', () => {
     const user = userEvent.setup();
     render(<VacancyRoutes path="/dashboard/jobs/new" />);
 
-    await user.click(screen.getByRole('button', { name: /publish vacancy/i }));
+    pressNext();
     expect(await screen.findByText(/a job title is required/i)).toBeInTheDocument();
 
     await user.type(screen.getByLabelText(/job title/i), 'Backend');
     expect(screen.queryByText(/a job title is required/i)).not.toBeInTheDocument();
   });
 
-  it('files a draft unvalidated, then continues on its edit page so the next save updates it', async () => {
-    const user = userEvent.setup();
-    const stored = makeVacancy({ id: 'v-9', status: 'DRAFT', title: 'Backend Engineer' });
-    api.create.mockResolvedValue(stored);
-    api.get.mockResolvedValue(stored);
+  it('moves on and back with Next and Back, keeping what was entered and landing on each heading', async () => {
+    leaveWork('basics');
     render(<VacancyRoutes path="/dashboard/jobs/new" />);
+    await resumeWork();
 
-    fill(/job title/i, 'Backend Engineer');
-    await chooseTemplate(user, 'Engineering hiring');
-    await user.click(screen.getByRole('button', { name: /save draft/i }));
+    pressNext();
+    expect(openStepHeading()).toHaveTextContent('Job description');
+    expect(openStepHeading()).toHaveFocus();
+    expect(screen.getByText('Step 2 of 8')).toBeInTheDocument();
 
-    expect(api.create).toHaveBeenCalledWith(
-      expect.objectContaining({
-        title: 'Backend Engineer',
-        status: 'DRAFT',
-        applicationDeadline: null,
-        pipelineTemplateId: 'tpl-1',
-      }),
-    );
-    await waitFor(() => expect(location()).toHaveTextContent('/dashboard/jobs/v-9/edit'));
-    expect(await screen.findByText(/draft saved/i)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /^back$/i }));
+    expect(openStepHeading()).toHaveTextContent('Basic information');
+    expect(screen.getByLabelText(/job title/i)).toHaveValue('Backend Engineer');
   });
 
-  it('keeps the work when saving fails, and says why', async () => {
+  it('keeps the work in this browser and offers it back next time', async () => {
+    const first = render(<VacancyRoutes path="/dashboard/jobs/new" />);
+    fill(/job title/i, 'Backend Engineer');
+    expect(await screen.findByText(/saved in this browser/i)).toBeInTheDocument();
+    first.unmount();
+
+    render(<VacancyRoutes path="/dashboard/jobs/new" />);
+    expect(screen.getByLabelText(/job title/i)).toHaveValue('');
+    await resumeWork();
+
+    expect(screen.getByLabelText(/job title/i)).toHaveValue('Backend Engineer');
+    expect(screen.getByText(/picked up where you left off/i)).toBeInTheDocument();
+  });
+
+  it('starts over when asked, forgetting the earlier work', async () => {
+    leaveWork('requirements');
+    render(<VacancyRoutes path="/dashboard/jobs/new" />);
+
+    fireEvent.click(await screen.findByRole('button', { name: /start over/i }));
+
+    expect(screen.queryByRole('button', { name: /^resume$/i })).not.toBeInTheDocument();
+    expect(screen.getByLabelText(/job title/i)).toHaveValue('');
+    expect(vacancyDraftStore.read(NEW_VACANCY_DRAFT)).toBeNull();
+  });
+
+  it('files a draft once a template is chosen and Next pressed, then keeps updating that same draft in place', async () => {
+    const user = userEvent.setup();
+    const stored = makeVacancy({ id: 'v-9', status: 'DRAFT', version: 0, title: 'Backend Engineer' });
+    api.create.mockResolvedValue(stored);
+    api.update.mockResolvedValue({ ...stored, version: 1 });
+    leaveWork('pipeline');
+    render(<VacancyRoutes path="/dashboard/jobs/new" />);
+    await resumeWork();
+
+    await chooseTemplate(user, 'Engineering hiring');
+    // Not mid-step: the template is fixed once filed, so it waits for Next.
+    expect(api.create).not.toHaveBeenCalled();
+    pressNext();
+
+    await waitFor(() =>
+      expect(api.create).toHaveBeenCalledWith(
+        expect.objectContaining({ title: 'Backend Engineer', status: 'DRAFT', pipelineTemplateId: 'tpl-1' }),
+      ),
+    );
+    await waitFor(() => expect(location()).toHaveTextContent('/dashboard/jobs/new?draft=v-9'));
+    expect(await screen.findByText(/draft saved/i)).toBeInTheDocument();
+    // The same form, still on the step it moved to.
+    expect(openStepHeading()).toHaveTextContent('Ideal candidate matching');
+
+    fireEvent.click(screen.getByRole('button', { name: /^back$/i }));
+    // Filed, the template is fixed.
+    expect(screen.getByRole('group', { name: /pipeline template/i })).toHaveTextContent('Engineering hiring');
+    fill(/auto-advance threshold/i, '85');
+    pressNext();
+
+    await waitFor(() =>
+      expect(api.update).toHaveBeenCalledWith('v-9', expect.objectContaining({ autoThreshold: 85, version: 0 })),
+    );
+    expect(api.create).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the work when filing the draft fails, says why, and offers to retry', async () => {
     const user = userEvent.setup();
     api.create.mockRejectedValue(new AxiosError('Network Error'));
+    leaveWork('pipeline');
     render(<VacancyRoutes path="/dashboard/jobs/new" />);
+    await resumeWork();
 
-    fill(/job title/i, 'Backend Engineer');
     await chooseTemplate(user, 'Engineering hiring');
-    await user.click(screen.getByRole('button', { name: /save draft/i }));
+    pressNext();
 
     expect(await screen.findByText(/couldn't reach the server/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^retry$/i })).toBeInTheDocument();
     expect(screen.getByLabelText(/job title/i)).toHaveValue('Backend Engineer');
-    expect(location()).toHaveTextContent('/dashboard/jobs/new');
+    expect(location()).toHaveTextContent(/^\/dashboard\/jobs\/new$/);
   });
 
-  it('asks before throwing away work, and keeping it is safe', async () => {
+  it('reads the vacancy back on the review, then publishes the draft it filed', async () => {
+    const user = userEvent.setup();
+    const stored = makeVacancy({ id: 'v-9', status: 'DRAFT', version: 0 });
+    api.create.mockResolvedValue(stored);
+    api.update.mockResolvedValue({ ...stored, version: 1 });
+    api.publish.mockResolvedValue({ ...stored, version: 2, status: 'PUBLISHED', title: 'Backend Engineer' });
+    api.get.mockResolvedValue(makeVacancy({ id: 'v-9', status: 'PUBLISHED' }));
+    leaveWork('pipeline');
+    render(<VacancyRoutes path="/dashboard/jobs/new" />);
+    await resumeWork();
+
+    await chooseTemplate(user, 'Engineering hiring');
+    pressNext();
+    await screen.findByText(/draft saved/i);
+    pressNext();
+
+    expect(openStepHeading()).toHaveTextContent(/review & publish/i);
+    expect(screen.getByText(/everything is in place to publish/i)).toBeInTheDocument();
+    const basics = screen.getByRole('region', { name: 'Basic information' });
+    expect(within(basics).getByText('Backend Engineer')).toBeInTheDocument();
+    expect(within(screen.getByRole('region', { name: 'Pipeline & screening' })).getByText('Engineering hiring')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^cancel$/i })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /publish vacancy/i }));
+    const dialog = await screen.findByRole('alertdialog', { name: /publish this vacancy/i });
+    await user.click(within(dialog).getByRole('button', { name: /publish vacancy/i }));
+
+    await waitFor(() => expect(api.publish).toHaveBeenCalledWith('v-9'));
+    expect(api.create).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(location()).toHaveTextContent(/^\/dashboard\/jobs\/v-9$/));
+    expect(vacancyDraftStore.read('v-9')).toBeNull();
+  });
+
+  it('asks before leaving with work entered, and keeping editing is safe', async () => {
     const user = userEvent.setup();
     render(<VacancyRoutes path="/dashboard/jobs/new" />);
 
     fill(/job title/i, 'Backend Engineer');
     await user.click(screen.getByRole('button', { name: /^cancel$/i }));
 
-    const dialog = await screen.findByRole('alertdialog');
+    const dialog = await screen.findByRole('alertdialog', { name: /leave this vacancy/i });
     await user.click(within(dialog).getByRole('button', { name: /keep editing/i }));
 
     expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
     expect(screen.getByLabelText(/job title/i)).toHaveValue('Backend Engineer');
+  });
+
+  it('keeps unfinished work in this browser when it is kept as a draft', async () => {
+    const user = userEvent.setup();
+    render(<VacancyRoutes path="/dashboard/jobs/new" />);
+
+    fill(/job title/i, 'Backend Engineer');
+    await user.click(screen.getByRole('button', { name: /^cancel$/i }));
+    const dialog = await screen.findByRole('alertdialog', { name: /leave this vacancy/i });
+    expect(dialog).toHaveTextContent(/waits in this browser/i);
+    await user.click(within(dialog).getByRole('button', { name: /keep as draft/i }));
+
+    await waitFor(() => expect(location()).toHaveTextContent(/^\/dashboard\/jobs$/));
+    expect(vacancyDraftStore.read(NEW_VACANCY_DRAFT)?.values.title).toBe('Backend Engineer');
+    expect(api.create).not.toHaveBeenCalled();
+  });
+
+  it('throws the work away when it is discarded', async () => {
+    const user = userEvent.setup();
+    render(<VacancyRoutes path="/dashboard/jobs/new" />);
+
+    fill(/job title/i, 'Backend Engineer');
+    await user.click(screen.getByRole('button', { name: /^cancel$/i }));
+    const dialog = await screen.findByRole('alertdialog', { name: /leave this vacancy/i });
+    await user.click(within(dialog).getByRole('button', { name: /^discard$/i }));
+
+    await waitFor(() => expect(location()).toHaveTextContent(/^\/dashboard\/jobs$/));
+    expect(vacancyDraftStore.read(NEW_VACANCY_DRAFT)).toBeNull();
   });
 
   it('leaves straight away when nothing has been entered', async () => {
@@ -357,6 +489,8 @@ describe('editing a vacancy', () => {
     render(<VacancyRoutes path="/dashboard/jobs/v-1/edit" />);
 
     await screen.findByLabelText(/job title/i);
+    // Every step of a complete draft is open; the review is one click away.
+    openStep(/review & publish/i);
     await user.click(screen.getByRole('button', { name: /publish vacancy/i }));
     const dialog = await screen.findByRole('alertdialog', { name: /publish this vacancy/i });
     await user.click(within(dialog).getByRole('button', { name: /publish vacancy/i }));
@@ -364,6 +498,47 @@ describe('editing a vacancy', () => {
     await waitFor(() => expect(api.publish).toHaveBeenCalledWith('v-1'));
     expect(api.update).toHaveBeenCalledWith('v-1', expect.objectContaining({ version: 1 }));
     await waitFor(() => expect(location()).toHaveTextContent(/^\/dashboard\/jobs\/v-1$/));
+  });
+
+  it('reopens a section from the review with its Edit button', async () => {
+    const user = userEvent.setup();
+    api.get.mockResolvedValue(makeVacancy({ id: 'v-1', status: 'DRAFT', version: 1 }));
+    render(<VacancyRoutes path="/dashboard/jobs/v-1/edit" />);
+
+    await screen.findByLabelText(/job title/i);
+    openStep(/review & publish/i);
+    await user.click(screen.getByRole('button', { name: 'Edit Candidate requirements' }));
+
+    expect(openStepHeading()).toHaveTextContent('Candidate requirements');
+  });
+
+  it('saves a draft by itself as it is edited, against the version it was opened at', async () => {
+    const draft = makeVacancy({ id: 'v-1', status: 'DRAFT', version: 1 });
+    api.get.mockResolvedValue(draft);
+    api.update.mockResolvedValue({ ...draft, version: 2 });
+    render(<VacancyRoutes path="/dashboard/jobs/v-1/edit" />);
+
+    await screen.findByLabelText(/job title/i);
+    fill(/job title/i, 'Staff Engineer');
+    pressNext();
+
+    await waitFor(() =>
+      expect(api.update).toHaveBeenCalledWith('v-1', expect.objectContaining({ title: 'Staff Engineer', version: 1 })),
+    );
+    expect(await screen.findByText(/draft saved/i)).toBeInTheDocument();
+  });
+
+  it('never saves a live vacancy by itself: its saves go straight to candidates', async () => {
+    api.get.mockResolvedValue(makeVacancy({ id: 'v-1', status: 'PUBLISHED', version: 3 }));
+    render(<VacancyRoutes path="/dashboard/jobs/v-1/edit" />);
+
+    await screen.findByLabelText(/job title/i);
+    fill(/job title/i, 'Staff Engineer');
+    pressNext();
+    await act(async () => {});
+
+    expect(api.update).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: /save changes/i })).toBeInTheDocument();
   });
 
   it('sends a closed vacancy back to its page instead of opening a form it cannot save', async () => {
@@ -572,7 +747,9 @@ describe('a vacancy’s page', () => {
 describe('choosing a pipeline for a new vacancy', () => {
   it('offers the company’s active templates, and prefills the screening settings from the one chosen', async () => {
     const user = userEvent.setup();
+    leaveWork('pipeline');
     render(<VacancyRoutes path="/dashboard/jobs/new" />);
+    await resumeWork();
 
     await user.click(await templatePicker());
     expect(await screen.findByTitle('Engineering hiring · 4 stages · 1 interview round')).toBeInTheDocument();
@@ -585,33 +762,30 @@ describe('choosing a pipeline for a new vacancy', () => {
     expect(templatesApi.list).toHaveBeenCalledWith({ search: '', includeArchived: false });
   });
 
-  it('refuses to save a draft without a template, says why, and sends nothing', async () => {
+  it('will not move on, or file anything, without a template', async () => {
     const user = userEvent.setup();
+    leaveWork('pipeline');
     render(<VacancyRoutes path="/dashboard/jobs/new" />);
+    await resumeWork();
     await templatePicker();
 
-    fill(/job title/i, 'Backend Engineer');
-    await user.click(screen.getByRole('button', { name: /save draft/i }));
-
-    expect(await screen.findByText(/choose a pipeline template before saving this draft/i)).toBeInTheDocument();
-    expect(screen.getByText('Pipeline template is required.')).toBeInTheDocument();
-    expect(api.create).not.toHaveBeenCalled();
-  });
-
-  it('refuses to publish without a template, on the server’s own sentence', async () => {
-    const user = userEvent.setup();
-    render(<VacancyRoutes path="/dashboard/jobs/new" />);
-    await templatePicker();
-
-    await user.click(screen.getByRole('button', { name: /publish vacancy/i }));
-
+    pressNext();
     expect(await screen.findByText('Pipeline template is required.')).toBeInTheDocument();
+    expect(openStepHeading()).toHaveTextContent('Pipeline & screening');
+
+    // Kept as a draft, it can only wait in this browser.
+    await user.click(screen.getByRole('button', { name: /^cancel$/i }));
+    const dialog = await screen.findByRole('alertdialog', { name: /leave this vacancy/i });
+    await user.click(within(dialog).getByRole('button', { name: /keep as draft/i }));
+    await waitFor(() => expect(location()).toHaveTextContent(/^\/dashboard\/jobs$/));
     expect(api.create).not.toHaveBeenCalled();
   });
 
   it('says so when the workspace has no templates, pointing an admin at the template editor', async () => {
     templatesApi.list.mockResolvedValue([]);
+    leaveWork('pipeline');
     render(<VacancyRoutes path="/dashboard/jobs/new" />);
+    await resumeWork();
 
     expect(await screen.findByRole('link', { name: /create a pipeline template/i })).toHaveAttribute(
       'href',
@@ -628,7 +802,7 @@ describe('choosing a pipeline for a new vacancy', () => {
     expect(screen.queryByRole('link', { name: /create a pipeline template/i })).not.toBeInTheDocument();
   });
 
-  it('files a duplicate on the original’s template, with the original’s settings', async () => {
+  it('keeps a duplicate as a draft on the original’s template, with the original’s settings', async () => {
     const user = userEvent.setup();
     api.get.mockResolvedValue(makeVacancy({ id: 'v-1', autoThreshold: 85, manualThreshold: 65 }));
     api.create.mockResolvedValue(makeVacancy({ id: 'v-2', status: 'DRAFT' }));
@@ -636,11 +810,15 @@ describe('choosing a pipeline for a new vacancy', () => {
 
     await templatePicker();
     expect(screen.getByLabelText(/auto-advance threshold/i)).toHaveValue('85');
-    await user.click(screen.getByRole('button', { name: /save draft/i }));
+    fill(/job title/i, 'Platform Engineer');
+    await user.click(screen.getByRole('button', { name: /^cancel$/i }));
+    const dialog = await screen.findByRole('alertdialog', { name: /leave this vacancy/i });
+    await user.click(within(dialog).getByRole('button', { name: /keep as draft/i }));
 
     await waitFor(() =>
       expect(api.create).toHaveBeenCalledWith(
         expect.objectContaining({
+          title: 'Platform Engineer',
           pipelineTemplateId: 'tpl-1',
           autoThreshold: 85,
           manualThreshold: 65,
@@ -686,11 +864,12 @@ describe('the pipeline rules a form is held to', () => {
   it('says the template is gone when creating answers 404, not that the vacancy is', async () => {
     const user = userEvent.setup();
     api.create.mockRejectedValue(httpError(404, 'Pipeline template not found'));
+    leaveWork('pipeline');
     render(<VacancyRoutes path="/dashboard/jobs/new" />);
+    await resumeWork();
 
-    fill(/job title/i, 'Backend Engineer');
     await chooseTemplate(user, 'Engineering hiring');
-    await user.click(screen.getByRole('button', { name: /save draft/i }));
+    pressNext();
 
     expect(await screen.findByText(/pipeline template you chose no longer exists/i)).toBeInTheDocument();
     expect(screen.queryByText(/this vacancy no longer exists/i)).not.toBeInTheDocument();
@@ -715,17 +894,18 @@ describe('the pipeline rules a form is held to', () => {
     );
   });
 
-  it('refuses a draft whose thresholds the server would refuse, before sending it', async () => {
-    const user = userEvent.setup();
+  it('neither saves nor moves on with thresholds the server would refuse', async () => {
     api.get.mockResolvedValue(makeVacancy({ id: 'v-1', status: 'DRAFT' }));
     render(<VacancyRoutes path="/dashboard/jobs/v-1/edit" />);
 
     await screen.findByLabelText(/manual-review threshold/i);
+    openStep(/pipeline & screening/i);
     fill(/manual-review threshold/i, '90');
-    await user.click(screen.getByRole('button', { name: /save draft/i }));
+    pressNext();
 
-    expect(await screen.findByText(/fix the screening thresholds before saving this draft/i)).toBeInTheDocument();
+    expect(await screen.findByText(/fill in the marked fields to continue/i)).toBeInTheDocument();
     expect(screen.getByText('The manual threshold must be lower than the auto threshold.')).toBeInTheDocument();
+    expect(openStepHeading()).toHaveTextContent('Pipeline & screening');
     expect(api.update).not.toHaveBeenCalled();
   });
 });
@@ -735,7 +915,9 @@ describe('the pipeline of a stored vacancy', () => {
     api.get.mockResolvedValue(makeVacancy({ id: 'v-1', status: 'DRAFT' }));
     render(<VacancyRoutes path="/dashboard/jobs/v-1/edit" />);
 
-    const badge = await screen.findByRole('group', { name: /pipeline template/i });
+    await screen.findByLabelText(/job title/i);
+    openStep(/pipeline & screening/i);
+    const badge = screen.getByRole('group', { name: /pipeline template/i });
     expect(badge).toHaveTextContent('Engineering hiring');
     expect(badge).toHaveTextContent(/fixed when the vacancy was created/i);
     expect(screen.queryByRole('combobox', { name: /pipeline template/i })).not.toBeInTheDocument();
@@ -749,6 +931,7 @@ describe('the pipeline of a stored vacancy', () => {
     render(<VacancyRoutes path="/dashboard/jobs/v-1/edit" />);
 
     await screen.findByLabelText(/auto-advance threshold/i);
+    openStep(/pipeline & screening/i);
     fill(/auto-advance threshold/i, '85');
     fill(/manual-review threshold/i, '65');
     await user.click(screen.getByRole('switch', { name: /blind screening/i }));
@@ -858,18 +1041,19 @@ describe('the industry a vacancy is filed under', () => {
     profileSaved.industry = 'Information Technology';
     profileSaved.additionalIndustries = ['Financial Services'];
     api.create.mockResolvedValue(makeVacancy({ id: 'v-9', status: 'DRAFT' }));
-    api.get.mockResolvedValue(makeVacancy({ id: 'v-9', status: 'DRAFT' }));
     const user = userEvent.setup();
+    leaveWork('basics');
     render(<VacancyRoutes path="/dashboard/jobs/new" />);
+    await resumeWork();
 
     await user.click(screen.getByLabelText(/^industry/i));
     expect(await screen.findByTitle('Information Technology · main')).toBeInTheDocument();
     await user.click(screen.getByTitle('Financial Services'));
-    fill(/job title/i, 'Payments Engineer');
+    openStep(/pipeline & screening/i);
     await chooseTemplate(user, 'Engineering hiring');
-    await user.click(screen.getByRole('button', { name: /save draft/i }));
+    pressNext();
 
-    expect(api.create).toHaveBeenCalledWith(expect.objectContaining({ industry: 'Financial Services' }));
+    await waitFor(() => expect(api.create).toHaveBeenCalledWith(expect.objectContaining({ industry: 'Financial Services' })));
   });
 
   it('is shown among the basic information of the vacancy', async () => {
@@ -882,16 +1066,16 @@ describe('the industry a vacancy is filed under', () => {
 
   it('leaves the choice to the server when nothing is picked, and has no field without industries', async () => {
     api.create.mockResolvedValue(makeVacancy({ id: 'v-9', status: 'DRAFT' }));
-    api.get.mockResolvedValue(makeVacancy({ id: 'v-9', status: 'DRAFT' }));
     const user = userEvent.setup();
+    leaveWork('pipeline');
     render(<VacancyRoutes path="/dashboard/jobs/new" />);
 
     expect(screen.queryByLabelText(/^industry/i)).toBeNull();
-    fill(/job title/i, 'Payments Engineer');
+    await resumeWork();
     await chooseTemplate(user, 'Engineering hiring');
-    await user.click(screen.getByRole('button', { name: /save draft/i }));
+    pressNext();
 
-    expect(api.create).toHaveBeenCalledWith(expect.objectContaining({ industry: null }));
+    await waitFor(() => expect(api.create).toHaveBeenCalledWith(expect.objectContaining({ industry: null })));
   });
 });
 
@@ -1030,7 +1214,10 @@ describe('interview panels', () => {
     render(<VacancyRoutes path="/dashboard/jobs/v-1/edit" />);
 
     await screen.findByLabelText(/job title/i);
-    await user.click(screen.getByRole('button', { name: /publish vacancy/i }));
+    // The review stays out of reach while a round is short.
+    expect(stepButton(/review & publish/i)).toBeDisabled();
+    openStep(/pipeline & screening/i);
+    await user.click(screen.getByRole('button', { name: /^next/i }));
 
     expect(await screen.findByText('Technical interview needs 2 interviewers, 1 chosen.')).toBeInTheDocument();
     expect(screen.queryByRole('alertdialog', { name: /publish this vacancy/i })).not.toBeInTheDocument();
@@ -1046,7 +1233,8 @@ describe('interview panels', () => {
     render(<VacancyRoutes path="/dashboard/jobs/v-1/edit" />);
 
     await screen.findByLabelText(/job title/i);
-    await user.click(screen.getByRole('button', { name: /save draft/i }));
+    fill(/job title/i, 'Staff Engineer');
+    await user.click(screen.getByRole('button', { name: /^next/i }));
 
     await waitFor(() =>
       expect(api.update).toHaveBeenCalledWith(
@@ -1068,6 +1256,7 @@ describe('interview panels', () => {
     render(<VacancyRoutes path="/dashboard/jobs/v-1/edit" />);
 
     const picker = await screen.findByLabelText('Interviewers for Technical interview');
+    openStep(/pipeline & screening/i);
     expect(picker).toBeDisabled();
 
     fireEvent.change(screen.getByLabelText('Number of interviewers'), { target: { value: '1' } });
@@ -1078,7 +1267,7 @@ describe('interview panels', () => {
     await waitFor(() => expect(api.searchAssignableMembers).toHaveBeenCalledWith('g'));
     await user.click(await screen.findByText('Grace Hopper'));
 
-    await user.click(screen.getByRole('button', { name: /save draft/i }));
+    await user.click(screen.getByRole('button', { name: /^back$/i }));
     await waitFor(() =>
       expect(api.update).toHaveBeenCalledWith(
         'v-1',
@@ -1117,7 +1306,9 @@ describe('interview panels', () => {
         { id: 's-3', position: 3, stageType: 'ONBOARD', name: 'Onboard', benchmark: null },
       ],
     }));
+    leaveWork('pipeline');
     render(<VacancyRoutes path="/dashboard/jobs/new" />);
+    await resumeWork();
 
     await chooseTemplate(user, 'Engineering hiring');
 
@@ -1155,13 +1346,20 @@ describe('ideal candidate matching', () => {
       ...overrides,
     });
 
+  /** Opens the matching step once the form is in. */
+  async function openMatching() {
+    await screen.findByLabelText(/job title/i);
+    openStep(/ideal candidate matching/i);
+  }
+
   it('switching it on loads the skills, tools and experience from candidate requirements', async () => {
     const user = userEvent.setup();
     api.get.mockResolvedValue(draftWith());
     api.idealMatching.mockResolvedValue(offered);
     render(<VacancyRoutes path="/dashboard/jobs/v-1/edit" />);
 
-    await user.click(await screen.findByRole('switch', { name: 'Use ideal candidate matching' }));
+    await openMatching();
+    await user.click(screen.getByRole('switch', { name: 'Use ideal candidate matching' }));
 
     expect(screen.getByLabelText('Weight for Java')).toBeInTheDocument();
     expect(screen.getByLabelText('Weight for Kafka')).toBeInTheDocument();
@@ -1180,11 +1378,12 @@ describe('ideal candidate matching', () => {
     api.idealMatching.mockResolvedValue(offered);
     render(<VacancyRoutes path="/dashboard/jobs/v-1/edit" />);
 
-    await user.click(await screen.findByRole('switch', { name: 'Use ideal candidate matching' }));
+    await openMatching();
+    await user.click(screen.getByRole('switch', { name: 'Use ideal candidate matching' }));
     await user.click(screen.getByRole('button', { name: 'Even out weights' }));
     expect(screen.getByText('The weights total 100%.')).toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: /save draft/i }));
+    await user.click(screen.getByRole('button', { name: /^back$/i }));
     await waitFor(() => expect(api.update).toHaveBeenCalled());
     const sent = api.update.mock.calls[0][1].idealMatching;
     expect(sent.enabled).toBe(true);
@@ -1209,7 +1408,8 @@ describe('ideal candidate matching', () => {
     render(<VacancyRoutes path="/dashboard/jobs/v-1/edit" />);
 
     await screen.findByLabelText('Weight for Java');
-    await user.click(screen.getByRole('button', { name: /publish vacancy/i }));
+    openStep(/ideal candidate matching/i);
+    await user.click(screen.getByRole('button', { name: /^next/i }));
 
     expect(
       await screen.findByText('The ideal candidate weights add up to 60%; they need to total 100%.'),
@@ -1223,7 +1423,8 @@ describe('ideal candidate matching', () => {
     api.get.mockResolvedValue(draftWith());
     api.idealMatching.mockResolvedValue(offered);
     render(<VacancyRoutes path="/dashboard/jobs/v-1/edit" />);
-    await user.click(await screen.findByRole('switch', { name: 'Use ideal candidate matching' }));
+    await openMatching();
+    await user.click(screen.getByRole('switch', { name: 'Use ideal candidate matching' }));
 
     await user.click(screen.getByRole('button', { name: 'Remove Kafka' }));
     expect(screen.queryByLabelText('Weight for Kafka')).not.toBeInTheDocument();
@@ -1242,14 +1443,16 @@ describe('ideal candidate matching', () => {
     api.get.mockResolvedValue(draftWith({ education: 'Higher secondary (A/L)' }));
     api.idealMatching.mockResolvedValue(offered);
     const { unmount } = render(<VacancyRoutes path="/dashboard/jobs/v-1/edit" />);
-    await user.click(await screen.findByRole('switch', { name: 'Use ideal candidate matching' }));
+    await openMatching();
+    await user.click(screen.getByRole('switch', { name: 'Use ideal candidate matching' }));
     expect(screen.queryByLabelText(/accepted degree types/i)).not.toBeInTheDocument();
     expect(screen.getByText(/choose a degree \(diploma or higher\)/i)).toBeInTheDocument();
     unmount();
 
     api.get.mockResolvedValue(draftWith());
     render(<VacancyRoutes path="/dashboard/jobs/v-1/edit" />);
-    await user.click(await screen.findByRole('switch', { name: 'Use ideal candidate matching' }));
+    await openMatching();
+    await user.click(screen.getByRole('switch', { name: 'Use ideal candidate matching' }));
     expect(screen.getByLabelText(/accepted degree types/i)).toBeInTheDocument();
   });
 
