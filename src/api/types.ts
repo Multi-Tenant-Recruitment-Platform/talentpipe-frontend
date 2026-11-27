@@ -443,6 +443,57 @@ export interface HiringTeamResponse {
   members: MemberSummary[];
 }
 
+/* --- Ideal candidate matching (V27) --------------------------------------- */
+
+/**
+ * What a weighted criterion is about. Only skills are weighted (V28); tools,
+ * experience, education and certifications are context, never a share.
+ */
+export type MatchingCategory = 'TECHNICAL_SKILL';
+
+/** How firmly a skill is asked for: a required skill is a must-have, a preferred skill preferred. */
+export type MatchingRequirement = 'MUST_HAVE' | 'PREFERRED';
+
+/** One weighted criterion as the job form sends it. The list's order is kept. */
+export interface MatchingCriterionRequest {
+  category: MatchingCategory;
+  name: string;
+  /** Its share of the 100%, 1–100; null while a draft has not decided it. */
+  weightPercent: number | null;
+  requirement: MatchingRequirement;
+}
+
+/**
+ * The ideal candidate: weighted skills sharing one 100%, plus unweighted
+ * degree types and nice-to-have certifications. A draft may hold any total;
+ * publishing needs exactly 100%.
+ */
+export interface IdealMatchingRequest {
+  enabled: boolean;
+  criteria: MatchingCriterionRequest[];
+  degreeTypes: string[];
+  niceToHaveCertifications: string[];
+}
+
+/** `GET /jobs/{id}/ideal-matching`. Company-side only. */
+export interface IdealMatchingResponse {
+  /** Whether the vacancy's pipeline template offers matching. */
+  available: boolean;
+  enabled: boolean;
+  criteria: {
+    id: string;
+    category: MatchingCategory;
+    name: string;
+    /** 0 while a draft has not decided it. */
+    weightPercent: number;
+    requirement: MatchingRequirement;
+    position: number;
+  }[];
+  totalWeightPercent: number;
+  degreeTypes: string[];
+  niceToHaveCertifications: string[];
+}
+
 /* --- Interview panels (V25) ---------------------------------------------- */
 
 /**
@@ -629,6 +680,8 @@ export interface JobDetail extends JobSummary {
   jobDescription?: string | null;
   keyResponsibilities?: string[] | null;
   preferredSkills?: string[] | null;
+  /** Tools, technologies and platforms the role uses. */
+  toolsAndTechnologies?: string[] | null;
   education?: string | null;
   certifications?: string[] | null;
   languageRequirements?: string[] | null;
@@ -699,6 +752,8 @@ export interface JobVacancyRequest {
 
   requiredSkills: string[];
   preferredSkills: string[];
+  /** Tools, technologies and platforms the person will use — Docker, Git, AWS. */
+  toolsAndTechnologies?: string[];
   minimumExperienceYears: number | null;
   education: string | null;
   certifications: string[];
@@ -757,6 +812,13 @@ export interface JobVacancyRequest {
    * interviewers as its count.
    */
   interviewPanels?: InterviewPanelRequest[] | null;
+
+  /**
+   * The ideal candidate screening scores applicants against. Left out (or
+   * null), a new vacancy starts with matching off and an edit keeps the stored
+   * profile; sent, it replaces it. Only where the pipeline template offers it.
+   */
+  idealMatching?: IdealMatchingRequest | null;
 }
 
 /**
@@ -783,7 +845,12 @@ export interface JobStageResponse extends PipelineStage {
 }
 
 /** A stored vacancy: everything submitted, plus what only the server knows. Panels are read separately. */
-export interface JobVacancyResponse extends Omit<JobVacancyRequest, StoredPipelineFields | 'interviewPanels'> {
+export interface JobVacancyResponse
+  extends Omit<JobVacancyRequest, StoredPipelineFields | 'interviewPanels' | 'idealMatching'> {
+  /** Whether the vacancy's pipeline template offers ideal candidate matching; the profile is read separately. */
+  idealMatchingAvailable?: boolean;
+  /** Whether the vacancy screens against its own ideal candidate. */
+  idealMatchingEnabled?: boolean;
   /** Vacancy-owned snapshots, independent of later template edits. */
   stages?: JobStageResponse[];
   /**

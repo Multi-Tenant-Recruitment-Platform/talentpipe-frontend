@@ -7,6 +7,7 @@ import { EMPTY_VACANCY_VALUES, PIPELINE_MESSAGES, validatePipeline } from '../..
 import { authContextMock, makeUser, setAuth } from '../../test/authHarness';
 import { server } from '../../test/http';
 import { makeVacancy } from '../../test/vacancyFixtures';
+import { enterDraftWorkspace, leaveWork, pressNext, resumeWork } from '../../test/vacancyFormHarness';
 
 vi.mock('../../auth/AuthContext', () => authContextMock);
 vi.mock('../../dashboard/CompanyProfileContext', () => ({
@@ -30,13 +31,16 @@ function templatesResponse(content: PipelineTemplateSummary[]) {
   return HttpResponse.json({ content, page: 0, size: 100, totalElements: content.length, totalPages: 1 });
 }
 
-function openCreate() {
+/** Opens a new vacancy on its pipeline step, with the first five steps answered. */
+async function openCreate() {
+  leaveWork('pipeline');
   render(<MemoryRouter><CreateJobVacancyPage /></MemoryRouter>);
+  await resumeWork();
 }
 
 function expectTemplateRequired() {
-  fireEvent.click(screen.getByRole('button', { name: 'Save draft' }));
-  expect(screen.getByText('Choose a pipeline template before saving this draft.')).toBeVisible();
+  pressNext();
+  expect(screen.getByText('Fill in the marked fields to continue.')).toBeVisible();
 }
 
 async function choose(name: string) {
@@ -46,17 +50,20 @@ async function choose(name: string) {
   fireEvent.click(await screen.findByTitle(new RegExp(`^${name}`)));
 }
 
-beforeEach(() => setAuth({ user: makeUser(), initializing: false }));
+beforeEach(() => {
+  setAuth({ user: makeUser(), initializing: false });
+  enterDraftWorkspace();
+});
 
 describe('job creation pipeline picker', () => {
-  it('disables selection while loading and requires a template before saving', async () => {
+  it('disables selection while loading and requires a template before moving on', async () => {
     let release!: () => void;
     const pending = new Promise<void>((resolve) => { release = resolve; });
     server.use(http.get('*/api/v1/pipeline-templates', async () => {
       await pending;
       return templatesResponse([template]);
     }));
-    openCreate();
+    await openCreate();
     try {
       expect(screen.getByText(/Loading templates/)).toBeVisible();
       expect(screen.getByRole('combobox', { name: /Pipeline template/i })).toBeDisabled();
@@ -68,14 +75,14 @@ describe('job creation pipeline picker', () => {
     expect(screen.getByText('Choose a pipeline template')).toBeVisible();
     expectTemplateRequired();
     await choose(template.name);
-    expect(screen.getByRole('button', { name: 'Save draft' })).toBeEnabled();
+    expect(screen.queryByText('Pipeline template is required.')).not.toBeInTheDocument();
   });
 
   it('replaces thresholds and blind mode when a different template is selected', async () => {
     server.use(http.get('*/api/v1/pipeline-templates', () => templatesResponse([
       template, { ...template, id: 'minimal', name: 'Minimal pipeline', defaultAutoThreshold: 100, defaultManualThreshold: 0, blindModeEnabled: false },
     ])));
-    openCreate();
+    await openCreate();
     await choose(template.name);
     expect(screen.getByRole('spinbutton', { name: /Auto.*threshold/i })).toHaveValue('80');
     expect(screen.getByRole('switch', { name: /Blind screening/i })).toBeChecked();
@@ -83,32 +90,30 @@ describe('job creation pipeline picker', () => {
     expect(screen.getByRole('spinbutton', { name: /Auto.*threshold/i })).toHaveValue('100');
     expect(screen.getByRole('spinbutton', { name: /Manual.*threshold/i })).toHaveValue('0');
     expect(screen.getByRole('switch', { name: /Blind screening/i })).not.toBeChecked();
-    expect(screen.getByRole('button', { name: 'Save draft' })).toBeEnabled();
   });
 
   it.each([false, true])('shows an empty state when only archived templates exist: %s', async (archived) => {
     server.use(http.get('*/api/v1/pipeline-templates', () => templatesResponse(
       archived ? [{ ...template, status: 'ARCHIVED' }] : [],
     )));
-    openCreate();
+    await openCreate();
     expect(await screen.findByText(/this workspace has none yet/)).toBeVisible();
     expect(screen.queryByRole('combobox', { name: /Pipeline template/i })).not.toBeInTheDocument();
     expectTemplateRequired();
   });
 
-  it.each([80, 85, 100])('rejects saving when manual threshold is %s and auto is 80', async (manual) => {
+  it.each([80, 85, 100])('will not move on when manual threshold is %s and auto is 80', async (manual) => {
     server.use(http.get('*/api/v1/pipeline-templates', () => templatesResponse([template])));
-    openCreate();
+    await openCreate();
     await choose(template.name);
     const input = screen.getByRole('spinbutton', { name: /Manual.*threshold/i });
     fireEvent.change(input, { target: { value: String(manual) } });
-    fireEvent.click(screen.getByRole('button', { name: 'Save draft' }));
+    pressNext();
     expect(screen.getByText('The manual threshold must be lower than the auto threshold.')).toBeVisible();
     expect(input).toHaveAttribute('aria-invalid', 'true');
-    expect(screen.getByText('Fix the screening thresholds before saving this draft.')).toBeVisible();
+    expect(screen.getByText('Fill in the marked fields to continue.')).toBeVisible();
     fireEvent.change(input, { target: { value: '0' } });
     expect(screen.queryByText('The manual threshold must be lower than the auto threshold.')).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Save draft' })).toBeEnabled();
   });
 });
 

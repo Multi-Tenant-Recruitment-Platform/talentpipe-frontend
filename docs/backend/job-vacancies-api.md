@@ -60,6 +60,9 @@ If you split permissions (for example only admins may archive), tell the fronten
 | GET | `/jobs/{id}/interview-panels` | — | `200 InterviewPanelResponse[]` | Each interview round in pipeline order with its panel: `{ stageId, position, name, benchmark, interviewerCount, interviewers: MemberSummary[] }`. Any company member who can see the vacancy. |
 | PUT | `/jobs/{id}/interview-panels` | `{ panels: InterviewPanelRequest[] }` | `200 InterviewPanelResponse[]` | Replace every panel (`jobs.manage`). A round left out loses its panel. 422 when archived, or on a panel rule (§6a). |
 | GET | `/jobs/assignable-members?q=&limit=20` | — | `200 MemberSummary[]` | Active company members whose first name, last name, full name or email **starts with** `q` (any case), sorted by name. Any role; never other companies, invitees, disabled accounts or candidates. `jobs.manage`, not `team.view`. Blank `q` → 400; `limit` capped at 50. |
+| GET | `/jobs/{id}/ideal-matching` | — | `200 IdealMatchingResponse` | The ideal candidate: `{ available, enabled, criteria: [{ id, category, name, weightPercent, requirement, position }], totalWeightPercent, degreeTypes, niceToHaveCertifications }`. Any company member who can see the vacancy. |
+| PUT | `/jobs/{id}/ideal-matching` | `IdealMatchingRequest` | `200 IdealMatchingResponse` | Replace the ideal candidate (`jobs.manage`). 422 when closed/archived, not offered by the template, or on a rule in §6b. |
+| GET | `/jobs/{id}/screening-profile` | — | `200 ScreeningProfileResponse` | What AI screening is to be sent (`jobs.manage`): `criteriaWeights: [{ name, weight (0–1) }]` exactly as the AI service's `criteria_weights` (skills only), plus `mustHave`, `preferred`, `toolsAndTechnologies`, `minimumExperienceYears`, `educationLevel`, `acceptedDegreeTypes`, `niceToHaveCertifications`, `blindMode`, the job title, summary and description. Read only — nothing here calls the AI service. With matching off, `criteriaWeights` is empty. |
 
 Every write returns the vacancy **as now stored**. The frontend renders that response and does not guess.
 
@@ -138,6 +141,8 @@ Types are JSON. "Draft" means what a `DRAFT` may hold. "Publish" means what is r
 | `blindModeEnabled` | boolean \| null | | `null` takes the template's setting. |
 | `status` | enum | | **only `DRAFT` or `PUBLISHED`** on create, otherwise 400 |
 | `interviewPanels` | `InterviewPanelRequest[]` \| null | may be short | Who interviews in each interview round: `{ stagePosition, interviewerCount (1–10 \| null), interviewerIds }`, keyed by the round's `position` (a new vacancy's stages have no ids yet). `null` on create starts without panels; on PUT keeps the stored ones; a list replaces them all. See §6a. |
+| `toolsAndTechnologies` | string[] | may be `[]` | Tools, technologies and platforms (Docker, Git, AWS). A candidate requirement; shown on the public advert like the skills. ≤ 50 entries of ≤ 100 chars. |
+| `idealMatching` | `IdealMatchingRequest` \| null | may be short | The ideal candidate: `{ enabled, criteria: [{ category: TECHNICAL_SKILL, name, weightPercent (1–100 \| null), requirement: MUST_HAVE \| PREFERRED }], degreeTypes, niceToHaveCertifications }`. `null` on create means off; on PUT keeps the stored profile. See §6b. |
 
 Shape rules (lengths, ranges, enum membership, salary pairing, tenant-member ids) apply in **every** state, drafts
 included. Only the *required-ness* in §6 depends on state.
@@ -178,6 +183,8 @@ Every `JobVacancyRequest` field (with the current `status`), plus:
 | `blindModeEnabled` | boolean | |
 | `createdBy` | UUID \| null | who filed it |
 | `createdByName` | string \| null | their name, so every role can see who filed it without the team roster (`team.view`). `null` when unknown. |
+| `toolsAndTechnologies` | string[] | |
+| `idealMatchingAvailable` / `idealMatchingEnabled` | boolean | whether the template offers ideal candidate matching, and whether the vacancy uses it. The profile itself is at `GET /jobs/{id}/ideal-matching` and never on the public board. |
 
 Panels are **not** part of `JobVacancyResponse`; read them from `GET /jobs/{id}/interview-panels`.
 
@@ -213,6 +220,25 @@ On failure return `422` with **one** human sentence naming what is missing, for 
   complete. A vacancy without interview rounds passes.
 - Panels stay editable until the vacancy is **archived** (the hiring team's rule) — a closed vacancy still interviews.
 - Being on a panel lets someone see the vacancy, like the hiring team. None of it is ever on the public board.
+
+### 6b. Ideal candidate matching (V27, skills only since V28)
+
+- Set by whoever creates or edits the vacancy, in its form. Available only where the pipeline template has
+  "ideal-person matching" on; the vacancy keeps that flag from creation (`idealMatchingAvailable`).
+- **Weighted, sharing one 100%:** skills only — the required skills as `MUST_HAVE` and the preferred skills as
+  `PREFERRED` (the form loads them from Candidate requirements). The requirement is passed to screening so it can
+  call out a missing must-have; the weight alone decides the score. Any other `category` is refused (`400`).
+- **Not weighted (context for screening):** tools and technologies, the minimum experience and the education level,
+  all read from the vacancy's candidate requirements; accepted degree types (kept only when the education level is
+  Diploma or higher) and nice-to-have certifications.
+- In **every** state: each skill needs a name and a requirement; names are unique ignoring case (the AI service
+  refuses "Git" twice); a weight, if given, is 1–100.
+- **Publishing** (create as `PUBLISHED`, or `POST /publish`) with matching on needs at least one skill, every
+  skill weighted, and exactly 100%: *"This vacancy can't be published yet: the ideal candidate weights add up to
+  85%; they need to total 100%."* A live vacancy whose profile changes must stay at 100%. A draft may be saved with
+  any total.
+- Switching matching off keeps the criteria, so switching it back on restores them. A duplicate copies the profile.
+- Stored as whole percents ÷ 100 in `job_screening_criteria.weight` (25% → 0.250), the AI service's scale.
 
 ## 7. Status codes
 

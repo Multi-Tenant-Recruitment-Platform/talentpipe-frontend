@@ -2,7 +2,7 @@ import { WarningOutlined } from '@ant-design/icons';
 import { Flex, Typography } from 'antd';
 import { useEffect, useRef, type ReactNode } from 'react';
 import { Alert } from './Alert';
-import { Button } from './Button';
+import { Button, type ButtonVariant } from './Button';
 import { useFocusTrap } from './useFocusTrap';
 
 /**
@@ -33,6 +33,7 @@ export function ConfirmDialog({
   busy = false,
   error = null,
   fallbackFocusId = 'team-search',
+  extraAction,
   onConfirm,
   onCancel,
 }: Readonly<{
@@ -56,6 +57,11 @@ export function ConfirmDialog({
    * team search box, the first page that needed it.
    */
   fallbackFocusId?: string;
+  /**
+   * A third way out, between Cancel and the confirm button — for a choice
+   * with two outcomes besides "never mind", like keeping or discarding work.
+   */
+  extraAction?: { label: string; variant?: ButtonVariant; onClick: () => void };
   onConfirm: () => void;
   onCancel: () => void;
 }>) {
@@ -135,10 +141,15 @@ export function ConfirmDialog({
           </div>
         </Flex>
 
-        <Flex align="center" justify="flex-end" gap={12} className="mt-6">
+        <Flex align="center" justify="flex-end" gap={12} wrap className="mt-6">
           <Button ref={cancelRef} type="button" variant="ghost" onClick={onCancel} disabled={busy}>
             {cancelLabel}
           </Button>
+          {extraAction && (
+            <Button type="button" variant={extraAction.variant ?? 'secondary'} onClick={extraAction.onClick} disabled={busy}>
+              {extraAction.label}
+            </Button>
+          )}
           <Button
             type="button"
             variant={tone === 'danger' ? 'dangerSolid' : 'primary'}
