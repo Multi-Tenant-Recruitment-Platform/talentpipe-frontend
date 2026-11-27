@@ -8,11 +8,13 @@ export const pageBanner = `${heroSurface} mb-6 rounded-3xl px-6 py-7 shadow-lg s
 /**
  * For an action slot on the banner. Actions are styled by their callers for a
  * light page, so this adapts the one kind that would vanish on slate: a text
- * (ghost) button turns white, with a translucent hover. Filled and outlined
- * buttons carry their own background and need nothing.
+ * (ghost) button. Bare white text on the dark surface read as a caption, not a
+ * control, so it becomes a translucent outlined button — visibly pressable,
+ * still quieter than a filled one. Filled and outlined buttons carry their own
+ * background and need nothing.
  */
 export const bannerActions =
-  '[&_.ant-btn-text]:text-white [&_.ant-btn-text:not(:disabled):hover]:bg-white/10 [&_.ant-btn-text:not(:disabled):hover]:text-white';
+  '[&_.ant-btn-text]:border [&_.ant-btn-text]:border-white/35 [&_.ant-btn-text]:bg-white/10 [&_.ant-btn-text]:font-semibold [&_.ant-btn-text]:text-white [&_.ant-btn-text:not(:disabled):hover]:border-white/60 [&_.ant-btn-text:not(:disabled):hover]:bg-white/20 [&_.ant-btn-text:not(:disabled):hover]:text-white';
 
 /**
  * Consistent page heading for the workspace: title + subtitle on the left,

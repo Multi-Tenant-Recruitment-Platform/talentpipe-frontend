@@ -527,7 +527,7 @@ export function VacancyForm({
   return (
     <section>
       <PageHeader title={heading.title} subtitle={heading.subtitle}>
-        <Button variant="ghost" onClick={cancel}>
+        <Button variant="ghost" icon={<ArrowLeftOutlined aria-hidden />} onClick={cancel}>
           {exitLabel}
         </Button>
       </PageHeader>
@@ -660,7 +660,9 @@ export function VacancyForm({
             {/* Cancel and the save status share a row of their own at phone width,
                 so the step buttons stay together on the next. */}
             <div className="flex min-w-0 items-center gap-3 max-sm:basis-full">
-              <Button variant="ghost" onClick={cancel} disabled={busy}>
+              {/* Outlined, not a text button: beside the save status a bare "Cancel"
+                  read as a label rather than something to press. */}
+              <Button variant="secondary" onClick={cancel} disabled={busy}>
                 Cancel
               </Button>
               <AutosaveStatus status={autosave.status} onRetry={() => void autosave.saveNow()} />
