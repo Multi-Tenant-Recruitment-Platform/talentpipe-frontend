@@ -1491,3 +1491,10 @@ a.tp-account-item[aria-current='page'] .tp-account-item-icon {
   color: var(--tp-slate-500);
   cursor: default;
 }
+
+/* The applicant whose panel is open stays marked in the list behind it, so
+   the recruiter keeps their place. antd's own selected-row tint belongs to
+   row selection (checkboxes), which this table does not use. */
+.tp-applicant-row-selected > td {
+  background: var(--tp-primary-50);
+}
