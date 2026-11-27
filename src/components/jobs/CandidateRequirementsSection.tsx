@@ -41,6 +41,18 @@ export function CandidateRequirementsSection({
         />
       </Col>
 
+      <Col xs={24}>
+        <CompanyChipListEditor
+          id={vacancyFieldId('toolsAndTechnologies')}
+          label="Tools & technologies"
+          placeholder="e.g. Docker"
+          hint="Tools, technologies and platforms the person will use — Docker, Git, AWS, Kubernetes, Jenkins, Azure. Press Enter after each."
+          values={values.toolsAndTechnologies}
+          error={errors.toolsAndTechnologies}
+          onChange={(next) => set('toolsAndTechnologies', next)}
+        />
+      </Col>
+
       <VacancyField
         field="minimumExperienceYears"
         span={8}

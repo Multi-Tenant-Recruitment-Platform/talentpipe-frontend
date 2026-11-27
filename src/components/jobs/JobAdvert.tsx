@@ -193,6 +193,7 @@ export function JobAdvert({ job }: Readonly<{ job: JobDetail }>) {
   const hasRequirements =
     hasItems(job.requiredSkills) ||
     hasItems(job.preferredSkills) ||
+    hasItems(job.toolsAndTechnologies) ||
     hasItems(job.certifications) ||
     hasItems(job.languageRequirements) ||
     Boolean(job.otherRequirements);
@@ -245,6 +246,12 @@ export function JobAdvert({ job }: Readonly<{ job: JobDetail }>) {
               <div>
                 <h3 className={subhead}>Nice to have</h3>
                 <TagList items={job.preferredSkills} label="Preferred skills" muted />
+              </div>
+            )}
+            {hasItems(job.toolsAndTechnologies) && (
+              <div>
+                <h3 className={subhead}>Tools &amp; technologies</h3>
+                <TagList items={job.toolsAndTechnologies} label="Tools and technologies" />
               </div>
             )}
             {hasItems(job.certifications) && (

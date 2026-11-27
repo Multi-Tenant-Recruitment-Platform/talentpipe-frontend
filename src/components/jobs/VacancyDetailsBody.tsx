@@ -141,6 +141,14 @@ export function VacancyDetailsBody({ vacancy }: Readonly<{ vacancy: JobVacancyRe
               <Chips values={vacancy.preferredSkills} />
             </div>
           )}
+          {(vacancy.toolsAndTechnologies ?? []).length > 0 && (
+            <div>
+              <Typography.Text strong className="mb-2 block">
+                Tools &amp; technologies
+              </Typography.Text>
+              <Chips values={vacancy.toolsAndTechnologies ?? []} />
+            </div>
+          )}
           <dl className={detailGrid}>
             <Fact
               label="Minimum experience"

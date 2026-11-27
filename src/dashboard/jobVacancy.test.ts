@@ -13,15 +13,21 @@ import {
   formatSalary,
   formatWorkingDays,
   formProgress,
+  furthestReachableStep,
   isVacancyDirty,
   PIPELINE_MESSAGES,
   pipelineShape,
   runsOnPipeline,
+  REVIEW_STEP,
+  sectionOf,
+  sectionProblems,
   sectionProgress,
   sectionsWithErrors,
   todayIso,
   toVacancyRequest,
   VACANCY_SECTIONS,
+  VACANCY_STEP_IDS,
+  vacancyProblems,
   validatePipeline,
   validateVacancy,
   type JobVacancyFormValues,
@@ -127,6 +133,41 @@ describe('validateVacancy', () => {
   });
 });
 
+describe('steps', () => {
+  it('walks the seven sections, then the review', () => {
+    expect(VACANCY_STEP_IDS).toEqual([...VACANCY_SECTIONS.map((section) => section.id), REVIEW_STEP]);
+  });
+
+  it('holds each step only to the rules of its own fields', () => {
+    const problems = vacancyProblems(completeValues({ title: '', requiredSkills: [] }), 'create');
+
+    expect(Object.keys(sectionProblems(problems, 'basics'))).toEqual(['title']);
+    expect(Object.keys(sectionProblems(problems, 'requirements'))).toEqual(['requiredSkills']);
+    expect(sectionProblems(problems, 'compensation')).toEqual({});
+  });
+
+  it('asks a new vacancy for its template on the pipeline step', () => {
+    const problems = vacancyProblems(completeValues({ pipelineTemplateId: '' }), 'create');
+
+    expect(sectionProblems(problems, 'pipeline')).toEqual({ pipelineTemplateId: PIPELINE_MESSAGES.templateRequired });
+  });
+
+  it('lets no one past the first section with a problem', () => {
+    expect(furthestReachableStep(vacancyProblems(EMPTY_VACANCY_VALUES, 'create'))).toBe(0);
+    expect(furthestReachableStep(vacancyProblems(completeValues({ requiredSkills: [] }), 'create'))).toBe(2);
+    expect(furthestReachableStep(vacancyProblems(completeValues({ pipelineTemplateId: '' }), 'create'))).toBe(4);
+  });
+
+  it('opens the review once every section is in order', () => {
+    expect(VACANCY_STEP_IDS[furthestReachableStep(vacancyProblems(completeValues(), 'create'))]).toBe(REVIEW_STEP);
+  });
+
+  it('finds the section a field is asked in', () => {
+    expect(sectionOf('applicationDeadline')?.id).toBe('basics');
+    expect(sectionOf('autoThreshold')?.id).toBe('pipeline');
+  });
+});
+
 describe('progress', () => {
   it('counts only required fields as a section is filled', () => {
     const basics = VACANCY_SECTIONS[0];
@@ -140,8 +181,8 @@ describe('progress', () => {
   });
 
   it('tracks optional work so an all-optional section still shows effort', () => {
-    const schedule = VACANCY_SECTIONS[4];
-    const progress = sectionProgress(completeValues({ workingDays: ['MON'] }), schedule);
+    const compensation = VACANCY_SECTIONS.find((section) => section.id === 'compensation')!;
+    const progress = sectionProgress(completeValues({ workingDays: ['MON'] }), compensation);
     expect(progress.total).toBe(0);
     expect(progress.optionalFilled).toBe(1);
   });
@@ -373,7 +414,8 @@ describe('editing and duplicating', () => {
     const values = completeValues({ education: 'Diploma', screeningQuestions: ['Right to work?'] });
     const request = toVacancyRequest(values, 'DRAFT');
     const stored = makeVacancy({ ...request, blindModeEnabled: request.blindModeEnabled ?? false });
-    expect(toFormValues(stored)).toEqual(values);
+    // The ideal candidate is read separately (GET /jobs/{id}/ideal-matching), as the panels are.
+    expect(toFormValues(stored)).toEqual({ ...values, idealMatching: null });
   });
 
   it('turns a blank choice back into an empty control, not a default', () => {

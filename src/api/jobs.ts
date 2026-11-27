@@ -1,6 +1,8 @@
 import { api } from './client';
 import type {
   HiringTeamResponse,
+  IdealMatchingRequest,
+  IdealMatchingResponse,
   InterviewPanelRequest,
   InterviewPanelResponse,
   JobStageResponse,
@@ -170,6 +172,25 @@ export const jobsApi = {
     const { data } = await api.put<InterviewPanelResponse[]>(`/jobs/${encodeURIComponent(id)}/interview-panels`, {
       panels,
     });
+    return data;
+  },
+
+  /** The vacancy's ideal candidate: whether matching is offered and on, the weighted criteria and the unweighted lists. */
+  async idealMatching(id: string): Promise<IdealMatchingResponse> {
+    const { data } = await api.get<IdealMatchingResponse>(`/jobs/${encodeURIComponent(id)}/ideal-matching`);
+    return data;
+  },
+
+  /**
+   * Replaces the ideal candidate. 422 when the vacancy is closed, the template
+   * does not offer matching, a name is listed twice, or a live vacancy's
+   * weights would not total 100%.
+   */
+  async replaceIdealMatching(id: string, profile: IdealMatchingRequest): Promise<IdealMatchingResponse> {
+    const { data } = await api.put<IdealMatchingResponse>(
+      `/jobs/${encodeURIComponent(id)}/ideal-matching`,
+      profile,
+    );
     return data;
   },
 

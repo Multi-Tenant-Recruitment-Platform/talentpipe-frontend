@@ -1,6 +1,6 @@
 import { CheckOutlined } from '@ant-design/icons';
 import { Card, Row, Typography } from 'antd';
-import type { ReactNode } from 'react';
+import type { ReactNode, Ref } from 'react';
 import type { SectionProgress, VacancySection } from '../../dashboard/jobVacancy';
 import { space } from '../../theme/tokens';
 
@@ -12,27 +12,31 @@ import { space } from '../../theme/tokens';
  * form of this length read as one undifferentiated run of forty inputs without
  * it. The company profile form makes the same trade for the same reason.</p>
  *
- * <p>The number is not decoration. The rail beside the form lists the same six,
- * so the figure is how a reader matches where they are against how much is
- * left — which is the one thing a long single-page form owes them.</p>
+ * <p>The number is not decoration. The stepper above the form shows the same
+ * figures, so it is how a reader matches the card in front of them to where
+ * they are in the sequence.</p>
+ *
+ * <p>The title is the focus target when a step opens, so keyboard and
+ * screen-reader users land on the heading of the step they just moved to
+ * rather than on the button they pressed.</p>
  */
 export function VacancySectionCard({
   section,
   progress,
   hasError,
+  headingRef,
   children,
 }: Readonly<{
   section: VacancySection;
   progress: SectionProgress;
   hasError: boolean;
+  headingRef?: Ref<HTMLHeadingElement>;
   children: ReactNode;
 }>) {
   const done = progress.total > 0 && progress.complete;
 
   return (
-    // Clears the sticky chrome when the rail jumps to a section — without this the
-    // heading lands underneath the top bar and reads as the wrong section.
-    <Card id={section.id} className="scroll-mt-33 lg:scroll-mt-20" styles={{ body: { padding: space[3] } }}>
+    <Card id={section.id} styles={{ body: { padding: space[3] } }}>
       {/* A fieldset carries an intrinsic minimum width that would stop the grid
           inside it from ever shrinking; min-width:0 is what lets the columns wrap. */}
       <fieldset className="m-0 min-w-0 border-0 p-0">
@@ -44,7 +48,15 @@ export function VacancySectionCard({
           >
             {section.index}
           </span>
-          <span className="text-title font-semibold tracking-heading text-slate-900">{section.title}</span>
+          {/* A heading inside the legend: the legend still names the group, and the
+              heading gives the step a place in the page outline and a focus target. */}
+          <h2
+            ref={headingRef}
+            tabIndex={-1}
+            className="m-0 text-title font-semibold tracking-heading text-slate-900 focus:outline-none"
+          >
+            {section.title}
+          </h2>
           {progress.total > 0 && (
             // The count is detail, not structure — at phone width the heading keeps it.
             <span
