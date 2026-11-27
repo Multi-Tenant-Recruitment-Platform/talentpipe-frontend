@@ -9,6 +9,14 @@ import {
   type Permission,
   type Role,
 } from './permissions';
+import {
+  DEMO_CANDIDATE,
+  DEMO_COORDINATOR,
+  DEMO_INTERVIEWER,
+  DEMO_JUNIOR_RECRUITER,
+  DEMO_OWNER,
+  DEMO_RECRUITER,
+} from '../test/demoMembers';
 
 /**
  * The matrix is written out by hand on purpose. Deriving it from the map under
@@ -32,7 +40,9 @@ const EXPECTED: Record<Permission, Record<Role, boolean>> = {
   'team.manage': { COMPANY_ADMIN: false, HR_MANAGER: false, INTERVIEWER: false, CANDIDATE: false },
   'roles.view': { COMPANY_ADMIN: false, HR_MANAGER: false, INTERVIEWER: false, CANDIDATE: false },
   'roles.manage': { COMPANY_ADMIN: false, HR_MANAGER: false, INTERVIEWER: false, CANDIDATE: false },
-  'pipeline.view': { COMPANY_ADMIN: true, HR_MANAGER: true, INTERVIEWER: true, CANDIDATE: false },
+  // The pipeline is every applicant's progress; an interviewer sees their own
+  // interviews, not the company's funnel.
+  'pipeline.view': { COMPANY_ADMIN: true, HR_MANAGER: true, INTERVIEWER: false, CANDIDATE: false },
   'pipeline.manage': {
     COMPANY_ADMIN: true,
     HR_MANAGER: true,
@@ -48,7 +58,8 @@ const EXPECTED: Record<Permission, Record<Role, boolean>> = {
     INTERVIEWER: true,
     CANDIDATE: false,
   },
-  'settings.view': { COMPANY_ADMIN: true, HR_MANAGER: true, INTERVIEWER: false, CANDIDATE: false },
+  // Company settings are the admin's page.
+  'settings.view': { COMPANY_ADMIN: true, HR_MANAGER: false, INTERVIEWER: false, CANDIDATE: false },
   'settings.edit': { COMPANY_ADMIN: true, HR_MANAGER: false, INTERVIEWER: false, CANDIDATE: false },
   'billing.view': { COMPANY_ADMIN: true, HR_MANAGER: false, INTERVIEWER: false, CANDIDATE: false },
   'jobs.browse': { COMPANY_ADMIN: true, HR_MANAGER: true, INTERVIEWER: true, CANDIDATE: true },
@@ -69,6 +80,8 @@ const EXPECTED: Record<Permission, Record<Role, boolean>> = {
     INTERVIEWER: false,
     CANDIDATE: false,
   },
+  // The company's interview schedule: whoever organises interviews.
+  'interviews.viewAll': { COMPANY_ADMIN: true, HR_MANAGER: true, INTERVIEWER: false, CANDIDATE: false },
   'applications.viewOwn': {
     COMPANY_ADMIN: false,
     HR_MANAGER: false,
@@ -122,13 +135,40 @@ describe('a company member with a permission list', () => {
     expect(can(recruiter, 'jobs.publish')).toBe(true);
   });
 
-  it('keeps pipeline templates on the fixed role, which is what the backend still checks', () => {
-    const owner = member('COMPANY_ADMIN', ['pipeline.templates.manage', 'roles.manage', 'team.manage']);
-    const customWithTemplates = member('CUSTOM', ['pipeline.templates.manage']);
+  it('opens pipeline templates by permission, as the backend now checks them', () => {
+    const templateEditor = member('CUSTOM', ['pipeline.templates.manage']);
+    const vacancyCreator = member('CUSTOM', ['jobs.manage']);
+    const neither = member('CUSTOM', ['jobs.view.all', 'applications.view.all']);
 
-    expect(can(owner, 'templates.manage')).toBe(true);
-    expect(can(owner, 'roles.manage')).toBe(true);
-    expect(can(customWithTemplates, 'templates.view')).toBe(false);
+    expect(can(templateEditor, 'templates.view')).toBe(true);
+    expect(can(templateEditor, 'templates.manage')).toBe(true);
+    // A vacancy is created from a template, so its creator reads them...
+    expect(can(vacancyCreator, 'templates.view')).toBe(true);
+    // ...without being able to change the pipelines other vacancies follow.
+    expect(can(vacancyCreator, 'templates.manage')).toBe(false);
+    expect(can(neither, 'templates.view')).toBe(false);
+  });
+
+  it('follows the permissions, not the role name, when an Owner edits a default role', () => {
+    // A Recruiter whose role lost everything but seeing vacancies.
+    const editedRecruiter = member('HR_MANAGER', ['jobs.view.all']);
+
+    for (const denied of ['templates.view', 'pipeline.view', 'pipeline.manage', 'settings.view', 'jobs.manage'] as const) {
+      expect(can(editedRecruiter, denied), denied).toBe(false);
+    }
+    // An "Interviewer" given team access gets the team, whatever the role is called.
+    expect(can(member('INTERVIEWER', ['team.view']), 'team.view')).toBe(true);
+  });
+
+  it('shows the company settings page only to someone who can change the settings', () => {
+    expect(can(member('CUSTOM', ['settings.edit']), 'settings.view')).toBe(true);
+    expect(can(member('CUSTOM', ['team.view', 'team.invite', 'jobs.manage']), 'settings.view')).toBe(false);
+  });
+
+  it('shows the company-wide pipeline only to someone who sees every applicant', () => {
+    expect(can(member('CUSTOM', ['applications.view.all']), 'pipeline.view')).toBe(true);
+    // Moving applicants is scoped to your own vacancies; the pipeline page is not.
+    expect(can(member('CUSTOM', ['applications.manage']), 'pipeline.view')).toBe(false);
   });
 
   it('ignores a permission key it does not know', () => {
@@ -144,6 +184,44 @@ describe('a company member with a permission list', () => {
     expect(can(candidate, 'dashboard.view')).toBe(false);
     expect(homeRouteFor(candidate)).toBe('/');
     expect(homeRouteFor(member('CUSTOM', []))).toBe('/dashboard');
+  });
+});
+
+/**
+ * Every UI permission each demo member gets, from the permissions `/auth/me`
+ * really sends them. Written out in full so that a new mapping in
+ * permissions.ts shows up here as a reviewed change.
+ */
+describe("the demo workspace's members, as /auth/me sends them", () => {
+  const BASE = ['company.profile.view', 'dashboard.view', 'jobs.browse', 'jobs.view', 'overview.view'];
+  const ALL_COMPANY = PERMISSIONS.filter((p) => p !== 'applications.viewOwn' && p !== 'profile.manageOwn');
+
+  it.each([
+    ['Owner', DEMO_OWNER, ALL_COMPANY],
+    [
+      'Recruiter',
+      DEMO_RECRUITER,
+      [...BASE, 'interviews.viewAll', 'jobs.manage', 'jobs.publish', 'jobs.viewAll', 'pipeline.manage', 'pipeline.view', 'templates.view'],
+    ],
+    ['Interviewer', DEMO_INTERVIEWER, BASE],
+    [
+      'Hiring Coordinator',
+      DEMO_COORDINATOR,
+      [...BASE, 'interviews.viewAll', 'pipeline.view', 'roles.view', 'team.invite', 'team.invite.manage', 'team.view'],
+    ],
+    ['Junior Recruiter', DEMO_JUNIOR_RECRUITER, [...BASE, 'jobs.manage', 'pipeline.manage', 'templates.view']],
+  ])('%s gets exactly its screens', (_name, user, expected) => {
+    expect([...permissionsFor(user)].sort()).toEqual([...expected].sort());
+  });
+
+  it('gives the Recruiter none of the admin screens', () => {
+    for (const admin of ['team.view', 'team.invite', 'roles.view', 'roles.manage', 'settings.view', 'settings.edit', 'billing.view', 'templates.manage'] as const) {
+      expect(can(DEMO_RECRUITER, admin), admin).toBe(false);
+    }
+  });
+
+  it('keeps a candidate out of the company workspace', () => {
+    expect([...permissionsFor(DEMO_CANDIDATE)].sort()).toEqual(['applications.viewOwn', 'jobs.browse', 'profile.manageOwn']);
   });
 });
 

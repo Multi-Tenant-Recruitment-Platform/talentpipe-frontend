@@ -38,7 +38,7 @@ interface AccountItem {
 
 const ITEMS: AccountItem[] = [
   { key: 'profile', label: 'My profile', icon: UserOutlined, permission: 'profile.manageOwn', to: '/profile' },
-  { key: 'applications', label: 'Applied jobs', icon: SolutionOutlined, permission: 'applications.viewOwn' },
+  { key: 'applications', label: 'Applied jobs', icon: SolutionOutlined, permission: 'applications.viewOwn', to: '/applications' },
   { key: 'settings', label: 'Settings', icon: SettingOutlined, permission: 'profile.manageOwn' },
   // Company users reach their workspace from here too, so the menu is never empty.
   { key: 'dashboard', label: 'Dashboard', icon: AppstoreOutlined, permission: 'dashboard.view', to: '/dashboard' },

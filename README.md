@@ -102,3 +102,39 @@ is the same port `npm run dev` uses — run one or the other, not both.
 pointing the SPA at a different API needs no rebuild. Because it resolves over
 `host.docker.internal`, the backend can be a container or a plain
 `mvnw spring-boot:run` on the host — both work unchanged.
+
+To run everything (database, API and this app) with one command, use the
+backend repo's `full` profile:
+`cd ../talentpipe-backend/infra && docker compose --profile full up -d --build`.
+
+## Deployment (AWS)
+
+In production the built app is served from a private S3 bucket through
+CloudFront, and the same distribution sends `/api/*` to the backend. So the
+app and the API are on one origin, like with nginx above, and
+`VITE_API_BASE_URL` stays `/api/v1`. The AWS setup lives in the backend repo
+(`infra/terraform`), see its
+[docs/DEPLOYMENT.md](https://github.com/Multi-Tenant-Recruitment-Platform/talentpipe-backend/blob/development/docs/DEPLOYMENT.md).
+
+`.github/workflows/deploy.yml` runs on every push to `master`. You can also
+run it by hand on an older commit to roll back. It:
+
+1. type-checks, builds and runs the tests, and stops if anything fails
+2. uploads `dist/assets/` with a one-year immutable cache. Old files stay in
+   the bucket so people still on the previous `index.html` can load their
+   chunks
+3. uploads the rest, `index.html` included, with `no-cache`
+4. invalidates `/index.html` in CloudFront. Every app route is served as
+   `/index.html`, so that's the only path to refresh
+
+It logs in to AWS with OIDC (no AWS keys in GitHub) and runs in the
+`production` environment. It needs these repository variables, all from
+`terraform output`:
+
+| Variable | Value |
+|---|---|
+| `AWS_REGION` | `aws_region` |
+| `AWS_DEPLOY_ROLE_ARN` | `frontend_deploy_role_arn` |
+| `SPA_BUCKET` | `spa_bucket` |
+| `CLOUDFRONT_DISTRIBUTION_ID` | `cloudfront_distribution_id` |
+| `SITE_URL` | `site_url` (for the smoke test) |

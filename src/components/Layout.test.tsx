@@ -74,10 +74,9 @@ describe('Layout — signed-in candidate', () => {
     // The header above the links names whose menu this is.
     expect(screen.getByText('jane@example.com')).toBeInTheDocument();
     expect(within(panel()).getByRole('link', { name: 'My profile' })).toHaveAttribute('href', '/profile');
-    for (const soon of ['Applied jobs', 'Settings']) {
-      expect(within(panel()).queryByRole('link', { name: new RegExp(soon) })).not.toBeInTheDocument();
-      expect(within(panel()).getByText(soon).closest('[aria-disabled="true"]')).toHaveTextContent('Soon');
-    }
+    expect(within(panel()).getByRole('link', { name: 'Applied jobs' })).toHaveAttribute('href', '/applications');
+    expect(within(panel()).queryByRole('link', { name: /Settings/ })).not.toBeInTheDocument();
+    expect(within(panel()).getByText('Settings').closest('[aria-disabled="true"]')).toHaveTextContent('Soon');
     expect(within(panel()).queryByText('Dashboard')).not.toBeInTheDocument();
   });
 

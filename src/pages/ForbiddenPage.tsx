@@ -6,20 +6,24 @@ import { homeRouteFor, type Permission } from '../auth/permissions';
 import { RoleBadge } from '../components/dashboard/RoleBadge';
 
 /**
- * Why this particular door is closed. Generic copy is a dead end — naming the
- * role that does hold the permission tells the user who to ask.
+ * Why this particular door is closed. Generic copy is a dead end, so each
+ * reason names what the user's role is missing. It never names a role that
+ * has it: companies build their own roles, so "only admins" may not be true
+ * here.
  */
 const REASONS: Partial<Record<Permission, string>> = {
-  'team.view': 'Only a Company Admin can manage teammates and invitations.',
-  'team.invite': 'Only a Company Admin can invite teammates.',
+  'team.view': "Seeing the team and its invitations isn't part of your role.",
+  'team.invite': "Inviting people isn't part of your role.",
   'roles.view': "Your role doesn't include seeing the team, so its roles aren't shown either.",
-  'roles.manage': "Changing roles isn't part of your role. A workspace Owner can add it, or make the change for you.",
-  'settings.view': 'Company settings are limited to admins and HR managers.',
-  'settings.edit': 'Only a Company Admin can change company settings.',
-  'billing.view': 'Plan and billing are visible to Company Admins only.',
-  'pipeline.manage': 'Moving candidates between stages is limited to admins and HR managers.',
-  'templates.view': 'Pipeline templates are visible to Company Admins and HR managers.',
-  'templates.manage': 'Only a Company Admin can create or change pipeline templates.',
+  'roles.manage': "Changing roles isn't part of your role.",
+  'settings.view': 'Company settings are for people whose role can change them.',
+  'settings.edit': "Changing company settings isn't part of your role.",
+  'billing.view': 'Plan and billing are for people whose role can change company settings.',
+  'pipeline.view': 'The pipeline shows every applicant, and your role sees only the vacancies you work on.',
+  'pipeline.manage': "Moving candidates between stages isn't part of your role.",
+  'jobs.manage': "Creating and editing vacancies isn't part of your role.",
+  'templates.view': 'Pipeline templates are for people whose role creates vacancies or manages templates.',
+  'templates.manage': "Creating or changing pipeline templates isn't part of your role.",
 };
 
 /**
@@ -48,7 +52,7 @@ export function ForbiddenPage({ requires }: Readonly<{ requires?: Permission }>)
         <>
           {(requires && REASONS[requires]) ??
             'Your role doesn’t include this part of the workspace.'}{' '}
-          Ask a Company Admin if you need it.{' '}
+          A workspace Owner can add it to your role if you need it.{' '}
           {/* The code stays, but as a trailing detail rather than a kicker over
               the heading: it is what someone quotes when asking for help, not
               the first thing they need to read. */}

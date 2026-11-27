@@ -9,7 +9,7 @@ vi.mock('../../auth/AuthContext', () => authContextMock);
 vi.mock('../../dashboard/TeamSummaryContext', () => ({
   useTeamSummary: () => ({ activeMembers: [], members: [], loading: false }),
 }));
-const api = vi.hoisted(() => ({ get: vi.fn(), stages: vi.fn(), hiringTeam: vi.fn() }));
+const api = vi.hoisted(() => ({ get: vi.fn(), stages: vi.fn(), hiringTeam: vi.fn(), interviewPanels: vi.fn() }));
 vi.mock('../../api/jobs', () => ({ jobsApi: api }));
 const { VacancyDetailPage } = await import('./VacancyDetailPage');
 
@@ -26,6 +26,7 @@ beforeEach(() => {
   setAuth({ user: makeUser(), initializing: false });
   api.hiringTeam.mockResolvedValue({ vacancyId: 'v-1', recruiter: null, hiringManager: null, members: [] });
   api.stages.mockResolvedValue(stages);
+  api.interviewPanels.mockResolvedValue([]);
 });
 
 async function open(overrides: Partial<JobVacancyResponse> = {}) {
