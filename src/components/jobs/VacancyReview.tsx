@@ -2,7 +2,7 @@ import { CheckCircleFilled, EditOutlined } from '@ant-design/icons';
 import { Flex, Tag, Typography } from 'antd';
 import type { ReactNode } from 'react';
 import { benefitLabel } from '../../dashboard/companyProfile';
-import { CATEGORY_LABELS, REQUIREMENT_LABELS } from '../../dashboard/idealMatching';
+import { REQUIREMENT_LABELS } from '../../dashboard/idealMatching';
 import {
   createsVacancy,
   employmentTypeLabel,
@@ -231,7 +231,7 @@ function MatchingFacts({ values }: Readonly<{ values: JobVacancyFormValues }>) {
       <Fact label="Ideal candidate matching" value="On" />
       {weighted.length > 0 && (
         <div className="min-w-0 sm:col-span-2">
-          <dt className="mb-1.5 text-caption font-medium uppercase tracking-[0.03em] text-slate-500">Weights</dt>
+          <dt className="mb-1.5 text-caption font-medium uppercase tracking-[0.03em] text-slate-500">Skill weights</dt>
           <dd className="m-0">
             <ul className="m-0 grid list-none gap-1 p-0">
               {weighted.map((item) => (
@@ -239,8 +239,7 @@ function MatchingFacts({ values }: Readonly<{ values: JobVacancyFormValues }>) {
                   <span className="min-w-0 truncate">
                     <Typography.Text>{item.name}</Typography.Text>{' '}
                     <Typography.Text type="secondary" className="text-caption">
-                      {CATEGORY_LABELS[item.category]}
-                      {item.requirement ? ` · ${REQUIREMENT_LABELS[item.requirement]}` : ''}
+                      {REQUIREMENT_LABELS[item.requirement]}
                     </Typography.Text>
                   </span>
                   <span className="shrink-0 font-semibold tabular-nums text-slate-900">{item.weight}%</span>

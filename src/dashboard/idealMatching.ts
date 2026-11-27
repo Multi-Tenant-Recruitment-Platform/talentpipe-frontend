@@ -9,10 +9,12 @@ import type {
  * Ideal candidate matching, pure: what the person creating a vacancy says the
  * best applicant looks like, and how much each part counts.
  *
- * <p>Each technical skill, each tool and relevant experience carry a share of
- * one 100%. Skills and tools also say whether they are a must-have or
- * preferred — screening calls out a missing must-have, the weight alone sets
- * the score. Degree types and nice-to-have certifications are never weighted.</p>
+ * <p>Only skills carry a share of the 100%: the vacancy's required skills as
+ * must-haves and its preferred skills as preferred — screening calls out a
+ * missing must-have, the weight alone sets the score. Tools and technologies,
+ * the minimum experience and education come straight from Candidate
+ * requirements as context, like degree types and nice-to-have certifications,
+ * and are never weighted.</p>
  *
  * <p>The rules mirror the server's (`IdealMatchingService`) word for word, so
  * the form catches a problem before Save and says it the same way.</p>
@@ -28,8 +30,7 @@ export interface MatchingItemDraft {
   name: string;
   /** Whole percent, 1–100; `null` until decided. */
   weight: number | null;
-  /** Skills and tools only. */
-  requirement: MatchingRequirement | null;
+  requirement: MatchingRequirement;
 }
 
 export interface IdealMatchingDraft {
@@ -47,9 +48,6 @@ export const EMPTY_MATCHING: IdealMatchingDraft = {
   niceToHaveCertifications: [],
 };
 
-/** The server's name for the experience criterion when none is given. */
-export const EXPERIENCE_NAME = 'Relevant experience';
-
 /** The education levels that are a degree; only these take accepted degree types. Same list as the server's. */
 export const DEGREE_LEVELS = ['Diploma', 'Bachelor’s degree', 'Master’s degree', 'Doctorate'];
 
@@ -66,12 +64,6 @@ export const DEGREE_TYPE_SUGGESTIONS = [
   'Statistics',
   'Business Administration',
 ];
-
-export const CATEGORY_LABELS: Record<MatchingCategory, string> = {
-  TECHNICAL_SKILL: 'Technical skills',
-  TOOL: 'Tools & technologies',
-  EXPERIENCE: 'Relevant experience',
-};
 
 export const REQUIREMENT_LABELS: Record<MatchingRequirement, string> = {
   MUST_HAVE: 'Must-have',
@@ -92,42 +84,44 @@ export const isDegreeLevel = (education: string) => DEGREE_LEVELS.includes(educa
 export interface RequirementsSource {
   requiredSkills: string[];
   preferredSkills: string[];
-  toolsAndTechnologies: string[];
-  minimumExperienceYears: number | null;
   certifications: string[];
 }
 
 /* --- Building ------------------------------------------------------------- */
 
-/** A new row; skills and tools default to must-have. */
-export function newItem(category: MatchingCategory, name: string, requirement?: MatchingRequirement): MatchingItemDraft {
+/** The one kind of criterion that is weighted. */
+const SKILL: MatchingCategory = 'TECHNICAL_SKILL';
+
+/** A new skill row; a skill typed in by hand starts as a must-have. */
+export function newItem(name: string, requirement: MatchingRequirement = 'MUST_HAVE'): MatchingItemDraft {
   return {
     key: newKey(),
-    category,
-    name: category === 'EXPERIENCE' ? EXPERIENCE_NAME : name.trim().replace(/\s+/g, ' '),
+    category: SKILL,
+    name: name.trim().replace(/\s+/g, ' '),
     weight: null,
-    requirement: category === 'EXPERIENCE' ? null : (requirement ?? 'MUST_HAVE'),
+    requirement,
   };
+}
+
+/** Candidate Requirements' skills, in order: required as must-haves, then preferred as preferred. */
+function requirementSkills(source: RequirementsSource): { name: string; requirement: MatchingRequirement }[] {
+  return [
+    ...source.requiredSkills.map((name) => ({ name, requirement: 'MUST_HAVE' as const })),
+    ...source.preferredSkills.map((name) => ({ name, requirement: 'PREFERRED' as const })),
+  ];
 }
 
 /**
  * The rows Candidate Requirements already describe, so nobody types them twice:
- * required skills as must-haves, preferred skills as preferred, tools as
- * must-haves, and relevant experience when a minimum is set. A name already
- * taken (say "Git" as both a skill and a tool) is used once.
+ * every required skill as a must-have and every preferred skill as preferred.
+ * A skill listed as both is used once, as the must-have.
  */
 export function seedMatchingItems(source: RequirementsSource): MatchingItemDraft[] {
   const items: MatchingItemDraft[] = [];
-  const push = (category: MatchingCategory, name: string, requirement?: MatchingRequirement) => {
+  for (const { name, requirement } of requirementSkills(source)) {
     if (name.trim() !== '' && !items.some((item) => sameName(item.name, name))) {
-      items.push(newItem(category, name, requirement));
+      items.push(newItem(name, requirement));
     }
-  };
-  source.requiredSkills.forEach((name) => push('TECHNICAL_SKILL', name, 'MUST_HAVE'));
-  source.preferredSkills.forEach((name) => push('TECHNICAL_SKILL', name, 'PREFERRED'));
-  source.toolsAndTechnologies.forEach((name) => push('TOOL', name, 'MUST_HAVE'));
-  if (source.minimumExperienceYears !== null) {
-    items.push(newItem('EXPERIENCE', EXPERIENCE_NAME));
   }
   return items;
 }
@@ -144,23 +138,16 @@ export function seedMatching(draft: IdealMatchingDraft, source: RequirementsSour
 }
 
 /**
- * Requirement entries of one kind not weighted yet — offered as one-click
- * additions. A row the recruiter removed comes back only if they add it.
+ * Candidate Requirements' skills not weighted yet — added there after matching
+ * was switched on — offered as one-click additions. A row the recruiter
+ * removed comes back only if they add it.
  */
 export function suggestionsFor(
   source: RequirementsSource,
   draft: IdealMatchingDraft,
-  category: 'TECHNICAL_SKILL' | 'TOOL',
 ): { name: string; requirement: MatchingRequirement }[] {
-  const listed =
-    category === 'TECHNICAL_SKILL'
-      ? [
-          ...source.requiredSkills.map((name) => ({ name, requirement: 'MUST_HAVE' as const })),
-          ...source.preferredSkills.map((name) => ({ name, requirement: 'PREFERRED' as const })),
-        ]
-      : source.toolsAndTechnologies.map((name) => ({ name, requirement: 'MUST_HAVE' as const }));
   const seen: string[] = [];
-  return listed.filter(({ name }) => {
+  return requirementSkills(source).filter(({ name }) => {
     const taken = draft.items.some((item) => sameName(item.name, name)) || seen.some((other) => sameName(other, name));
     seen.push(name);
     return name.trim() !== '' && !taken;
@@ -200,22 +187,21 @@ const joinNames = (names: string[]) =>
 
 /**
  * What is wrong with the profile. Some problems block every save — a skill
- * or tool without a name, the same name twice, relevant experience twice.
- * Publishing a profile that is switched on also needs a weighted row, every
- * row weighted, and exactly 100%.
+ * without a name, the same skill twice. Publishing a profile that is switched
+ * on also needs a weighted skill, every skill weighted, and exactly 100%.
  */
 export function matchingProblems(draft: IdealMatchingDraft, forPublish: boolean): MatchingProblems {
   const rows: Record<string, string> = {};
   const sentences: string[] = [];
 
   draft.items.forEach((item, index) => {
-    if (item.category !== 'EXPERIENCE' && item.name.trim() === '') {
+    if (item.name.trim() === '') {
       rows[item.key] = 'Give this a name or remove it.';
       return;
     }
     const earlier = draft.items.slice(0, index).find((other) => sameName(other.name, item.name));
     if (earlier) {
-      rows[item.key] = `${item.name} is listed twice. Weigh each skill, tool or experience once.`;
+      rows[item.key] = `${item.name} is listed twice. Weigh each skill once.`;
     }
   });
   if (Object.keys(rows).length > 0) {
@@ -224,7 +210,7 @@ export function matchingProblems(draft: IdealMatchingDraft, forPublish: boolean)
 
   if (forPublish && draft.enabled) {
     if (draft.items.length === 0) {
-      sentences.push('weigh at least one skill, tool or relevant experience for the ideal candidate');
+      sentences.push('weigh at least one skill for the ideal candidate');
     }
     const unweighted = draft.items.filter((item) => item.weight === null);
     for (const item of unweighted) {
@@ -253,10 +239,10 @@ export function toMatchingRequest(draft: IdealMatchingDraft): IdealMatchingReque
   return {
     enabled: draft.enabled,
     criteria: draft.items.map((item) => ({
-      category: item.category,
-      name: item.category === 'EXPERIENCE' ? EXPERIENCE_NAME : item.name.trim(),
+      category: SKILL,
+      name: item.name.trim(),
       weightPercent: item.weight,
-      requirement: item.category === 'EXPERIENCE' ? null : item.requirement,
+      requirement: item.requirement,
     })),
     degreeTypes: draft.degreeTypes,
     niceToHaveCertifications: draft.niceToHaveCertifications,
@@ -267,6 +253,8 @@ export function toMatchingDraft(response: IdealMatchingResponse): IdealMatchingD
   return {
     enabled: response.enabled,
     items: [...response.criteria]
+      // Only skills are weighted; anything else an older answer carries is not shown or sent back.
+      .filter((criterion) => criterion.category === SKILL)
       .sort((a, b) => a.position - b.position)
       .map((criterion) => ({
         key: newKey(),

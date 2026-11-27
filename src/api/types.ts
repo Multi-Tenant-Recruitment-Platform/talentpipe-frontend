@@ -445,26 +445,28 @@ export interface HiringTeamResponse {
 
 /* --- Ideal candidate matching (V27) --------------------------------------- */
 
-/** What a weighted criterion is about. Education and certifications are never weighted. */
-export type MatchingCategory = 'TECHNICAL_SKILL' | 'TOOL' | 'EXPERIENCE';
+/**
+ * What a weighted criterion is about. Only skills are weighted (V28); tools,
+ * experience, education and certifications are context, never a share.
+ */
+export type MatchingCategory = 'TECHNICAL_SKILL';
 
-/** How firmly a skill or tool is asked for. Experience has neither. */
+/** How firmly a skill is asked for: a required skill is a must-have, a preferred skill preferred. */
 export type MatchingRequirement = 'MUST_HAVE' | 'PREFERRED';
 
 /** One weighted criterion as the job form sends it. The list's order is kept. */
 export interface MatchingCriterionRequest {
   category: MatchingCategory;
-  /** Experience may leave it out ("Relevant experience"). */
-  name: string | null;
+  name: string;
   /** Its share of the 100%, 1–100; null while a draft has not decided it. */
   weightPercent: number | null;
-  requirement: MatchingRequirement | null;
+  requirement: MatchingRequirement;
 }
 
 /**
- * The ideal candidate: weighted skills, tools and experience sharing one 100%,
- * plus unweighted degree types and nice-to-have certifications. A draft may
- * hold any total; publishing needs exactly 100%.
+ * The ideal candidate: weighted skills sharing one 100%, plus unweighted
+ * degree types and nice-to-have certifications. A draft may hold any total;
+ * publishing needs exactly 100%.
  */
 export interface IdealMatchingRequest {
   enabled: boolean;
@@ -484,7 +486,7 @@ export interface IdealMatchingResponse {
     name: string;
     /** 0 while a draft has not decided it. */
     weightPercent: number;
-    requirement: MatchingRequirement | null;
+    requirement: MatchingRequirement;
     position: number;
   }[];
   totalWeightPercent: number;

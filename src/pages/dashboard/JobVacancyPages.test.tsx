@@ -1351,7 +1351,7 @@ describe('ideal candidate matching', () => {
     openStep(/ideal candidate matching/i);
   }
 
-  it('switching it on loads the skills, tools and experience from candidate requirements', async () => {
+  it('switching it on weighs the required and preferred skills, and shows tools and experience as context', async () => {
     const user = userEvent.setup();
     api.get.mockResolvedValue(draftWith());
     api.idealMatching.mockResolvedValue(offered);
@@ -1360,13 +1360,19 @@ describe('ideal candidate matching', () => {
     await openMatching();
     await user.click(screen.getByRole('switch', { name: 'Use ideal candidate matching' }));
 
+    // Skills only carry weight: required as must-have, preferred as preferred.
     expect(screen.getByLabelText('Weight for Java')).toBeInTheDocument();
     expect(screen.getByLabelText('Weight for Kafka')).toBeInTheDocument();
-    expect(screen.getByLabelText('Weight for Docker')).toBeInTheDocument();
-    expect(screen.getByLabelText('Weight for Relevant experience')).toBeInTheDocument();
-    expect(screen.getByText('Minimum 3 years (from Candidate requirements).')).toBeInTheDocument();
-    // Certifications come along as nice-to-haves, outside the 100%.
-    expect(screen.getByText('Not part of the 100%')).toBeInTheDocument();
+    const [javaMust, kafkaMust] = screen.getAllByRole('radio', { name: 'Must-have' });
+    expect(javaMust).toBeChecked();
+    expect(kafkaMust).not.toBeChecked();
+    // Tools and experience are context, like education: shown, never weighted.
+    expect(screen.queryByLabelText('Weight for Docker')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Weight for Relevant experience')).not.toBeInTheDocument();
+    const outside = screen.getByRole('region', { name: 'Not part of the 100%' });
+    expect(within(outside).getByText('Docker')).toBeInTheDocument();
+    expect(within(outside).getByText('At least 3 years.')).toBeInTheDocument();
+    expect(within(outside).getByText('Bachelor’s degree')).toBeInTheDocument();
   });
 
   it('evens the weights out to 100% and saves the profile with the draft', async () => {
@@ -1386,11 +1392,16 @@ describe('ideal candidate matching', () => {
     await waitFor(() => expect(api.update).toHaveBeenCalled());
     const sent = api.update.mock.calls[0][1].idealMatching;
     expect(sent.enabled).toBe(true);
-    expect(sent.criteria.map((c: { name: string; weightPercent: number }) => [c.name, c.weightPercent])).toEqual([
-      ['Java', 25],
-      ['Kafka', 25],
-      ['Docker', 25],
-      ['Relevant experience', 25],
+    expect(
+      sent.criteria.map((c: { category: string; name: string; weightPercent: number; requirement: string }) => [
+        c.category,
+        c.name,
+        c.weightPercent,
+        c.requirement,
+      ]),
+    ).toEqual([
+      ['TECHNICAL_SKILL', 'Java', 50, 'MUST_HAVE'],
+      ['TECHNICAL_SKILL', 'Kafka', 50, 'PREFERRED'],
     ]);
     expect(sent.niceToHaveCertifications).toEqual(['AWS Solutions Architect']);
   });
@@ -1430,11 +1441,11 @@ describe('ideal candidate matching', () => {
     // Removed, it is offered again rather than coming back by itself.
     expect(screen.getByRole('button', { name: 'Add Kafka' })).toBeInTheDocument();
 
-    await user.type(screen.getByLabelText('Add a tool'), 'Jenkins{Enter}');
-    expect(screen.getByLabelText('Weight for Jenkins')).toBeInTheDocument();
+    await user.type(screen.getByLabelText('Add a skill'), 'Spring Boot{Enter}');
+    expect(screen.getByLabelText('Weight for Spring Boot')).toBeInTheDocument();
 
-    await user.type(screen.getByLabelText('Add a tool'), 'docker{Enter}');
-    expect(screen.getByText('docker is already weighted.')).toBeInTheDocument();
+    await user.type(screen.getByLabelText('Add a skill'), 'java{Enter}');
+    expect(screen.getByText('java is already weighted.')).toBeInTheDocument();
   });
 
   it('asks for degree types only when the education asked for is a degree', async () => {
@@ -1470,7 +1481,7 @@ describe('ideal candidate matching', () => {
       enabled: true,
       criteria: [
         { id: 'c1', category: 'TECHNICAL_SKILL', name: 'Java', weightPercent: 60, requirement: 'MUST_HAVE', position: 0 },
-        { id: 'c2', category: 'TOOL', name: 'Docker', weightPercent: 40, requirement: 'PREFERRED', position: 1 },
+        { id: 'c2', category: 'TECHNICAL_SKILL', name: 'Kafka', weightPercent: 40, requirement: 'PREFERRED', position: 1 },
       ],
       totalWeightPercent: 100,
       degreeTypes: ['Computer Science'],

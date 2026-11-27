@@ -1,20 +1,19 @@
 import { EditOutlined } from '@ant-design/icons';
 import { Card, Flex, Progress, Skeleton, Tag, Typography } from 'antd';
 import { Link } from 'react-router-dom';
-import type { IdealMatchingResponse, JobVacancyResponse, MatchingCategory } from '../../api/types';
+import type { IdealMatchingResponse, JobVacancyResponse } from '../../api/types';
 import { useCan } from '../../auth/useCan';
-import { CATEGORY_LABELS, REQUIREMENT_LABELS } from '../../dashboard/idealMatching';
+import { REQUIREMENT_LABELS } from '../../dashboard/idealMatching';
 import { canEditVacancy } from '../../dashboard/jobVacancy';
 import { useIdealMatching } from '../../dashboard/useIdealMatching';
 import { space } from '../../theme/tokens';
 import { Button } from '../ui/Button';
 
-const GROUPS: MatchingCategory[] = ['TECHNICAL_SKILL', 'TOOL', 'EXPERIENCE'];
-
 /**
- * The vacancy's ideal candidate at a glance: what each skill, tool and
- * experience counts for, which are must-haves, and the unweighted degree
- * types and certifications. Company-side only — candidates never see it.
+ * The vacancy's ideal candidate at a glance: what each skill counts for,
+ * which are must-haves, and the unweighted context screening also reads —
+ * tools, minimum experience, education, degree types and certifications.
+ * Company-side only — candidates never see it.
  *
  * <p>Read-only: the profile is edited with the vacancy, in its form, so the
  * 100% is checked together with everything else that is saved.</p>
@@ -51,7 +50,7 @@ export function IdealMatchingCard({ vacancy }: Readonly<{ vacancy: JobVacancyRes
       </Typography.Text>
     );
   } else if (profile) {
-    body = <Profile profile={profile} />;
+    body = <Profile profile={profile} vacancy={vacancy} />;
   }
 
   return (
@@ -74,8 +73,23 @@ export function IdealMatchingCard({ vacancy }: Readonly<{ vacancy: JobVacancyRes
   );
 }
 
-function Profile({ profile }: Readonly<{ profile: IdealMatchingResponse }>) {
+function Profile({ profile, vacancy }: Readonly<{ profile: IdealMatchingResponse; vacancy: JobVacancyResponse }>) {
   const total = profile.totalWeightPercent;
+  const tools = vacancy.toolsAndTechnologies ?? [];
+  const context: { label: string; value: string }[] = [
+    { label: 'Tools & technologies', value: tools.join(', ') },
+    {
+      label: 'Experience',
+      value:
+        vacancy.minimumExperienceYears === null
+          ? ''
+          : `At least ${vacancy.minimumExperienceYears} ${vacancy.minimumExperienceYears === 1 ? 'year' : 'years'}`,
+    },
+    { label: 'Education', value: vacancy.education ?? '' },
+    { label: 'Degree types', value: profile.degreeTypes.join(', ') },
+    { label: 'Nice-to-have certifications', value: profile.niceToHaveCertifications.join(', ') },
+  ].filter((entry) => entry.value !== '');
+
   return (
     <div className="flex flex-col gap-4">
       <div>
@@ -93,49 +107,35 @@ function Profile({ profile }: Readonly<{ profile: IdealMatchingResponse }>) {
         />
       </div>
 
-      {GROUPS.map((category) => {
-        const rows = profile.criteria.filter((criterion) => criterion.category === category);
-        if (rows.length === 0) {
-          return null;
-        }
-        return (
-          <div key={category}>
-            <h3 className="mb-1.5 text-caption font-semibold uppercase tracking-caps text-slate-500">
-              {CATEGORY_LABELS[category]}
-            </h3>
-            <ul className="m-0 flex list-none flex-col gap-1.5 p-0">
-              {rows.map((criterion) => (
-                <li key={criterion.id} className="flex items-center justify-between gap-2 text-small">
-                  <span className="min-w-0 truncate text-slate-900">
-                    {criterion.name}
-                    {criterion.requirement === 'MUST_HAVE' && (
-                      <Tag className="ms-2 me-0 text-caption">{REQUIREMENT_LABELS.MUST_HAVE}</Tag>
-                    )}
-                  </span>
-                  <span className="tabular-nums text-slate-600">
-                    {criterion.weightPercent > 0 ? `${criterion.weightPercent}%` : 'No weight'}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        );
-      })}
+      {profile.criteria.length > 0 && (
+        <div>
+          <h3 className="mb-1.5 text-caption font-semibold uppercase tracking-caps text-slate-500">Skills</h3>
+          <ul className="m-0 flex list-none flex-col gap-1.5 p-0">
+            {profile.criteria.map((criterion) => (
+              <li key={criterion.id} className="flex items-center justify-between gap-2 text-small">
+                <span className="min-w-0 truncate text-slate-900">
+                  {criterion.name}
+                  {criterion.requirement === 'MUST_HAVE' && (
+                    <Tag className="ms-2 me-0 text-caption">{REQUIREMENT_LABELS.MUST_HAVE}</Tag>
+                  )}
+                </span>
+                <span className="tabular-nums text-slate-600">
+                  {criterion.weightPercent > 0 ? `${criterion.weightPercent}%` : 'No weight'}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
-      {(profile.degreeTypes.length > 0 || profile.niceToHaveCertifications.length > 0) && (
+      {context.length > 0 && (
         <div className="border-t border-slate-100 pt-3 text-small">
           <span className="mb-1 block text-caption text-slate-500">Not part of the 100%</span>
-          {profile.degreeTypes.length > 0 && (
-            <p className="m-0 text-slate-700">
-              <span className="font-medium">Degree types:</span> {profile.degreeTypes.join(', ')}
+          {context.map((entry) => (
+            <p key={entry.label} className="m-0 text-slate-700">
+              <span className="font-medium">{entry.label}:</span> {entry.value}
             </p>
-          )}
-          {profile.niceToHaveCertifications.length > 0 && (
-            <p className="m-0 text-slate-700">
-              <span className="font-medium">Nice-to-have certifications:</span>{' '}
-              {profile.niceToHaveCertifications.join(', ')}
-            </p>
-          )}
+          ))}
         </div>
       )}
     </div>
