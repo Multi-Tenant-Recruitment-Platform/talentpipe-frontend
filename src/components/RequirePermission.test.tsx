@@ -32,10 +32,11 @@ describe('RequirePermission', () => {
     expect(screen.getByText(/error 403/i)).toBeInTheDocument();
   });
 
-  it('names the role that does hold the permission', () => {
+  it('says what the role is missing, and who can add it', () => {
     setAuth({ user: makeUser({ role: 'INTERVIEWER' }) });
     renderGate();
-    expect(screen.getByText(/only a company admin can manage teammates/i)).toBeInTheDocument();
+    expect(screen.getByText(/seeing the team and its invitations isn.t part of your role/i)).toBeInTheDocument();
+    expect(screen.getByText(/a workspace owner can add it to your role/i)).toBeInTheDocument();
   });
 
   it('keeps the URL so the deep link survives', () => {

@@ -13,7 +13,7 @@ import {
 } from '@ant-design/icons';
 import { Col, Flex, List, Row, Timeline, Typography } from 'antd';
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { jobsApi } from '../../api/jobs';
 import { teamApi } from '../../api/team';
 import { useAuth } from '../../auth/AuthContext';
@@ -69,13 +69,18 @@ function greeting(): string {
 }
 
 /**
- * Company admin overview: headline KPIs, the hiring funnel, recruitment
- * health, today's interviews and the latest activity — everything an admin
- * needs to understand the state of hiring at a glance.
+ * The workspace overview: headline KPIs, the hiring funnel, recruitment
+ * health, upcoming interviews and the latest activity.
+ *
+ * <p>Every member lands here, so each section shows only to a member whose
+ * role reaches what it is about. The funnel, the schedule and the feed are
+ * company-wide; a member who works on a few vacancies gets their own vacancy
+ * count and a pointer to them, not the whole company's hiring.</p>
  */
 export function OverviewPage() {
   const { user } = useAuth();
   const allow = useCan();
+  const navigate = useNavigate();
   const { pendingInvites, loading: teamLoading, refresh: refreshTeam } = useTeamSummary();
   const [inviteOpen, setInviteOpen] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
@@ -83,9 +88,19 @@ export function OverviewPage() {
   const [inviteSubmitting, setInviteSubmitting] = useState(false);
   const [inviteError, setInviteError] = useState<TeamErrorPlan | null>(null);
   const [activeJobs, setActiveJobs] = useState<number | null>(null);
-  // GET /jobs/counts is limited to the roles that manage vacancies; for anyone
-  // else the tile stays at "—" rather than showing a number they cannot reach.
-  const canSeeJobs = allow('jobs.manage');
+  // GET /jobs/counts counts the vacancies the member works on, or every one
+  // with jobs.view.all, so it is safe for anyone who may list vacancies.
+  const canSeeJobs = allow('jobs.view');
+  const seesAllJobs = allow('jobs.viewAll');
+  const canSeePipeline = allow('pipeline.view');
+  const canSeeInterviews = allow('interviews.viewAll');
+  const canSeeTeam = allow('team.view');
+  // The feed mixes team events (invites, joins) with hiring ones (offers,
+  // hires), so it needs both.
+  const canSeeActivity = canSeeTeam && canSeePipeline;
+  const kpis = [canSeeJobs, canSeePipeline, canSeeInterviews, canSeeTeam].filter(Boolean).length;
+  const kpiXs = kpis > 1 ? 12 : 24;
+  const kpiXl = kpis > 0 ? 24 / kpis : 24;
 
   useEffect(() => {
     if (!canSeeJobs) {
@@ -161,15 +176,17 @@ export function OverviewPage() {
         title={`${greeting()}, ${user?.firstName ?? 'there'}`}
         subtitle={`Here's what's happening with your hiring — ${today}`}
       >
-        <Button
-          variant="secondary"
-          onClick={() => setNotice('Job posting arrives with the Job module — for now, invite your hiring team and shape your pipeline.')}
-          icon={<SolutionOutlined aria-hidden className="text-[16px]" />}
-        >
-          Post a job
-        </Button>
-        {/* Inviting is a COMPANY_ADMIN action; anyone else would only get a
-            403 from the API, so they never see the button. */}
+        {allow('jobs.manage') && (
+          <Button
+            variant="secondary"
+            onClick={() => navigate('/dashboard/jobs/new')}
+            icon={<SolutionOutlined aria-hidden className="text-[16px]" />}
+          >
+            Post a job
+          </Button>
+        )}
+        {/* Without team.invite the API would only answer 403, so the button
+            is not offered. */}
         {allow('team.invite') && (
           <Button
             variant="primary"
@@ -193,159 +210,195 @@ export function OverviewPage() {
         </Alert>
       )}
 
-      {/* KPI row */}
+      {/* KPI row: one tile per thing the member's role can see. */}
       <Row gutter={[20, 20]}>
         {/* Published vacancies, from GET /jobs/counts. No trend delta: the API
             keeps no history to compare against. */}
-        <Col xs={12} xl={6}>
-          <StatCard
-            label="Active jobs"
-            value={activeJobs === null ? '—' : String(activeJobs)}
-            icon={SolutionOutlined}
-          />
-        </Col>
-        <Col xs={12} xl={6}>
-          <StatCard
-            label="Candidates in pipeline"
-            value={overviewStats.candidatesInPipeline.toLocaleString()}
-            icon={TeamOutlined}
-            delta={{ value: '+18%', direction: 'up', hint: 'vs last week' }}
-          />
-        </Col>
-        <Col xs={12} xl={6}>
-          <StatCard
-            label="Interviews this week"
-            value={String(overviewStats.interviewsThisWeek)}
-            icon={CalendarOutlined}
-            delta={{ value: '+4', direction: 'up', hint: 'vs last week' }}
-          />
-        </Col>
-        {/* The only KPI on this row with a real backend behind it — the rest
-            wait on the Job / Candidate / Interview modules. */}
-        <Col xs={12} xl={6}>
-          <StatCard
-            label="Pending invites"
-            value={teamLoading ? '—' : String(pendingInvites.length)}
-            icon={MailOutlined}
-          />
-        </Col>
+        {canSeeJobs && (
+          <Col xs={kpiXs} xl={kpiXl}>
+            <StatCard
+              label={seesAllJobs ? 'Active jobs' : 'Your active jobs'}
+              value={activeJobs === null ? '—' : String(activeJobs)}
+              icon={SolutionOutlined}
+            />
+          </Col>
+        )}
+        {canSeePipeline && (
+          <Col xs={kpiXs} xl={kpiXl}>
+            <StatCard
+              label="Candidates in pipeline"
+              value={overviewStats.candidatesInPipeline.toLocaleString()}
+              icon={TeamOutlined}
+              delta={{ value: '+18%', direction: 'up', hint: 'vs last week' }}
+            />
+          </Col>
+        )}
+        {canSeeInterviews && (
+          <Col xs={kpiXs} xl={kpiXl}>
+            <StatCard
+              label="Interviews this week"
+              value={String(overviewStats.interviewsThisWeek)}
+              icon={CalendarOutlined}
+              delta={{ value: '+4', direction: 'up', hint: 'vs last week' }}
+            />
+          </Col>
+        )}
+        {/* From GET /team, which needs team.view. */}
+        {canSeeTeam && (
+          <Col xs={kpiXs} xl={kpiXl}>
+            <StatCard
+              label="Pending invites"
+              value={teamLoading ? '—' : String(pendingInvites.length)}
+              icon={MailOutlined}
+            />
+          </Col>
+        )}
       </Row>
 
-      {/* Funnel + health */}
-      <Row gutter={[24, 24]} className="mt-6">
-        <Col xs={24} lg={16}>
-          <Card
-            title="Hiring funnel"
-            subtitle="All open jobs · last 90 days"
-            action={
-              <Link to="/dashboard/pipeline" className="inline-flex items-center gap-1 font-semibold">
-                View pipeline
-                <ArrowRightOutlined aria-hidden className="text-[16px]" />
-              </Link>
-            }
-          >
-            <HiringFunnel stages={hiringFunnel} />
-          </Card>
-        </Col>
+      {/* A member who sees only their own vacancies would otherwise get a
+          near-empty page with no hint of where their work is. */}
+      {!canSeePipeline && !canSeeInterviews && !canSeeActivity && (
+        <Row gutter={[24, 24]} className="mt-6">
+          <Col xs={24}>
+            <Card title="Your work here" subtitle="What your role covers in this workspace">
+              <Typography.Paragraph className="mb-0">
+                Your role works on particular vacancies rather than the whole company&rsquo;s hiring, so
+                there&rsquo;s no company-wide funnel or schedule here.
+                {canSeeJobs && (
+                  <>
+                    {' '}
+                    Open <Link to="/dashboard/jobs">Job Vacancies</Link> to see the ones you&rsquo;re on.
+                  </>
+                )}
+              </Typography.Paragraph>
+            </Card>
+          </Col>
+        </Row>
+      )}
 
-        <Col xs={24} lg={8}>
-          <Card title="Recruitment health" subtitle="Key efficiency signals">
-            <Flex vertical gap={20}>
-              {healthMetrics.map((metric) => (
-                <Flex align="center" gap={16} key={metric.label}>
-                  <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary-50 text-primary-600">
-                    <metric.icon aria-hidden className="text-[20px]" />
-                  </span>
-                  <div className="min-w-0">
-                    <Typography.Text type="secondary" className="block text-caption">
-                      {metric.label}
-                    </Typography.Text>
-                    <Typography.Text strong className="block text-title">
-                      {metric.value}
-                    </Typography.Text>
-                    <Typography.Text type="secondary" className="text-caption">
-                      {metric.hint}
-                    </Typography.Text>
-                  </div>
-                </Flex>
-              ))}
-            </Flex>
-          </Card>
-        </Col>
-      </Row>
+      {/* Funnel + health: every applicant's progress, so pipeline.view. */}
+      {canSeePipeline && (
+        <Row gutter={[24, 24]} className="mt-6">
+          <Col xs={24} lg={16}>
+            <Card
+              title="Hiring funnel"
+              subtitle="All open jobs · last 90 days"
+              action={
+                <Link to="/dashboard/pipeline" className="inline-flex items-center gap-1 font-semibold">
+                  View pipeline
+                  <ArrowRightOutlined aria-hidden className="text-[16px]" />
+                </Link>
+              }
+            >
+              <HiringFunnel stages={hiringFunnel} />
+            </Card>
+          </Col>
+
+          <Col xs={24} lg={8}>
+            <Card title="Recruitment health" subtitle="Key efficiency signals">
+              <Flex vertical gap={20}>
+                {healthMetrics.map((metric) => (
+                  <Flex align="center" gap={16} key={metric.label}>
+                    <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary-50 text-primary-600">
+                      <metric.icon aria-hidden className="text-[20px]" />
+                    </span>
+                    <div className="min-w-0">
+                      <Typography.Text type="secondary" className="block text-caption">
+                        {metric.label}
+                      </Typography.Text>
+                      <Typography.Text strong className="block text-title">
+                        {metric.value}
+                      </Typography.Text>
+                      <Typography.Text type="secondary" className="text-caption">
+                        {metric.hint}
+                      </Typography.Text>
+                    </div>
+                  </Flex>
+                ))}
+              </Flex>
+            </Card>
+          </Col>
+        </Row>
+      )}
 
       {/* Interviews + activity */}
-      <Row gutter={[24, 24]} className="mt-6">
-        <Col xs={24} lg={16}>
-          {/* A List that sits flush inside a Card, with its own inner padding. */}
-          <Card title="Upcoming interviews" subtitle="Next on the schedule" bodyClassName="tp-flush-list p-0">
-            <List
-              dataSource={upcomingInterviews}
-              renderItem={(interview) => {
-                const type = INTERVIEW_TYPE_BADGE[interview.type];
-                return (
-                  <List.Item key={interview.id}>
-                    <Flex wrap align="center" gap={16} className="w-full">
-                      {/* The date/time column on an upcoming-interview row. */}
-                      <div className="w-24 shrink-0 border-l-2 border-primary-500 pl-3">
-                        <Typography.Text strong className="block">
-                          {interview.dayLabel}
-                        </Typography.Text>
-                        <Typography.Text type="secondary" className="text-caption">
-                          {interview.time}
-                        </Typography.Text>
-                      </div>
-                      <Avatar firstName={interview.candidateName} size="sm" />
-                      <div className="min-w-0 flex-1">
-                        <Typography.Text strong ellipsis className="block">
-                          {interview.candidateName}
-                        </Typography.Text>
-                        <Typography.Text type="secondary" ellipsis className="text-caption">
-                          {interview.jobTitle} · with {interview.interviewerName}
-                        </Typography.Text>
-                      </div>
-                      <Badge>
-                        {interview.type === 'VIDEO' && <VideoCameraOutlined aria-hidden className="text-[14px]" />}
-                        {interview.type === 'ONSITE' && <BankOutlined aria-hidden className="text-[14px]" />}
-                        {interview.type === 'PHONE' && <ClockCircleOutlined aria-hidden className="text-[14px]" />}
-                        {type.label}
-                      </Badge>
-                    </Flex>
-                  </List.Item>
-                );
-              }}
-            />
-          </Card>
-        </Col>
+      {(canSeeInterviews || canSeeActivity) && (
+        <Row gutter={[24, 24]} className="mt-6">
+          {canSeeInterviews && (
+            <Col xs={24} lg={canSeeActivity ? 16 : 24}>
+              {/* A List that sits flush inside a Card, with its own inner padding. */}
+              <Card title="Upcoming interviews" subtitle="Next on the schedule" bodyClassName="tp-flush-list p-0">
+                <List
+                  dataSource={upcomingInterviews}
+                  renderItem={(interview) => {
+                    const type = INTERVIEW_TYPE_BADGE[interview.type];
+                    return (
+                      <List.Item key={interview.id}>
+                        <Flex wrap align="center" gap={16} className="w-full">
+                          {/* The date/time column on an upcoming-interview row. */}
+                          <div className="w-24 shrink-0 border-l-2 border-primary-500 pl-3">
+                            <Typography.Text strong className="block">
+                              {interview.dayLabel}
+                            </Typography.Text>
+                            <Typography.Text type="secondary" className="text-caption">
+                              {interview.time}
+                            </Typography.Text>
+                          </div>
+                          <Avatar firstName={interview.candidateName} size="sm" />
+                          <div className="min-w-0 flex-1">
+                            <Typography.Text strong ellipsis className="block">
+                              {interview.candidateName}
+                            </Typography.Text>
+                            <Typography.Text type="secondary" ellipsis className="text-caption">
+                              {interview.jobTitle} · with {interview.interviewerName}
+                            </Typography.Text>
+                          </div>
+                          <Badge>
+                            {interview.type === 'VIDEO' && <VideoCameraOutlined aria-hidden className="text-[14px]" />}
+                            {interview.type === 'ONSITE' && <BankOutlined aria-hidden className="text-[14px]" />}
+                            {interview.type === 'PHONE' && <ClockCircleOutlined aria-hidden className="text-[14px]" />}
+                            {type.label}
+                          </Badge>
+                        </Flex>
+                      </List.Item>
+                    );
+                  }}
+                />
+              </Card>
+            </Col>
+          )}
 
-        <Col xs={24} lg={8}>
-          <Card title="Recent activity" subtitle="Latest workspace events">
-            {/* A Timeline rather than a list: these are events in order, and the
-                connecting rail is what says so. */}
-            <Timeline
-              items={activityFeed.map((item) => ({
-                key: item.id,
-                dot: (
-                  // Neutral by design: a feed of five hues turns a
-                  // chronology into a colour key nobody is given. The icon
-                  // already says what kind of event this was.
-                  <span className="flex size-7 items-center justify-center rounded-full bg-primary-50 text-primary-600">
-                    <ActivityGlyph kind={item.icon} />
-                  </span>
-                ),
-                children: (
-                  <>
-                    <Typography.Text className="block">{item.text}</Typography.Text>
-                    <Typography.Text type="secondary" className="text-caption">
-                      {item.time}
-                    </Typography.Text>
-                  </>
-                ),
-              }))}
-            />
-          </Card>
-        </Col>
-      </Row>
+          {canSeeActivity && (
+            <Col xs={24} lg={canSeeInterviews ? 8 : 24}>
+              <Card title="Recent activity" subtitle="Latest workspace events">
+                {/* A Timeline rather than a list: these are events in order, and the
+                    connecting rail is what says so. */}
+                <Timeline
+                  items={activityFeed.map((item) => ({
+                    key: item.id,
+                    dot: (
+                      // Neutral by design: a feed of five hues turns a
+                      // chronology into a colour key nobody is given. The icon
+                      // already says what kind of event this was.
+                      <span className="flex size-7 items-center justify-center rounded-full bg-primary-50 text-primary-600">
+                        <ActivityGlyph kind={item.icon} />
+                      </span>
+                    ),
+                    children: (
+                      <>
+                        <Typography.Text className="block">{item.text}</Typography.Text>
+                        <Typography.Text type="secondary" className="text-caption">
+                          {item.time}
+                        </Typography.Text>
+                      </>
+                    ),
+                  }))}
+                />
+              </Card>
+            </Col>
+          )}
+        </Row>
+      )}
 
       {/* Mounted only while open, so each invite starts from a clean form. */}
       {allow('team.invite') && inviteOpen && (

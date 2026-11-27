@@ -601,7 +601,7 @@ describe('who sees what', () => {
     setAuth({ user: makeUser({ role: 'HR_MANAGER' }) });
     render(<TemplateRoutes path="/dashboard/pipeline-templates/new" />);
 
-    expect(screen.getByText(/only a company admin can create or change pipeline templates/i)).toBeInTheDocument();
+    expect(screen.getByText(/creating or changing pipeline templates isn.t part of your role/i)).toBeInTheDocument();
   });
 });
 
