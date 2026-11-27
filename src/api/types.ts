@@ -940,3 +940,171 @@ export interface PipelineTemplateRequest {
   idealMatchingEnabled: boolean;
   stages: PipelineStageRequest[];
 }
+
+/* --- Applicant dashboard -------------------------------------------------- *
+ * Mirrors of the backend DTOs in `com.talentpipe.application.dto`
+ * (ApplicantPage / ApplicantRow / ApplicantCounts / ApplicantSummary), served
+ * by GET /jobs/{jobId}/applicants and /summary. Tenant comes from the token.
+ */
+
+/** Where an application stands in the recruiter's review (backend `ReviewStatus`). */
+export type ReviewStatus =
+  | 'PENDING_SCREENING'
+  | 'AUTO_ADVANCED'
+  | 'MANUAL_REVIEW'
+  | 'ADVANCED_BY_RECRUITER'
+  | 'REJECTED'
+  | 'WITHDRAWN';
+
+/** PENDING: not screened yet (or the vacancy does not screen); the other two from the screening. */
+export type ApplicantScoreStatus = 'PENDING' | 'SCORED' | 'SCORING_FAILED';
+
+export interface ApplicantStageRef {
+  id: string;
+  name: string;
+  type: PipelineStageType;
+}
+
+export interface ApplicantRow {
+  applicationId: string;
+  /** The candidate's name, or "Applicant #n" in blind mode. */
+  candidateName: string;
+  /** Null in blind mode. */
+  email: string | null;
+  appliedAt: string;
+  /** 0–100; null until screened, or when screening failed. */
+  score: number | null;
+  scoreStatus: ApplicantScoreStatus;
+  reviewStatus: ReviewStatus;
+  /** Null when the vacancy does not run on a pipeline. */
+  currentStage: ApplicantStageRef | null;
+}
+
+/** Per group, independent of the list's filter and search. */
+export interface ApplicantCounts {
+  all: number;
+  /** Advanced by the screening or by a recruiter. */
+  autoAdvanced: number;
+  /** Of `autoAdvanced`, the ones a recruiter moved on. */
+  advancedByRecruiter: number;
+  manualReview: number;
+  pending: number;
+  rejected: number;
+  withdrawn: number;
+}
+
+export interface ApplicantThresholds {
+  auto: number;
+  manual: number;
+  /** False when the vacancy has no pipeline and the defaults (80 / 70) apply. */
+  fromPipeline: boolean;
+}
+
+export interface ApplicantPage extends PageResponse<ApplicantRow> {
+  counts: ApplicantCounts;
+  thresholds: ApplicantThresholds;
+  /** Names and emails hidden; search is ignored. */
+  blindMode: boolean;
+  lastChangedAt: string | null;
+}
+
+export interface ApplicantSummary {
+  counts: ApplicantCounts;
+  lastChangedAt: string | null;
+}
+
+/** A vacancy as the applicants area lists it (GET /applicants/vacancies). No advert, no company details. */
+export interface ApplicantVacancy {
+  id: string;
+  title: string;
+  department: string;
+  location: string;
+  employmentType: EmploymentType | null;
+  status: VacancyStatus;
+  publishedAt: string | null;
+  applicationDeadline: string | null;
+  blindMode: boolean;
+  counts: ApplicantCounts;
+  /** When the newest application arrived; null when nobody has applied. */
+  lastAppliedAt: string | null;
+}
+
+/** What one line of an application's history records (backend `StageEventType`). */
+export type ApplicationEventType =
+  | 'SUBMITTED'
+  | 'AI_SCREENED'
+  | 'SCREENING_FAILED'
+  | 'SCREENING_SKIPPED'
+  | 'ADVANCED'
+  | 'SHORTLISTED'
+  | 'STAGE_CHANGED'
+  | 'STATUS_CHANGED'
+  | 'REJECTED'
+  | 'HIRED'
+  | 'WITHDRAWN';
+
+export type ScreeningOutcome = 'AUTO_ADVANCED' | 'MANUAL_REVIEW' | 'AUTO_REJECTED';
+
+export interface ApplicantCriterionScore {
+  name: string;
+  score: number;
+  rationale: string | null;
+  /** Share of the score, 0–1; null when the vacancy weighs no criteria. */
+  weight: number | null;
+  mustHave: boolean | null;
+}
+
+export interface ApplicantHistoryEntry {
+  type: ApplicationEventType;
+  at: string;
+  fromStage: string | null;
+  toStage: string | null;
+  fromReviewStatus: ReviewStatus | null;
+  toReviewStatus: ReviewStatus | null;
+  /** Null: the system did it. */
+  actorName: string | null;
+  reason: string | null;
+  /** The score, on a screening line. */
+  score: number | null;
+}
+
+/** One application in full (GET /applications/{id}/review). */
+export interface ApplicantReview {
+  /** In blind mode: "Applicant #n", and the contact details are null. */
+  candidate: { name: string; email: string | null; phone: string | null; location: string | null };
+  application: {
+    id: string;
+    appliedAt: string;
+    /** The status the candidate sees. */
+    status: string;
+    reviewStatus: ReviewStatus;
+    decidedAt: string | null;
+    /** Sent back with a decision, so one made on a stale copy is refused (409). */
+    version: number;
+    vacancy: { id: string; title: string; status: VacancyStatus; blindMode: boolean };
+  };
+  /** Null until screened. */
+  score: {
+    status: 'PENDING' | 'SCORED' | 'SCORING_FAILED';
+    overallScore: number | null;
+    outcome: ScreeningOutcome | null;
+    autoThresholdUsed: number | null;
+    manualThresholdUsed: number | null;
+    summary: string | null;
+    strengths: string[];
+    gaps: string[];
+    matchedSkills: string[];
+    missingSkills: string[];
+    criteria: ApplicantCriterionScore[];
+    modelVersion: string | null;
+    scoredAt: string | null;
+    failureReason: string | null;
+  } | null;
+  thresholds: ApplicantThresholds;
+  stages: { id: string; name: string; type: PipelineStageType; position: number }[];
+  currentStageId: string | null;
+  /** Oldest first. */
+  history: ApplicantHistoryEntry[];
+  /** Null when they applied without a CV. */
+  cv: { fileName: string; mimeType: string; sizeBytes: number } | null;
+}
