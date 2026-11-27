@@ -91,18 +91,24 @@ How permission keys open screens (the UI never grants more than these):
 
 | Backend key | UI permissions | Opens |
 |---|---|---|
-| *(any company member)* | `dashboard.view`, `jobs.view`, `settings.view`, … | the workspace, the vacancies they work on |
+| *(any company member)* | `dashboard.view`, `overview.view`, `company.profile.view`, `jobs.view` | the workspace, the company profile, the vacancies they work on |
 | `team.view` | `team.view`, `roles.view` | Team › Members, Roles (read-only) |
 | `team.invite` | `team.invite`, `team.invite.manage` | Invite, resend, revoke |
 | `team.manage` | `team.manage` | Change a member's role |
 | `roles.manage` | `roles.manage` | Create/edit/delete roles, Team › Activity |
-| `settings.edit` | `settings.edit`, `billing.view` | Edit the company profile and switches |
+| `settings.edit` | `settings.view`, `settings.edit`, `billing.view` | Company Settings, editing the profile and switches |
 | `jobs.view.all` | `jobs.viewAll` | Every vacancy, and "Only mine" |
-| `jobs.manage` / `jobs.publish` | same | Vacancy writes / lifecycle |
+| `jobs.manage` | `jobs.manage`, `templates.view` | Vacancy writes, and reading the templates a vacancy is made from |
+| `jobs.publish` | `jobs.publish` | Vacancy lifecycle |
+| `pipeline.templates.manage` | `templates.view`, `templates.manage` | Pipeline Templates, creating and changing them |
+| `applications.view.all` | `pipeline.view` | The Pipeline page, the overview's funnel and health |
 | `applications.manage` | `pipeline.manage` | Moving applicants |
+| `interviews.schedule` | `interviews.viewAll` | The overview's interview schedule |
 
-Pipeline templates still check the fixed role on the backend, so the UI does too. A server that sends no
-`permissions` (older than company roles) gets the fixed role matrix.
+Nothing comes from the role's name: an Owner who edits the Recruiter role changes what Recruiters see. The overview
+shows each section only to members holding what it needs, so a member who works on a few vacancies gets their own
+vacancy count rather than the company's hiring. A server that sends no `permissions` (older than company roles)
+gets the fixed role matrix.
 
 Client: [`src/api/roles.ts`](../../src/api/roles.ts), [`src/auth/permissions.ts`](../../src/auth/permissions.ts),
 [`src/dashboard/roleEditor.ts`](../../src/dashboard/roleEditor.ts), the pages under `src/pages/dashboard/Role*`.

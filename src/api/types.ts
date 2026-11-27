@@ -643,6 +643,36 @@ export interface JobApplicationResponse {
   submittedAt: string;
 }
 
+/**
+ * Where an application stands. The backend sends APPLIED, IN_REVIEW,
+ * SHORTLISTED, REJECTED and WITHDRAWN today; INTERVIEW and OFFERED are the
+ * stages the hiring pipeline adds next, and anything else is shown by name.
+ */
+export type ApplicationStatus =
+  | 'APPLIED'
+  | 'IN_REVIEW'
+  | 'SHORTLISTED'
+  | 'INTERVIEW'
+  | 'OFFERED'
+  | 'REJECTED'
+  | 'WITHDRAWN';
+
+/** One of the signed-in candidate's applications. GET /api/v1/applications. */
+export interface CandidateApplicationResponse {
+  id: string;
+  jobId: string;
+  candidateId: string;
+  tenantId: string;
+  jobTitle: string;
+  /** An {@link ApplicationStatus}, typed loosely so a new stage never breaks the page. */
+  status: string;
+  /** ISO timestamp: when the application was submitted. */
+  createdAt: string;
+  /** ISO timestamp of the last status change. */
+  updatedAt: string;
+  withdrawnAt: string | null;
+}
+
 /** Public vacancy details: the card plus the rest of the advert. ASSUMED shape; there is no details endpoint yet. */
 export interface JobDetail extends JobSummary {
   jobDescription?: string | null;

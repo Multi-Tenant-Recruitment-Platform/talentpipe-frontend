@@ -62,6 +62,8 @@
   --color-error: var(--tp-error);
   --color-error-bg: var(--tp-error-bg);
   --color-error-text: var(--tp-error-text);
+  --color-highlight-bg: var(--tp-highlight-bg);
+  --color-highlight-text: var(--tp-highlight-text);
 
   --color-surface: var(--tp-surface);
   --color-canvas: var(--tp-canvas);

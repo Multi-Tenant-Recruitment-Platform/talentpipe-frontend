@@ -23,6 +23,7 @@ export function JobsRedirect() {
 const DashboardLayout = lazy(() => import('./layouts/DashboardLayout').then((m) => ({ default: m.DashboardLayout })));
 const AcceptInvitePage = lazy(() => import('./pages/AcceptInvitePage').then((m) => ({ default: m.AcceptInvitePage })));
 const ApplyPage = lazy(() => import('./pages/ApplyPage').then((m) => ({ default: m.ApplyPage })));
+const MyApplicationsPage = lazy(() => import('./pages/MyApplicationsPage').then((m) => ({ default: m.MyApplicationsPage })));
 const CandidateProfilePage = lazy(() => import('./pages/CandidateProfilePage').then((m) => ({ default: m.CandidateProfilePage })));
 const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage').then((m) => ({ default: m.ForgotPasswordPage })));
 const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage').then((m) => ({ default: m.ResetPasswordPage })));
@@ -82,6 +83,15 @@ export default function App() {
             element={
               <ProtectedRoute requires="profile.manageOwn">
                 <CandidateProfilePage />
+              </ProtectedRoute>
+            }
+          />
+          {/* Applied jobs: the candidate's applications and their statuses. */}
+          <Route
+            path="/applications"
+            element={
+              <ProtectedRoute requires="applications.viewOwn">
+                <MyApplicationsPage />
               </ProtectedRoute>
             }
           />
