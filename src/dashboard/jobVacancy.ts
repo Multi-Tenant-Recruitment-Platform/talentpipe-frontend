@@ -29,7 +29,7 @@ import { cleanValues } from './companyProfile';
  * lives here, pure and DOM-free, so the rules can be tested without a render.
  * The pages orchestrate; this file knows the vocabulary.</p>
  *
- * <p>{@link VACANCY_SECTIONS} is the spine. The rail, the six cards, the
+ * <p>{@link VACANCY_SECTIONS} is the spine. The stepper, the six cards, the
  * per-section completion marks and the order validation focuses fields in are
  * all read from it, so adding a field means touching one array rather than
  * four screens that drift apart.</p>
@@ -370,24 +370,29 @@ export const VACANCY_SECTIONS: VacancySection[] = [
     required: ['requiredSkills'],
   },
   {
-    id: 'salary',
+    // Pay and hours are one step: both optional, both what a candidate weighs
+    // an offer by, and short enough that two steps of them were mostly chrome.
+    id: 'compensation',
     index: '04',
-    title: 'Salary & benefits',
-    summary: 'What the role pays and what comes with it. Optional, but a stated range gets more applicants.',
-    fields: ['salaryMin', 'salaryMax', 'currency', 'payPeriod', 'benefits'],
-    required: [],
-  },
-  {
-    id: 'schedule',
-    index: '05',
-    title: 'Work schedule',
-    summary: 'The working week this role is expected to keep.',
-    fields: ['workingDays', 'workingHours', 'shiftType', 'expectedHoursPerWeek'],
+    title: 'Compensation & schedule',
+    summary:
+      'What the role pays, what comes with it, and the working week it keeps. All optional, but a stated salary range gets more applicants.',
+    fields: [
+      'salaryMin',
+      'salaryMax',
+      'currency',
+      'payPeriod',
+      'benefits',
+      'workingDays',
+      'workingHours',
+      'shiftType',
+      'expectedHoursPerWeek',
+    ],
     required: [],
   },
   {
     id: 'pipeline',
-    index: '06',
+    index: '05',
     title: 'Pipeline & screening',
     summary: 'The stages applicants move through, and how AI screening sorts them.',
     fields: ['pipelineTemplateId', 'autoThreshold', 'manualThreshold', 'blindModeEnabled', 'interviewPanels'],
@@ -399,7 +404,7 @@ export const VACANCY_SECTIONS: VacancySection[] = [
   },
   {
     id: 'matching',
-    index: '07',
+    index: '06',
     title: 'Ideal candidate matching',
     summary: 'Who the best applicant is, and how much each skill, tool and experience counts in AI screening.',
     fields: ['idealMatching'],
@@ -868,7 +873,7 @@ export function sectionsWithErrors(errors: JobVacancyFieldErrors): Set<string> {
 
 /* --- Steps --------------------------------------------------------------- */
 
-/** The step after the seven sections, where the vacancy is read back before it goes out. */
+/** The step after the sections, where the vacancy is read back before it goes out. */
 export const REVIEW_STEP = 'review';
 
 /** Every step of the form, in the order Next walks them: the sections, then the review. */

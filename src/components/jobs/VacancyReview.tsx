@@ -166,17 +166,12 @@ function Body({ sectionId, values }: Readonly<{ sectionId: string; values: JobVa
           <Prose label="Other requirements" value={values.otherRequirements} />
         </>
       );
-    case 'salary':
+    case 'compensation':
       return (
         <>
           <Fact label="Salary" value={salaryOf(values)} />
           <Fact label="Pay period" value={payPeriodLabel(values.payPeriod || null) ?? ''} />
           <Chips label="Benefits" values={values.benefits.map(benefitLabel)} />
-        </>
-      );
-    case 'schedule':
-      return (
-        <>
           <Fact label="Working days" value={formatWorkingDays(values.workingDays)} />
           <Fact label="Working hours" value={values.workingHours.trim()} />
           <Fact label="Shift" value={shiftTypeLabel(values.shiftType || null) ?? ''} />

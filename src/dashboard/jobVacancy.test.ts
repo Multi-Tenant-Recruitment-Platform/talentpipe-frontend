@@ -143,7 +143,7 @@ describe('steps', () => {
 
     expect(Object.keys(sectionProblems(problems, 'basics'))).toEqual(['title']);
     expect(Object.keys(sectionProblems(problems, 'requirements'))).toEqual(['requiredSkills']);
-    expect(sectionProblems(problems, 'salary')).toEqual({});
+    expect(sectionProblems(problems, 'compensation')).toEqual({});
   });
 
   it('asks a new vacancy for its template on the pipeline step', () => {
@@ -155,7 +155,7 @@ describe('steps', () => {
   it('lets no one past the first section with a problem', () => {
     expect(furthestReachableStep(vacancyProblems(EMPTY_VACANCY_VALUES, 'create'))).toBe(0);
     expect(furthestReachableStep(vacancyProblems(completeValues({ requiredSkills: [] }), 'create'))).toBe(2);
-    expect(furthestReachableStep(vacancyProblems(completeValues({ pipelineTemplateId: '' }), 'create'))).toBe(5);
+    expect(furthestReachableStep(vacancyProblems(completeValues({ pipelineTemplateId: '' }), 'create'))).toBe(4);
   });
 
   it('opens the review once every section is in order', () => {
@@ -181,8 +181,8 @@ describe('progress', () => {
   });
 
   it('tracks optional work so an all-optional section still shows effort', () => {
-    const schedule = VACANCY_SECTIONS[4];
-    const progress = sectionProgress(completeValues({ workingDays: ['MON'] }), schedule);
+    const compensation = VACANCY_SECTIONS.find((section) => section.id === 'compensation')!;
+    const progress = sectionProgress(completeValues({ workingDays: ['MON'] }), compensation);
     expect(progress.total).toBe(0);
     expect(progress.optionalFilled).toBe(1);
   });

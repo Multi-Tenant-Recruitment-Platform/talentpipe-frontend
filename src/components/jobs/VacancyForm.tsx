@@ -1,4 +1,3 @@
-import { WorkScheduleSection } from './WorkScheduleSection';
 import { ArrowLeftOutlined, ArrowRightOutlined, FileSearchOutlined, UserOutlined } from '@ant-design/icons';
 import { Typography } from 'antd';
 import {
@@ -49,7 +48,7 @@ import { JobDescriptionSection } from './JobDescriptionSection';
 import { IdealMatchingSection } from './IdealMatchingSection';
 import { PipelineScreeningSection } from './PipelineScreeningSection';
 // import { RecruitmentSettingsSection } from './RecruitmentSettingsSection';
-import { SalaryBenefitsSection } from './SalaryBenefitsSection';
+import { CompensationScheduleSection } from './CompensationScheduleSection';
 import type { VacancySectionProps } from './sectionProps';
 import { vacancyFieldId, vacancyGroupId } from './vacancyFieldIds';
 import { VacancyReview } from './VacancyReview';
@@ -83,8 +82,7 @@ const SECTION_BODIES: Record<string, ComponentType<VacancySectionProps>> = {
   basics: BasicInformationSection,
   description: JobDescriptionSection,
   requirements: CandidateRequirementsSection,
-  salary: SalaryBenefitsSection,
-  schedule: WorkScheduleSection,
+  compensation: CompensationScheduleSection,
   pipeline: PipelineScreeningSection,
   matching: IdealMatchingSection,
   // recruitment: RecruitmentSettingsSection,
@@ -93,7 +91,7 @@ const SECTION_BODIES: Record<string, ComponentType<VacancySectionProps>> = {
 const HEADINGS: Record<VacancyFormMode, { title: string; subtitle: string }> = {
   create: {
     title: 'Create vacancy',
-    subtitle: 'Eight short steps. We save as you go, so you can stop at any point and pick up where you left off.',
+    subtitle: 'Seven short steps. We save as you go, so you can stop at any point and pick up where you left off.',
   },
   duplicate: {
     title: 'Duplicate vacancy',

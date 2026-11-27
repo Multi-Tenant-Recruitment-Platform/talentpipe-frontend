@@ -176,20 +176,19 @@ beforeEach(() => {
 /* --- Create ------------------------------------------------------------- */
 
 describe('creating a vacancy', () => {
-  it('walks eight numbered steps, from basic information to the review', () => {
+  it('walks seven numbered steps, from basic information to the review', () => {
     render(<VacancyRoutes path="/dashboard/jobs/new" />);
 
     expect(within(stepper()).getAllByRole('button').map((step) => step.textContent)).toEqual([
       expect.stringContaining('Basic information'),
       expect.stringContaining('Job description'),
       expect.stringContaining('Candidate requirements'),
-      expect.stringContaining('Salary & benefits'),
-      expect.stringContaining('Work schedule'),
+      expect.stringContaining('Compensation & schedule'),
       expect.stringContaining('Pipeline & screening'),
       expect.stringContaining('Ideal candidate matching'),
       expect.stringContaining('Review & publish'),
     ]);
-    expect(screen.getByText('Step 1 of 8')).toBeInTheDocument();
+    expect(screen.getByText('Step 1 of 7')).toBeInTheDocument();
     expect(screen.getByRole('group', { name: /basic information/i })).toHaveTextContent('01');
     // Steps ahead of an unfinished one wait for it.
     expect(stepButton(/job description/i)).toBeDisabled();
@@ -235,7 +234,7 @@ describe('creating a vacancy', () => {
     pressNext();
     expect(openStepHeading()).toHaveTextContent('Job description');
     expect(openStepHeading()).toHaveFocus();
-    expect(screen.getByText('Step 2 of 8')).toBeInTheDocument();
+    expect(screen.getByText('Step 2 of 7')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: /^back$/i }));
     expect(openStepHeading()).toHaveTextContent('Basic information');
