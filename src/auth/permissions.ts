@@ -36,10 +36,10 @@ export const PERMISSIONS = [
   'team.manage', // PUT /team/members/{id}/role — move someone to another role
   'roles.view', // GET /roles — see the workspace's roles and who holds them
   'roles.manage', // create, edit, duplicate and delete roles; read the audit trail
-  'pipeline.view',
+  'pipeline.view', // the company-wide pipeline: every applicant's progress
   'pipeline.manage', // move candidates between stages
   'company.profile.view', // the Profile Management page (PB-010)
-  'settings.view',
+  'settings.view', // the Company Settings page
   'settings.edit', // PATCH /tenant, logo and cover, PATCH /tenant/settings
   'billing.view', // plan & seat usage
   'jobs.browse',
@@ -49,16 +49,20 @@ export const PERMISSIONS = [
   'jobs.publish', // publish, close and archive
   'templates.view', // GET /pipeline-templates — read the reusable hiring pipelines
   'templates.manage', // create, edit and archive pipeline templates
+  'interviews.viewAll', // the company's interview schedule, everyone's interviews
   'applications.viewOwn',
   'profile.manageOwn', // a candidate's own My profile page
 ] as const;
 export type Permission = (typeof PERMISSIONS)[number];
 
-/** Everything every company member shares, whatever their role. */
+/**
+ * Everything every company member shares, whatever their role. The overview
+ * is here because it only shows the sections the member's other permissions
+ * open; nothing company-wide is in the base.
+ */
 const COMPANY_BASE = [
   'dashboard.view',
   'overview.view',
-  'pipeline.view',
   'jobs.browse',
   // Everyone in the workspace may read the company's own profile — it is the
   // company they work for, and it is destined to be candidate-visible anyway.
@@ -76,7 +80,9 @@ const ROLE_PERMISSIONS: Record<Role, ReadonlySet<Permission>> = {
     'team.view',
     'team.invite',
     'team.invite.manage',
+    'pipeline.view',
     'pipeline.manage',
+    'interviews.viewAll',
     'jobs.view',
     'jobs.viewAll',
     'jobs.manage',
@@ -90,19 +96,22 @@ const ROLE_PERMISSIONS: Record<Role, ReadonlySet<Permission>> = {
   // Opening a role is the HR manager's job, not a privilege of ownership, so
   // the vacancy permissions sit alongside pipeline.manage rather than with the
   // admin-only cells above. Pipeline templates are the admin's to shape; the
-  // HR manager, as the one who opens roles, only needs to read them.
+  // HR manager, as the one who opens roles, only needs to read them. Company
+  // settings are the admin's too.
   HR_MANAGER: new Set([
     ...COMPANY_BASE,
+    'pipeline.view',
     'pipeline.manage',
+    'interviews.viewAll',
     'jobs.view',
     'jobs.viewAll',
     'jobs.manage',
     'jobs.publish',
     'templates.view',
-    'settings.view',
   ]),
   // Servers older than company roles refused GET /jobs to interviewers, so the
   // fallback leaves them out; a server with roles sends permissions instead.
+  // An interviewer sees their own interviews, not the company's pipeline.
   INTERVIEWER: new Set(COMPANY_BASE),
   CANDIDATE: new Set(['jobs.browse', 'applications.viewOwn', 'profile.manageOwn']),
 };
@@ -116,15 +125,21 @@ const FROM_BACKEND_KEY: Record<string, readonly Permission[]> = {
   'team.invite': ['team.invite', 'team.invite.manage'],
   'team.manage': ['team.manage'],
   'roles.manage': ['roles.manage'],
-  'settings.edit': ['settings.edit', 'billing.view'],
+  // The settings page is where settings are changed; a member who cannot
+  // change them has no reason to be there.
+  'settings.edit': ['settings.view', 'settings.edit', 'billing.view'],
   'jobs.view.all': ['jobs.viewAll'],
-  'jobs.manage': ['jobs.manage'],
+  // A vacancy is created from a template, so whoever creates vacancies reads
+  // them (GET /pipeline-templates allows jobs.manage).
+  'jobs.manage': ['jobs.manage', 'templates.view'],
   'jobs.publish': ['jobs.publish'],
+  'pipeline.templates.manage': ['templates.view', 'templates.manage'],
+  // The pipeline page shows every applicant's progress, so it needs the
+  // permission that sees every applicant.
+  'applications.view.all': ['pipeline.view'],
   'applications.manage': ['pipeline.manage'],
+  'interviews.schedule': ['interviews.viewAll'],
 };
-
-/** Pipeline templates still check the fixed role on the backend, so the UI does too. */
-const TEMPLATE_PERMISSIONS = ['templates.view', 'templates.manage'] as const satisfies readonly Permission[];
 
 /**
  * Who a permission question is about: the signed-in user (preferred), or a
@@ -155,19 +170,15 @@ function roleMatrix(role: string | null | undefined): ReadonlySet<Permission> {
 
 /**
  * A company member's UI permissions from the keys their role grants. Every
- * member may enter the dashboard, read the company and its settings, and list
- * the vacancies they work on (the backend narrows that list for them).
+ * member may enter the dashboard, read the company profile, and list the
+ * vacancies they work on (the backend narrows that list for them). Nothing
+ * else comes from the role's name: an Owner who edits the Recruiter role
+ * changes what Recruiters see.
  */
-function fromBackendKeys(role: string, keys: readonly string[]): ReadonlySet<Permission> {
-  const granted = new Set<Permission>([...COMPANY_BASE, 'settings.view', 'jobs.view']);
+function fromBackendKeys(keys: readonly string[]): ReadonlySet<Permission> {
+  const granted = new Set<Permission>([...COMPANY_BASE, 'jobs.view']);
   for (const key of keys) {
     for (const permission of FROM_BACKEND_KEY[key] ?? []) {
-      granted.add(permission);
-    }
-  }
-  const legacy = roleMatrix(role);
-  for (const permission of TEMPLATE_PERMISSIONS) {
-    if (legacy.has(permission)) {
       granted.add(permission);
     }
   }
@@ -190,7 +201,7 @@ export function permissionsFor(subject: PermissionSubject): ReadonlySet<Permissi
   // Only company members carry company permissions; a candidate's empty list
   // means "no company role", not "a company role with nothing in it".
   if (Array.isArray(permissions) && tenantId) {
-    return fromBackendKeys(role, permissions);
+    return fromBackendKeys(permissions);
   }
   return roleMatrix(role);
 }
